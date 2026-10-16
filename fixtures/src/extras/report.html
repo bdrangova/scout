@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Test report</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 24px; color: #1f2933; }
+  table { border-collapse: collapse; }
+  td, th { border: 1px solid #d1d5db; padding: 6px 12px; text-align: left; }
+  .pass { color: #047857; font-weight: 600; }
+  #status { margin-top: 16px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+  <h1>Trial bar test report</h1>
+  <table>
+    <thead><tr><th>Suite</th><th>Tests</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>format.test.ts</td><td>4</td><td class="pass">pass</td></tr>
+      <tr><td>client.test.ts</td><td>3</td><td class="pass">pass</td></tr>
+      <tr><td>trial-bar.test.ts</td><td>5</td><td class="pass">pass</td></tr>
+    </tbody>
+  </table>
+  <div id="status">script not run</div>
+  <script>
+    const status = document.getElementById('status')
+    status.textContent = 'inline script ran; checking network access...'
+    fetch('https://example.com')
+      .then(() => { status.textContent = 'inline script ran; fetch allowed' })
+      .catch(() => { status.textContent = 'inline script ran; fetch blocked' })
+  </script>
+</body>
+</html>

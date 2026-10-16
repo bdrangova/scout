@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trial bar design</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #f4f5f7; color: #1f2933; }
+  .frame { max-width: 960px; margin: 32px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.08); overflow: hidden; }
+  .bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; font-size: 14px; }
+  .bar.neutral { background: #e8f0fe; color: #174ea6; }
+  .bar.warning { background: #fff4e5; color: #8a4b00; }
+  .bar button { border: 0; border-radius: 6px; padding: 6px 14px; font-weight: 600; cursor: pointer; }
+  .bar.neutral button { background: #174ea6; color: #fff; }
+  .bar.warning button { background: #b45309; color: #fff; }
+  header { padding: 16px 20px; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
+  .notes { max-width: 960px; margin: 0 auto 32px; font-size: 14px; line-height: 1.5; }
+  code { background: #eef; padding: 1px 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="bar neutral"><span>Your trial ends in <strong>7 days</strong>. Keep your workspace by upgrading.</span><button>Upgrade</button></div>
+    <header>Acme Console</header>
+  </div>
+  <div class="frame">
+    <div class="bar warning"><span>Your trial ends in <strong>2 days</strong>. Upgrade now to avoid read-only mode.</span><button>Upgrade</button></div>
+    <header>Acme Console</header>
+  </div>
+  <div class="notes">
+    <p><strong>Neutral</strong> uses the info palette; <strong>warning</strong> switches to amber at <code>warnAtDays</code> (3) or fewer days.</p>
+    <p>The close control sits at the far right on wide screens and wraps under the text below 640px.</p>
+  </div>
+</body>
+</html>
