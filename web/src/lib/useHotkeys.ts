@@ -1,0 +1,111 @@
+import { useEffect, useRef } from 'react'
+import { isTypingTarget } from './keyboard'
+
+export type Hotkey =
+  | 'prev'
+  | 'next'
+  | 'prevScope'
+  | 'nextScope'
+  | 'approve'
+  | 'reject'
+  | 'comment'
+  | 'submitComment'
+  | 'cancel'
+  | 'toggleMode'
+  | 'toggleGrid'
+  | 'toggleSidebar'
+  | 'toggleMerges'
+  | 'section1'
+  | 'section2'
+  | 'section3'
+  | 'section4'
+  | 'section5'
+  | 'help'
+
+export type HotkeyHandlers = Partial<Record<Hotkey, () => void>>
+
+type KeyLike = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 'target' | 'defaultPrevented'>
+
+/**
+ * The hotkey a key press maps to, or null. Ignored while typing in inputs, textareas and
+ * contenteditable elements, except ⌘/Ctrl+Enter.
+ */
+export function hotkeyFor(event: KeyLike): Hotkey | null {
+  if (event.defaultPrevented) return null
+  const command = event.metaKey || event.ctrlKey
+  if (command && event.key === 'Enter') return 'submitComment'
+  if (command || event.altKey) return null
+  if (isTypingTarget(event.target)) return null
+  switch (event.key) {
+    case 'ArrowLeft':
+      return 'prev'
+    case 'ArrowRight':
+      return 'next'
+    case '[':
+      return 'prevScope'
+    case ']':
+      return 'nextScope'
+    case 'a':
+    case 'A':
+      return 'approve'
+    case 'x':
+    case 'X':
+    case 'r':
+    case 'R':
+      return 'reject'
+    case 'c':
+    case 'C':
+      return 'comment'
+    case 'Escape':
+      return 'cancel'
+    case 's':
+    case 'S':
+      return 'toggleMode'
+    case 'g':
+    case 'G':
+      return 'toggleGrid'
+    case 'b':
+    case 'B':
+      return 'toggleSidebar'
+    case 'h':
+    case 'H':
+      return 'toggleMerges'
+    case '1':
+      return 'section1'
+    case '2':
+      return 'section2'
+    case '3':
+      return 'section3'
+    case '4':
+      return 'section4'
+    case '5':
+      return 'section5'
+    case '?':
+      return 'help'
+    default:
+      return null
+  }
+}
+
+/** Binds page-level shortcuts on `window`; only the keys with a handler are consumed. */
+export function useHotkeys(handlers: HotkeyHandlers, enabled = true): void {
+  const handlersRef = useRef(handlers)
+
+  useEffect(() => {
+    handlersRef.current = handlers
+  })
+
+  useEffect(() => {
+    if (!enabled) return
+    function onKeyDown(event: KeyboardEvent) {
+      const hotkey = hotkeyFor(event)
+      if (hotkey === null) return
+      const handler = handlersRef.current[hotkey]
+      if (!handler) return
+      event.preventDefault()
+      handler()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [enabled])
+}

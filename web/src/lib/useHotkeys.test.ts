@@ -1,0 +1,51 @@
+import { describe, expect, it } from 'vitest'
+import { hotkeyFor } from './useHotkeys'
+
+function key(overrides: Partial<Parameters<typeof hotkeyFor>[0]>) {
+  return hotkeyFor({ key: '', metaKey: false, ctrlKey: false, altKey: false, target: null, defaultPrevented: false, ...overrides })
+}
+
+describe('hotkeyFor', () => {
+  it('maps the review keys', () => {
+    expect(key({ key: 'ArrowLeft' })).toBe('prev')
+    expect(key({ key: 'ArrowRight' })).toBe('next')
+    expect(key({ key: '[' })).toBe('prevScope')
+    expect(key({ key: ']' })).toBe('nextScope')
+    expect(key({ key: 'a' })).toBe('approve')
+    expect(key({ key: 'A' })).toBe('approve')
+    expect(key({ key: 'x' })).toBe('reject')
+    expect(key({ key: 'r' })).toBe('reject')
+    expect(key({ key: 'c' })).toBe('comment')
+    expect(key({ key: 'Escape' })).toBe('cancel')
+    expect(key({ key: 's' })).toBe('toggleMode')
+    expect(key({ key: 'g' })).toBe('toggleGrid')
+    expect(key({ key: 'B' })).toBe('toggleSidebar')
+    expect(key({ key: 'h' })).toBe('toggleMerges')
+    expect(key({ key: '3' })).toBe('section3')
+    expect(key({ key: '?' })).toBe('help')
+    expect(key({ key: 'q' })).toBeNull()
+  })
+
+  it('ignores modifier combinations except ⌘/Ctrl+Enter', () => {
+    expect(key({ key: 'a', metaKey: true })).toBeNull()
+    expect(key({ key: 'a', ctrlKey: true })).toBeNull()
+    expect(key({ key: 'a', altKey: true })).toBeNull()
+    expect(key({ key: 'Enter', metaKey: true })).toBe('submitComment')
+    expect(key({ key: 'Enter', ctrlKey: true })).toBe('submitComment')
+    expect(key({ key: 'Enter' })).toBeNull()
+  })
+
+  it('ignores keys while typing, except ⌘/Ctrl+Enter', () => {
+    const textarea = document.createElement('textarea')
+    expect(key({ key: 'a', target: textarea })).toBeNull()
+    expect(key({ key: 'Escape', target: textarea })).toBeNull()
+    expect(key({ key: 'Enter', metaKey: true, target: textarea })).toBe('submitComment')
+    const editable = document.createElement('div')
+    editable.contentEditable = 'true'
+    expect(key({ key: 'x', target: editable })).toBeNull()
+  })
+
+  it('skips events something else already handled', () => {
+    expect(key({ key: 'a', defaultPrevented: true })).toBeNull()
+  })
+})

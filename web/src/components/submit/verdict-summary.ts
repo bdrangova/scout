@@ -1,0 +1,46 @@
+import { effectiveVerdict, type Comment, type Review, type Verdict, type WorkingTree } from '@review-dash/shared'
+
+export interface VerdictSummary {
+  approved: number
+  rejected: number
+  commented: number
+  notReviewed: number
+}
+
+/**
+ * Files of the live tree by effective verdict (a verdict pinned to an older fingerprint counts
+ * as none); a file without a verdict but with a comment counts as `commented`.
+ */
+export function verdictSummary(review: Review, tree: WorkingTree): VerdictSummary {
+  const commented = new Set<string>()
+  for (const comment of review.comments) {
+    if (comment.target.kind === 'file' && comment.target.ref !== null) commented.add(comment.target.ref)
+  }
+  const summary: VerdictSummary = { approved: 0, rejected: 0, commented: 0, notReviewed: 0 }
+  for (const file of tree.files) {
+    const verdict = effectiveVerdict(review.files[file.path], file)
+    if (verdict === 'approved') summary.approved += 1
+    else if (verdict === 'rejected') summary.rejected += 1
+    else if (commented.has(file.path)) summary.commented += 1
+    else summary.notReviewed += 1
+  }
+  return summary
+}
+
+/** `3 approved · 1 rejected · 1 commented · 3 not reviewed` */
+export function formatVerdictSummary(summary: VerdictSummary): string {
+  return [
+    `${summary.approved} approved`,
+    `${summary.rejected} rejected`,
+    `${summary.commented} commented`,
+    `${summary.notReviewed} not reviewed`,
+  ].join(' · ')
+}
+
+export type FileChip = Exclude<Verdict, 'none'> | 'commented'
+
+/** The chip next to a file in the comment list: its verdict, or `commented` when it only has comments. */
+export function fileChip(verdict: Verdict, comments: readonly Comment[]): FileChip | null {
+  if (verdict !== 'none') return verdict
+  return comments.length > 0 ? 'commented' : null
+}
