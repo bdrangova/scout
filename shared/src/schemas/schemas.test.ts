@@ -134,7 +134,7 @@ describe('schemas accept a valid example of each shape', () => {
     const summary: SessionSummary = {
       id: m.id,
       title: m.title,
-      repo: { path: m.repo.path, branch: tree.branch, baseRef: m.repo.baseRef },
+      repo: { path: m.repo.path, branch: tree.branch, sessionBranch: m.repo.branch, baseRef: m.repo.baseRef },
       tickets: m.tickets,
       status: 'in-progress',
       progress: { reviewed: 1, total: 3 },

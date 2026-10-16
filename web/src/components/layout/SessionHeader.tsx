@@ -1,8 +1,9 @@
 import { sessionStatus } from '@review-dash/shared'
-import { Archive, ChevronLeft, Keyboard, TriangleAlert } from 'lucide-react'
+import { Archive, ChevronLeft, Keyboard } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
+import { BranchChangedChip } from '@/components/session/BranchChangedChip'
 import { DiffStats } from '@/components/session/DiffStats'
 import { StatusPill } from '@/components/session/StatusPill'
 import { TicketChips } from '@/components/session/TicketChip'
@@ -58,9 +59,6 @@ export function SessionHeader({ onHelp }: SessionHeaderProps) {
   const status = sessionStatus({ review: state.review, tree, resolutions, activeRun: detail.activeRunId !== null })
   const branch = tree.branch ?? manifest.repo.branch
   const baseRef = tree.baseRef || manifest.repo.baseRef
-  // The diff follows whatever is checked out: say so when that is no longer the session's branch.
-  const branchChanged = tree.branch !== null && manifest.repo.branch !== null && tree.branch !== manifest.repo.branch
-
   const tabs: SectionTab[] = [
     { to: 'files', label: 'Files', count: tree.files.length },
     { to: 'evidence', label: 'Evidence', count: detail.evidence.length },
@@ -155,20 +153,7 @@ export function SessionHeader({ onHelp }: SessionHeaderProps) {
             {null}
           </Progress>
           <StatusPill summary={{ status, progress, openComments }} className="shrink-0" />
-          {branchChanged && (
-            <span
-              role="status"
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-warn/15 px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-warn-foreground"
-              title={`The session was created on ${manifest.repo.branch}; the repository is now on ${tree.branch}. The diff follows the checkout.`}
-            >
-              <TriangleAlert className="size-3.5" aria-hidden />
-              Branch changed
-              <span className="hidden xl:inline">
-                {' · now on '}
-                <span className="font-mono">{tree.branch}</span>
-              </span>
-            </span>
-          )}
+          <BranchChangedChip sessionBranch={manifest.repo.branch} current={tree.branch} />
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <span className="w-16 text-right text-xs whitespace-nowrap text-muted-foreground" aria-live="polite">
               {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Not saved' : ''}

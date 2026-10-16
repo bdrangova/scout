@@ -103,7 +103,7 @@ export function sessionSummary(manifest: Manifest, state: ReviewState, tree: Wor
   return {
     id: manifest.id,
     title: manifest.title,
-    repo: { path: manifest.repo.path, branch: tree.branch ?? manifest.repo.branch, baseRef: manifest.repo.baseRef },
+    repo: { path: manifest.repo.path, branch: tree.branch ?? manifest.repo.branch, sessionBranch: manifest.repo.branch, baseRef: manifest.repo.baseRef },
     tickets: manifest.tickets,
     status: sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null }),
     progress: progress(state.review, tree, state.resolutions),

@@ -34,8 +34,11 @@ export type Health = z.infer<typeof HealthSchema>
 export const SessionSummarySchema = z.object({
   id: z.string().regex(SESSION_ID_RE),
   title: z.string(),
-  /** `baseRef` is the manifest's base ref name (e.g. `origin/main`); the live merge-base is not part of the summary. */
-  repo: z.object({ path: z.string(), branch: z.string().nullable(), baseRef: z.string().min(1) }),
+  /**
+   * `branch` is the live checkout, `sessionBranch` the one the session was published on (a difference
+   * is flagged). `baseRef` is the manifest's base ref name (e.g. `origin/main`); the live merge-base is not part of the summary.
+   */
+  repo: z.object({ path: z.string(), branch: z.string().nullable(), sessionBranch: z.string().nullable(), baseRef: z.string().min(1) }),
   tickets: ManifestSchema.shape.tickets,
   status: SessionStatusSchema,
   progress: ProgressSchema,

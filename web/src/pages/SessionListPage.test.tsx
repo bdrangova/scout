@@ -147,6 +147,13 @@ describe('SessionListPage', () => {
     for (const chip of chips) expect(chip.parentElement).toBe(strip)
   })
 
+  it('flags a row whose repository moved to another branch than the session was published on', () => {
+    const first = sessionListFixture[0]
+    if (!first || !('tickets' in first)) throw new Error('fixture')
+    renderPage({ sessions: [{ ...first, repo: { ...first.repo, branch: 'other-branch' } }] })
+    expect(screen.getByRole('status')).toHaveTextContent('Branch changed')
+  })
+
   it('navigates to the session on click and Enter, but not from the ticket link', async () => {
     listState.current = { sessions: sessionListFixture, loading: false, error: null, reload: () => {} }
     render(

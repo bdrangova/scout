@@ -6,6 +6,7 @@ import type { KeyboardEvent, MouseEvent } from 'react'
 import { toast } from 'sonner'
 import { BranchPair, BranchRef } from '@/components/common/BranchRef'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { BranchChangedChip } from '@/components/session/BranchChangedChip'
 import { DiffStats } from '@/components/session/DiffStats'
 import { StatusPill } from '@/components/session/StatusPill'
 import { TicketChips } from '@/components/session/TicketChip'
@@ -247,6 +248,7 @@ function SessionRow({ session, onArchive }: SessionRowProps) {
           <span className="flex min-w-0 items-center gap-1.5 font-mono text-xs text-muted-foreground">
             <span className="shrink-0">{repoName(session.repo.path)} ·</span>
             <BranchPair baseRef={session.repo.baseRef} branch={session.repo.branch} />
+            <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />
           </span>
         </div>
         <div className={META}>
