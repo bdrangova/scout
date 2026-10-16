@@ -1,0 +1,22 @@
+{
+  "name": "@review-dash/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Zod schemas, constants and pure review logic shared by the server, web app and CLI",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}
