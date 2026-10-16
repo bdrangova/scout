@@ -1,0 +1,36 @@
+import { Command } from 'commander'
+import { SCHEMA_VERSION } from '@review-dash/shared'
+import pkg from '../package.json' with { type: 'json' }
+import { registerArchive } from './commands/archive.ts'
+import { registerFeedback } from './commands/feedback.ts'
+import { registerInit } from './commands/init.ts'
+import { registerInstall } from './commands/install.ts'
+import { registerOpen } from './commands/open.ts'
+import { registerPath } from './commands/path.ts'
+import { registerPending } from './commands/pending.ts'
+import { registerResolve } from './commands/resolve.ts'
+import { registerStatus } from './commands/status.ts'
+
+const program = new Command()
+
+program
+  .name('ai-review')
+  .description(`Create review-dash sessions for Claude Code work and read the review back (contract v${SCHEMA_VERSION})`)
+  .version(pkg.version)
+
+registerInit(program)
+registerPath(program)
+registerFeedback(program)
+registerResolve(program)
+registerPending(program)
+registerStatus(program)
+registerOpen(program)
+registerArchive(program)
+registerInstall(program)
+
+try {
+  await program.parseAsync(process.argv)
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exit(1)
+}
