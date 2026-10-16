@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { AgentRunEventSchema, mergeComments } from '@review-dash/shared'
-import type { AgentRun, AgentRunEvent, AgentRunStatus, SessionDetail } from '@review-dash/shared'
+import type { AgentRun, AgentRunEvent, AgentRunStatus, Decision, SessionDetail } from '@review-dash/shared'
 import { HttpError, errorMessage } from '../errors.ts'
 import type { StoreEventBus } from '../events.ts'
 import { readTextIfExists } from '../store/fs.ts'
@@ -151,7 +151,7 @@ export class RunManager {
   }
 
   /** Starts the adapter for a session; 409 `HttpError` when a run is already active. */
-  async start(session: SessionDetail, opts: { sentAt: string; fork: boolean }): Promise<AgentRun> {
+  async start(session: SessionDetail, opts: { sentAt: string; decision: Decision; fork: boolean }): Promise<AgentRun> {
     const sessionId = session.manifest.id
     const sessionDir = this.store.paths.sessionDir(sessionId)
     await this.reconcileStale(sessionDir)
@@ -163,7 +163,7 @@ export class RunManager {
 
     const before = await commentStatuses(sessionDir, sessionId)
     const abort = new AbortController()
-    const handle = this.adapter.applyFeedback({ session, sentAt: opts.sentAt, fork: opts.fork, signal: abort.signal, home: this.home })
+    const handle = this.adapter.applyFeedback({ session, sentAt: opts.sentAt, decision: opts.decision, fork: opts.fork, signal: abort.signal, home: this.home })
     const run: AgentRun = {
       id,
       sessionId,

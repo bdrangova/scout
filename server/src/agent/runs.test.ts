@@ -61,12 +61,12 @@ describe('RunManager with the fake adapter', () => {
   it('runs to completion, persisting the run, its log and the fake resolutions', async () => {
     await writeReview(fixture.dir, sentReview())
     const detail = await store.getSession(FIXTURE_SESSION_ID)
-    const run = await manager.start(detail, { sentAt: SENT_AT, fork: false })
+    const run = await manager.start(detail, { sentAt: SENT_AT, decision: 'request-changes', fork: false })
     expect(run).toMatchObject({ sessionId: FIXTURE_SESSION_ID, status: 'running', adapter: 'fake', sentAt: SENT_AT, pid: null })
     expect(run.argv[0]).toBe('fake-agent')
     expect(manager.activeRun(FIXTURE_SESSION_ID)?.id).toBe(run.id)
-    await expect(manager.start(detail, { sentAt: SENT_AT, fork: false })).rejects.toThrow(HttpError)
-    await expect(manager.start(detail, { sentAt: SENT_AT, fork: false })).rejects.toMatchObject({ status: 409 })
+    await expect(manager.start(detail, { sentAt: SENT_AT, decision: 'request-changes', fork: false })).rejects.toThrow(HttpError)
+    await expect(manager.start(detail, { sentAt: SENT_AT, decision: 'request-changes', fork: false })).rejects.toMatchObject({ status: 409 })
 
     const live = collector()
     const sub = await manager.subscribe(run.id, 0, live.listener)
@@ -169,7 +169,7 @@ describe('RunManager cancel', () => {
 
   it('aborts the adapter, records cancelled and writes no resolutions', async () => {
     await writeReview(fixture.dir, sentReview())
-    const run = await manager.start(await store.getSession(FIXTURE_SESSION_ID), { sentAt: SENT_AT, fork: false })
+    const run = await manager.start(await store.getSession(FIXTURE_SESSION_ID), { sentAt: SENT_AT, decision: 'request-changes', fork: false })
     const seen = collector()
     await manager.subscribe(run.id, 0, seen.listener)
     await new Promise((resolve) => setTimeout(resolve, 120))
@@ -183,7 +183,7 @@ describe('RunManager cancel', () => {
   })
 
   it('close() cancels active runs', async () => {
-    const run = await manager.start(await store.getSession(FIXTURE_SESSION_ID), { sentAt: SENT_AT, fork: false })
+    const run = await manager.start(await store.getSession(FIXTURE_SESSION_ID), { sentAt: SENT_AT, decision: 'request-changes', fork: false })
     await manager.close()
     expect(await manager.get(run.id)).toMatchObject({ status: 'cancelled', error: expect.stringContaining('shut down') })
   })

@@ -13,7 +13,7 @@ const OPTIONS: readonly Option[] = [
   {
     value: 'approve',
     label: 'Approve',
-    hint: 'Ready to merge as is.',
+    hint: 'Ready for a PR to be opened.',
     labelClass: 'text-approve',
     activeClass: 'border-approve bg-approve/10',
   },

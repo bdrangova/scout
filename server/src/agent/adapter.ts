@@ -1,4 +1,4 @@
-import type { AgentAdapterName, AgentRunEvent, SessionDetail } from '@review-dash/shared'
+import type { AgentAdapterName, AgentRunEvent, Decision, SessionDetail } from '@review-dash/shared'
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
 
@@ -21,6 +21,8 @@ export type CanResumeResult = { ok: true } | { ok: false; reason: string }
 export interface ApplyFeedbackRequest {
   session: SessionDetail
   sentAt: string
+  /** The decision the reviewer sent; `approve` lets the agent commit, push and open a PR. */
+  decision: Decision
   fork: boolean
   signal: AbortSignal
   /** Store root, passed to the agent as `AI_REVIEW_HOME`. */

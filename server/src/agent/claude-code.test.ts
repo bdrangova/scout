@@ -41,7 +41,7 @@ async function collect(handle: AsyncIterable<AdapterEvent>): Promise<AdapterEven
 
 describe('applyReviewArgv and headlessEnv', () => {
   it('builds exactly the command from the plan', () => {
-    expect(applyReviewArgv('20260926-1830-add-trial-bar-3f2a', 'sid-1', false)).toEqual([
+    expect(applyReviewArgv('20260926-1830-add-trial-bar-3f2a', 'sid-1', 'request-changes', false)).toEqual([
       '-p',
       '/apply-review 20260926-1830-add-trial-bar-3f2a',
       '--resume',
@@ -65,8 +65,19 @@ describe('applyReviewArgv and headlessEnv', () => {
       '--max-budget-usd',
       '10',
     ])
-    expect(applyReviewArgv('s', 'sid', true)).toContain('--fork-session')
+    expect(applyReviewArgv('s', 'sid', 'request-changes', true)).toContain('--fork-session')
     expect(APPLY_REVIEW_ALLOWED_TOOLS.join(' ')).not.toMatch(/bypass/i)
+  })
+
+  it('allows the commit, push and gh pr tools only for an approve decision', () => {
+    const prTools = ['Bash(git add *)', 'Bash(git commit *)', 'Bash(git push *)', 'Bash(gh pr create *)', 'Bash(gh pr view *)']
+    const approve = applyReviewArgv('s', 'sid', 'approve', false)
+    const tools = approve.slice(approve.indexOf('--allowedTools') + 1, approve.indexOf('--max-turns'))
+    expect(tools).toEqual([...APPLY_REVIEW_ALLOWED_TOOLS, ...prTools])
+    for (const decision of ['undecided', 'request-changes', 'reject'] as const) {
+      const argv = applyReviewArgv('s', 'sid', decision, false)
+      expect(argv.slice(argv.indexOf('--allowedTools') + 1, argv.indexOf('--max-turns'))).toEqual([...APPLY_REVIEW_ALLOWED_TOOLS])
+    }
   })
 
   it('strips the nested-session variables and adds the review-dash ones', () => {
@@ -115,7 +126,7 @@ describe('ClaudeCodeAdapter.applyFeedback', () => {
   it('spawns the binary, parses stdout with raw lines, forwards stderr and reports the exit', async () => {
     const bin = stubBinary('claude-ok', 'echo "headless=$AI_REVIEW_HEADLESS home=$AI_REVIEW_HOME" >&2\ncat "$SAMPLE_FILE"\nexit 0')
     const adapter = new ClaudeCodeAdapter({ claudeBin: bin, env: { PATH: process.env.PATH ?? '', SAMPLE_FILE: DEFAULT_SAMPLE_PATH } })
-    const handle = adapter.applyFeedback({ session: detail(), sentAt: '2026-09-26T18:47:36.000Z', fork: false, signal: new AbortController().signal, home: tmp })
+    const handle = adapter.applyFeedback({ session: detail(), sentAt: '2026-09-26T18:47:36.000Z', decision: 'request-changes', fork: false, signal: new AbortController().signal, home: tmp })
     expect(handle.argv[0]).toBe(bin)
     expect(handle.argv).toContain('--resume')
     expect(handle.argv).toContain('agent-session-1')
@@ -134,7 +145,7 @@ describe('ClaudeCodeAdapter.applyFeedback', () => {
   it('reports a non-zero exit without a result as an error event', async () => {
     const bin = stubBinary('claude-fail', 'echo "{\\"type\\":\\"system\\",\\"subtype\\":\\"init\\",\\"model\\":\\"m\\",\\"session_id\\":\\"s\\"}"\nexit 3')
     const adapter = new ClaudeCodeAdapter({ claudeBin: bin, env: {} })
-    const handle = adapter.applyFeedback({ session: detail(), sentAt: '2026-09-26T18:47:36.000Z', fork: false, signal: new AbortController().signal, home: tmp })
+    const handle = adapter.applyFeedback({ session: detail(), sentAt: '2026-09-26T18:47:36.000Z', decision: 'request-changes', fork: false, signal: new AbortController().signal, home: tmp })
     const events = await collect(handle)
     expect(events.map((e) => e.type)).toEqual(['init', 'error'])
     expect(events[1]).toMatchObject({ message: expect.stringContaining('exited with code 3') })
@@ -146,7 +157,7 @@ describe('ClaudeCodeAdapter.applyFeedback', () => {
     const adapter = new ClaudeCodeAdapter({ claudeBin: bin, env: {}, escalation: { termAfterMs: 100, killAfterMs: 300 } })
     const controller = new AbortController()
     const started = Date.now()
-    const handle = adapter.applyFeedback({ session: detail(), sentAt: '2026-09-26T18:47:36.000Z', fork: false, signal: controller.signal, home: tmp })
+    const handle = adapter.applyFeedback({ session: detail(), sentAt: '2026-09-26T18:47:36.000Z', decision: 'request-changes', fork: false, signal: controller.signal, home: tmp })
     setTimeout(() => controller.abort(), 50)
     const events = await collect(handle)
     const exit = await handle.exit
@@ -158,7 +169,7 @@ describe('ClaudeCodeAdapter.applyFeedback', () => {
 
   it('fails cleanly when the binary cannot be started', async () => {
     const adapter = new ClaudeCodeAdapter({ claudeBin: path.join(tmp, 'missing-claude'), env: {} })
-    const handle = adapter.applyFeedback({ session: detail(), sentAt: '2026-09-26T18:47:36.000Z', fork: false, signal: new AbortController().signal, home: tmp })
+    const handle = adapter.applyFeedback({ session: detail(), sentAt: '2026-09-26T18:47:36.000Z', decision: 'request-changes', fork: false, signal: new AbortController().signal, home: tmp })
     const events = await collect(handle)
     expect(events.some((e) => e.type === 'error' && /failed to start/.test(e.message))).toBe(true)
     expect((await handle.exit).code).not.toBe(0)

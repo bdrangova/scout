@@ -1,21 +1,27 @@
 import type { AgentRun } from '@review-dash/shared'
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { applyReviewCommand, describeApiError, startRun } from '@/lib/runs'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { applyReviewCommand, describeApiError, desktopNewSessionUrl, startRun, type SendTarget } from '@/lib/runs'
 import { cn } from '@/lib/utils'
 
 export interface PendingPanelProps {
   sessionId: string
-  reason: string
+  /** Absolute repo path, for the Claude Desktop deep link in `new` mode. */
+  repoPath: string
+  mode: SendTarget
+  /** The server's reason when it declined to start a run; `null` when no run was asked for. */
+  reason: string | null
   onRun: (run: AgentRun) => void
   className?: string
 }
 
 /**
- * Shown when the feedback was written but no headless run started: the Claude Code session is
- * still open (or another run is active), so the reviewer runs the skill there or forks.
+ * Shown when the feedback was written but no headless run started. `current`: the reviewer's open
+ * Claude Code session picks it up on their next message (or `/apply-review` there). `new`: a
+ * Desktop deep link opens a fresh session with the command prefilled. Either way a headless fork
+ * is one click away.
  */
-export function PendingPanel({ sessionId, reason, onRun, className }: PendingPanelProps) {
+export function PendingPanel({ sessionId, repoPath, mode, reason, onRun, className }: PendingPanelProps) {
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -43,6 +49,8 @@ export function PendingPanel({ sessionId, reason, onRun, className }: PendingPan
     }
   }
 
+  const code = <code className="rounded bg-background px-1.5 py-0.5 font-mono text-xs">{command}</code>
+
   return (
     <section
       aria-label="Feedback pending"
@@ -50,19 +58,25 @@ export function PendingPanel({ sessionId, reason, onRun, className }: PendingPan
     >
       <div className="flex items-center gap-2.5">
         <span className="size-2.5 rounded-full bg-warn" aria-hidden />
-        <h3 className="text-sm font-semibold">Feedback saved, waiting for Claude Code</h3>
+        <h3 className="text-sm font-semibold">Feedback saved</h3>
       </div>
-      <p className="text-muted-foreground">{reason}</p>
-      <p>
-        Run <code className="rounded bg-background px-1.5 py-0.5 font-mono text-xs">{command}</code> in your open Claude
-        Code session, or start a fork of it here.
-      </p>
+      {reason && <p className="text-muted-foreground">{reason}</p>}
+      {mode === 'new' ? (
+        <p>The new Claude Desktop session opens with {code} ready; confirm it there.</p>
+      ) : (
+        <p>Send any message in your open Claude Code session, or run {code} there, to pick it up.</p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" onClick={fork} disabled={starting}>
-          {starting ? 'Starting…' : 'Run as fork'}
-        </Button>
-        <Button size="sm" variant="outline" onClick={copy}>
+        {mode === 'new' && (
+          <a href={desktopNewSessionUrl(repoPath, sessionId)} className={buttonVariants({ size: 'sm' })}>
+            Open in Claude Desktop
+          </a>
+        )}
+        <Button size="sm" variant={mode === 'new' ? 'outline' : 'default'} onClick={copy}>
           {copied ? 'Copied' : 'Copy command'}
+        </Button>
+        <Button size="sm" variant="outline" onClick={fork} disabled={starting}>
+          {starting ? 'Starting…' : 'Run as fork'}
         </Button>
         {error && (
           <span role="alert" className="text-xs text-reject">

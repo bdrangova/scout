@@ -184,11 +184,8 @@ test.describe('review loop smoke', () => {
     await page.getByRole('radio', { name: 'Request changes' }).click()
     await expect(page.getByRole('radio', { name: 'Request changes' })).toHaveAttribute('aria-checked', 'true')
 
-    await page.getByRole('button', { name: 'Submit & send to Claude Code' }).click()
-    const dialog = page.getByRole('dialog', { name: 'Send to Claude Code' })
-    await expect(dialog).toBeVisible()
-    await expect(dialog.getByText('Send 1 open comment and request changes to Claude Code?')).toBeVisible()
-    await dialog.getByRole('button', { name: 'Send', exact: true }).click()
+    // No confirmation step: the split button's main action sends at once.
+    await page.getByRole('button', { name: 'Submit & send to current session' }).click()
 
     const status = page.getByRole('region', { name: 'Agent status' })
     await expect(status).toBeVisible()

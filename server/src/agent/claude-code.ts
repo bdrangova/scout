@@ -2,7 +2,7 @@ import { execFile, spawn } from 'node:child_process'
 import type { ChildProcess, SpawnOptions } from 'node:child_process'
 import path from 'node:path'
 import readline from 'node:readline'
-import type { SessionDetail } from '@review-dash/shared'
+import type { Decision, SessionDetail } from '@review-dash/shared'
 import { errorMessage } from '../errors.ts'
 import type { AdapterEvent, AgentAdapter, AgentExit, AgentRunHandle, ApplyFeedbackRequest, CanResumeResult } from './adapter.ts'
 import { AsyncQueue } from './async-queue.ts'
@@ -19,8 +19,15 @@ export const APPLY_REVIEW_ALLOWED_TOOLS: readonly string[] = [
   'Bash(npx vitest *)',
 ]
 
+/** Added for `approve` only: the PR step of `/apply-review` commits, pushes and runs `gh pr create`. */
+const APPROVE_PR_TOOLS: readonly string[] = ['Bash(git add *)', 'Bash(git commit *)', 'Bash(git push *)', 'Bash(gh pr create *)', 'Bash(gh pr view *)']
+
+function allowedTools(decision: Decision): readonly string[] {
+  return decision === 'approve' ? [...APPLY_REVIEW_ALLOWED_TOOLS, ...APPROVE_PR_TOOLS] : APPLY_REVIEW_ALLOWED_TOOLS
+}
+
 /** Arguments (without the binary) of the headless apply-review command from the plan. */
-export function applyReviewArgv(sessionId: string, agentSessionId: string, fork: boolean): string[] {
+export function applyReviewArgv(sessionId: string, agentSessionId: string, decision: Decision, fork: boolean): string[] {
   return [
     '-p',
     `/apply-review ${sessionId}`,
@@ -34,7 +41,7 @@ export function applyReviewArgv(sessionId: string, agentSessionId: string, fork:
     '--permission-mode',
     'acceptEdits',
     '--allowedTools',
-    ...APPLY_REVIEW_ALLOWED_TOOLS,
+    ...allowedTools(decision),
     '--max-turns',
     '80',
     '--max-budget-usd',
@@ -176,7 +183,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       return { argv: [], pid: null, exit: Promise.resolve({ code: null, signal: null }), [Symbol.asyncIterator]: () => queue[Symbol.asyncIterator]() }
     }
 
-    const args = applyReviewArgv(manifest.id, agentSessionId, req.fork)
+    const args = applyReviewArgv(manifest.id, agentSessionId, req.decision, req.fork)
     const child = this.spawnFn(bin, args, {
       cwd: manifest.repo.path,
       env: headlessEnv(this.env, req.home),

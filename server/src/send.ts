@@ -32,8 +32,9 @@ export async function sendReview(deps: SendDeps, sessionId: string, request: Sen
     if (sent.comments.length === 0 && request.decision === 'undecided') {
       throw badRequest('nothing to send: there are no open comments and no decision')
     }
-    const markdown = renderSentMarkdown(sent, { title: session.manifest.title, dashboardUrl: deps.dashboardUrl, ...artifacts })
-    await store.writeSent(session.dir, sent, markdown, concatPatches(tree, patches))
+    const patch = concatPatches(tree, patches)
+    const markdown = renderSentMarkdown(sent, { title: session.manifest.title, dashboardUrl: deps.dashboardUrl, patch, ...artifacts })
+    await store.writeSent(session.dir, sent, markdown, patch)
     snapshot = sent
     return stampSent(review, sent, now)
   })
@@ -49,7 +50,7 @@ export async function sendReview(deps: SendDeps, sessionId: string, request: Sen
     } else {
       const detail = await store.getSession(sessionId)
       const can = await adapter.canResume(detail, { fork: false })
-      if (can.ok) run = await runs.start(detail, { sentAt: sent.sentAt, fork: false })
+      if (can.ok) run = await runs.start(detail, { sentAt: sent.sentAt, decision: sent.decision, fork: false })
       else pending = { reason: can.reason }
     }
   }

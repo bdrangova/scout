@@ -24,7 +24,7 @@ function sentReview(): Review {
 }
 
 async function drain(adapter: FakeAdapter, store: Store, home: string): Promise<void> {
-  const handle = adapter.applyFeedback({ session: await store.getSession(FIXTURE_SESSION_ID), sentAt: SENT_AT, fork: false, signal: new AbortController().signal, home })
+  const handle = adapter.applyFeedback({ session: await store.getSession(FIXTURE_SESSION_ID), sentAt: SENT_AT, decision: 'request-changes', fork: false, signal: new AbortController().signal, home })
   for await (const _event of handle) {
     // consume
   }

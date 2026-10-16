@@ -9,27 +9,33 @@ import { OpenComments } from '@/components/submit/OpenComments'
 import { OverallComment } from '@/components/submit/OverallComment'
 import { PendingPanel } from '@/components/submit/PendingPanel'
 import { PreviousRuns } from '@/components/submit/PreviousRuns'
+import { SendTargetMenu } from '@/components/submit/SendTargetMenu'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { useAsync } from '@/lib/hooks'
-import { DECISION_LABELS, describeApiError, isRunActive, listRuns, sendReview } from '@/lib/runs'
+import {
+  SEND_TARGET_LABELS,
+  applyReviewCommand,
+  describeApiError,
+  desktopNewSessionUrl,
+  isRunActive,
+  listRuns,
+  sendReview,
+  sessionOrigin,
+  type SendTarget,
+} from '@/lib/runs'
 import { useSessionContext } from '@/lib/session-context'
 import { useReview } from '@/state/review-context'
 
 const RUN_PARAM = 'run'
 const PENDING_PARAM = 'pending'
+const TARGET_PARAM = 'target'
+/** `?pending=` value when the feedback was written without asking the server for a run. */
+const PENDING_SAVED = 'saved'
 
 /**
- * The Submit page: decision, overall feedback, the open comments and the PR description; after
- * sending, the live agent run (or the pending panel) takes the place of the compose cards. The
- * selected run lives in `?run=` so it survives a review reload (which remounts this page). Store
+ * The Submit page: decision, overall feedback, the open comments and the PR description. The split
+ * button sends at once (no confirmation); then the live agent run (or the pending panel) takes the
+ * place of the compose cards. The selected run lives in `?run=` so it survives a review reload (which remounts this page). Store
  * events are handled by `SessionLiveUpdates` in the layout.
  */
 export function SubmitPage() {
@@ -41,12 +47,19 @@ export function SubmitPage() {
   const [params, setParams] = useSearchParams()
   const runs = useAsync(`runs:${sessionId}:${detail.activeRunId ?? 'none'}`, () => listRuns(sessionId))
   const [knownRuns, setKnownRuns] = useState<Record<string, AgentRun>>({})
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const agent = detail.manifest.agent
+  const origin = sessionOrigin(agent)
+  // A Desktop session without a recorded id has nothing to pick the feedback up; for CLI and
+  // unknown origins the server still decides (headless resume, or its `pending` reason).
+  const canContinue = origin !== 'desktop' || agent.sessionId !== null
+  // Reset on every visit on purpose: the choice is per send, not a preference.
+  const [target, setTarget] = useState<SendTarget>(canContinue ? 'current' : 'new')
 
   const runParam = params.get(RUN_PARAM)
-  const pendingReason = params.get(PENDING_PARAM)
+  const pendingParam = params.get(PENDING_PARAM)
+  const pendingMode: SendTarget = params.get(TARGET_PARAM) === 'new' ? 'new' : 'current'
   const selectedRunId = runParam === 'none' ? null : (runParam ?? detail.activeRunId)
   const allRuns = useMemo(() => {
     // The final run from the event stream may be newer than the list's copy of it.
@@ -76,6 +89,7 @@ export function SubmitPage() {
           const next = new URLSearchParams(current)
           next.set(RUN_PARAM, run.id)
           next.delete(PENDING_PARAM)
+          next.delete(TARGET_PARAM)
           return next
         },
         { replace: true },
@@ -105,18 +119,40 @@ export function SubmitPage() {
     [reloadRuns, reloadReview],
   )
 
+  function showPending(reason: string | null) {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        next.set(PENDING_PARAM, reason ?? PENDING_SAVED)
+        next.set(TARGET_PARAM, target)
+        return next
+      },
+      { replace: true },
+    )
+  }
+
   async function send() {
     setSending(true)
     setSendError(null)
+    // A Desktop session never gets a headless run by default: `claude -p --resume` would write into
+    // the transcript the user has open. CLI and unknown origins keep the headless resume.
+    const dispatch = target === 'current' && origin !== 'desktop'
     try {
-      const response = await sendReview(sessionId, decision)
-      setConfirmOpen(false)
+      const response = await sendReview(sessionId, decision, { dispatch })
       if (response.run) showRun(response.run)
-      else if (response.pending) setParam(PENDING_PARAM, response.pending.reason)
+      else {
+        showPending(response.pending?.reason ?? null)
+        if (origin === 'desktop' && target === 'current') {
+          await navigator.clipboard.writeText(applyReviewCommand(sessionId)).catch(() => undefined)
+        }
+        if (origin === 'desktop' && target === 'new') {
+          // May be blocked after the await; the pending panel repeats the link.
+          window.location.assign(desktopNewSessionUrl(detail.manifest.repo.path, sessionId))
+        }
+      }
       reloadReview()
       reloadDetail()
     } catch (reason: unknown) {
-      setConfirmOpen(false)
       setSendError(describeApiError(reason))
     } finally {
       setSending(false)
@@ -130,12 +166,6 @@ export function SubmitPage() {
     onReopen: (id: string) => dispatch({ type: 'REOPEN_COMMENT', id }),
   }
 
-  const confirmText =
-    openComments.length === 0
-      ? `Send your decision (${DECISION_LABELS[decision]}) to Claude Code?`
-      : decision === 'undecided'
-        ? `Send ${pluralComments(openComments.length)} to Claude Code?`
-        : `Send ${pluralComments(openComments.length)} and ${DECISION_LABELS[decision]} to Claude Code?`
 
   return (
     <main className="flex flex-1 flex-col">
@@ -157,7 +187,15 @@ export function SubmitPage() {
                     Loading run…
                   </p>
                 )}
-                {pendingReason && <PendingPanel sessionId={sessionId} reason={pendingReason} onRun={showRun} />}
+                {pendingParam && (
+                  <PendingPanel
+                    sessionId={sessionId}
+                    repoPath={detail.manifest.repo.path}
+                    mode={pendingMode}
+                    reason={pendingParam === PENDING_SAVED ? null : pendingParam}
+                    onRun={showRun}
+                  />
+                )}
                 <Card title="Overall feedback">
                   <OverallComment
                     comment={overall}
@@ -215,39 +253,20 @@ export function SubmitPage() {
             </span>
           )}
           {sendBlocker && !sending && <span className="text-xs text-muted-foreground">{sendBlocker}</span>}
-          <Button onClick={() => setConfirmOpen(true)} disabled={sendBlocker !== null || sending}>
-            Submit &amp; send to Claude Code
-            <ArrowRight data-icon="inline-end" />
-          </Button>
+          <div className="flex" data-slot="button-group">
+            <Button className="rounded-r-none" onClick={send} disabled={sendBlocker !== null || sending} aria-busy={sending}>
+              {sending ? 'Sending…' : `Submit & send to ${SEND_TARGET_LABELS[target].toLowerCase()}`}
+              <ArrowRight data-icon="inline-end" />
+            </Button>
+            <SendTargetMenu value={target} onChange={setTarget} canContinue={canContinue} disabled={sendBlocker !== null || sending} />
+          </div>
         </div>
       </div>
 
-      <Dialog open={confirmOpen} onOpenChange={(open) => !sending && setConfirmOpen(open)}>
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>Send to Claude Code</DialogTitle>
-            <DialogDescription>{confirmText}</DialogDescription>
-          </DialogHeader>
-          <p className="text-[13px] text-muted-foreground">
-            Comments, verdicts and the decision are written to the session; Claude Code works on them headlessly.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={sending}>
-              Cancel
-            </Button>
-            <Button onClick={send} disabled={sending}>
-              {sending ? 'Sending…' : 'Send'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </main>
   )
 }
 
-function pluralComments(count: number): string {
-  return `${count} open ${count === 1 ? 'comment' : 'comments'}`
-}
 
 function Card({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) {
   return (

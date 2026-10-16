@@ -6,8 +6,33 @@ function sessionPath(sessionId: string): string {
   return `/sessions/${encodeURIComponent(sessionId)}`
 }
 
-export function sendReview(sessionId: string, decision: Decision): Promise<SendResponse> {
-  return apiPost<SendResponse>(`${sessionPath(sessionId)}/review/send`, { decision, dispatch: true })
+/** Where the sent feedback goes: the Claude Code session the review came from, or a new one. */
+export type SendTarget = 'current' | 'new'
+
+export const SEND_TARGET_LABELS: Record<SendTarget, string> = {
+  current: 'Current session',
+  new: 'New session',
+}
+
+export type SessionOrigin = 'desktop' | 'cli' | 'other'
+
+/**
+ * Where the session was started from, read off `manifest.agent.entrypoint`. The exact string
+ * Claude Desktop writes is unverified, so any mention of "desktop" counts.
+ */
+export function sessionOrigin(agent: { entrypoint: string | null }): SessionOrigin {
+  const entrypoint = agent.entrypoint?.toLowerCase() ?? ''
+  if (entrypoint.includes('desktop')) return 'desktop'
+  if (entrypoint.includes('cli')) return 'cli'
+  return 'other'
+}
+
+export function sendReview(
+  sessionId: string,
+  decision: Decision,
+  { dispatch = true }: { dispatch?: boolean } = {},
+): Promise<SendResponse> {
+  return apiPost<SendResponse>(`${sessionPath(sessionId)}/review/send`, { decision, dispatch })
 }
 
 export function listRuns(sessionId: string): Promise<AgentRun[]> {
@@ -26,6 +51,15 @@ export function applyReviewCommand(sessionId: string): string {
   return `/apply-review ${sessionId}`
 }
 
+/**
+ * Claude Desktop deep link that opens a new session in `repoPath` with the apply-review command
+ * prefilled (Desktop asks for confirmation before sending it).
+ */
+export function desktopNewSessionUrl(repoPath: string, sessionId: string): string {
+  const query = encodeURIComponent(applyReviewCommand(sessionId))
+  return `claude://code/new?q=${query}&folder=${encodeURIComponent(repoPath)}`
+}
+
 export function runEventsUrl(runId: string): string {
   return `/api/runs/${encodeURIComponent(runId)}/events`
 }
@@ -41,13 +75,6 @@ export function describeApiError(reason: unknown): string {
     return reason.message
   }
   return reason instanceof Error ? reason.message : String(reason)
-}
-
-export const DECISION_LABELS: Record<Decision, string> = {
-  undecided: 'undecided',
-  approve: 'approve',
-  'request-changes': 'request changes',
-  reject: 'reject',
 }
 
 export const RUN_STATUS_LABELS: Record<AgentRunStatus, string> = {

@@ -64,7 +64,7 @@ export function runsRouter(deps: RunsDeps): Router {
       res.status(412).json(body)
       return
     }
-    res.json(await runs.start(detail, { sentAt: review.sent.at, fork }))
+    res.json(await runs.start(detail, { sentAt: review.sent.at, decision: review.sent.decision, fork }))
   })
 
   router.get('/runs/:runId', async (req, res) => {

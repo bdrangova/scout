@@ -1,4 +1,4 @@
-import type { AgentRun, SendResponse } from '@review-dash/shared'
+import type { AgentRun, SendResponse, SessionDetail } from '@review-dash/shared'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router'
@@ -43,13 +43,22 @@ interface Options {
   send?: () => Response
   runs?: AgentRun[]
   startRun?: () => Response
+  detail?: SessionDetail
+  /** Route params to start on (e.g. a pending state surviving a reload). */
+  search?: string
+}
+
+/** The fixture session, but started from the CLI instead of Claude Desktop. */
+const cliDetail: SessionDetail = {
+  ...sessionDetailFixture,
+  manifest: { ...sessionDetailFixture.manifest, agent: { ...sessionDetailFixture.manifest.agent, entrypoint: 'cli' } },
 }
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 }
 
-function sendResponse(overrides: Partial<SendResponse>): SendResponse {
+function sendResponse(overrides: Partial<SendResponse> = {}): SendResponse {
   return {
     sent: {
       schemaVersion: 2,
@@ -88,12 +97,12 @@ function renderSubmit(response = reviewResponseFixture(), options: Options = {})
   })
   render(
     <StrictMode>
-      <MemoryRouter initialEntries={[`/s/${SESSION_ID}/submit`]}>
+      <MemoryRouter initialEntries={[`/s/${SESSION_ID}/submit${options.search ?? ''}`]}>
         <Routes>
           <Route
             path="/s/:id"
             element={
-              <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
+              <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: options.detail ?? sessionDetailFixture, reload: () => {} }}>
                 <ReviewProvider>
                   <Outlet />
                 </ReviewProvider>
@@ -118,8 +127,19 @@ const withComment = () =>
   )
 
 async function submitButton() {
-  return screen.findByRole('button', { name: /Submit & send to Claude Code/ })
+  return screen.findByRole('button', { name: /Submit & send to (current|new) session/ })
 }
+
+async function pickTarget(name: string) {
+  fireEvent.click(await screen.findByRole('button', { name: 'Send options' }))
+  fireEvent.click(await screen.findByRole('menuitemradio', { name }))
+}
+
+async function confirmSend() {
+  fireEvent.click(await submitButton())
+}
+
+const sentBody = (posts: Posted[]) => posts.find((post) => post.url.endsWith('/review/send'))?.body
 
 let event = runEventFactory(SENT_AT)
 
@@ -159,18 +179,14 @@ describe('SubmitPage', () => {
     expect(await screen.findByText('1 open')).toBeInTheDocument()
   })
 
-  it('confirms, sends with dispatch, then streams the run and cancels it', async () => {
+  it('sends at once (no confirmation) with dispatch for a CLI session, then streams the run and cancels it', async () => {
     const started = run()
-    const api = renderSubmit(withComment(), { send: () => json(200, sendResponse({ run: started })) })
+    const api = renderSubmit(withComment(), { detail: cliDetail, send: () => json(200, sendResponse({ run: started })) })
     fireEvent.click(await screen.findByRole('radio', { name: /Request changes/ }))
     fireEvent.click(await submitButton())
-    const dialog = await screen.findByRole('dialog')
-    expect(within(dialog).getByText('Send 1 open comment and request changes to Claude Code?')).toBeInTheDocument()
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Send' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-    await waitFor(() =>
-      expect(api.posts.find((post) => post.url.endsWith('/review/send'))?.body).toEqual({ decision: 'request-changes', dispatch: true }),
-    )
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes', dispatch: true }))
     expect(await screen.findByText('Claude Code is working on your comments')).toBeInTheDocument()
     expect(screen.getByText('Claude Code is working')).toBeInTheDocument()
     const source = await waitFor(() => {
@@ -216,32 +232,99 @@ describe('SubmitPage', () => {
 
   it('shows the pending panel and starts a fork from it', async () => {
     const api = renderSubmit(withComment(), {
+      detail: cliDetail,
       send: () => json(200, sendResponse({ pending: { reason: 'the Claude Code session is still open' } })),
     })
-    fireEvent.click(await submitButton())
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Send' }))
+    await confirmSend()
     const panel = await screen.findByLabelText('Feedback pending')
     expect(within(panel).getByText('the Claude Code session is still open')).toBeInTheDocument()
     expect(within(panel).getByText(`/apply-review ${SESSION_ID}`)).toBeInTheDocument()
+    expect(within(panel).queryByRole('link', { name: 'Open in Claude Desktop' })).not.toBeInTheDocument()
     fireEvent.click(within(panel).getByRole('button', { name: 'Run as fork' }))
     await waitFor(() => expect(api.posts.find((post) => /\/runs$/.test(post.url))?.body).toEqual({ fork: true }))
     expect(await screen.findByText('Claude Code is working on your comments')).toBeInTheDocument()
   })
 
+  it('sends a Desktop session without a headless run and copies the command', async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    const api = renderSubmit(withComment(), { send: () => json(200, sendResponse()) })
+    await confirmSend()
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: false }))
+    const panel = await screen.findByLabelText('Feedback pending')
+    expect(within(panel).getByText(/Send any message in your open Claude Code session/)).toBeInTheDocument()
+    expect(within(panel).queryByRole('link')).not.toBeInTheDocument()
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(`/apply-review ${SESSION_ID}`))
+  })
+
+  it('"New session" sends without dispatch, opens the Desktop deep link and shows it in the panel', async () => {
+    const assign = vi.fn()
+    vi.stubGlobal('location', { ...window.location, assign })
+    const api = renderSubmit(withComment(), { send: () => json(200, sendResponse()) })
+    await pickTarget('New session')
+    await confirmSend()
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: false }))
+    const href = `claude://code/new?q=${encodeURIComponent(`/apply-review ${SESSION_ID}`)}&folder=${encodeURIComponent(sessionDetailFixture.manifest.repo.path)}`
+    const panel = await screen.findByLabelText('Feedback pending')
+    expect(within(panel).getByRole('link', { name: 'Open in Claude Desktop' })).toHaveAttribute('href', href)
+    expect(assign).toHaveBeenCalledWith(href)
+  })
+
+  it('"New session" from a CLI session shows the Desktop link without opening it', async () => {
+    const assign = vi.fn()
+    vi.stubGlobal('location', { ...window.location, assign })
+    const api = renderSubmit(withComment(), { detail: cliDetail, send: () => json(200, sendResponse()) })
+    await pickTarget('New session')
+    await confirmSend()
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: false }))
+    expect(within(await screen.findByLabelText('Feedback pending')).getByRole('link', { name: 'Open in Claude Desktop' })).toBeInTheDocument()
+    expect(assign).not.toHaveBeenCalled()
+  })
+
+  it('disables "Current session" and defaults to a new one for a Desktop session without an agent session id', async () => {
+    const detail: SessionDetail = {
+      ...sessionDetailFixture,
+      manifest: { ...sessionDetailFixture.manifest, agent: { ...sessionDetailFixture.manifest.agent, sessionId: null } },
+    }
+    const api = renderSubmit(withComment(), { detail, send: () => json(200, sendResponse()) })
+    fireEvent.click(await screen.findByRole('button', { name: 'Send options' }))
+    expect(await screen.findByRole('menuitemradio', { name: 'Current session' })).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    await confirmSend()
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: false }))
+    expect(within(await screen.findByLabelText('Feedback pending')).getByRole('link', { name: 'Open in Claude Desktop' })).toBeInTheDocument()
+  })
+
+  it('keeps the headless default for a CLI session without an agent session id (the server decides)', async () => {
+    const detail: SessionDetail = {
+      ...cliDetail,
+      manifest: { ...cliDetail.manifest, agent: { ...cliDetail.manifest.agent, sessionId: null } },
+    }
+    const api = renderSubmit(withComment(), { detail, send: () => json(200, sendResponse({ run: run() })) })
+    await confirmSend()
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: true }))
+  })
+
+  it('restores the pending panel in new mode from the URL', async () => {
+    renderSubmit(withComment(), { search: '?pending=saved&target=new' })
+    const panel = await screen.findByLabelText('Feedback pending')
+    expect(within(panel).getByRole('link', { name: 'Open in Claude Desktop' })).toBeInTheDocument()
+    expect(within(panel).queryByText('saved')).not.toBeInTheDocument()
+  })
+
   it('shows a 4xx from the send route inline', async () => {
     renderSubmit(withComment(), { send: () => json(400, { error: 'nothing to send: there are no open comments and no decision' }) })
-    fireEvent.click(await submitButton())
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Send' }))
+    await confirmSend()
     expect(await screen.findByRole('alert')).toHaveTextContent('nothing to send')
   })
 
   it('surfaces a 409 from Run as fork inside the panel', async () => {
     renderSubmit(withComment(), {
+      detail: cliDetail,
       send: () => json(200, sendResponse({ pending: { reason: 'still open' } })),
       startRun: () => json(409, { error: 'run run-20260926181000-ab12 is already active for session' }),
     })
-    fireEvent.click(await submitButton())
-    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Send' }))
+    await confirmSend()
     const panel = await screen.findByLabelText('Feedback pending')
     fireEvent.click(within(panel).getByRole('button', { name: 'Run as fork' }))
     expect(await within(panel).findByRole('alert')).toHaveTextContent('already active')
