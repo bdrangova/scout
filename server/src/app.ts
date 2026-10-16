@@ -17,6 +17,7 @@ import { runsRouter } from './routes/runs.ts'
 import { scopesRouter } from './routes/scopes.ts'
 import { sendRouter } from './routes/send.ts'
 import { sessionsRouter } from './routes/sessions.ts'
+import { localOnly } from './security.ts'
 import { SseRegistry } from './sse.ts'
 import { Store } from './store/index.ts'
 import type { StoreOptions } from './store/index.ts'
@@ -84,6 +85,7 @@ function buildAdapter(config: Config, overrides: AppOverrides): AgentAdapter {
 export function createApp(config: Config, overrides: AppOverrides = {}): Express {
   const app = express()
   app.disable('x-powered-by')
+  app.use('/api', localOnly(config.dashboardUrl))
   app.use(express.json({ limit: '5mb' }))
 
   const bus = new StoreEventBus()

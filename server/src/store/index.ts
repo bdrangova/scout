@@ -148,6 +148,18 @@ function isMedia(mime: string | null): mime is string {
   return mime !== null && (mime.startsWith('image/') || mime.startsWith('video/'))
 }
 
+/**
+ * The file as it is on disk. A symlink answers its link target, as `git show` does, and is never
+ * followed: a tracked link must not read files outside the repo. Links in the directories are refused too.
+ */
+async function readWorkingFile(repo: string, relative: string): Promise<Buffer> {
+  const absolute = safeJoin(repo, relative)
+  const [root, parent] = await Promise.all([fs.realpath(repo), fs.realpath(path.dirname(absolute))])
+  if (parent !== root && !parent.startsWith(root + path.sep)) throw notFound(`${JSON.stringify(relative)} is not inside the repository`)
+  const stat = await fs.lstat(absolute)
+  return stat.isSymbolicLink() ? Buffer.from(await fs.readlink(absolute)) : fs.readFile(absolute)
+}
+
 /** Images and videos keep their type; other text is plain, other binary is an octet stream. */
 export function contentsType(file: TreeFile): string {
   const mime = mimeFromPath(file.path)
@@ -389,7 +401,7 @@ export class Store {
       }
     }
     try {
-      return { body: await fs.readFile(safeJoin(repo, file.path)), contentType }
+      return { body: await readWorkingFile(repo, file.path), contentType }
     } catch (err) {
       if (isMissing(err)) throw notFound(`${shown} is no longer on disk`)
       throw err

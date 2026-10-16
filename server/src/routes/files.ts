@@ -2,6 +2,7 @@ import { Router } from 'express'
 import type { Request, Response } from 'express'
 import type { ApiError, FileContentsSide, TreeFile } from '@review-dash/shared'
 import type { FileContents, Store } from '../store/index.ts'
+import { contentSecurityPolicy } from '../security.ts'
 import { queryString, wildcardPath } from './params.ts'
 
 /** text/plain patch, or 413 `isLarge` for a collapsed file unless `?force=1`. */
@@ -29,6 +30,7 @@ export function contentsSide(req: Request, res: Response): FileContentsSide | nu
 export function sendContents(res: Response, { body, contentType }: FileContents): void {
   res.setHeader('Content-Type', contentType)
   res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('Content-Security-Policy', contentSecurityPolicy(contentType))
   res.send(body)
 }
 
