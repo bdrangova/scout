@@ -51,6 +51,15 @@ describe('CommentBox', () => {
     await waitFor(() => expect(box).toHaveFocus())
   })
 
+  it('offers Cancel and Escape when it can be dismissed', async () => {
+    const onCancel = vi.fn()
+    renderBox({ collapsible: false, onCancel })
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    await userEvent.type(screen.getByRole('textbox', { name: LABEL }), 'x{Escape}')
+    expect(onCancel).toHaveBeenCalledTimes(2)
+  })
+
   it('a pending reject forces it open with "Comment & Reject"', () => {
     const { rerenderWith } = renderBox()
     rerenderWith({ pendingReject: true, label: 'Why reject badge.tsx?' })

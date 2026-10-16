@@ -229,15 +229,63 @@ describe('FilesPage', () => {
     expect(third).toHaveAttribute('data-verdict', 'none')
   })
 
-  it('redirects to Submit when the last file gets reviewed', async () => {
-    const approved = Object.fromEntries(
+  describe('when the last file gets reviewed', () => {
+    const allButFirst = Object.fromEntries(
       files.slice(1).map((file) => [file.path, { verdict: 'approved' as const, fingerprint: file.fingerprint, viewed: true }]),
     )
-    renderFiles(`/s/${SESSION_ID}/files`, reviewResponseFixture(reviewFixture({ files: approved })))
-    const card = await firstCard()
-    const user = userEvent.setup()
-    await user.click(within(card).getByRole('button', { name: 'Approve' }))
-    expect(await screen.findByText('Submit page')).toBeInTheDocument()
+    const panel = () => screen.findByRole('heading', { level: 2, name: 'Review complete' })
+
+    it('shows the end panel over the blurred deck instead of going to Submit; the verdict keys are off and a step leaves it', async () => {
+      const api = renderFiles(`/s/${SESSION_ID}/files`, reviewResponseFixture(reviewFixture({ files: allButFirst })))
+      const card = await firstCard()
+      const user = userEvent.setup()
+      await user.click(within(card).getByRole('button', { name: 'Approve' }))
+      expect(await panel()).toBeInTheDocument()
+      expect(screen.queryByText('Submit page')).not.toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Submit' })).toHaveAttribute('href', `/s/${SESSION_ID}/submit`)
+      expect(screen.getByRole('link', { name: 'Evidence 2' })).toBeInTheDocument()
+      // The deck is still there, out of reach.
+      expect(screen.queryByRole('article')).not.toBeInTheDocument()
+      expect(screen.getByRole('article', { hidden: true })).toHaveAttribute('data-verdict', 'approved')
+      expect(screen.getByRole('tree', { name: 'Changed files' })).toBeInTheDocument()
+
+      fireEvent.keyDown(window, { key: 'x' })
+      expect(screen.queryByRole('textbox', { name: /Why reject/, hidden: true })).not.toBeInTheDocument()
+      fireEvent.keyDown(window, { key: 'a' })
+      await waitFor(() => expect(api.puts.some((put) => put.review.files[P0]?.verdict === 'approved')).toBe(true))
+
+      fireEvent.keyDown(window, { key: 'ArrowLeft' })
+      await waitFor(() => expect(screen.queryByRole('heading', { level: 2, name: 'Review complete' })).not.toBeInTheDocument())
+      expect(screen.getByRole('article', { name: P0 })).toBeInTheDocument()
+    })
+
+    it('"Back to files" and a file picked in the tree leave the end panel', async () => {
+      renderFiles(`/s/${SESSION_ID}/files`, reviewResponseFixture(reviewFixture({ files: allButFirst })))
+      const card = await firstCard()
+      fireEvent.click(within(card).getByRole('button', { name: 'Approve' }))
+      await panel()
+      fireEvent.click(screen.getByRole('button', { name: 'Back to files' }))
+      await waitFor(() => expect(screen.queryByRole('heading', { level: 2, name: 'Review complete' })).not.toBeInTheDocument())
+      expect(screen.getByRole('article', { name: P0 })).toBeInTheDocument()
+
+      fireEvent.keyDown(window, { key: 'a' })
+      fireEvent.keyDown(window, { key: 'a' })
+      await panel()
+      fireEvent.click(within(screen.getByRole('tree', { name: 'Changed files' })).getByRole('treeitem', { name: /useTrial\.ts/ }))
+      await waitFor(() => expect(screen.queryByRole('heading', { level: 2, name: 'Review complete' })).not.toBeInTheDocument())
+      expect(await screen.findByText('2 / 6')).toBeInTheDocument()
+    })
+
+    it('shows the end panel over the grid too', async () => {
+      renderFiles(`/s/${SESSION_ID}/files?mode=grid`, reviewResponseFixture(reviewFixture({ files: allButFirst })))
+      await screen.findByRole('list', { name: 'All files' })
+      const tile = screen.getByRole('button', { name: P0 })
+      tile.focus()
+      fireEvent.keyDown(tile, { key: 'a' })
+      expect(await panel()).toBeInTheDocument()
+      expect(screen.queryByRole('list', { name: 'All files' })).not.toBeInTheDocument()
+      expect(screen.getByRole('list', { name: 'All files', hidden: true })).toBeInTheDocument()
+    })
   })
 
   it('renders every card in scroll mode, persists the mode and makes a clicked card current', async () => {

@@ -10,6 +10,8 @@ All timestamps are ISO-8601 strings. Schemas live in `shared/src/schemas/*.ts` a
 
 ```
 manifest.json                 written by `ai-review init` only (atomically: tmp + rename); nothing else edits it
+                              init reuses the latest live session of (repo, branch), approved or not, unless `--new`;
+                              after an approval it resets `overall.decision` to undecided and keeps verdicts/comments
 evidence/                     images and videos the agent drops here; optional evidence/index.json
 extras/                       .md | .html | .mmd | .mermaid; optional extras/index.json
 spec/                         jira.md, plan.md, design.html …; optional spec/index.json
@@ -120,13 +122,16 @@ deriveTitle(path, explicit, content) // index title, else first `# ` heading / <
 ```ts
 Verdict = 'none'|'approved'|'rejected';  Decision = 'undecided'|'approve'|'request-changes'|'reject'
 Mode = 'swipe'|'scroll';  Section = 'files'|'evidence'|'spec'|'extras'|'submit'
-CommentTarget = { kind: 'overall'|'file'|'evidence'|'extra'|'spec', ref: string|null }   // ref: repo path / artifact path; null iff overall
+LineAnchor = { side: 'old'|'new', line: number /* ≥ 1 */, endLine?: number /* ≥ line, a short range */ }
+CommentTarget = { kind: 'overall'|'file'|'evidence'|'extra'|'spec', ref: string|null, anchor?: LineAnchor }   // ref: repo path / artifact path; null iff overall; anchor only on `file`
 Comment = { id /* c<n> */, target, body, timestampSec: number|null, createdAt, updatedAt: string|null, sentAt: string|null, resolvedAt: string|null, reopenedAt: string|null }
 FileReview = { verdict, fingerprint: string|null /* TreeFile.fingerprint when judged */, viewed }
 Review = { schemaVersion: 2, sessionId, files: Record<path, FileReview>, comments: Comment[], nextCommentId,
   overall: { decision }, sent: { at, decision } | null, ui: { mode: 'swipe'|'scroll'|'grid', currentFile: string|null, section }, updatedAt }
 emptyReview(sessionId, now?)
 ```
+
+A `file` comment with an `anchor` is a line comment (GitHub-style, on one side of the diff; `old` numbers the before side). Everywhere a file comment counts (`commentedPaths`, `progress`, the grid's Commented state, `nextUnreviewedFile`, the sent snapshot's `commented` count) a line comment counts the same: it targets `file.path`. Ids and resolutions are unchanged. Helpers in `review/line-anchor.ts` (`anchorKey`, `formatLineAnchor` → `12` / `10-14` / `12 (old)`, `anchorLabel` → `line 12`) and `review/patch-lines.ts` (`parsePatchLines(filePatch)` → numbered content lines, `filePatchFor(patch, path)`, `anchorInPatch`, `anchorExcerpt`).
 
 ## schemas/resolutions.ts (agent-owned) — unchanged apart from `schemaVersion: 2`
 
@@ -153,7 +158,7 @@ sessionStatus({ review, tree, resolutions, activeRun })
 
 ## review/reducer.ts
 
-`reviewReducer(state, action, ctx: { files: TreeFile[] })`. `SET_VERDICT` carries `fingerprint: string|null` (falls back to the tree's); a reject is stored when its comment lands, pinned to the tree fingerprint at that moment. `ADVANCE`/approve/comment move to the next file whose effective verdict is `none` and that has no file comment (wrapping once), so a file updated since its verdict comes back into the deck. Other actions unchanged.
+`reviewReducer(state, action, ctx: { files: TreeFile[] })`. `SET_VERDICT` carries `fingerprint: string|null` (falls back to the tree's); a reject is stored when its comment lands, pinned to the tree fingerprint at that moment. `ADVANCE`/approve/comment move to the next file whose effective verdict is `none` and that has no file comment (wrapping once), so a file updated since its verdict comes back into the deck. `ADD_COMMENT` with an anchored `file` target adds a line comment: it is stored like a file comment but neither resolves a pending reject (only the file comment box does) nor advances the deck. Other actions unchanged.
 
 ## review/sent.ts (`review/sent/<stem>.json`)
 
@@ -166,7 +171,7 @@ buildSentSnapshot({ review, tree, decision, resolutions, now }); stampSent(revie
 
 The server writes the `.json`, the `.md` (`renderSentMarkdown(sent, { title, dashboardUrl, evidence?, extras?, spec? })`) and the `.patch` (every per-file patch of the tree concatenated) in one go.
 
-`renderSentMarkdown` layout: title line; `Sent · Decision · Dashboard` line; `Tree: <branch> @ <head12> (base <base12>) · Diff: \`<patchPath>\``; `## Overall`; `## Files (…)` with `### path — REJECTED|commented|approved`; `## Evidence`, `## Spec`, `## Extras` with `### <path> — <caption|title>` (path alone when unknown); `## Required response` telling the agent to change the working tree (nothing to publish), run `ai-review resolve <id> --comment c<n> …` per comment, and where the `.patch` is. Empty sections omitted.
+`renderSentMarkdown(sent, ctx)` layout: title line; `Sent · Decision · Dashboard` line; `Tree: <branch> @ <head12> (base <base12>) · Diff: \`<patchPath>\``; `## Overall`; `## Files (…)` with `### path — REJECTED|commented|approved`; `## Evidence`, `## Spec`, `## Extras` with `### <path> — <caption|title>` (path alone when unknown); `## Required response` telling the agent to change the working tree (nothing to publish), run `ai-review resolve <id> --comment c<n> …` per comment, and where the `.patch` is. Empty sections omitted. A comment line is `- [c<n>] > body`; a line comment is `- [c<n>] path:LINE > body` (`path:START-END` for a range, `path:LINE (old)` for the before side) followed, when `ctx.patch` (the full diff the server writes to the `.patch`) is given, by an indented fenced excerpt of the 1–3 diff lines around the anchor (`<number> <+|-| > <text>`), so the agent sees the code without opening the patch.
 
 ## schemas/agent.ts — unchanged (AgentRun, AgentRunEvent)
 

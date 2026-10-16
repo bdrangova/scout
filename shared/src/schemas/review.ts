@@ -18,17 +18,40 @@ export type Section = z.infer<typeof SectionSchema>
 export const CommentTargetKindSchema = z.enum(['overall', 'file', 'evidence', 'extra', 'spec'])
 export type CommentTargetKind = z.infer<typeof CommentTargetKindSchema>
 
+export const LineSideSchema = z.enum(['old', 'new'])
+export type LineSide = z.infer<typeof LineSideSchema>
+
+/**
+ * A line (or a short range, `line..endLine`) of one side of a file's diff: `old` numbers the
+ * before side, `new` the after side. Only a `file` comment carries one.
+ */
+export const LineAnchorSchema = z
+  .object({
+    side: LineSideSchema,
+    line: z.number().int().min(1),
+    endLine: z.number().int().min(1).optional(),
+  })
+  .check((ctx) => {
+    const { line, endLine } = ctx.value
+    if (endLine !== undefined && endLine < line) {
+      ctx.issues.push({ code: 'custom', message: 'endLine is before line', path: ['endLine'], input: endLine })
+    }
+  })
+export type LineAnchor = z.infer<typeof LineAnchorSchema>
+
 /**
  * `ref` is the repo path for `file`, the artifact's path relative to its folder (`evidence/`,
- * `extras/`, `spec/`) for the artifact kinds, and null for `overall`.
+ * `extras/`, `spec/`) for the artifact kinds, and null for `overall`. A `file` comment may be
+ * anchored to a line of the diff; without `anchor` it is a file-level comment.
  */
 export const CommentTargetSchema = z
   .object({
     kind: CommentTargetKindSchema,
     ref: z.string().min(1).nullable(),
+    anchor: LineAnchorSchema.optional(),
   })
   .check((ctx) => {
-    const { kind, ref } = ctx.value
+    const { kind, ref, anchor } = ctx.value
     if ((kind === 'overall') !== (ref === null)) {
       ctx.issues.push({
         code: 'custom',
@@ -36,6 +59,9 @@ export const CommentTargetSchema = z
         path: ['ref'],
         input: ref,
       })
+    }
+    if (anchor !== undefined && kind !== 'file') {
+      ctx.issues.push({ code: 'custom', message: `a ${kind} comment cannot be anchored to a line`, path: ['anchor'], input: anchor })
     }
   })
 export type CommentTarget = z.infer<typeof CommentTargetSchema>

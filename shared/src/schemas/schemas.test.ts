@@ -89,6 +89,17 @@ describe('schemas accept a valid example of each shape', () => {
     expect(CommentTargetSchema.safeParse({ kind: 'file', ref: null }).success).toBe(false)
   })
 
+  it('CommentTarget takes a line anchor on file comments only', () => {
+    const line = { kind: 'file', ref: 'src/a.tsx', anchor: { side: 'new', line: 12 } }
+    expect(CommentTargetSchema.parse(line)).toEqual(line)
+    const range = { kind: 'file', ref: 'src/a.tsx', anchor: { side: 'old', line: 3, endLine: 5 } }
+    expect(CommentTargetSchema.parse(range)).toEqual(range)
+    expect(CommentTargetSchema.safeParse({ kind: 'file', ref: 'src/a.tsx', anchor: { side: 'new', line: 0 } }).success).toBe(false)
+    expect(CommentTargetSchema.safeParse({ kind: 'file', ref: 'src/a.tsx', anchor: { side: 'new', line: 5, endLine: 3 } }).success).toBe(false)
+    expect(CommentTargetSchema.safeParse({ kind: 'spec', ref: 'jira.md', anchor: { side: 'new', line: 1 } }).success).toBe(false)
+    expect(CommentTargetSchema.safeParse({ kind: 'overall', ref: null, anchor: { side: 'new', line: 1 } }).success).toBe(false)
+  })
+
   it('Resolutions', () => {
     const rs = makeResolutions({ c1: makeResolution() })
     expect(ResolutionsSchema.parse(rs)).toEqual(rs)

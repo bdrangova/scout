@@ -135,6 +135,18 @@ describe('SessionListPage', () => {
     expect(screen.getByRole('link', { name: 'Storybook stories for Badge' })).toBeInTheDocument()
   })
 
+  it('keeps many tickets on one scrollable line beside the title', () => {
+    const first = sessionListFixture[0]
+    if (!first || !('tickets' in first)) throw new Error('fixture')
+    const tickets = [15472, 15473, 15480, 15491, 15502, 15510].map((n) => ({ key: `QI-${n}`, url: null }))
+    renderPage({ sessions: [{ ...first, tickets }] })
+    const row = screen.getByRole('link', { name: 'Trial countdown bar' })
+    const chips = tickets.map((ticket) => within(row).getByText(ticket.key))
+    const strip = chips[0]?.parentElement
+    expect(strip).toHaveClass('overflow-x-auto', 'min-w-0')
+    for (const chip of chips) expect(chip.parentElement).toBe(strip)
+  })
+
   it('navigates to the session on click and Enter, but not from the ticket link', async () => {
     listState.current = { sessions: sessionListFixture, loading: false, error: null, reload: () => {} }
     render(

@@ -1,4 +1,4 @@
-import type { CommentWithStatus } from '@review-dash/shared'
+import { anchorLabel, type CommentWithStatus } from '@review-dash/shared'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -65,6 +65,7 @@ function Meta({ comment }: { comment: CommentWithStatus }) {
   return (
     <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
       <span className="font-mono">{comment.id}</span>
+      {comment.target.anchor && <span className="font-mono text-info">{anchorLabel(comment.target.anchor)}</span>}
       <Timestamp seconds={comment.timestampSec} />
       <time dateTime={comment.updatedAt ?? comment.createdAt}>
         {formatRelativeTime(comment.updatedAt ?? comment.createdAt)}

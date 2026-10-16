@@ -13,7 +13,7 @@ import {
   makeTree,
   makeTreeFile,
 } from '../testing/fixtures.ts'
-import { anyFileUpdated, commentStatus, effectiveVerdict, fileIsUpdated, mergeComments, progress, sessionStatus } from './status.ts'
+import { anyFileUpdated, commentStatus, commentedPaths, effectiveVerdict, fileIsUpdated, mergeComments, progress, sessionStatus } from './status.ts'
 
 describe('commentStatus', () => {
   it('is open without any event', () => {
@@ -196,6 +196,14 @@ describe('progress and anyFileUpdated', () => {
     expect(progress(r, tree)).toEqual({ reviewed: 2, total: 3 })
     expect(anyFileUpdated(r, tree)).toBe(true)
     expect(anyFileUpdated(makeReview(), tree)).toBe(false)
+  })
+
+  it('a line comment makes its file commented like a file comment', () => {
+    const tree = makeTree()
+    const r = makeReview({ comments: [makeComment({ id: 'c1', target: { kind: 'file', ref: 'src/b.ts', anchor: { side: 'new', line: 4 } } })] })
+    expect(commentedPaths(r)).toEqual(new Set(['src/b.ts']))
+    expect(progress(r, tree)).toEqual({ reviewed: 1, total: 3 })
+    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('in-progress')
   })
 
   it('a comment counts until the agent resolves it; other targets never count', () => {

@@ -11,6 +11,8 @@ export interface CommentBoxProps {
   pendingReject: boolean
   onSubmit: (body: string) => void
   onCancelReject: () => void
+  /** Offered as a Cancel button and on Escape (a line comment box that closes without saving). */
+  onCancel?: () => void
   /** Bump to move focus into the textarea (the `C` hotkey, the Comment button). */
   focusToken?: number
   /**
@@ -30,6 +32,7 @@ export function CommentBox({
   pendingReject,
   onSubmit,
   onCancelReject,
+  onCancel,
   focusToken = 0,
   collapsible = false,
   placeholder = 'Leave a comment…',
@@ -80,6 +83,8 @@ export function CommentBox({
       event.preventDefault()
       if (pendingReject) {
         onCancelReject()
+      } else if (onCancel) {
+        onCancel()
       } else if (collapsible && body === '') {
         setExpanded(false)
       }
@@ -125,11 +130,11 @@ export function CommentBox({
             <Kbd>⌘</Kbd>
             <Kbd>Enter</Kbd>
           </KbdGroup>{' '}
-          to submit{pendingReject ? ' · Esc to cancel' : ''}
+          to submit{pendingReject || onCancel ? ' · Esc to cancel' : ''}
         </span>
         <div className="ml-auto flex items-center gap-2">
-          {pendingReject && (
-            <Button variant="outline" size="sm" onClick={onCancelReject}>
+          {(pendingReject || onCancel) && (
+            <Button variant="outline" size="sm" onClick={pendingReject ? onCancelReject : onCancel}>
               Cancel
             </Button>
           )}

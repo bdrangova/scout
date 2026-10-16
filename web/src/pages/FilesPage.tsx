@@ -6,6 +6,7 @@ import { CardDeck } from '@/components/diff/CardDeck'
 import { ScrollList } from '@/components/diff/ScrollList'
 import { FileGrid } from '@/components/files/FileGrid'
 import { FilesSidebar, SidebarToggle } from '@/components/files/FilesSidebar'
+import { ReviewComplete } from '@/components/files/ReviewComplete'
 import { useSidebarOpen } from '@/components/files/useSidebarOpen'
 import { CommitTimeline } from '@/components/timeline/CommitTimeline'
 import { useCommits, useScopeTree } from '@/lib/hooks'
@@ -53,7 +54,6 @@ export function FilesPage() {
   const statePath = stateFile !== null && files.some((file) => file.path === stateFile) ? stateFile : null
   const [commentFocusToken, bumpCommentFocus] = useReducer((count: number) => count + 1, 0)
   const previousRef = useRef<{ url: string | null; state: string | null } | null>(null)
-  const atEndRef = useRef(state.atEnd)
 
   // A scope the commit list cannot serve (a sha no longer in range): back to the full diff.
   useEffect(() => {
@@ -88,13 +88,10 @@ export function FilesPage() {
     if (isCardMode(mode)) rememberCardMode(mode)
   }, [mode, state.review.ui.mode, dispatch])
 
-  // Nothing left to review: continue to Submit (only on the transition, so coming back works,
-  // and only in the full-diff view: a scope's end is not the review's).
-  useEffect(() => {
-    const wasAtEnd = atEndRef.current
-    atEndRef.current = state.atEnd
-    if (state.atEnd && !wasAtEnd && scope === null) navigate(`/s/${encodeURIComponent(sessionId)}/submit`)
-  }, [state.atEnd, navigate, sessionId, scope])
+  // Nothing left to review: the view gives way to the end panel, only in the full-diff view (a
+  // scope's end is not the review's) and only while that holds (a file the agent changed since
+  // comes back as unreviewed). Any `GO_TO` (a step, the tree, "Back to files") leaves it.
+  const ended = state.atEnd && scope === null && nextUnreviewedFile(state.review, fullFiles) === null
 
   function goTo(path: string) {
     dispatch({ type: 'GO_TO', path })
@@ -135,16 +132,21 @@ export function FilesPage() {
     if (verdict === 'approved' || withComment) scopeReview?.advanceFrom(file.path)
   }
 
+  // At the end a step with no neighbour still leaves the end panel, on the current file.
   function stepBy(delta: number) {
     if (!urlFile) return
-    const next = files[files.indexOf(urlFile) + delta]
+    const next = files[files.indexOf(urlFile) + delta] ?? (ended ? urlFile : undefined)
     if (next) goTo(next.path)
   }
 
   // In the grid the card keys are left alone (a focused tile handles `A` and Enter itself).
-  const cardHotkeys: HotkeyHandlers = {
+  const stepHotkeys: HotkeyHandlers = {
     prev: () => stepBy(-1),
     next: () => stepBy(1),
+  }
+  // Behind the end panel the cards are out of reach: the verdict keys do nothing.
+  const cardHotkeys: HotkeyHandlers = {
+    ...stepHotkeys,
     approve: () => {
       if (urlFile) setVerdict(urlFile, 'approved')
     },
@@ -157,7 +159,7 @@ export function FilesPage() {
   }
 
   useHotkeys({
-    ...(isCardMode(mode) ? cardHotkeys : {}),
+    ...(isCardMode(mode) ? (ended ? stepHotkeys : cardHotkeys) : {}),
     prevScope: () => selectScope(stepScope(commitsState.commits, scope, -1, mergesHidden)),
     nextScope: () => selectScope(stepScope(commitsState.commits, scope, 1, mergesHidden)),
     cancel: () => dispatch({ type: 'CANCEL_REJECT' }),
@@ -227,7 +229,13 @@ export function FilesPage() {
       <FilesSidebar files={files} reviewFiles={fullFiles} currentPath={urlPath} onSelect={goTo} sidebar={sidebar} />
       <div className="flex h-[calc(100dvh-6.25rem)] min-w-0 flex-1 flex-col">
         {timeline}
-        {content}
+        {ended && first ? (
+          <ReviewComplete sessionId={sessionId} detail={detail} onBack={() => goTo(currentPath)}>
+            {content}
+          </ReviewComplete>
+        ) : (
+          content
+        )}
       </div>
     </main>
   )

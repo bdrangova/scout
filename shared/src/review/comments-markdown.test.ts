@@ -87,6 +87,70 @@ describe('renderSentMarkdown', () => {
     `)
   })
 
+  it('renders line comments as path:line with an excerpt from the sent patch', () => {
+    const patch = `diff --git a/src/a.tsx b/src/a.tsx
+index 1111111..2222222 100644
+--- a/src/a.tsx
++++ b/src/a.tsx
+@@ -1,3 +1,4 @@
+ import x from 'x'
+-const a = 1
++const a = 2
++const b = 3
+ export { a }
+diff --git a/src/b.ts b/src/b.ts
+index 1111111..2222222 100644
+--- a/src/b.ts
++++ b/src/b.ts
+@@ -7,2 +7,2 @@
+-old line
++new line
+ after
+`
+    const r = makeReview({
+      comments: [
+        makeComment({ id: 'c1', target: { kind: 'file', ref: 'src/a.tsx', anchor: { side: 'new', line: 3 } }, body: 'Name it.' }),
+        makeComment({ id: 'c2', target: { kind: 'file', ref: 'src/a.tsx', anchor: { side: 'new', line: 2, endLine: 4 } }, body: 'Both of these.\nAnd the export.' }),
+        makeComment({ id: 'c3', target: { kind: 'file', ref: 'src/a.tsx' }, body: 'File-level note.' }),
+        makeComment({ id: 'c4', target: { kind: 'file', ref: 'src/b.ts', anchor: { side: 'old', line: 7 } }, body: 'Why remove this?' }),
+        makeComment({ id: 'c5', target: { kind: 'file', ref: 'src/b.ts', anchor: { side: 'new', line: 40 } }, body: 'Line no longer in the diff.' }),
+      ],
+    })
+    const sent = buildSentSnapshot({ review: r, tree, decision: 'request-changes', resolutions: null, now: T2 })
+    const markdown = renderSentMarkdown(sent, { title: 'Add trial bar', dashboardUrl: DASHBOARD, patch })
+    expect(markdown.slice(markdown.indexOf('## Files'), markdown.indexOf('## Required'))).toMatchInlineSnapshot(`
+      "## Files (0 rejected, 0 approved, 2 commented, 3 not reviewed)
+      ### src/a.tsx — commented
+      - [c1] src/a.tsx:3 > Name it.
+        \`\`\`
+        2 + const a = 2
+        3 + const b = 3
+        4   export { a }
+        \`\`\`
+      - [c2] src/a.tsx:2-4 > Both of these.
+        > And the export.
+        \`\`\`
+        2 + const a = 2
+        3 + const b = 3
+        4   export { a }
+        \`\`\`
+      - [c3] > File-level note.
+      ### src/b.ts — commented
+      - [c4] src/b.ts:7 (old) > Why remove this?
+        \`\`\`
+        7 - old line
+          + new line
+        \`\`\`
+      - [c5] src/b.ts:40 > Line no longer in the diff.
+
+      "
+    `)
+    // Without the patch the anchor alone is rendered.
+    const bare = renderSentMarkdown(sent, { title: 'Add trial bar', dashboardUrl: DASHBOARD })
+    expect(bare).toContain('- [c1] src/a.tsx:3 > Name it.\n- [c2]')
+    expect(bare).not.toContain('```')
+  })
+
   it('omits every empty section when only an overall comment was left', () => {
     const r = makeReview({ comments: [makeComment({ id: 'c1', target: { kind: 'overall', ref: null }, body: 'Ship it.' })] })
     const sent = buildSentSnapshot({ review: r, tree, decision: 'approve', resolutions: null, now: T2 })

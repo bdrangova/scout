@@ -47,6 +47,22 @@ describe('SpecPage', () => {
     vi.unstubAllGlobals()
   })
 
+  it('folds a card from its header chevron and unfolds it again', async () => {
+    renderSpec()
+    const jira = await screen.findByRole('article', { name: 'Jira spec' })
+    expect(await within(jira).findByRole('heading', { level: 2, name: 'Acceptance criteria' })).toBeInTheDocument()
+    const toggle = within(jira).getByRole('button', { name: 'Collapse QI-15472: Trial bar' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.setup().click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(within(jira).queryByRole('heading', { level: 2, name: 'Acceptance criteria' })).not.toBeInTheDocument()
+    expect(within(jira).queryByRole('button', { name: 'Comment on QI-15472: Trial bar' })).not.toBeInTheDocument()
+    // The other cards keep their own state.
+    expect(within(screen.getByRole('article', { name: 'Markdown spec' })).getByRole('button', { name: /^Collapse/ })).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.setup().click(within(jira).getByRole('button', { name: 'Expand QI-15472: Trial bar' }))
+    expect(within(jira).getByRole('heading', { level: 2, name: 'Acceptance criteria' })).toBeInTheDocument()
+  })
+
   it('renders the Jira, markdown and artifact cards from the derived spec items via /spec/<path>', async () => {
     const api = renderSpec()
     expect(await screen.findByText('Jira ticket · plan.md · exported artifact')).toBeInTheDocument()

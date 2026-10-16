@@ -104,6 +104,25 @@ describe('flow rules', () => {
     expect(next.review.files[B]).toBeUndefined()
   })
 
+  it('a line comment is stored on the file but neither resolves a pending reject nor advances', () => {
+    const anchor = { side: 'new' as const, line: 12 }
+    const next = run(start(), [
+      { type: 'SET_VERDICT', path: A, verdict: 'rejected', fingerprint: null, now: T1 },
+      { type: 'ADD_COMMENT', target: { kind: 'file', ref: A, anchor }, body: 'Off by one.', now: T2 },
+    ])
+    expect(next.pendingReject).toBe(A)
+    expect(next.review.files[A]).toBeUndefined()
+    expect(next.review.ui.currentFile).toBe(A)
+    expect(next.review.comments.map((c) => [c.id, c.target])).toEqual([['c1', { kind: 'file', ref: A, anchor }]])
+    // The file counts as commented: advancing from it skips it like any file comment.
+    expect(nextUnreviewedFile(next.review, files)).toBe(B)
+    // The file-level comment still resolves the reject.
+    const done = reviewReducer(next, { type: 'ADD_COMMENT', target: { kind: 'file', ref: A }, body: 'No.', now: T3 }, ctx)
+    expect(done.pendingReject).toBeNull()
+    expect(done.review.files[A]?.verdict).toBe('rejected')
+    expect(done.review.ui.currentFile).toBe(B)
+  })
+
   it('CANCEL_REJECT drops the pending reject; approving another file clears it too', () => {
     const pending = run(start(), [{ type: 'SET_VERDICT', path: A, verdict: 'rejected', fingerprint: null, now: T1 }])
     const cancelled = reviewReducer(pending, { type: 'CANCEL_REJECT' }, ctx)

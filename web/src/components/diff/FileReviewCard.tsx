@@ -1,4 +1,4 @@
-import { effectiveVerdict, fileIsUpdated, type CommentTarget, type TreeFile } from '@review-dash/shared'
+import { effectiveVerdict, fileIsUpdated, type CommentTarget, type LineAnchor, type TreeFile } from '@review-dash/shared'
 import { Check, MessageSquare, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState, type PointerEvent } from 'react'
 import { CommentBox } from '@/components/common/CommentBox'
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { useReview } from '@/state/review-context'
 import type { DiffStyle } from './FileDiffView'
 import { LargeFileGate } from './LargeFileGate'
+import { LineCommentsContext, type LineCommentsValue } from './line-comments'
 import { MarkdownPreview } from './MarkdownPreview'
 import { VerdictOverlay } from './VerdictOverlay'
 
@@ -65,7 +66,9 @@ export function FileReviewCard({
   const { dir, name } = splitPath(file.path)
   const badge = fileStatusBadge(file)
   const target = useMemo<CommentTarget>(() => ({ kind: 'file', ref: file.path }), [file.path])
+  // Every comment on the file; the anchored ones render inside the diff, the rest in the footer.
   const comments = commentsFor(target)
+  const fileComments = useMemo(() => comments.filter((comment) => comment.target.anchor === undefined), [comments])
   const review = fileReview(file.path)
   const pendingReject = state.pendingReject === file.path
   // Kept in the review state (not the comment box) so Approve and Reject send what is typed instead of dropping it.
@@ -106,6 +109,21 @@ export function FileReviewCard({
     dispatch({ type: 'ADD_COMMENT', target, body })
     if (body.trim() !== '') scope?.advanceFrom(file.path)
   }
+
+  const lineComments = useMemo<LineCommentsValue | null>(
+    () =>
+      reviewable
+        ? {
+            comments: comments.filter((comment) => comment.target.anchor !== undefined),
+            onAdd: (anchor: LineAnchor, body: string) => dispatch({ type: 'ADD_COMMENT', target: { ...target, anchor }, body }),
+            onEdit: (id, body) => dispatch({ type: 'EDIT_COMMENT', id, body }),
+            onDelete: (id) => dispatch({ type: 'DELETE_COMMENT', id }),
+            onResolve: (id) => dispatch({ type: 'RESOLVE_COMMENT', id }),
+            onReopen: (id) => dispatch({ type: 'REOPEN_COMMENT', id }),
+          }
+        : null,
+    [reviewable, comments, dispatch, target],
+  )
 
   return (
     <article
@@ -202,13 +220,15 @@ export function FileReviewCard({
         {view === 'preview' && previewable ? (
           <MarkdownPreview file={file} sessionId={sessionId} scope={scope?.scope ?? null} />
         ) : (
-          <LargeFileGate
-            file={file}
-            sessionId={sessionId}
-            scope={scope?.scope ?? null}
-            diffStyle={view === 'preview' ? 'unified' : view}
-            onApprove={reviewable ? () => setVerdict('approved') : undefined}
-          />
+          <LineCommentsContext.Provider value={lineComments}>
+            <LargeFileGate
+              file={file}
+              sessionId={sessionId}
+              scope={scope?.scope ?? null}
+              diffStyle={view === 'preview' ? 'unified' : view}
+              onApprove={reviewable ? () => setVerdict('approved') : undefined}
+            />
+          </LineCommentsContext.Provider>
         )}
       </div>
 
@@ -217,7 +237,7 @@ export function FileReviewCard({
           <p className="text-xs text-muted-foreground">No net change in the full diff: a later change undid this one, so it cannot be reviewed here.</p>
         )}
         <CommentList
-          comments={comments}
+          comments={fileComments}
           onEdit={(id, body) => dispatch({ type: 'EDIT_COMMENT', id, body })}
           onDelete={(id) => dispatch({ type: 'DELETE_COMMENT', id })}
           onResolve={(id) => dispatch({ type: 'RESOLVE_COMMENT', id })}

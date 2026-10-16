@@ -8,7 +8,7 @@ import { BranchPair, BranchRef } from '@/components/common/BranchRef'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { DiffStats } from '@/components/session/DiffStats'
 import { StatusPill } from '@/components/session/StatusPill'
-import { TicketChip } from '@/components/session/TicketChip'
+import { TicketChips } from '@/components/session/TicketChip'
 import { Button } from '@/components/ui/button'
 import { archiveErrorMessage, archiveSession, unarchiveSession } from '@/lib/archive'
 import { formatRelativeTime } from '@/lib/format'
@@ -239,9 +239,7 @@ function SessionRow({ session, onArchive }: SessionRowProps) {
       >
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            {session.tickets.map((ticket) => (
-              <TicketChip key={ticket.key} ticket={ticket} />
-            ))}
+            <TicketChips tickets={session.tickets} className="max-w-[55%] shrink-0" />
             <span className="truncate text-base font-semibold" title={session.title}>
               {session.title}
             </span>
@@ -321,9 +319,7 @@ function ArchivedList({ items, error, onUnarchive, onDeleted, reloadArchived }: 
         >
           <div className="flex min-w-0 basis-full flex-col gap-1.5 lg:flex-1 lg:basis-64">
             <div className="flex min-w-0 items-center gap-2.5">
-              {session.tickets.map((ticket) => (
-                <TicketChip key={ticket.key} ticket={ticket} />
-              ))}
+              <TicketChips tickets={session.tickets} className="max-w-[55%] shrink-0" />
               <span className="truncate text-base font-semibold" title={session.title}>
                 {session.title}
               </span>

@@ -5,7 +5,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { DiffStats } from '@/components/session/DiffStats'
 import { StatusPill } from '@/components/session/StatusPill'
-import { TicketChip } from '@/components/session/TicketChip'
+import { TicketChips } from '@/components/session/TicketChip'
 import { BranchPair } from '@/components/common/BranchRef'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
@@ -89,9 +89,7 @@ export function SessionHeader({ onHelp }: SessionHeaderProps) {
             </TooltipTrigger>
             <TooltipContent side="bottom">Sessions</TooltipContent>
           </Tooltip>
-          {manifest.tickets.map((ticket) => (
-            <TicketChip key={ticket.key} ticket={ticket} />
-          ))}
+          <TicketChips tickets={manifest.tickets} className="max-w-[45%] shrink-0" />
           <div className="flex min-w-0 flex-1 basis-80 flex-col">
             <h1 className="min-w-0 truncate text-[15px] leading-5 font-semibold" title={manifest.title}>
               {manifest.title}

@@ -44,7 +44,7 @@ export function ExtraCard({ item, sessionId }: ExtraCardProps) {
   } else if (item.type === 'html') {
     body = <SandboxedHtml html={content.content} title={item.title} />
   } else {
-    body = <Markdown source={item.type === 'mermaid' ? wrapMermaid(content.content) : content.content} />
+    body = <Markdown source={item.type === 'mermaid' ? wrapMermaid(content.content) : content.content} tallDiagrams />
   }
 
   return (

@@ -1,14 +1,35 @@
-import { mergeComments, progress, type TreeFile } from '@review-dash/shared'
-import { act, render, screen } from '@testing-library/react'
+import { mergeComments, progress, type CommentWithStatus, type TreeFile } from '@review-dash/shared'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FilePatchOptions, FilePatchState } from '@/lib/hooks'
 import { ReviewStateContext, type ReviewContextValue } from '@/state/review-context'
-import { fp, makeTreeFile, reviewFixture, SESSION_ID, treeFixture } from '@/test/fixtures'
+import { commentFixture, fp, makeTreeFile, reviewFixture, SESSION_ID, treeFixture } from '@/test/fixtures'
 import { CHANGED_PULSE_MS, FileReviewCard } from './FileReviewCard'
 
+interface MockProps {
+  patch: string
+  options?: { onGutterUtilityClick?: (range: { start: number; side?: string; end: number }) => void }
+  lineAnnotations?: { side: string; lineNumber: number }[]
+  renderAnnotation?: (annotation: { side: string; lineNumber: number }) => React.ReactNode
+}
+
 vi.mock('@pierre/diffs/react', () => ({
-  PatchDiff: ({ patch }: { patch: string }) => <pre data-testid="patch-diff">{patch}</pre>,
+  PatchDiff: ({ patch, options, lineAnnotations, renderAnnotation }: MockProps) => (
+    <div>
+      <pre data-testid="patch-diff">{patch}</pre>
+      {options?.onGutterUtilityClick && (
+        <button type="button" onClick={() => options.onGutterUtilityClick?.({ start: 5, side: 'additions', end: 5 })}>
+          gutter new 5
+        </button>
+      )}
+      {lineAnnotations?.map((annotation, index) => (
+        <div key={index} data-testid={`slot:${annotation.side}:${annotation.lineNumber}`}>
+          {renderAnnotation?.(annotation)}
+        </div>
+      ))}
+    </div>
+  ),
 }))
 
 vi.mock('@streamdown/mermaid', () => ({
@@ -44,12 +65,12 @@ const review = reviewFixture({
   },
 })
 
-function contextValue(dispatch = vi.fn(), draft = ''): ReviewContextValue {
+function contextValue(dispatch = vi.fn(), draft = '', comments: CommentWithStatus[] = []): ReviewContextValue {
   return {
     state: { review, pendingReject: null, atEnd: false },
     dispatch,
     comments: mergeComments(review, null),
-    commentsFor: () => [],
+    commentsFor: () => comments,
     fileReview: (p) => review.files[p] ?? null,
     draftFor: () => draft,
     setDraft: () => {},
@@ -129,6 +150,37 @@ describe('FileReviewCard', () => {
     })
     expect(article).not.toHaveAttribute('data-changed')
     expect(screen.queryByText('changed just now')).not.toBeInTheDocument()
+  })
+
+  describe('line comments', () => {
+    const PATCH = 'diff --git a/src/other.ts b/src/other.ts\n--- a/src/other.ts\n+++ b/src/other.ts\n@@ -1,2 +1,3 @@\n a\n+b\n c\n'
+    const lineComment = commentFixture('c1', { kind: 'file', ref: untouched.path, anchor: { side: 'new', line: 2 } }, 'Inline note.')
+    const fileComment = commentFixture('c2', { kind: 'file', ref: untouched.path }, 'Footer note.')
+
+    it('shows anchored comments inside the diff and file comments in the footer; the card counts as commented', () => {
+      useFilePatchMock.mockReturnValue({ patch: PATCH, isLarge: false, isOmitted: false, loading: false, error: null, reload: () => {} })
+      const comments = mergeComments(reviewFixture({ comments: [lineComment, fileComment], nextCommentId: 3 }), null)
+      render(
+        <ReviewStateContext.Provider value={contextValue(vi.fn(), '', comments)}>
+          <FileReviewCard file={{ ...untouched, additions: 1 }} sessionId={SESSION_ID} />
+        </ReviewStateContext.Provider>,
+      )
+      expect(screen.getByText('Inline note.').closest('[data-testid="slot:additions:2"]')).not.toBeNull()
+      const footer = screen.getByRole('region', { name: `Comments on ${untouched.path}` })
+      expect(within(footer).getByText('Footer note.')).toBeInTheDocument()
+      expect(within(footer).queryByText('Inline note.')).not.toBeInTheDocument()
+      expect(screen.getByText('line 2')).toBeInTheDocument()
+    })
+
+    it('dispatches ADD_COMMENT with the anchor from the gutter "+"', async () => {
+      useFilePatchMock.mockReturnValue({ patch: PATCH, isLarge: false, isOmitted: false, loading: false, error: null, reload: () => {} })
+      const dispatch = vi.fn()
+      render(card(untouched, dispatch))
+      await userEvent.click(screen.getByRole('button', { name: 'gutter new 5' }))
+      await userEvent.type(screen.getByRole('textbox', { name: 'Comment on line 5' }), 'Check this')
+      await userEvent.click(within(screen.getByTestId('slot:additions:5')).getByRole('button', { name: 'Comment' }))
+      expect(dispatch).toHaveBeenCalledWith({ type: 'ADD_COMMENT', target: { kind: 'file', ref: untouched.path, anchor: { side: 'new', line: 5 } }, body: 'Check this' })
+    })
   })
 
   describe('markdown preview', () => {

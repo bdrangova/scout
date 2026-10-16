@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 export interface MarkdownProps {
   source: string
   className?: string
+  /** Mermaid blocks take most of the viewport (pan/zoom inside); the text keeps its usual flow. */
+  tallDiagrams?: boolean
 }
 
 const PLUGINS = { code, mermaid }
@@ -28,13 +30,22 @@ const PROSE =
   '[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1 [&_img]:max-w-full [&_img]:rounded-md'
 
 /**
+ * Streamdown's diagram box is as tall as its content; without a height the SVG shrinks to the
+ * replaced-element default and a graph becomes a thumbnail. These give the pan/zoom box a viewport
+ * height and let the SVG fill its width, capped at that height.
+ */
+const TALL_DIAGRAMS =
+  '[&_[data-streamdown=mermaid]>div]:min-h-[70vh] [&_[data-streamdown=mermaid]_[role=img]]:w-full ' +
+  '[&_[data-streamdown=mermaid]_[role=img]>svg]:max-h-[70vh] [&_[data-streamdown=mermaid]_[role=img]>svg]:w-full'
+
+/**
  * Static (non-streaming) GFM markdown with Shiki code blocks and Mermaid diagrams. Streamdown's
  * link-safety modal is off: the content is the reviewer's own agent output, and plain anchors keep
  * links readable (and testable) as links.
  */
-export function Markdown({ source, className }: MarkdownProps) {
+export function Markdown({ source, className, tallDiagrams = false }: MarkdownProps) {
   return (
-    <Streamdown mode="static" plugins={PLUGINS} linkSafety={LINK_SAFETY} className={cn(PROSE, className)}>
+    <Streamdown mode="static" plugins={PLUGINS} linkSafety={LINK_SAFETY} className={cn(PROSE, tallDiagrams && TALL_DIAGRAMS, className)}>
       {source}
     </Streamdown>
   )

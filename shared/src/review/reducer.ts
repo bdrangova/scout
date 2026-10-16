@@ -21,6 +21,7 @@ export type ReviewContext = {
 export type ReviewAction =
   /** `comment` rides along with the verdict (the draft typed before approving or rejecting): one file comment, and a reject is stored at once instead of waiting for one. */
   | { type: 'SET_VERDICT'; path: string; verdict: Verdict; fingerprint: string | null; comment?: string; now: string }
+  /** A `file` target with an `anchor` adds a line comment: stored like a file comment, but it neither resolves a pending reject nor advances. */
   | { type: 'ADD_COMMENT'; target: CommentTarget; body: string; timestampSec?: number | null; now: string }
   | { type: 'EDIT_COMMENT'; id: string; body: string; now: string }
   | { type: 'DELETE_COMMENT'; id: string; now: string }
@@ -152,7 +153,9 @@ export function reviewReducer(state: ReviewState, action: ReviewAction, ctx: Rev
       if (body === '') return state
       const { target, now } = action
       const patch = withComment(review, target, body, action.timestampSec ?? null, now)
-      if (target.kind !== 'file' || target.ref === null) {
+      // A line comment never stands in for the reject's reason and never moves the deck:
+      // the reviewer is still reading the file.
+      if (target.kind !== 'file' || target.ref === null || target.anchor !== undefined) {
         return { ...state, review: touch(review, now, patch) }
       }
       let pendingReject = state.pendingReject
