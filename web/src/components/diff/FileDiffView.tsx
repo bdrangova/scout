@@ -2,6 +2,7 @@ import { parsePatchLines, type LineAnchor } from '@review-dash/shared'
 import { PatchDiff, type PatchDiffProps } from '@pierre/diffs/react'
 import { useCallback, useMemo, useState, type KeyboardEvent } from 'react'
 import { cn } from '@/lib/utils'
+import { contentsLoader, fullFileRows, type FileSides } from './expand-context'
 import { LineAnnotation } from './LineAnnotation'
 import {
   anchorFromCursor,
@@ -20,19 +21,25 @@ type DiffOptions = NonNullable<PatchDiffProps<LineAnnotationContent, undefined>[
 
 // The card header shows the path, so the library's own file header is off; lines never wrap
 // (horizontal scroll instead); the theme is pinned to light because the app is light-only (the
-// diff must not follow the OS scheme).
+// diff must not follow the OS scheme). The hunk separators reveal hidden lines 10 at a time.
 const BASE_OPTIONS: DiffOptions = {
   overflow: 'scroll',
   themeType: 'light',
   disableFileHeader: true,
   hunkSeparators: 'line-info',
   lineDiffType: 'word',
+  expansionLineCount: 10,
 }
 
 interface FileDiffViewProps {
   /** The per-file slice of `diff.patch` (one `diff --git` section). */
   patch: string
   diffStyle: DiffStyle
+  /**
+   * Fetches both sides of the file; given, the separators between hunks offer to reveal the
+   * hidden lines and this runs on the first reveal. Absent (or failing once), nothing is offered.
+   */
+  loadSides?: () => Promise<FileSides>
 }
 
 /**
@@ -41,11 +48,41 @@ interface FileDiffViewProps {
  * opens a comment box under that line, and the file's line comments render under their lines.
  * The wrapper is focusable: ↑/↓ move a cursor over the lines (Shift extends it), Enter comments there.
  */
-export function FileDiffView({ patch, diffStyle }: FileDiffViewProps) {
+export function FileDiffView({ patch, diffStyle, loadSides }: FileDiffViewProps) {
   const lineComments = useLineComments()
   const [draft, setDraft] = useState<LineAnchor | null>(null)
   const [cursor, setCursor] = useState<RowCursor | null>(null)
+  // The loaded sides (once revealed), or `null` after a failed load: the offer is withdrawn.
+  const [sides, setSides] = useState<FileSides | null | undefined>(undefined)
+  // A new patch (the file moved on disk) starts over: what was loaded belongs to the old content.
+  const [seenPatch, setSeenPatch] = useState(patch)
+  if (seenPatch !== patch) {
+    setSeenPatch(patch)
+    setSides(undefined)
+  }
   const rows = useMemo(() => (lineComments ? parsePatchLines(patch) : []), [lineComments, patch])
+  // Anchors on revealed lines count as in the diff; the keyboard cursor keeps to the patch's own rows.
+  const anchorRows = useMemo(() => (sides ? fullFileRows(rows, sides) : rows), [rows, sides])
+
+  const offered = sides !== null
+  const loadDiffFiles = useMemo(
+    () =>
+      loadSides && offered
+        ? contentsLoader(() =>
+            loadSides().then(
+              (loaded) => {
+                setSides(loaded)
+                return loaded
+              },
+              (reason: unknown) => {
+                setSides(null)
+                throw reason
+              },
+            ),
+          )
+        : undefined,
+    [loadSides, offered],
+  )
 
   const onGutterUtilityClick = useCallback((range: Parameters<NonNullable<DiffOptions['onGutterUtilityClick']>>[0]) => {
     setCursor(null)
@@ -53,12 +90,15 @@ export function FileDiffView({ patch, diffStyle }: FileDiffViewProps) {
   }, [])
 
   const options = useMemo<DiffOptions>(
-    () => (lineComments ? { ...BASE_OPTIONS, diffStyle, enableGutterUtility: true, onGutterUtilityClick } : { ...BASE_OPTIONS, diffStyle }),
-    [diffStyle, lineComments, onGutterUtilityClick],
+    () =>
+      lineComments
+        ? { ...BASE_OPTIONS, diffStyle, loadDiffFiles, enableGutterUtility: true, onGutterUtilityClick }
+        : { ...BASE_OPTIONS, diffStyle, loadDiffFiles },
+    [diffStyle, lineComments, loadDiffFiles, onGutterUtilityClick],
   )
   const annotations = useMemo<DiffAnnotation[]>(
-    () => (lineComments ? buildAnnotations(rows, lineComments.comments, draft) : []),
-    [lineComments, rows, draft],
+    () => (lineComments ? buildAnnotations(anchorRows, lineComments.comments, draft) : []),
+    [lineComments, anchorRows, draft],
   )
   const cursorAnchor = cursor ? anchorFromCursor(rows, cursor) : null
   const selected = draft ?? cursorAnchor

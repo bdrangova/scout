@@ -1,5 +1,5 @@
 import { mergeComments, type Comment } from '@review-dash/shared'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { commentFixture, reviewFixture } from '@/test/fixtures'
@@ -8,7 +8,11 @@ import { LineCommentsContext, type LineCommentsValue } from './line-comments'
 
 interface MockProps {
   patch: string
-  options?: { onGutterUtilityClick?: (range: { start: number; side?: string; end: number; endSide?: string }) => void; enableGutterUtility?: boolean }
+  options?: {
+    onGutterUtilityClick?: (range: { start: number; side?: string; end: number; endSide?: string }) => void
+    enableGutterUtility?: boolean
+    loadDiffFiles?: (fileDiff: { name: string }) => Promise<unknown>
+  }
   lineAnnotations?: { side: string; lineNumber: number; metadata: unknown }[]
   renderAnnotation?: (annotation: { side: string; lineNumber: number; metadata: unknown }) => React.ReactNode
   selectedLines?: { start: number; end: number; side?: string } | null
@@ -18,8 +22,17 @@ interface MockProps {
 // "+" as buttons so the tests can click a line and drag over a range.
 vi.mock('@pierre/diffs/react', () => ({
   PatchDiff: ({ patch, options, lineAnnotations, renderAnnotation, selectedLines }: MockProps) => (
-    <div data-testid="patch-diff" data-selected={selectedLines ? `${selectedLines.side ?? ''}:${selectedLines.start}-${selectedLines.end}` : undefined}>
+    <div
+      data-testid="patch-diff"
+      data-selected={selectedLines ? `${selectedLines.side ?? ''}:${selectedLines.start}-${selectedLines.end}` : undefined}
+      data-expandable={options?.loadDiffFiles ? '' : undefined}
+    >
       <pre>{patch}</pre>
+      {options?.loadDiffFiles && (
+        <button type="button" onClick={() => void options.loadDiffFiles?.({ name: 'src/a.ts' }).catch(() => {})}>
+          expand
+        </button>
+      )}
       {options?.enableGutterUtility && (
         <>
           <button type="button" onClick={() => options.onGutterUtilityClick?.({ start: 3, side: 'additions', end: 3 })}>
@@ -66,13 +79,15 @@ function value(comments: Comment[] = [], overrides: Partial<LineCommentsValue> =
   }
 }
 
-function renderView(ctx: LineCommentsValue | null, diffStyle: 'unified' | 'split' = 'unified') {
+function renderView(ctx: LineCommentsValue | null, diffStyle: 'unified' | 'split' = 'unified', loadSides?: () => Promise<{ before: string; after: string }>) {
   return render(
     <LineCommentsContext.Provider value={ctx}>
-      <FileDiffView patch={PATCH} diffStyle={diffStyle} />
+      <FileDiffView patch={PATCH} diffStyle={diffStyle} loadSides={loadSides} />
     </LineCommentsContext.Provider>,
   )
 }
+
+const FULL_AFTER = Array.from({ length: 50 }, (_, index) => (index === 0 ? "import x from 'x'" : `line ${index + 1}`)).join('\n')
 
 describe('FileDiffView line comments', () => {
   it('is a plain read-only diff without a line-comments context', () => {
@@ -80,6 +95,26 @@ describe('FileDiffView line comments', () => {
     expect(screen.getByTestId('patch-diff')).toHaveTextContent('const a = 2')
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Diff lines' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('patch-diff')).not.toHaveAttribute('data-expandable')
+  })
+
+  it('offers the hidden context only with a sides loader; a comment on a revealed line moves under it once loaded', async () => {
+    const loadSides = vi.fn(() => Promise.resolve({ before: FULL_AFTER.replace('line 40', 'old 40'), after: FULL_AFTER }))
+    const comments = [commentFixture('c9', { kind: 'file', ref: 'src/a.ts', anchor: { side: 'new', line: 40 } }, 'Outside the hunk.')]
+    renderView(value(comments), 'unified', loadSides)
+    expect(within(screen.getByTestId('slot:additions:0')).getByText('Outside the hunk.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'expand' }))
+    expect(loadSides).toHaveBeenCalledTimes(1)
+    expect(within(await screen.findByTestId('slot:additions:40')).getByText('Outside the hunk.')).toBeInTheDocument()
+    expect(screen.queryByTestId('slot:additions:0')).not.toBeInTheDocument()
+    expect(screen.getByTestId('patch-diff')).toHaveAttribute('data-expandable')
+  })
+
+  it('withdraws the offer when the sides cannot be loaded', async () => {
+    renderView(value(), 'split', () => Promise.reject(new Error('404')))
+    await userEvent.click(screen.getByRole('button', { name: 'expand' }))
+    await waitFor(() => expect(screen.getByTestId('patch-diff')).not.toHaveAttribute('data-expandable'))
+    expect(screen.queryByRole('button', { name: 'expand' })).not.toBeInTheDocument()
   })
 
   it('opens a comment box under the clicked line and saves the comment anchored there', async () => {

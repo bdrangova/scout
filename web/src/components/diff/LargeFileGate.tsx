@@ -1,11 +1,12 @@
 import type { Scope, TreeFile } from '@review-dash/shared'
 import { Check, FileX, Image as ImageIcon, TriangleAlert } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { collapseReason, omitReason } from '@/lib/file-status'
 import { formatAdditions, formatBytes, formatDeletions, formatNumber, pluralize } from '@/lib/format'
 import { useFilePatch } from '@/lib/hooks'
 import { fileContentsUrl, isImagePath } from '@/lib/paths'
+import { canExpandContext, fetchFileSides } from './expand-context'
 import { FileDiffView, type DiffStyle } from './FileDiffView'
 
 interface LargeFileGateProps {
@@ -34,6 +35,13 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
     fingerprint: file.fingerprint,
     scope,
   })
+  // Hidden context is offered only where both sides are servable text; a scope whose revision
+  // has no blob fails on the first reveal and the diff withdraws the offer.
+  const expandable = canExpandContext(file)
+  const loadSides = useMemo(
+    () => (expandable ? () => fetchFileSides(sessionId, file.path, scope) : undefined),
+    [expandable, sessionId, file.path, scope],
+  )
 
   const approve = onApprove && (
     <Button variant="outline" size="sm" onClick={onApprove}>
@@ -103,7 +111,7 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
     return <Notice title="No textual changes">The file's contents did not change.</Notice>
   }
 
-  return <FileDiffView patch={patch} diffStyle={diffStyle} />
+  return <FileDiffView patch={patch} diffStyle={diffStyle} loadSides={loadSides} />
 }
 
 /** `+2,400 −1,800 · 4,200 changed lines` */
