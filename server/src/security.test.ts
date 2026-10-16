@@ -46,6 +46,8 @@ describe('localOnly', () => {
 
 describe('contentSecurityPolicy', () => {
   it('sandboxes every served file and cuts scripts, styles and requests out of SVG, HTML and XML', () => {
+    expect(contentSecurityPolicy('')).toContain("default-src 'none'")
+    expect(contentSecurityPolicy('application/x-unknown')).toContain("default-src 'none'")
     expect(contentSecurityPolicy('image/png')).toBe('sandbox')
     expect(contentSecurityPolicy('video/webm')).toBe('sandbox')
     expect(contentSecurityPolicy('text/plain; charset=utf-8')).toBe('sandbox')

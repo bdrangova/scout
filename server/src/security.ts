@@ -38,16 +38,17 @@ export function localOnly(dashboardUrl: string): RequestHandler {
   }
 }
 
-/** Types a browser runs or styles when opened as a page. */
-function canBeActive(contentType: string): boolean {
-  return /^(text\/html|application\/xhtml|image\/svg|text\/xml|application\/xml)/i.test(contentType)
+/** Types that cannot script or style a page when opened; everything else (SVG, HTML, XML, unknown) is treated as active. */
+function isPassive(contentType: string): boolean {
+  return /^(image\/(?!svg)|video\/|audio\/|text\/(plain|markdown)|application\/(octet-stream|json))/i.test(contentType)
 }
 
 /**
  * Served files come from repos and agents, and the API shares the dashboard's origin: `sandbox`
- * gives an opened file an opaque origin, and anything that can script (SVG, HTML, XML) also loses
- * network and script access. Images in `<img>` and the sandboxed preview frame are not affected.
+ * gives an opened file an opaque origin, and anything that is not known to be passive also loses
+ * script, style and network access. An unknown type (`''`) is strict, so a type the browser works
+ * out for itself cannot slip past. Images in `<img>` and the sandboxed preview frame are not affected.
  */
 export function contentSecurityPolicy(contentType: string): string {
-  return canBeActive(contentType) ? "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox" : 'sandbox'
+  return isPassive(contentType) ? 'sandbox' : "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox"
 }

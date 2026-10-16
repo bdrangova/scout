@@ -1,3 +1,4 @@
+import { constants as fsConstants } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { RUN_ID_RE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, emptyReview, mergeComments, mimeFromPath, progress, sessionStatus } from '@review-dash/shared'
@@ -150,14 +151,26 @@ function isMedia(mime: string | null): mime is string {
 
 /**
  * The file as it is on disk. A symlink answers its link target, as `git show` does, and is never
- * followed: a tracked link must not read files outside the repo. Links in the directories are refused too.
+ * followed: a tracked link must not read files outside the repo. The leaf is opened with
+ * `O_NOFOLLOW`, so it cannot be swapped for a link between the check and the read; links in the
+ * directories are refused up front (swapping those needs write access to the repo, which already reads anything).
  */
 async function readWorkingFile(repo: string, relative: string): Promise<Buffer> {
   const absolute = safeJoin(repo, relative)
   const [root, parent] = await Promise.all([fs.realpath(repo), fs.realpath(path.dirname(absolute))])
   if (parent !== root && !parent.startsWith(root + path.sep)) throw notFound(`${JSON.stringify(relative)} is not inside the repository`)
-  const stat = await fs.lstat(absolute)
-  return stat.isSymbolicLink() ? Buffer.from(await fs.readlink(absolute)) : fs.readFile(absolute)
+  let handle: Awaited<ReturnType<typeof fs.open>>
+  try {
+    handle = await fs.open(absolute, fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW)
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ELOOP') return Buffer.from(await fs.readlink(absolute))
+    throw err
+  }
+  try {
+    return await handle.readFile()
+  } finally {
+    await handle.close()
+  }
 }
 
 /** Images and videos keep their type; other text is plain, other binary is an octet stream. */
