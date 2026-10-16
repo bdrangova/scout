@@ -1,6 +1,6 @@
 // `ai-review install --repo <path>`: skills, the pending-feedback hook, settings merge, Playwright MCP, launcher, config.
 import { execFile } from 'node:child_process'
-import { access, chmod, constants, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { access, chmod, constants, lstat, mkdir, readFile, readlink, stat, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,7 +13,9 @@ import { resolveHome, writeJsonAtomic } from '../store.ts'
 
 export const PENDING_HOOK = 'ai_review_pending_feedback.sh'
 export const PERMISSION = 'Bash(ai-review *)'
-export const MCP_ADD_ARGS = ['mcp', 'add', '--scope', 'project', 'playwright', '--', 'npx', '@playwright/mcp@latest', '--caps=devtools']
+/** Change-list key for the MCP step (a user-level setting, not a file in the repo). */
+const MCP_RECORD = 'claude mcp (user)'
+export const MCP_ADD_ARGS = ['mcp', 'add', '--scope', 'user', 'playwright', '--', 'npx', '@playwright/mcp@latest', '--caps=devtools']
 
 const TEMPLATE_FILES = [
   { from: 'skills/publish-review/SKILL.md', to: '.claude/skills/publish-review/SKILL.md', mode: 0o644 },
@@ -32,6 +34,8 @@ export interface InstallOptions {
   /** Absolute path of the bundled CLI the launcher should exec; default derived from this module's location. */
   cliBundle?: string
   nodeBin?: string
+  /** A directory on PATH that gets an `ai-review` symlink to the launcher (skills call the bare name); default `~/.local/bin`, null = none. */
+  pathDir?: string | null
 }
 
 export type InstallAction = 'created' | 'updated' | 'unchanged' | 'skipped'
@@ -114,17 +118,6 @@ async function isIgnored(repo: string, relPath: string): Promise<boolean> {
   return (await gitText(repo, ['check-ignore', '--', relPath], { okExitCodes: [1] })).trim() !== ''
 }
 
-async function readMcpServers(repo: string): Promise<Record<string, unknown> | null> {
-  try {
-    const parsed: unknown = JSON.parse(await readFile(path.join(repo, '.mcp.json'), 'utf8'))
-    if (typeof parsed !== 'object' || parsed === null) return null
-    const servers = (parsed as Record<string, unknown>).mcpServers
-    return typeof servers === 'object' && servers !== null ? (servers as Record<string, unknown>) : null
-  } catch {
-    return null
-  }
-}
-
 function run(file: string, args: string[], options: { cwd: string; input?: string }): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const child = execFile(file, args, { cwd: options.cwd, timeout: 60_000, maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -180,23 +173,21 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
     record('.gitignore', current === null ? 'created' : 'updated', settingsRel)
   }
 
-  // Playwright MCP for evidence capture, registered through the claude CLI at project scope.
-  const servers = await readMcpServers(repo)
-  if (servers !== null && 'playwright' in servers) {
-    record('.mcp.json', 'unchanged', 'playwright already registered')
+  // Playwright MCP for evidence capture, registered once for the user (all repos) through the claude CLI.
+  // `claude mcp get` answers for any scope and prints nothing we read, so ~/.claude.json is never opened here.
+  const claudeBin = options.claudeBin === undefined ? await findClaudeBin() : options.claudeBin
+  if (claudeBin === null) {
+    record(MCP_RECORD, 'skipped', 'claude binary not found')
+    messages.push(`claude binary not found; register the Playwright MCP yourself: claude ${MCP_ADD_ARGS.join(' ')}`)
+  } else if (await run(claudeBin, ['mcp', 'get', 'playwright'], { cwd: repo }).then(() => true, () => false)) {
+    record(MCP_RECORD, 'unchanged', 'playwright already registered')
   } else {
-    const claudeBin = options.claudeBin === undefined ? await findClaudeBin() : options.claudeBin
-    if (claudeBin === null) {
-      record('.mcp.json', 'skipped', 'claude binary not found')
-      messages.push(`claude binary not found; register the Playwright MCP yourself: claude ${MCP_ADD_ARGS.join(' ')}`)
-    } else {
-      try {
-        await run(claudeBin, MCP_ADD_ARGS, { cwd: repo })
-        record('.mcp.json', servers === null ? 'created' : 'updated', 'playwright')
-      } catch (error) {
-        record('.mcp.json', 'skipped', error instanceof Error ? error.message : String(error))
-        messages.push(`could not register the Playwright MCP: ${error instanceof Error ? error.message : String(error)}`)
-      }
+    try {
+      await run(claudeBin, MCP_ADD_ARGS, { cwd: repo })
+      record(MCP_RECORD, 'created', 'playwright (user scope)')
+    } catch (error) {
+      record(MCP_RECORD, 'skipped', error instanceof Error ? error.message : String(error))
+      messages.push(`could not register the Playwright MCP: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -209,6 +200,24 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
     '',
   ].join('\n')
   record(launcher, await writeIfChanged(launcher, launcherContent, 0o755))
+
+  // The skills and the hook say plain `ai-review`, which a Desktop or terminal session only finds on PATH.
+  const pathDir = options.pathDir === undefined ? path.join(os.homedir(), '.local', 'bin') : options.pathDir
+  if (pathDir !== null && (await stat(pathDir).then((s) => s.isDirectory(), () => false))) {
+    const link = path.join(pathDir, 'ai-review')
+    const current = await lstat(link).then(() => readlink(link).catch(() => null), () => undefined)
+    if (current === launcher) {
+      record(link, 'unchanged')
+    } else if (current === undefined) {
+      await symlink(launcher, link)
+      record(link, 'created', `-> ${launcher}`)
+    } else {
+      record(link, 'skipped', 'something else is already there')
+      messages.push(`${link} already exists and is not the review-dash launcher; put ${path.dirname(launcher)} on PATH instead`)
+    }
+  } else {
+    messages.push(`put ${path.dirname(launcher)} on PATH (or symlink ${launcher} into a PATH directory) so sessions can run ai-review`)
+  }
 
   const configFile = path.join(options.home, CONFIG_FILE)
   if (await exists(configFile)) {

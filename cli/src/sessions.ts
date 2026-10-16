@@ -80,6 +80,12 @@ export async function writeResolutions(dir: string, resolutions: Resolutions): P
   return valid
 }
 
+export async function writeReview(dir: string, review: Review): Promise<Review> {
+  const valid = ReviewSchema.parse(review)
+  await writeJsonAtomic(path.join(dir, REVIEW_FILE), valid)
+  return valid
+}
+
 /** Open comments = review comments whose latest event (agent resolution or reviewer mark) leaves them open. */
 export async function countOpenComments(dir: string, review: Review | null): Promise<number> {
   if (review === null) return 0
@@ -118,11 +124,11 @@ export async function sessionsForRepo(home: string, repoPath: string, branch: st
   return matches.sort((a, b) => (a.manifest.updatedAt < b.manifest.updatedAt ? 1 : a.manifest.updatedAt > b.manifest.updatedAt ? -1 : 0))
 }
 
-/** The latest session for (repo, branch) unless its review was sent with an approve decision. */
+/**
+ * The latest live session for (repo, branch), approved or not: file verdicts are pinned to content
+ * fingerprints, so after an approval only the files changed since come back for review. Archived
+ * sessions live under `archive/` and are never found here.
+ */
 export async function openSessionForBranch(home: string, repoPath: string, branch: string | null): Promise<SessionMatch | null> {
-  const latest = (await sessionsForRepo(home, repoPath, branch))[0]
-  if (latest === undefined) return null
-  const review = await readReview(latest.dir)
-  if (review?.sent?.decision === 'approve') return null
-  return latest
+  return (await sessionsForRepo(home, repoPath, branch))[0] ?? null
 }

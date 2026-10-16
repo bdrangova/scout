@@ -1,4 +1,4 @@
-import { access, lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { access, lstat, mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { ManifestSchema, SCHEMA_VERSION, type Manifest, type Resolutions, type Review } from '@review-dash/shared'
@@ -102,6 +102,39 @@ describe('init', () => {
     expect(fresh.reused).toBe(false)
     expect(fresh.id).not.toBe(first.id)
     expect(fresh.manifest.title).toBe('feature/x')
+  })
+
+  it('reuses an approved session with its file verdicts and comments, resetting only the decision; never an archived one', async () => {
+    const { repo } = await makeRepo(home)
+    const repoPath = (await gitText(repo, ['rev-parse', '--show-toplevel'])).trim()
+    const m = makeManifest({ id: '20260926-1000-a-aaaa', repo: { path: repoPath, remote: null, branch: 'feature/x', baseRef: 'origin/master' } })
+    const sent = { at: '2026-09-26T19:00:00.000Z', decision: 'approve' as const }
+    const files = { 'a.txt': { verdict: 'approved' as const, fingerprint: '0123456789abcdef', viewed: true } }
+    const comments = [makeComment({ id: 'c1', sentAt: sent.at, resolvedAt: sent.at })]
+    await writeSession(home, m, makeReview({ files, comments, overall: { decision: 'approve' }, sent }))
+
+    const reused = await initSession({ home, repo, now: new Date(T_NOW) })
+    expect(reused).toMatchObject({ id: m.id, reused: true })
+    const review = JSON.parse(await readFile(path.join(reused.dir, 'review', 'review.json'), 'utf8')) as Review
+    expect(review).toMatchObject({ files, comments, overall: { decision: 'undecided' }, sent, updatedAt: T_NOW })
+
+    await archiveSession({ home, id: m.id })
+    const fresh = await initSession({ home, repo, now: new Date(T_NOW) })
+    expect(fresh.reused).toBe(false)
+    expect(fresh.id).not.toBe(m.id)
+  })
+
+  it('keeps a request-changes decision when reusing', async () => {
+    const { repo } = await makeRepo(home)
+    const repoPath = (await gitText(repo, ['rev-parse', '--show-toplevel'])).trim()
+    const m = makeManifest({ id: '20260926-1000-a-aaaa', repo: { path: repoPath, remote: null, branch: 'feature/x', baseRef: 'origin/master' } })
+    const sent = { at: '2026-09-26T19:00:00.000Z', decision: 'request-changes' as const }
+    await writeSession(home, m, makeReview({ overall: { decision: 'request-changes' }, sent }))
+    const reused = await initSession({ home, repo, now: new Date(T_NOW) })
+    expect(reused.reused).toBe(true)
+    const review = JSON.parse(await readFile(path.join(reused.dir, 'review', 'review.json'), 'utf8')) as Review
+    expect(review.overall.decision).toBe('request-changes')
+    expect(review.updatedAt).not.toBe(T_NOW)
   })
 
   it('honours --base and rejects a base ref that does not exist', async () => {
@@ -334,7 +367,7 @@ describe('install', () => {
     const settingsFile = path.join(repo, '.claude', 'settings.local.json')
     await writeFile(settingsFile, JSON.stringify(existing, null, 2))
 
-    const first = await installIntoRepo({ home, repo, claudeBin: null, cliBundle: '/opt/review-dash/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
+    const first = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/opt/review-dash/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
     expect(first.changed).toBe(true)
     const actions = Object.fromEntries(first.changes.map((c) => [c.path, c.action]))
     expect(actions['.claude/skills/publish-review/SKILL.md']).toBe('created')
@@ -342,7 +375,7 @@ describe('install', () => {
     expect(actions['.claude/hooks/ai_review_pending_feedback.sh']).toBe('created')
     expect(actions['.claude/settings.local.json']).toBe('updated')
     expect(actions['.gitignore']).toBe('created')
-    expect(actions['.mcp.json']).toBe('skipped')
+    expect(actions['claude mcp (user)']).toBe('skipped')
     expect(first.messages.join('\n')).toContain(`claude ${MCP_ADD_ARGS.join(' ')}`)
     expect(await exists(path.join(repo, '.claude', 'hooks', 'ai_review_publish_nudge.sh'))).toBe(false)
 
@@ -366,6 +399,8 @@ describe('install', () => {
     expect(apply).toContain('!`ai-review feedback $ARGUMENTS --format markdown`')
     expect(apply).toContain('ai-review resolve <sessionId> --comment c<n> --status resolved')
     expect(apply).not.toMatch(/republish/i)
+    expect(apply).toMatch(/Decision: \*\*APPROVE\*\*/)
+    expect(apply).toContain('Bash(gh pr create *)')
     const launcher = await readFile(path.join(home, 'bin', 'ai-review'), 'utf8')
     expect(launcher).toContain('exec "/opt/node/bin/node" "/opt/review-dash/cli/dist/index.js" "$@"')
     expect(JSON.parse(await readFile(path.join(home, 'config.json'), 'utf8'))).toEqual({ port: 4546 })
@@ -373,21 +408,51 @@ describe('install', () => {
     expect(await exists(path.join(repo, '.git', 'ai-review'))).toBe(true)
 
     const before = await readFile(settingsFile, 'utf8')
-    const second = await installIntoRepo({ home, repo, claudeBin: null, cliBundle: '/opt/review-dash/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
+    const second = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/opt/review-dash/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
     expect(second.changed).toBe(false)
     expect(second.changes.every((c) => c.action === 'unchanged' || c.action === 'skipped')).toBe(true)
     expect(await readFile(settingsFile, 'utf8')).toBe(before)
     expect(await readFile(path.join(repo, '.gitignore'), 'utf8')).toBe('.claude/settings.local.json\n')
   })
 
-  it('skips the MCP step when .mcp.json already has playwright', async () => {
+  it('registers the Playwright MCP at user scope once, and skips it when claude already knows it', async () => {
     const repo = path.join(home, 'repo')
     await mkdir(repo)
     await gitText(home, ['init', '-q', '-b', 'main', repo])
-    await writeFile(path.join(repo, '.mcp.json'), JSON.stringify({ mcpServers: { playwright: { command: 'npx' } } }))
-    const result = await installIntoRepo({ home, repo, claudeBin: null, cliBundle: '/b', nodeBin: '/n' })
-    expect(result.changes.find((c) => c.path === '.mcp.json')).toEqual({ path: '.mcp.json', action: 'unchanged', note: 'playwright already registered' })
-    expect(result.messages).toEqual([])
+    const log = path.join(home, 'claude.log')
+    const claude = path.join(home, 'claude')
+    await writeFile(claude, `#!/bin/sh\necho "$@" >> "${log}"\n[ "$1 $2" = "mcp get" ] && [ -f "${home}/registered" ] && exit 0\n[ "$1 $2" = "mcp get" ] && exit 1\ntouch "${home}/registered"\n`, { mode: 0o755 })
+    const opts = { home, repo, claudeBin: claude, pathDir: null, cliBundle: '/b', nodeBin: '/n' }
+
+    const first = await installIntoRepo(opts)
+    expect(first.changes.find((c) => c.path === 'claude mcp (user)')).toMatchObject({ action: 'created' })
+    expect(await readFile(log, 'utf8')).toContain('mcp add --scope user playwright')
+    expect(await exists(path.join(repo, '.mcp.json'))).toBe(false)
+
+    const second = await installIntoRepo(opts)
+    expect(second.changes.find((c) => c.path === 'claude mcp (user)')).toEqual({ path: 'claude mcp (user)', action: 'unchanged', note: 'playwright already registered' })
+    expect((await readFile(log, 'utf8')).match(/mcp add/g)).toHaveLength(1)
+  })
+
+  it('links ai-review into a PATH directory, idempotently, and never replaces another file', async () => {
+    const repo = path.join(home, 'repo')
+    const pathDir = path.join(home, 'localbin')
+    await mkdir(repo)
+    await mkdir(pathDir)
+    await gitText(home, ['init', '-q', '-b', 'main', repo])
+    const opts = { home, repo, claudeBin: null, pathDir, cliBundle: '/b', nodeBin: '/n' }
+    const link = path.join(pathDir, 'ai-review')
+
+    const first = await installIntoRepo(opts)
+    expect(first.changes.find((c) => c.path === link)).toMatchObject({ action: 'created' })
+    expect(await readlink(link)).toBe(path.join(home, 'bin', 'ai-review'))
+    expect((await installIntoRepo(opts)).changes.find((c) => c.path === link)).toEqual({ path: link, action: 'unchanged' })
+
+    await rm(link)
+    await writeFile(link, 'mine')
+    const third = await installIntoRepo(opts)
+    expect(third.changes.find((c) => c.path === link)).toMatchObject({ action: 'skipped' })
+    expect(await readFile(link, 'utf8')).toBe('mine')
   })
 })
 

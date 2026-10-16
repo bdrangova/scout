@@ -6,7 +6,7 @@ import type { Command } from 'commander'
 import { SCHEMA_VERSION, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR, type Manifest } from '@review-dash/shared'
 import { currentBranch, defaultBase, refExists, remoteUrl, topLevel } from '@review-dash/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
-import { openSessionForBranch } from '../sessions.ts'
+import { openSessionForBranch, readReview, writeReview } from '../sessions.ts'
 import { newSessionId, resolveHome, sessionDir, writeManifest } from '../store.ts'
 
 /** Folders created under the session so the agent can write into them right away. */
@@ -21,7 +21,7 @@ export interface InitOptions {
   /** Base ref name; default `defaultBase(repo)` (origin/master → master → origin/main → main → origin/HEAD). */
   base?: string | null
   agentSession?: string | null
-  /** Always create a new session instead of reusing the open one for this branch. */
+  /** Always create a new session instead of reusing the latest one for this branch. */
   fresh?: boolean
   now?: Date
 }
@@ -31,7 +31,7 @@ export interface InitResult {
   dir: string
   url: string
   manifest: Manifest
-  /** True when the open session for (repo, branch) was reused and its manifest refreshed. */
+  /** True when the latest session for (repo, branch) was reused and its manifest refreshed. */
   reused: boolean
 }
 
@@ -48,6 +48,17 @@ function defaultTitle(tickets: Manifest['tickets'], branch: string | null): stri
   const subject = branch ?? 'review'
   const key = tickets[0]?.key
   return key === undefined ? subject : `${key}: ${subject}`
+}
+
+/**
+ * Reusing a session after an approval: the reviewer decides again, so the overall decision goes back
+ * to undecided. File verdicts, comments and resolutions stay; `effectiveVerdict` drops the verdicts of
+ * files whose content changed since.
+ */
+async function resetApprovedDecision(dir: string, now: string): Promise<void> {
+  const review = await readReview(dir)
+  if (review === null || review.sent?.decision !== 'approve' || review.overall.decision === 'undecided') return
+  await writeReview(dir, { ...review, overall: { decision: 'undecided' }, updatedAt: now })
 }
 
 export async function initSession(options: InitOptions): Promise<InitResult> {
@@ -86,6 +97,7 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
     tickets,
   }
   const written = await writeManifest(dir, manifest)
+  if (open !== null) await resetApprovedDecision(open.dir, now)
   const url = dashboardUrl(await readConfig(options.home), id)
   return { id, dir, url, manifest: written, reused: previous !== null }
 }
@@ -103,12 +115,12 @@ interface InitFlags {
 export function registerInit(program: Command): void {
   program
     .command('init')
-    .description('Create a review session for a repository, or refresh the open one for this branch; prints id, folder and URL')
+    .description('Create a review session for a repository, or refresh the latest one for this branch; prints id, folder and URL')
     .requiredOption('--repo <path>', 'path inside the repository')
     .option('--base <ref>', 'base ref (default: origin/master, master, origin/main, main, then origin/HEAD)')
     .option('--title <title>', 'session title, e.g. "QI-15472: Trial bar"')
     .option('--ticket <KEY[=url]>', 'ticket key with an optional URL (repeatable)', (value: string, previous: string[] = []) => [...previous, value])
-    .option('--new', 'always create a new session instead of reusing the open one for this branch')
+    .option('--new', 'always create a new session instead of reusing the latest one for this branch')
     .option('--agent-session <id>', 'Claude Code session id')
     .option('--format <format>', 'json | brief', 'json')
     .action(async (flags: InitFlags) => {
