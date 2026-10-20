@@ -74,6 +74,7 @@ function contextValue(dispatch = vi.fn(), draft = '', comments: CommentWithStatu
     fileReview: (p) => review.files[p] ?? null,
     draftFor: () => draft,
     setDraft: () => {},
+    unsavedDrafts: [],
     setVerdict: (path, verdict, fingerprint) => {
       dispatch({ type: 'SET_VERDICT', path, verdict, fingerprint })
       return false
@@ -81,6 +82,7 @@ function contextValue(dispatch = vi.fn(), draft = '', comments: CommentWithStatu
     progress: progress(review, { ...treeFixture, files: [changed, untouched] }),
     resolutions: null,
     saveStatus: 'idle',
+    flushSave: () => Promise.resolve(true),
     reload: () => {},
   }
 }
@@ -111,7 +113,7 @@ describe('FileReviewCard', () => {
   it('shows the "updated" chip and drops the stale verdict for a file that changed on disk since', () => {
     render(card(changed))
     const article = screen.getByRole('article', { name: changed.path })
-    expect(screen.getByText('updated')).toBeInTheDocument()
+    expect(screen.getByText('updated since sent')).toBeInTheDocument()
     expect(article).toHaveAttribute('data-verdict', 'none')
     expect(screen.getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'false')
   })
@@ -143,7 +145,7 @@ describe('FileReviewCard', () => {
     expect(useFilePatchMock).toHaveBeenLastCalledWith(SESSION_ID, untouched.path, expect.objectContaining({ fingerprint: moved.fingerprint }))
     // The verdict was pinned to the old fingerprint: it no longer counts.
     expect(article).toHaveAttribute('data-verdict', 'none')
-    expect(screen.getByText('updated')).toBeInTheDocument()
+    expect(screen.getByText('updated since sent')).toBeInTheDocument()
 
     act(() => {
       vi.advanceTimersByTime(CHANGED_PULSE_MS + 10)
@@ -192,12 +194,12 @@ describe('FileReviewCard', () => {
 
     it('offers Preview only for markdown files', () => {
       const { unmount } = render(card(untouched))
-      expect(screen.queryByRole('button', { name: 'preview' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Preview' })).not.toBeInTheDocument()
       unmount()
       render(card(readme))
       const group = screen.getByRole('group', { name: 'Diff layout' })
-      expect(group).toHaveTextContent('unifiedsplitpreview')
-      expect(screen.getByRole('button', { name: 'preview' })).toHaveAttribute('aria-pressed', 'false')
+      expect(within(group).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Unified diff', 'Split diff', 'Preview'])
+      expect(screen.getByRole('button', { name: 'Preview' })).toHaveAttribute('aria-pressed', 'false')
     })
 
     it('fetches the after side, renders the markdown and switches back to the diff', async () => {
@@ -206,15 +208,15 @@ describe('FileReviewCard', () => {
       render(card(readme))
       expect(screen.getByTestId('patch-diff')).toBeInTheDocument()
 
-      await userEvent.click(screen.getByRole('button', { name: 'preview' }))
-      expect(screen.getByRole('button', { name: 'preview' })).toHaveAttribute('aria-pressed', 'true')
+      await userEvent.click(screen.getByRole('button', { name: 'Preview' }))
+      expect(screen.getByRole('button', { name: 'Preview' })).toHaveAttribute('aria-pressed', 'true')
       expect(fetchMock.mock.calls[0]?.[0]).toBe(`/api/sessions/${SESSION_ID}/files/docs/readme.md/contents?side=after`)
       expect(await screen.findByRole('heading', { level: 1, name: 'Title' })).toBeInTheDocument()
       expect(screen.getByRole('table')).toBeInTheDocument()
       expect(screen.getByText('Rendered after side ·')).toBeInTheDocument()
       expect(screen.queryByTestId('patch-diff')).not.toBeInTheDocument()
 
-      await userEvent.click(screen.getByRole('button', { name: 'unified' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Unified diff' }))
       expect(screen.getByTestId('patch-diff')).toBeInTheDocument()
       expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument()
     })
@@ -224,7 +226,7 @@ describe('FileReviewCard', () => {
       vi.stubGlobal('fetch', fetchMock)
       const deleted = makeTreeFile({ path: 'docs/old.md', status: 'deleted', additions: 0, deletions: 9, sizeBefore: 300, sizeAfter: null })
       render(card(deleted))
-      await userEvent.click(screen.getByRole('button', { name: 'preview' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Preview' }))
       expect(fetchMock.mock.calls[0]?.[0]).toBe(`/api/sessions/${SESSION_ID}/files/docs/old.md/contents?side=before`)
       expect(await screen.findByRole('heading', { level: 1, name: 'Gone' })).toBeInTheDocument()
       expect(screen.getByText('Rendered before side (deleted) ·')).toBeInTheDocument()
@@ -237,7 +239,7 @@ describe('FileReviewCard', () => {
         .mockResolvedValueOnce(markdownResponse('# Back'))
       vi.stubGlobal('fetch', fetchMock)
       render(card(readme))
-      await userEvent.click(screen.getByRole('button', { name: 'preview' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Preview' }))
       expect(await screen.findByText("Couldn't load this preview")).toBeInTheDocument()
       await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
       expect(await screen.findByRole('heading', { level: 1, name: 'Back' })).toBeInTheDocument()

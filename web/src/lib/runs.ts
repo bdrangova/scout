@@ -14,6 +14,18 @@ export const SEND_TARGET_LABELS: Record<SendTarget, string> = {
   new: 'New session',
 }
 
+export const DECISION_LABELS: Record<Exclude<Decision, 'undecided'>, string> = {
+  approve: 'Approve',
+  'request-changes': 'Request changes',
+  reject: 'Reject',
+}
+
+/** What each target does, shown under its name in the send menu. */
+export const SEND_TARGET_HINTS: Record<SendTarget, string> = {
+  current: 'Continue the Claude Code session that wrote this',
+  new: 'Open a fresh Claude Desktop session',
+}
+
 export type SessionOrigin = 'desktop' | 'cli' | 'other'
 
 /**
@@ -75,14 +87,6 @@ export function describeApiError(reason: unknown): string {
     return reason.message
   }
   return reason instanceof Error ? reason.message : String(reason)
-}
-
-export const RUN_STATUS_LABELS: Record<AgentRunStatus, string> = {
-  queued: 'queued',
-  running: 'running',
-  succeeded: 'succeeded',
-  failed: 'failed',
-  cancelled: 'cancelled',
 }
 
 export function isRunActive(status: AgentRunStatus): boolean {

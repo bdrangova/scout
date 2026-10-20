@@ -1,0 +1,108 @@
+# review-dash design contract — "fine border retro"
+
+Source of truth: `design/retro/base-core.css` + `base-ext.css` (previews in `design/retro/previews`).
+Everything below is implemented in `web/src/index.css`, `web/src/components/ui/*`, `web/src/lib/*`, `web/src/theme/*`.
+Gallery of every primitive in both themes: run the dev server and open `/__kit`.
+
+## Element language
+- **Actions are raised**: fill + 1.5px line + hard 2px shadow; they lift on hover and press on `:active` (`Button`).
+- **Choosers are flat**: line only, the selected item is filled ink (`Segmented`, `Pill`).
+- **Notices are tinted** with a round solid icon, never clickable (`Notice`).
+- **Tags/chips are tiny flat labels** (`Tag`); counts are round `Badge`s.
+- **Panels are the only big surfaces**: 14px radius, 1.5px line, **no shadow**. Cards in a page body (Panel, ContentCard, FileReviewCard, tiles, notices, list rows) are flat; only raised buttons, floating overlays (menu, tooltip, dialog, toast, drawer) and the verdict stamp keep the hard shadow.
+- Light = warm paper + yellow header. Dark = indigo paper; "yellow" *becomes blue* in dark, so never hard-code either.
+
+## Tokens (CSS variables on `:root` / `.dark`, Tailwind utilities via `@theme inline`)
+| Role | Variable | Tailwind |
+|---|---|---|
+| Surfaces | `--paper` `--paper-2` `--surface` `--sunken` `--code-bg` | `bg-paper` `bg-paper-2` `bg-surface` `bg-sunken` `bg-code` |
+| Text | `--ink` `--ink-muted` | `text-ink` `text-ink-muted` |
+| Lines/shadow | `--line` `--fill-line` (outline on pastel fills) `--sh` `--hover` | `border-line` `border-fill-line` `bg-hover` |
+| Header | `--hdr-bg` `--hdr-ink` `--hdr-chip` `--hdr-h` (68px, the sessions list band) `--shell-h` (52px, the session bar) | `bg-hdr` `text-hdr-ink` `bg-hdr-chip` `h-hdr` / `min-h-hdr` |
+| Accents | `--yellow`/`--on-yellow` `--blue`/`--on-blue` `--pink` `--cyan` `--coral` `--red` `--red-solid`/`--on-red` `--green` `--mint` | `bg-yellow text-on-yellow` … `bg-mint` |
+| Notice tints | `--{warn,info,ok,err}-{bg,bd,ic}` | `bg-warn-bg border-warn-bd/50` … |
+| Status dots | `--st-a` (ok) `--st-m` (warn) `--st-r` (info) `--st-d` (err) | `bg-st-a` … `text-st-d` |
+| Session states | `--st-{awaiting,progress,ready,changes,working,updated,approved,failed}` (+ derived `-bg` tint in `@theme`); text/border/icon, >= 4.5:1 on paper | `text-st-changes` `bg-st-changes-bg` `border-st-changes` |
+| Diff | `--diff-add` `--diff-add-gutter` `--diff-del` `--diff-del-gutter` | `bg-diff-add` … |
+| Syntax | `--tk-k` `--tk-s` `--tk-f` `--tk-t` `--tk-n` `--tk-p` `--tk-i` | classes `tk-k` … `tk-i` |
+| Deck peeks | `--peek-a` `--peek-b` | `bg-peek-a` `bg-peek-b` |
+| File types | `--ft-{ts,js,react,yaml,json,css,other}`; `.ft-*` sets `--ft` | `ft-react bg-ft` / `text-ft` / `border-ft` |
+| Focus | `--focus` (also `--ring`) | `outline-focus`, global `:focus-visible` 3px |
+| Verdicts (legacy names) | `--approve`=green `--reject`=red `--info`=st-r `--warn`=st-m | `text-approve` … |
+| shadcn aliases | background/foreground/card/popover/primary(yellow)/secondary(paper-2)/muted(sunken)/muted-foreground(ink-muted)/accent(ink)/destructive(red)/border/input/ring | keep working, prefer design names |
+
+Radii: `rounded-sm` 6 (tag) · `md` 8 (chip/kbd/notice) · `lg` 10 (seg/sm button) · `xl` 12 (button/field) · `2xl` 14 (panel) · `3xl` 18 (peek) · `full` (pill).
+Shadows (hard, `--sh`): `shadow-kbd` 1px · `shadow-icon` 1.5px · `shadow-raised` 2px (buttons, stamps) · `shadow-panel` 4px / `shadow-card` 6px (floating overlays only, never a card in the page body).
+Custom utilities: `border-fine` (+ `border-{t,b,l,r}-fine`) = 1.5px width; `press` = hover lift / active push.
+Fonts: `font-sans` Space Grotesk Variable (UI, also `kbd`), `font-mono` Geist Mono Variable (paths, hashes, code).
+
+## Primitives (`@/components/ui/*`, all take `className`, set `data-slot`)
+```tsx
+<Button variant="default|primary|approve|reject|ghost|link" size="default|sm|icon|icon-sm">Send</Button>
+<Button size="icon" aria-label="Settings" title="Settings"><SettingsIcon /></Button>   // icon-only: BOTH attrs
+<Panel><PanelHeader><PanelTitle>Spec</PanelTitle><Badge className="ml-auto">4</Badge></PanelHeader><PanelBody/><PanelFooter/></Panel>
+<Notice tone="info|warn|ok|err" icon={<RefreshCwIcon/>}>Updated · 2 open comments</Notice>  // role=status, err → alert; icon={null} to drop it
+<Tag tone="neutral|info|warn|ok|err" | "yellow|mint|coral|blue|pink|sunken" size="sm" mono pill icon>…</Tag>
+<Badge variant="default(pink)|ink|neutral|yellow|coral">12</Badge>
+<Segmented aria-label="View" variant="seg|pills"><SegmentedItem pressed={on} count={3} onClick={…}>Deck</SegmentedItem></Segmented>
+<Pill pressed={false} count={0}><ArchiveIcon/> Archived</Pill>
+<StatusDot tone="ok|warn|info|err|neutral" size="sm|default|lg" pulse label="Claude Code working" />
+<Eyebrow as="h3">Navigation</Eyebrow>   // @/components/common: uppercase 11px group label (also PageHeader, EmptyState, IconCount, AsyncBoundary live there)
+<Kbd>J</Kbd> <KbdGroup>…</KbdGroup>
+<Tooltip><TooltipTrigger render={<Button/>}>…</TooltipTrigger><TooltipContent>Next <Kbd>J</Kbd></TooltipContent></Tooltip>  // inside <TooltipProvider>
+<Dialog><DialogTrigger render={<Button/>}/><DialogContent><DialogHeader><DialogTitle/><DialogDescription/></DialogHeader><DialogFooter showCloseButton/></DialogContent></Dialog>
+<Input aria-label="Filter files" /> <Textarea />
+<Menu><MenuTrigger render={<Button size="sm"/>}>Types</MenuTrigger><MenuContent><MenuLabel/><MenuCheckboxItem checked onCheckedChange/><MenuSeparator/><MenuItem/></MenuContent></Menu>
+<Progress value={n} max={total} aria-label="Review progress"><ProgressLabel/><ProgressValue/></Progress>  // coral, green when complete
+<FileTypeDot type={fileTypeOf(path).id} size="sm" />
+```
+
+## Domain helpers (`@/lib`)
+- `file-type.ts`: `fileTypeOf(path)` → `{ id, label, exts }`, `FILE_TYPES`, `fileTypeClass(id)` → `"ft-ts"`. Put the class on the element whose children use `bg-ft`.
+- `status-tone.ts`: `STATUS_TONE.session(s) / .file(s) / .run(s) / .verdict(v)` → `{ tone, label, pulse }`; `TONE_TEXT_CLASS`. Feed `tone`/`pulse`/`label` straight into `StatusDot`. `session(s)` also returns `hue`, `icon`, `textClass`, `fillClass` and `noticeClass`: the list pill, filter chips, rail notice, legend, Submit bar and tab badges all read them, never their own maps.
+- **Session lifecycle vocabulary** (one meaning each, one icon and hue each): Awaiting review (slate, dashed circle) → In progress (teal, checklist) → Ready to submit (green outline, clipboard; all files reviewed, nothing sent, even if all approved) → Changes sent (violet, send; Request changes/Reject went out, `lastSend` has the decision) → Updated since sent (amber, refresh; re-review) → Approved (solid green, check; only ever the result of sending Approve with every file still approved). Plain "Sent" no longer exists. The list chips are one per review state.
+- **Run chips** (decided): "Agent working" (blue, bot, live dot) and "Run failed" (red, alert) are NOT review states and there is no combined state. The review pill always shows the review state as it would without the run (`reviewStatusOf` for list summaries, rebuilt from lastSend/progress; `useSessionSummary().status` exactly) and `RunChip` sits beside it (`runChipOf(summary.status)`, `useSessionSummary().run`): a sent-back session being worked on reads `Changes sent` + `Agent working`, a failed run `Changes sent` + `Run failed`. The failed chip in the rail links to Submit; the tab badge on Submit still shows the failure. No announcement (role=alert) for either. A list session with a run is filed under its review filter. If Approve was sent but a file stopped being approved, the shared status is `sent`: the pill says "Changes sent · Approve, not all files approved". There is no PR chip in the rail or the mobile drawer (only the PR tab in the bar). `statusPill` adds the decision ("Changes sent · Request changes") to the tooltip/accessible name.
+- `verdict.ts`: `VERDICT_STYLE[approved|rejected|commented|none]` → `{ label, icon, className, tagClassName }`; `verdictKind(verdict, openComments)`.
+- `utils.ts`: `cn()` (clsx + tailwind-merge, knows `border-fine`). Always import from `@/lib/utils`.
+- Theme: `@/theme` exports `ThemeProvider` (mounted in `main.tsx`), `useTheme()` → `{ theme, resolved, setTheme }`, `ThemeToggle`.
+
+## Session shell (`components/layout`, `pages/SessionLayout.tsx`)
+Every session page is `SessionBar` (52px, sticky, `--shell-h`) over `SessionRail` (296px, sticky under the bar) beside the page (`<Outlet/>`). `SessionShell` composes them; `SessionLayout` only loads the session.
+- **Bar**: sidebar toggle (leftmost, `B`, wears `reviewed/total` while the rail is closed), Sessions, `SectionTabs` (Submit: open comments, green + check when ready, red + alert when the last run failed), Swipe/Grid (Files only), Shortcuts, theme, `BarMenu` (Archive with an Undo toast; below 1024px also Shortcuts and Theme). No identity, no status. Below 1024px inactive tabs are icons; below 520px Sessions moves into the menu. Error pages use `SessionErrorBar` (Sessions + id).
+- **Rail**: `RailIdentity` (the density chevron first, then every ticket on one row that scrolls sideways with a fading clipped edge, title, repo, branches; the title alone when compact), `RailReview` (verdict-split `VerdictBar`, counts, `SessionStatusNotice`, suggested decision from `suggestDecision`: Approve once every file is approved, Request changes once one is rejected, otherwise "none yet"), then the page's block. Density (roomy/compact) is `useRailDensity('files' | 'other')`, remembered per group in `localStorage` (Files defaults to compact). At 1024px and up the toggle collapses the rail (`useSidebarOpen`, shared through `SidebarProvider`/`useSidebar`); below, it is a left drawer (scrim, Esc, closes on navigation).
+- **Page blocks**: a page fills the rail's bottom block by rendering `<RailSection>…</RailSection>` (`RailSlot.tsx`), so the block shares the page's state; it renders nothing while the rail is closed and unmounts with the page. Files: `FilesRailSection` (the tree; its header has the same fold chevron at the front, remembered by `useTreeCollapsed`). Submit: the rail shows what will be sent and the runs; the page shows the Previous runs panel only while the rail is closed. Not-indexed rows are not implemented. Phase 2 pages do the same (`<RailSection><SpecSources …/></RailSection>`); give the block `flex min-h-0 flex-1 flex-col` and its own padding and scroll.
+- **Landing**: `/s/:id` (the session list links here) renders `SessionIndexRedirect` inside the review provider and replaces itself with `landingSection(detail, review, resolutions)` (`lib/landing-section.ts`): Submit once every file is reviewed, or when sent/failed/running with no open comments; untouched sessions open the first of Spec, Extras, Evidence, Files with content; started ones open Files, or the first of Spec/Extras/Evidence with open comments when no file is touched. Deep links are not redirected.
+- **Numbers** come from `useSessionSummary()` (status, progress, open comments, verdict counts, suggestion); never recompute them in a component.
+- **Timeline** (`CommitTimeline`) is the first thing in the Files page column, flush on the page background (no band); the Files `<main>` is `h-[calc(100dvh-var(--shell-h))]`.
+- Tests: `renderShell(path, { review, detail, page })` from `@/test/render-shell` renders bar + rail + a page with a fixed review.
+
+## GitHub PR comments (`components/prcomments`, `state/pr-comments-context.ts`)
+
+`PrCommentsProvider` (mounted in `SessionLayout`) loads `GET /api/sessions/:id/pr-comments` and refetches on the SSE event `pr-comments.updated`; `usePrComments()` (from `@/state/pr-comments-context`) returns `{ pr, counts, comments, threads, threadsFor(path), fileCounts, loading, error, reload }` and an empty value (never throws) where no provider is mounted, so Submit (`OpenComments`) reuses it as is. `threads` are `PrThread = { root, replies }` (`@/lib/pr-threads`: `groupPrThreads`, `threadsForPath`, `prCountsByPath`, `placePrThreads`). External comments never enter `useReview()`, the verdicts, Open comments or progress.
+- `PrCommentCard` (one thread: author with avatar and Copilot/Bot marker or person initials, relative time, status chip (icon + word for open and outdated; icon only with an `sr-only` word for addressed and declined), markdown body with "Show more" past ~7 lines, nested replies, the agent's note with commit sha, "View on GitHub") inside `PrThreadList`; status edge/tone/tint from `pr-status.ts`: an addressed card gets a `bg-ok-bg/40` wash and a declined one `bg-err-bg/40` (the `VerdictOverlay` tokens, `pointer-events-none`), so status reads by colour (open warn, addressed ok, declined err, outdated neutral, no wash; "Resolved on GitHub" / "Deleted on GitHub" are outdated with the reason).
+- Third-party markdown: every GitHub comment body is `<Markdown variant="untrusted">` (trusted authors too). Links open a Dialog confirmation showing the full URL (Streamdown `linkSafety` + `renderModal`), carry the host in their text, `noreferrer`, http/https/mailto only; images load only from github.com and `*.githubusercontent.com` (`referrerPolicy=no-referrer`), anything else shows as "image blocked: host"; raw HTML is dropped (no `rehype-raw`, sanitize + harden configured explicitly); no mermaid. The default variant stays for the agent's own docs.
+- On Submit there is no GitHub section: `OpenComments` adds the PR threads to its own groups (`commentSections(..., prThreads)`: file threads join the file's group under Files, threads with no file form "On the pull request" under Overall) through `GithubThreadItem` (the shared card plus an "In Files" link). Open threads show; addressed, declined and outdated ones count as resolved and hide behind "Show n resolved", except an answered thread whose reply still needs the reviewer (`needsReplyReview`: an unaccepted proposal or an unposted draft), which stays in the list until posted. The header counts only threads still open on GitHub as open; the toggle's number is the hidden ones. Their text never changes the suggested decision or the review's counts; only the reply drafts below join Will be sent. There is no "In last send" tag, group or count in the UI.
+- In a card: `FileReviewCard` provides `PrAnnotationsContext`; `FileDiffView` hangs threads under their `anchor` line (`PrAnnotation`, same panel as `LineAnnotation`) and reports the placed ids; everything else (outdated, file-level, line not in the diff, no text diff) goes to the footer `PrFooterGroup` "PR comments". Header chip `PrCardChip` ("N PR comments · M open"); `PrCount` (icon + number, bold when something is open) on tree rows and grid tiles; the rail's `PrFileFilter` "All files | GitHub comments n" narrows the tree (only shown when a listed file has threads).
+
+### Reply box (`PrReplyBox`, `state/usePrReplyDraft.ts`, `lib/pr-replies.ts`)
+The last row of a thread root's card (`border-t-fine`, same `Textarea` as the composers, `rounded-lg`, `text-[13px]`). Replies inside a thread, outdated threads, and answered threads with neither a proposal nor a draft have none. Hotkeys stay off while typing (`isTypingTarget`); Esc blurs, blur saves at once.
+- Open, no draft: a dashed "Tell Claude what to do…" trigger (`CommentBox` collapsed look) that opens the textarea ("Instruction for Claude · sent with your next submit").
+- Open or answered with a draft, not posted: the draft in the textarea, kind label ("Instruction…" or "Reply to post on GitHub · posted when you submit"), a `Tag tone="info"` "Queued" chip, and a tiny "Saving…/Saved/Not saved" at the right. Text autosaves 250 ms after the last keystroke (`PUT /pr-replies/:id`; blank deletes the draft). `PrCommentsProvider` keeps a registry of the boxes' flush functions and `useSendReview` awaits `flushReplies()` next to the review's `flushSave()`, so a reply typed just before Submit is in the snapshot.
+- Answered with a proposal and no draft: the proposal fills the textarea ("Proposed reply from Claude", "Not queued yet" hint). It is not a draft, so not sent, until "Use this reply" (a plain button: Submit keeps the screen's one primary) or an edit saves it.
+- Posted (`draftReply.postedAt`): read-only quote with a green "Posted to GitHub" tag and the time; no textarea.
+- No Dismiss action: dismissing a proposal cannot be persisted (a blank save is a no-op without a draft), so the proposal stays until accepted or posted.
+- Will be sent shows "Instructions n" and "PR replies n" (`queuedReplyCounts`, same rules as the server snapshot); with only drafts to send, Submit is enabled without a decision.
+
+## Rules
+1. Tokens, never hex or Tailwind palette colours (`bg-white`, `text-gray-500`, `text-white` are all wrong — use `text-paper`, `text-on-yellow`, `text-hdr-ink`).
+2. Borders are `border-fine border-line`; on a pastel fill use `border-fill-line`. No `ring-1 ring-foreground/10`, no soft blurred shadows.
+3. Icon-only controls need `aria-label` **and** `title`; decorative icons get `aria-hidden`. Icons default to 16px (`size-4`), 2.5 stroke in tags/notices.
+4. One `variant="primary"` button per screen. Destructive = `reject`. Flat toolbar icons = `ghost`.
+5. Selected state = ink fill + paper text (`Segmented`); current row = yellow fill + `text-on-yellow` (never `bg-yellow text-ink`).
+6. Status colour comes from `STATUS_TONE`, file accents from `fileTypeOf`; do not invent per-screen maps.
+7. Mono (`font-mono`) for paths, branches, hashes, counts in code; sans everywhere else, `tabular-nums` for numbers.
+8. Dark mode is automatic through tokens; never write `dark:` overrides for colour, only for things tokens cannot express.
+9. Keep `data-slot` on new primitives; tests select by role/label, not by class.
+
+## Unsaved comment drafts on Submit
+Text typed in a composer and not added is not sent. `ReviewProvider` keeps every composer draft in memory by key (`draftKey`: a file's plain path, `spec::`/`extra::`/`evidence::` + item path for the artifact cards; `TargetComments` and `EvidenceComments` use it like the file card does), so it survives moving between pages and `useReview().unsavedDrafts` lists the non-blank ones. Submit shows `UnsavedDraftsNotice` (warn `Notice`, "N comments typed but not added" with a link per file/item, `../files/<path>`) in the send bar and in the rail's Will be sent block. A warning, never a block; nothing is auto-added. Not covered: line comment boxes (they close when the page is left, their text goes with them), the overall feedback box and PR reply boxes (the latter autosave). A reload or a send (which remounts the provider) clears the drafts.

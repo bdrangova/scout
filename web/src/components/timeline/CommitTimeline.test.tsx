@@ -24,7 +24,7 @@ function renderTimeline(overrides: Partial<CommitTimelineProps> = {}) {
 }
 
 describe('CommitTimeline', () => {
-  it('shows the Full diff node first, one node per commit oldest first, the uncommitted node and the ahead count', () => {
+  it('shows the Full diff node first, one node per commit oldest first and the uncommitted node, with no remote pill', () => {
     renderTimeline()
     const strip = screen.getByTestId('commit-strip')
     const buttons = within(strip).getAllByRole('button')
@@ -37,35 +37,40 @@ describe('CommitTimeline', () => {
     ])
     expect(buttons[0]).toHaveAttribute('aria-pressed', 'true')
     expect(buttons[0]).toHaveAttribute('data-scope', 'full')
-    expect(buttons[0]?.querySelector('.bg-foreground')).not.toBeNull()
-    expect(within(strip).getByText('Full diff')).toHaveClass('font-semibold')
+    expect(buttons[0]?.querySelector('.bg-ink')).not.toBeNull()
+    expect(within(strip).getByText('Full diff')).toHaveClass('font-bold')
     expect(within(strip).getByText('6 files +272 −51')).toBeInTheDocument()
     expect(within(strip).getByText(truncateSubject('add shell breadcrumb/title helpers, wire up BasePage'))).toBeInTheDocument()
     expect(within(strip).getByText('2 files')).toBeInTheDocument()
-    // No branch chip and no "behind" arrow at zero: just the ahead count, naming the remote in its tooltip.
+    // No branch chip and no ahead/behind pill: the pushed icon on each node carries the remote state.
     expect(screen.queryByText(/origin\//)).not.toBeInTheDocument()
-    expect(screen.getByLabelText('1 commit not on origin/bojana-QI-15472-trial-bar')).toHaveTextContent('1')
+    expect(screen.queryByLabelText(/not on origin/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/not here$/)).not.toBeInTheDocument()
   })
 
-  it('shows the behind arrow once the remote has commits this branch lacks', () => {
-    renderTimeline({ list: makeCommitList({ remote: { ref: 'origin/x', ahead: 0, behind: 2 } }) })
-    expect(screen.getByLabelText('0 commits not on origin/x')).toHaveTextContent('0')
-    expect(screen.getByLabelText('2 commits on origin/x not here')).toHaveTextContent('2')
+  it('marks a strip of two nodes or fewer as compact (one line at narrow widths) and a longer one not', () => {
+    const { rerender } = renderTimeline({ list: makeCommitList({ commits: [] }) })
+    expect(screen.getByRole('region', { name: 'Commits' })).toHaveAttribute('data-compact', 'true')
+    rerender({ list: makeCommitList() })
+    expect(screen.getByRole('region', { name: 'Commits' })).not.toHaveAttribute('data-compact')
   })
 
   it('draws the line from Full diff through the commits to Uncommitted, dashed into unpushed ones', () => {
     renderTimeline()
     const items = [...screen.getByTestId('commit-strip').querySelectorAll('li')]
-    const segments = items.map((item) => [...item.querySelectorAll('span[aria-hidden].border-t')].map((segment) => (segment.classList.contains('border-dashed') ? 'dashed' : 'solid')))
+    const segments = items.map((item) => [...item.querySelectorAll<HTMLElement>('span[data-segment]')].map((segment) => segment.dataset['segment']))
     // Full diff → c1 solid; c1 → merge solid; merge → c3 (unpushed) dashed; c3 → uncommitted dashed; nothing after.
     expect(segments).toEqual([['solid'], ['solid', 'solid'], ['solid', 'dashed'], ['dashed', 'dashed'], ['dashed']])
   })
 
-  it('renders what is passed as leading at the left of the row and marks the strip busy while a scope loads', () => {
-    const { rerender } = renderTimeline({ leading: <button type="button">Files</button>, scopeLoad: { loading: true, error: null, reload: () => {} } })
+  it('sits flush on the page: no band, border or background', () => {
+    renderTimeline()
     const section = screen.getByRole('region', { name: 'Commits' })
-    expect(section.firstElementChild).toHaveTextContent('Files')
+    expect(section.className).not.toMatch(/\b(border|bg)-/)
+  })
+
+  it('marks the strip busy while a scope loads and offers a retry when the scope failed', () => {
+    const { rerender } = renderTimeline({ scopeLoad: { loading: true, error: null, reload: () => {} } })
     expect(screen.getByTestId('commit-strip')).toHaveAttribute('aria-busy', 'true')
     const reload = vi.fn()
     rerender({ scopeLoad: { loading: false, error: new Error('GET failed with 500'), reload } })
@@ -95,7 +100,8 @@ describe('CommitTimeline', () => {
     rerender({ selected: COMMIT_SHAS.last })
     const node = screen.getByRole('button', { name: /Fix the day count/ })
     expect(node).toHaveAttribute('aria-pressed', 'true')
-    expect(node.querySelector('.bg-foreground')).not.toBeNull()
+    expect(node.querySelector('.bg-ink')).not.toBeNull()
+    expect(screen.getByRole('button', { name: /^Full diff/ }).querySelector('.bg-ink')).toBeNull()
     expect(screen.getByRole('button', { name: /^Full diff/ })).toHaveAttribute('aria-pressed', 'false')
     fireEvent.click(screen.getByRole('button', { name: /^Full diff/ }))
     expect(onSelect).toHaveBeenLastCalledWith(null)
@@ -119,13 +125,13 @@ describe('CommitTimeline', () => {
     expect(mergeTip).toHaveTextContent('On origin/bojana-QI-15472-trial-bar')
   })
 
-  it('shows only a muted icon when the branch has no remote and nothing is pushed', () => {
+  it('marks every commit unpushed when the branch has no remote, dashed all the way', () => {
     const list = makeCommitList({ remote: { ref: null, ahead: 3, behind: 0 }, commits: [makeCommit({ sha: COMMIT_SHAS.first, pushed: false })] })
     renderTimeline({ list })
-    const icon = screen.getByRole('img', { name: 'No remote branch: nothing has been pushed' })
-    expect(icon.querySelector('.lucide-cloud-off')).not.toBeNull()
-    expect(icon).toHaveTextContent('')
     expect(screen.getAllByRole('img', { name: 'Not pushed yet' })).toHaveLength(1)
+    expect(screen.queryByRole('img', { name: /^Pushed to/ })).not.toBeInTheDocument()
+    const segments = [...screen.getByTestId('commit-strip').querySelectorAll<HTMLElement>('span[data-segment]')].map((segment) => segment.dataset['segment'])
+    expect(new Set(segments)).toEqual(new Set(['dashed']))
   })
 
   it('renders only the Full diff node with no commits and no uncommitted changes, and an inline error when the list failed', () => {
@@ -142,7 +148,7 @@ describe('CommitTimeline', () => {
     const strip = screen.getByTestId('commit-strip')
     expect(within(strip).queryByRole('button', { name: /^Merge commit/ })).not.toBeInTheDocument()
     expect(within(strip).getAllByRole('button')).toHaveLength(4)
-    const segments = [...strip.querySelectorAll('li')].map((item) => [...item.querySelectorAll('span[aria-hidden].border-t')].map((segment) => (segment.classList.contains('border-dashed') ? 'dashed' : 'solid')))
+    const segments = [...strip.querySelectorAll('li')].map((item) => [...item.querySelectorAll<HTMLElement>('span[data-segment]')].map((segment) => segment.dataset['segment']))
     // Full diff → c1 solid; c1 → c3 (unpushed) dashed; c3 → uncommitted dashed.
     expect(segments).toEqual([['solid'], ['solid', 'dashed'], ['dashed', 'dashed'], ['dashed']])
     rerender({ hideMerges: true, selected: COMMIT_SHAS.merge })

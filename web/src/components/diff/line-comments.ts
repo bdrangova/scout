@@ -1,6 +1,7 @@
 import { anchorInPatch, anchorKey, type CommentWithStatus, type LineAnchor, type LineSide, type PatchLine } from '@review-dash/shared'
 import type { DiffLineAnnotation, SelectedLineRange } from '@pierre/diffs/react'
 import { createContext, useContext } from 'react'
+import type { PrPlacement, PrThread } from '@/lib/pr-threads'
 
 /** What `FileDiffView` needs to show and edit the line comments of the file it renders. */
 export interface LineCommentsValue {
@@ -26,6 +27,8 @@ export type LineAnnotationContent =
   | { kind: 'draft'; anchor: LineAnchor }
   /** Comments whose line is no longer in the diff, listed above the first line. */
   | { kind: 'orphans'; comments: CommentWithStatus[] }
+  /** GitHub PR threads on one line (read-only, under the last line of a range). */
+  | { kind: 'pr'; anchor: LineAnchor; threads: PrThread[] }
 
 export type DiffAnnotation = DiffLineAnnotation<LineAnnotationContent>
 
@@ -101,4 +104,20 @@ export function buildAnnotations(rows: readonly PatchLine[], comments: readonly 
   }
   if (draft) annotations.push({ side: LIBRARY_SIDE[draft.side], lineNumber: draft.endLine ?? draft.line, metadata: { kind: 'draft', anchor: draft } })
   return annotations
+}
+
+/** One annotation per anchored line for the GitHub threads that sit on it. */
+export function buildPrAnnotations(placed: PrPlacement['placed']): DiffAnnotation[] {
+  const groups = new Map<string, { anchor: LineAnchor; threads: PrThread[] }>()
+  for (const { anchor, thread } of placed) {
+    const key = anchorKey(anchor)
+    const group = groups.get(key)
+    if (group) group.threads.push(thread)
+    else groups.set(key, { anchor, threads: [thread] })
+  }
+  return [...groups.values()].map((group) => ({
+    side: LIBRARY_SIDE[group.anchor.side],
+    lineNumber: group.anchor.endLine ?? group.anchor.line,
+    metadata: { kind: 'pr', ...group },
+  }))
 }

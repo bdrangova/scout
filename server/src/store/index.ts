@@ -1,13 +1,21 @@
 import { constants as fsConstants } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { RUN_ID_RE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, emptyReview, mergeComments, mimeFromPath, progress, sessionStatus } from '@review-dash/shared'
+import { RUN_ID_RE, SCHEMA_VERSION, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@review-dash/shared'
 import type {
   AgentRun,
   ArchivedSession,
   CommitList,
   FileContentsSide,
   Manifest,
+  PrComments,
+  PrCommentsResponse,
+  PrReplies,
+  PrReplyKind,
+  PrReplyDraft,
+  PrReplyDraftView,
+  PutPrReplyResponse,
+  PrResolutions,
   PutReviewConflict,
   PutReviewRequest,
   Resolutions,
@@ -25,7 +33,7 @@ import { overlayDirFor, resolveBase } from '@review-dash/shared/git/base'
 import { showFile } from '@review-dash/shared/git/repo'
 import type { RunOptions } from '@review-dash/shared/git/run'
 import type { WorkingTreeResult } from '@review-dash/shared/git/working-tree'
-import { HttpError, badRequest, errorMessage, invalidStoreFile, notFound } from '../errors.ts'
+import { HttpError, badRequest, conflict, errorMessage, invalidStoreFile, notFound } from '../errors.ts'
 import { StoreEventBus } from '../events.ts'
 import { archiveEntryKind, archivedSession, isDir, moveDir, readArchivedAt, removeArchivedDir, removeArchivedMarker, writeArchivedMarker } from './archive.ts'
 import { ARTIFACT_DIRS, artifactPaths, deriveArtifacts } from './artifacts.ts'
@@ -36,14 +44,14 @@ import { ManifestReader } from './manifest.ts'
 import type { ManifestResult } from './manifest.ts'
 import { safeJoin, storePaths } from './paths.ts'
 import type { StorePaths } from './paths.ts'
-import { REVIEW_FILE, activeRunId, listRuns, readResolutions, readReview, readRun, runFile, runLogFile, sentFiles } from './review.ts'
+import { REVIEW_FILE, activeRunId, latestRunStatus, listRuns, readPrComments, readPrReplies, readPrResolutions, writePrReplies, readResolutions, readReview, readRun, runFile, runLogFile, sentFiles } from './review.ts'
 import { ScopeCache } from './scopes.ts'
 import type { ScopeCacheOptions } from './scopes.ts'
 import { TreeCache } from './tree.ts'
 import type { SessionTree, TreeCacheOptions } from './tree.ts'
 
 export { safeJoin, storePaths } from './paths.ts'
-export { activeRunId, listRuns, readResolutions, readReview, readRun, runFile, runLogFile, writeReview } from './review.ts'
+export { activeRunId, listRuns, readPrComments, readPrReplies, readPrResolutions, readResolutions, readReview, readRun, runFile, runLogFile, writeReview } from './review.ts'
 
 export interface LoadedSession {
   id: string
@@ -56,6 +64,18 @@ export interface ReviewState {
   review: Review | null
   resolutions: Resolutions | null
   activeRunId: string | null
+  latestRunStatus?: AgentRun['status'] | null
+  /** The synced GitHub PR (`pr-comments.json`) and the agent's answers; null when absent or unreadable. */
+  prComments?: PrComments | null
+  prResolutions?: PrResolutions | null
+}
+
+/** `pr` and `prComments` of a summary or detail: counts are relative to the last send. */
+function prFields(state: ReviewState): Pick<SessionSummary, 'pr' | 'prComments'> {
+  const prComments = state.prComments ?? null
+  if (prComments === null) return { pr: null, prComments: null }
+  const views = derivePrComments(prComments, state.prResolutions ?? null, state.review?.sent?.at ?? null)
+  return { pr: prSummary(prComments), prComments: prCommentCounts(prComments, views) }
 }
 
 export type PutReviewResult = { ok: true; updatedAt: string } | { ok: false; conflict: PutReviewConflict }
@@ -105,12 +125,15 @@ export function sessionSummary(manifest: Manifest, state: ReviewState, tree: Wor
     title: manifest.title,
     repo: { path: manifest.repo.path, branch: tree.branch ?? manifest.repo.branch, sessionBranch: manifest.repo.branch, baseRef: manifest.repo.baseRef },
     tickets: manifest.tickets,
-    status: sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null }),
+    status: sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null, latestRunStatus: state.latestRunStatus }),
     progress: progress(state.review, tree, state.resolutions),
     openComments,
     stats: { files: tree.stats.files, additions: tree.stats.additions, deletions: tree.stats.deletions },
     updatedAt: latestUpdatedAt(manifest, state, tree),
     activeRunId: state.activeRunId,
+    latestRunStatus: state.latestRunStatus ?? null,
+    lastSend: state.review?.sent ?? null,
+    ...prFields(state),
   }
 }
 
@@ -126,6 +149,10 @@ function listSortKey(item: SessionListItem): number {
 }
 
 /** A timestamp strictly after `previous` (same-millisecond saves must still differ). */
+function pickDraft(draft: PrReplyDraft): PrReplyDraftView {
+  return { body: draft.body, kind: draft.kind, editedAt: draft.editedAt, postedAt: draft.postedAt }
+}
+
 function nextUpdatedAt(previous: string | null): string {
   let t = Date.now()
   if (previous !== null) {
@@ -193,6 +220,7 @@ export class Store {
   private readonly overlayRoot: string
   private readonly manifests = new ManifestReader()
   private readonly reviewLock = new KeyedLock()
+  private readonly prRepliesLock = new KeyedLock()
   private readonly log: (message: string) => void
   /** Artifact index warnings already logged, so a broken `index.json` is reported once, not on every request. */
   private readonly loggedOnce = new Set<string>()
@@ -271,12 +299,15 @@ export class Store {
 
   /** `review.json`, `resolutions.json` and the active run, read together. */
   async reviewState(session: LoadedSession): Promise<ReviewState> {
-    const [review, resolutions, runs] = await Promise.all([
+    // The PR files are optional extras: an unreadable one must not break the session list.
+    const [review, resolutions, runs, prComments, prResolutions] = await Promise.all([
       readReview(session.dir, session.id),
       readResolutions(session.dir, session.id),
       listRuns(session.dir),
+      readPrComments(session.dir, session.id).catch(() => null),
+      readPrResolutions(session.dir, session.id).catch(() => null),
     ])
-    return { review, resolutions, activeRunId: activeRunId(runs) }
+    return { review, resolutions, activeRunId: activeRunId(runs), latestRunStatus: latestRunStatus(runs), prComments, prResolutions }
   }
 
   /** The live working tree, per-file patches and commit list (cached; 422 `repo-missing: <path>` when the repo is gone). */
@@ -344,9 +375,11 @@ export class Store {
       tree,
       ...artifacts,
       prDescription,
-      status: sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null }),
+      status: sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null, latestRunStatus: state.latestRunStatus }),
       progress: progress(state.review, tree, state.resolutions),
       activeRunId: state.activeRunId,
+      latestRunStatus: state.latestRunStatus ?? null,
+      ...prFields(state),
     }
   }
 
@@ -430,6 +463,52 @@ export class Store {
     const absolute = safeJoin(root, relPath)
     if (!(await isFile(absolute))) throw notFound(`${JSON.stringify(relPath)} is missing from session ${id}`)
     return { root, relative: path.relative(root, absolute), contentType: mimeFromPath(relPath) }
+  }
+
+  /** `pr-comments.json` merged with `pr-resolutions.json` (an empty response when never synced); 422 when a file is invalid. */
+  async getPrComments(id: string): Promise<PrCommentsResponse> {
+    const session = await this.loadSession(id)
+    const [prComments, prResolutions, review, replies] = await Promise.all([readPrComments(session.dir, id), readPrResolutions(session.dir, id), readReview(session.dir, id), readPrReplies(session.dir, id)])
+    return buildPrCommentsResponse(prComments, prResolutions, review?.sent?.at ?? null, replies)
+  }
+
+  /**
+   * Saves the user's draft for one PR comment thread in `review/pr-replies.json` (atomic, under a per-session lock). A new draft's kind comes from the
+   * thread's status: open → `instruction`, addressed or declined → `reply`. Saving an existing unposted draft keeps its kind, so a private
+   * instruction never turns into a public reply by an edit; when its kind no longer fits the status the save is a 409
+   * `pr-reply-kind-mismatch`, unless the request names the kind the status implies (the explicit conversion). A blank body deletes the draft, except one already posted
+   * (it stays as the record). Saving the text of a posted draft again changes nothing, so it is never posted twice. 404 for an unknown
+   * comment id, 400 for a reply inside a thread or an outdated comment (nothing to say about those).
+   */
+  async putPrReply(id: string, commentId: string, body: string, requestedKind?: PrReplyKind, now: string = new Date().toISOString()): Promise<PutPrReplyResponse> {
+    return this.prRepliesLock.run(id, async () => {
+      const session = await this.loadSession(id)
+      const [prComments, prResolutions, review, current] = await Promise.all([readPrComments(session.dir, id), readPrResolutions(session.dir, id), readReview(session.dir, id), readPrReplies(session.dir, id)])
+      const view = derivePrComments(prComments, prResolutions, review?.sent?.at ?? null).find((candidate) => candidate.id === commentId)
+      if (view === undefined) throw notFound(`PR comment ${commentId} is not in session ${id}'s pr-comments.json`)
+      const derived = prReplyKindFor(view)
+      if (derived === null) throw badRequest(`${commentId} is ${view.isReply ? 'a reply inside a thread: use the thread root' : `${view.status}: nothing to instruct or reply`}`)
+      if (requestedKind !== undefined && requestedKind !== derived) throw badRequest(`${commentId} is ${view.status}: it takes ${derived === 'reply' ? 'a reply' : 'an instruction'}, not ${requestedKind === 'reply' ? 'a reply' : 'an instruction'}`)
+      const replies: PrReplies['replies'] = { ...(current?.replies ?? {}) }
+      const existing = replies[commentId]
+      if (existing !== undefined && existing.postedAt !== null && (body.trim() === '' || body === existing.body)) {
+        return { commentId, draft: pickDraft(existing), updatedAt: current?.updatedAt ?? now }
+      }
+      if (body.trim() === '') {
+        if (existing === undefined) return { commentId, draft: null, updatedAt: current?.updatedAt ?? now }
+        delete replies[commentId]
+      } else {
+        const keeps = existing !== undefined && existing.postedAt === null
+        if (keeps && existing.kind !== derived && requestedKind === undefined) {
+          throw conflict(`${commentId} changed since the ${existing.kind} was written: it was not saved or posted. Clear it first`, 'pr-reply-kind-mismatch')
+        }
+        replies[commentId] = { body, kind: keeps && requestedKind === undefined ? existing.kind : derived, editedAt: now, postedAt: null }
+      }
+      const updatedAt = nextUpdatedAt(current?.updatedAt ?? null)
+      await writePrReplies(session.dir, { schemaVersion: SCHEMA_VERSION, sessionId: id, updatedAt, replies })
+      const saved = replies[commentId]
+      return { commentId, draft: saved === undefined ? null : pickDraft(saved), updatedAt }
+    })
   }
 
   /** `review.json` merged with `resolutions.json`; an in-memory empty review when none was saved. */

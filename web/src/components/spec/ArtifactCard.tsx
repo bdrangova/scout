@@ -1,5 +1,6 @@
 import type { SpecItem } from '@review-dash/shared'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Package } from 'lucide-react'
+import { IconLink } from '@/components/common/IconLink'
 import { SandboxedHtml } from '@/components/common/SandboxedHtml'
 import { useContent } from '@/lib/useContent'
 import { SpecCardShell } from './SpecCardShell'
@@ -16,20 +17,15 @@ export function ArtifactCard({ item, sessionId, className }: ArtifactCardProps) 
   return (
     <SpecCardShell
       kind="Artifact"
+      icon={Package}
       item={item}
       className={className}
       title={item.title}
       actions={
         item.url && (
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 text-xs font-medium text-info hover:underline"
-          >
-            Open on claude.ai
-            <ExternalLink className="size-3" />
-          </a>
+          <IconLink showLabel href={item.url} label="Open on claude.ai">
+            <ExternalLink aria-hidden />
+          </IconLink>
         )
       }
       content={content}

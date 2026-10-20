@@ -38,6 +38,16 @@ export function commitsPath(sessionId: string): string {
   return `${sessionApiPath(sessionId)}/commits`
 }
 
+/** `GET /sessions/:id/pr-comments`: the GitHub PR comments with their status (`PrCommentsResponse`). */
+export function prCommentsPath(sessionId: string): string {
+  return `${sessionApiPath(sessionId)}/pr-comments`
+}
+
+/** `PUT /sessions/:id/pr-replies/:commentId`: saves the user's instruction or reply text for a PR comment thread (`PutPrReplyRequest`). */
+export function prReplyPath(sessionId: string, commentId: string): string {
+  return `${sessionApiPath(sessionId)}/pr-replies/${encodeURIComponent(commentId)}`
+}
+
 /** `GET /sessions/:id/scopes/:scope`: the `WorkingTree` of one commit or of the uncommitted changes. */
 export function scopeTreePath(sessionId: string, scope: Scope): string {
   return `${sessionApiPath(sessionId)}/scopes/${encodeURIComponent(scope)}`
@@ -93,6 +103,12 @@ export function evidenceRoute(sessionId: string, path: string): string {
   return `/s/${encodeURIComponent(sessionId)}/evidence/${encodePath(path)}`
 }
 
+/** The session's index route: it redirects to the step the review should open on (`lib/landing-section.ts`). */
+export function sessionIndexRoute(sessionId: string): string {
+  return `/s/${encodeURIComponent(sessionId)}`
+}
+
+/** The Files page, the base of the file routes. */
 export function sessionRoute(sessionId: string): string {
   return `/s/${encodeURIComponent(sessionId)}/files`
 }

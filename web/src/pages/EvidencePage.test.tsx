@@ -64,16 +64,14 @@ describe('EvidencePage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the item named in the URL, with the header counts and the thumbnail strip', async () => {
+  it('renders the item named in the URL, with the header counts and position', async () => {
     renderEvidence(`/s/${SESSION_ID}/evidence/dismiss.webm`)
     const card = await screen.findByRole('article', { name: E2?.caption })
     expect(within(card).getByTestId('video-player')).toBeInTheDocument()
     expect(card.querySelector('video')).toHaveAttribute('src', `/api/sessions/${SESSION_ID}/evidence/dismiss.webm`)
     expect(within(card).getByText('Click the close button and reload.')).toBeInTheDocument()
     // The header lists what is there; the item count lives on the Evidence tab, and "0 comments" is not shown.
-    expect(screen.getByText('1 screenshot · 1 recording')).toBeInTheDocument()
-    // The thumbnail (not the folded "Comment on dismiss.webm" row) is the current one.
-    expect(screen.getByRole('button', { name: /^dismiss\.webm \(/ })).toHaveAttribute('aria-current', 'true')
+    expect(screen.getByRole('group', { name: '1 screenshot · 1 recording' })).toBeInTheDocument()
     expect(screen.getByText('2 / 2')).toBeInTheDocument()
   })
 
@@ -104,7 +102,7 @@ describe('EvidencePage', () => {
     expect(await within(card).findByText('Badge overlaps the avatar.')).toBeInTheDocument()
     expect(within(card).queryByText('Old spacing issue.')).not.toBeInTheDocument()
     expect(within(card).queryByText('On the other item.')).not.toBeInTheDocument()
-    expect(screen.getByText('1 screenshot · 1 recording · 2 open comments')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: '1 screenshot · 1 recording · 2 open comments' })).toBeInTheDocument()
     expect(within(card).queryByText('No comments yet.')).not.toBeInTheDocument()
     await userEvent.setup().click(within(card).getByRole('button', { name: 'Show 1 resolved' }))
     expect(within(card).getByText('Old spacing issue.')).toBeInTheDocument()
@@ -121,5 +119,28 @@ describe('EvidencePage', () => {
     await user.type(within(card).getByRole('textbox', { name: 'Comment on trial-bar.png' }), 'Looks right.')
     await user.click(within(card).getByRole('button', { name: 'Comment' }))
     await waitFor(() => expect(api.puts.at(-1)?.review.comments[0]?.target).toEqual({ kind: 'evidence', ref: 'trial-bar.png' }), { timeout: 1500 })
+  })
+
+  it('shows the empty state when the evidence folder has nothing', async () => {
+    mockReviewApi(reviewResponseFixture())
+    render(
+      <MemoryRouter initialEntries={[`/s/${SESSION_ID}/evidence`]}>
+        <Routes>
+          <Route
+            path="/s/:id/evidence/*"
+            element={
+              <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: { ...sessionDetailFixture, evidence: [] }, reload: () => {} }}>
+                <ReviewProvider>
+                  <EvidencePage />
+                </ReviewProvider>
+              </SessionContext.Provider>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(await screen.findByRole('heading', { level: 1, name: 'Evidence' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('No evidence')
+    expect(screen.queryByRole('region', { name: 'Evidence' })).not.toBeInTheDocument()
   })
 })

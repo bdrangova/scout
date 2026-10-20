@@ -1,0 +1,229 @@
+/*
+ * Agent-written markdown (`<Markdown>`): the design's `.prose` typography plus the frames around
+ * Streamdown's code blocks, mermaid diagrams and tables, all on the design tokens so both themes
+ * follow. Streamdown's own classes are shadcn-flavoured (`bg-sidebar`, `border-border`); the
+ * `[data-streamdown=…]` hooks below replace them.
+ */
+
+.prose-rd {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink);
+    /* Shiki's css-variables theme (see Markdown.tsx) reads these; they are the diff renderer's token colours. */
+    --shiki-foreground: var(--ink);
+    --shiki-background: var(--code-bg);
+    --shiki-token-constant: var(--tk-n);
+    --shiki-token-string: var(--tk-s);
+    --shiki-token-string-expression: var(--tk-s);
+    --shiki-token-comment: var(--tk-p);
+    --shiki-token-keyword: var(--tk-k);
+    --shiki-token-parameter: var(--tk-i);
+    --shiki-token-function: var(--tk-f);
+    --shiki-token-punctuation: var(--tk-p);
+    --shiki-token-link: var(--focus);
+}
+.prose-rd > * + * { margin-top: 12px; }
+.prose-rd h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; line-height: 1.25; }
+.prose-rd h1 + * { margin-top: 16px; }
+.prose-rd h2 { margin: 20px 0 0; font-size: 16px; font-weight: 700; line-height: 1.3; }
+.prose-rd h3 { margin: 16px 0 0; font-size: 14px; font-weight: 700; }
+.prose-rd h4, .prose-rd h5, .prose-rd h6 { margin: 14px 0 0; font-size: 13px; font-weight: 700; color: var(--ink-muted); }
+.prose-rd p { margin: 0; }
+.prose-rd ul, .prose-rd ol { margin: 0; padding-left: 22px; }
+.prose-rd ul { list-style: disc; }
+.prose-rd ol { list-style: decimal; }
+.prose-rd li + li { margin-top: 7px; }
+.prose-rd li > ul, .prose-rd li > ol { margin-top: 7px; }
+.prose-rd li::marker { color: var(--ink-muted); }
+.prose-rd a { color: var(--focus); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.prose-rd a:hover { text-decoration-thickness: 2px; }
+.prose-rd hr { border: 0; border-top: 1.5px solid var(--line); margin: 16px 0; }
+.prose-rd strong { font-weight: 700; }
+.prose-rd img { max-width: 100%; border: 1.5px solid var(--line); border-radius: 8px; }
+.prose-rd :not(pre) > code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    padding: 1px 6px;
+    border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    border-radius: 5px;
+    background: var(--paper-2);
+}
+.prose-rd [data-streamdown="blockquote"] {
+    margin: 12px 0 0;
+    padding: 8px 14px;
+    border-left: 3px solid var(--yellow);
+    border-radius: 0 8px 8px 0;
+    background: var(--paper-2);
+    color: var(--ink);
+}
+.prose-rd [data-streamdown="blockquote"] > * + * { margin-top: 8px; }
+
+/* Code blocks and mermaid diagrams: a nested flat frame with a tinted toolbar strip. */
+.prose-rd [data-streamdown="code-block"],
+.prose-rd [data-streamdown="mermaid-block"] {
+    margin: 14px 0 0;
+    padding: 0;
+    gap: 0;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+}
+.prose-rd [data-streamdown="code-block-header"],
+.prose-rd [data-streamdown="mermaid-block"] > div:first-child {
+    height: auto;
+    min-height: 46px;
+    padding: 8px 12px 8px 14px;
+    border-bottom: 1.5px solid var(--line);
+    background: var(--paper-2);
+    color: var(--ink-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+/* The sticky toolbar overlays the strip; drop Streamdown's frosted pill and raise the buttons. */
+.prose-rd [data-streamdown="code-block"] > div:has(> [data-streamdown="code-block-actions"]),
+.prose-rd [data-streamdown="mermaid-block"] > div:has(> [data-streamdown="mermaid-block-actions"]) {
+    padding-right: 12px;
+}
+.prose-rd [data-streamdown="code-block-actions"],
+.prose-rd [data-streamdown="mermaid-block-actions"] {
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
+}
+.prose-rd [data-streamdown="code-block-actions"] > button,
+.prose-rd [data-streamdown="mermaid-block-actions"] > button,
+.prose-rd [data-streamdown="mermaid"] > div > div:has(> button) > button,
+.prose-rd [data-streamdown="table-wrapper"] button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1.5px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 1.5px 1.5px 0 var(--sh);
+    transition: transform .08s, box-shadow .08s, background-color .12s, color .12s;
+}
+.prose-rd [data-streamdown="code-block-actions"] > button:hover,
+.prose-rd [data-streamdown="mermaid-block-actions"] > button:hover,
+.prose-rd [data-streamdown="mermaid"] > div > div:has(> button) > button:hover,
+.prose-rd [data-streamdown="table-wrapper"] button:hover {
+    background: var(--yellow);
+    color: var(--on-yellow);
+    transform: translate(-.5px, -.5px);
+}
+.prose-rd [data-streamdown="code-block-actions"] > button:active,
+.prose-rd [data-streamdown="mermaid-block-actions"] > button:active,
+.prose-rd [data-streamdown="mermaid"] > div > div:has(> button) > button:active {
+    transform: translate(1.5px, 1.5px);
+    box-shadow: 0 0 0 var(--sh);
+}
+.prose-rd [data-streamdown="code-block-actions"] > button svg,
+.prose-rd [data-streamdown="mermaid-block-actions"] > button svg,
+.prose-rd [data-streamdown="mermaid"] > div > div:has(> button) > button svg {
+    width: 15px;
+    height: 15px;
+}
+.prose-rd [data-streamdown="code-block-body"] {
+    border: 0;
+    border-radius: 0;
+    background: var(--code-bg);
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+.prose-rd [data-streamdown="code-block-body"] pre {
+    background: transparent;
+}
+
+/* The diagram canvas: paper, a sensible height, the zoomer as a small stacked frame bottom-left. */
+.prose-rd [data-streamdown="mermaid-block"] > div:last-child {
+    border: 0;
+    border-radius: 0;
+    background: var(--paper);
+}
+.prose-rd [data-streamdown="mermaid"] > div {
+    min-height: 260px;
+    /* The left gutter is reserved for the zoom controls (a 3-button column at left: 12px), so they never cover diagram labels (U15). */
+    padding: 24px 18px 24px 70px;
+}
+.prose-rd--tall [data-streamdown="mermaid"] > div {
+    min-height: min(70vh, 560px);
+}
+.prose-rd [data-streamdown="mermaid"] [role="img"] {
+    width: 100%;
+}
+.prose-rd [data-streamdown="mermaid"] [role="img"] > svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: min(70vh, 560px);
+}
+.prose-rd [data-streamdown="mermaid"] > div > div:has(> button) {
+    left: 12px;
+    bottom: 12px;
+    gap: 6px;
+    padding: 6px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: var(--paper-2);
+    backdrop-filter: none;
+}
+
+/* Tables: a flat frame, tinted header row, horizontal scroll when wide. */
+.prose-rd [data-streamdown="table-wrapper"] {
+    margin: 14px 0 0;
+    padding: 0;
+    gap: 0;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+}
+.prose-rd [data-streamdown="table-wrapper"] > div:has(> [data-streamdown="table"]) {
+    overflow: auto;
+    border: 0;
+    border-radius: 0;
+    background: var(--surface);
+}
+.prose-rd [data-streamdown="table-wrapper"] > div:first-child:not(:has([data-streamdown="table"])) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-height: 46px;
+    padding: 8px 12px;
+    border-bottom: 1.5px solid var(--line);
+    background: var(--paper-2);
+}
+.prose-rd [data-streamdown="table"] {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.prose-rd [data-streamdown="table-header-cell"] {
+    padding: 8px 12px;
+    border: 0;
+    border-bottom: 1.5px solid var(--line);
+    background: var(--paper-2);
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.prose-rd [data-streamdown="table-cell"] {
+    padding: 7px 12px;
+    border: 0;
+    border-top: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+    vertical-align: top;
+}
+.prose-rd [data-streamdown="table-row"]:first-child [data-streamdown="table-cell"] {
+    border-top: 0;
+}

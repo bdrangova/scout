@@ -30,10 +30,12 @@ function renderList(currentPath: string, onNavigate = vi.fn()) {
     fileReview: () => null,
     draftFor: () => '',
     setDraft: () => {},
+    unsavedDrafts: [],
     setVerdict: () => false,
     progress: progress(review, treeFixture),
     resolutions: null,
     saveStatus: 'idle',
+    flushSave: () => Promise.resolve(true),
     reload: () => {},
   }
   const ui = (path: string) => (

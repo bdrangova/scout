@@ -1,0 +1,37 @@
+/* Extras: screen-only additions on top of the shared primitives */
+.panel .icon-btn{background:var(--surface);color:var(--text);--sh:var(--line)}
+.panel .icon-btn:hover{background:var(--yellow);color:var(--on-yellow)}
+.panel-h .fname{font-size:12px;font-weight:500;color:var(--muted)}
+.panel-b.open-row{display:flex;justify-content:flex-end}
+.dc button.compose{width:100%;font-family:inherit;text-align:left;color:var(--muted)}
+.dc button.compose:hover{color:var(--text)}
+.compose>svg{width:15px;height:15px}
+.prose h1+*{margin-top:16px}
+
+/* mermaid block: a nested flat frame with a toolbar and a zoomable canvas */
+.mmd{border:1.5px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.mmd-h{display:flex;align-items:center;gap:10px;min-height:46px;padding:8px 12px 8px 14px;border-bottom:1.5px solid var(--line);background:var(--paper-2)}
+.mmd-h .lbl{font-size:12px;font-weight:500;color:var(--muted)}
+.mmd-h .tools{margin-left:auto;display:flex;gap:8px}
+.mmd-h .icon-btn{width:30px;height:30px;border-radius:9px}
+.mmd-h .icon-btn svg{width:15px;height:15px}
+.mmd-c{position:relative;display:flex;align-items:center;min-height:500px;padding:24px 18px;background:var(--paper)}
+.zoomer{position:absolute;left:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;padding:6px;border:1.5px solid var(--line);border-radius:12px;background:var(--paper-2)}
+.zoomer .icon-btn{width:30px;height:30px;border-radius:9px}
+.zoomer .icon-btn svg{width:15px;height:15px}
+
+/* the flowchart, redrawn: soft outlines, tinted fills from the tokens */
+.dc .mm{width:100%;height:auto;display:block;stroke:none;stroke-width:0;overflow:visible;font-family:'Geist Mono','JetBrains Mono','SF Mono',Monaco,'Courier New',monospace}
+.mm .edges path{fill:none;stroke:var(--text);stroke-width:1.6;stroke-linecap:butt;stroke-linejoin:round}
+.mm .head{fill:var(--text);stroke:none}
+.mm .nd rect,.mm .nd polygon{stroke:var(--line);stroke-width:1.5;stroke-linejoin:round}
+.mm .nd.in rect{fill:color-mix(in srgb,var(--info-ic) 34%,var(--surface))}
+.mm .nd.core rect{fill:color-mix(in srgb,var(--warn-ic) 34%,var(--surface))}
+.mm .nd.ui rect{fill:color-mix(in srgb,var(--ok-ic) 34%,var(--surface))}
+.mm .nd.out rect,.mm .nd.out polygon{fill:color-mix(in srgb,var(--pink) 34%,var(--surface))}
+.mm text{fill:var(--text);stroke:none;font-size:19px;font-weight:500;text-anchor:middle;dominant-baseline:central}
+.mm .elabels text{font-size:17px;font-weight:500;fill:var(--text);stroke:var(--paper);stroke-width:7px;paint-order:stroke;stroke-linejoin:round}
+.panel-h .btn.sq{box-shadow:2px 2px 0 var(--sh)}
+.page-h .counts svg{width:15px;height:15px}
+.page-h .counts{font-size:13px}
+.panel-b.open-row{padding:10px 16px}

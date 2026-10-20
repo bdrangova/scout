@@ -1,0 +1,38 @@
+<main class="ts">
+  <header class="tp-h">
+    <h1>Stacked deck</h1>
+    <p>The card on top is the file under review. The layers behind it take the type colour of the next four files in the queue, in order.</p>
+  </header>
+  <div class="ts-body">
+    <div class="ts-deck">
+      <div class="peek p4 ft-json" aria-hidden="true"></div>
+      <div class="peek p3 ft-yaml" aria-hidden="true"></div>
+      <div class="peek p2 ft-ts" aria-hidden="true"></div>
+      <div class="peek p1 ft-css" aria-hidden="true"></div>
+      <article class="card ft-react" aria-label="src/components/TrialBar.tsx">
+        <div class="card-h">
+          <span class="win-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <div class="path">
+            <span class="dir mono">src/components/</span>
+            <span class="line"><span class="fn mono">TrialBar.tsx</span><span class="chip add ico" title="Added" aria-label="Added">[[i:plus]]</span></span>
+          </div>
+          <div class="meta"><span class="delta mono"><span class="a">+39</span><span class="r">−0</span></span><span class="pos" title="File 8 of 12">[[i:files]]8 / 12</span></div>
+        </div>
+        <div class="code-wrap mono"><div class="ln"><span class="num">1</span><span class="sign">+</span><div class="code"><span class="tk-k">import</span> <span class="tk-p">{</span> <span class="tk-i">days</span> <span class="tk-p">}</span> <span class="tk-k">from</span> <span class="tk-s">&#x27;../utils&#x27;</span></div></div><div class="ln"><span class="num">2</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">3</span><span class="sign">+</span><div class="code"><span class="tk-k">export</span> <span class="tk-k">function</span> <span class="tk-f">TrialBar</span><span class="tk-p">(</span><span class="tk-i">p</span><span class="tk-p">:</span> <span class="tk-t">Props</span><span class="tk-p">)</span> <span class="tk-p">{</span></div></div><div class="ln"><span class="num">4</span><span class="sign">+</span><div class="code">  <span class="tk-k">const</span> <span class="tk-i">warn</span> <span class="tk-p">=</span> <span class="tk-i">p</span><span class="tk-p">.</span><span class="tk-i">daysLeft</span> <span class="tk-p">&lt;=</span> <span class="tk-n">3</span></div></div><div class="ln"><span class="num">5</span><span class="sign">+</span><div class="code">  <span class="tk-k">return</span> <span class="tk-p">(</span></div></div><div class="ln"><span class="num">6</span><span class="sign">+</span><div class="code">    <span class="tk-p">&lt;</span><span class="tk-i">div</span> <span class="tk-i">className</span><span class="tk-p">={</span><span class="tk-i">warn</span> <span class="tk-p">?</span> <span class="tk-s">&#x27;warn&#x27;</span> <span class="tk-p">:</span> <span class="tk-s">&#x27;&#x27;</span><span class="tk-p">}&gt;</span></div></div><div class="ln"><span class="num">7</span><span class="sign">+</span><div class="code">      <span class="tk-i">Ends</span> <span class="tk-i">in</span> <span class="tk-p">{</span><span class="tk-f">days</span><span class="tk-p">(</span><span class="tk-i">p</span><span class="tk-p">.</span><span class="tk-i">daysLeft</span><span class="tk-p">)}</span></div></div><div class="ln"><span class="num">8</span><span class="sign">+</span><div class="code">    <span class="tk-p">&lt;/</span><span class="tk-i">div</span><span class="tk-p">&gt;</span></div></div><div class="ln"><span class="num">9</span><span class="sign">+</span><div class="code">  <span class="tk-p">)</span></div></div><div class="ln"><span class="num">10</span><span class="sign">+</span><div class="code"><span class="tk-p">}</span></div></div></div>
+        <div class="card-f">
+          <div class="act">
+            <div class="hint"><span class="kicon"><kbd>A</kbd>[[i:check]]</span><span class="kicon"><kbd>X</kbd>[[i:x]]</span><span class="kicon"><kbd>C</kbd>[[i:message-square]]</span></div>
+            <button class="btn rej sq" type="button" title="Reject" aria-label="Reject">[[i:x]]</button>
+            <button class="btn sq" type="button" title="Comment" aria-label="Comment">[[i:message-square]]</button>
+            <button class="btn pri" type="button" title="Approve" aria-label="Approve">[[i:check]]Approve</button>
+          </div>
+        </div>
+      </article>
+    </div>
+    <aside class="panel q-panel" aria-label="Queue">
+      <div class="q-h">[[i:list]]<b>Queue</b><span class="counts">[[i:files]]12</span></div>
+      <ol class="q-list"><li class="q ft-react now"><span class="qdot"></span><span class="qn"><span class="mono qd">src/components/</span><b class="mono">TrialBar.tsx</b></span></li><li class="q ft-css"><span class="qdot"></span><span class="qn"><span class="mono qd">src/styles/</span><b class="mono">trial-bar.css</b></span></li><li class="q ft-ts"><span class="qdot"></span><span class="qn"><span class="mono qd">src/utils/</span><b class="mono">format.ts</b></span></li><li class="q ft-yaml"><span class="qdot"></span><span class="qn"><span class="mono qd">.github/workflows/</span><b class="mono">ci.yml</b></span></li><li class="q ft-json"><span class="qdot"></span><span class="qn"><span class="mono qd"></span><b class="mono">package.json</b></span></li><li class="q ft-js hid"><span class="qdot"></span><span class="qn"><span class="mono qd">scripts/</span><b class="mono">release.mjs</b></span></li><li class="q ft-other hid"><span class="qdot"></span><span class="qn"><span class="mono qd"></span><b class="mono">README.md</b></span></li></ol>
+      <p class="q-foot">[[i:layers]]Four layers show; the rest wait their turn.</p>
+    </aside>
+  </div>
+</main>

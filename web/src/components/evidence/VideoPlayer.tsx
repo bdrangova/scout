@@ -28,20 +28,19 @@ export interface VideoPlayerProps {
   onCommentAt: (seconds: number) => void
 }
 
+/** media-chrome reads these custom properties; they point at the design tokens so the bar follows the theme. */
+const MEDIA_THEME =
+  '[--media-primary-color:var(--ink)] [--media-secondary-color:var(--surface)] [--media-text-color:var(--ink)] [--media-icon-color:var(--ink)] ' +
+  '[--media-control-background:var(--surface)] [--media-control-hover-background:var(--hover)] [--media-control-height:40px] ' +
+  '[--media-range-track-background:var(--sunken)] [--media-range-bar-color:var(--yellow)] [--media-range-thumb-background:var(--ink)] ' +
+  '[--media-range-track-height:5px] [--media-range-track-border-radius:999px] [--media-font-family:var(--font-sans)] [--media-font-size:12px] [--media-font-weight:600] ' +
+  '[--media-focus-box-shadow:inset_0_0_0_2px_var(--focus)] [--media-tooltip-display:none]'
+
 /** Native `<video>` inside media-chrome controls, with a comment-marker strip above the bar. */
-export function VideoPlayer({
-  src,
-  videoRef,
-  comments,
-  activeCommentId,
-  active,
-  onTimeUpdate,
-  onCommentAt,
-}: VideoPlayerProps) {
+export function VideoPlayer({ src, videoRef, comments, activeCommentId, active, onTimeUpdate, onCommentAt }: VideoPlayerProps) {
   const [time, setTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [paused, setPaused] = useState(true)
-  const [intrinsic, setIntrinsic] = useState<{ width: number; height: number } | null>(null)
 
   useEffect(() => {
     if (!active) videoRef.current?.pause()
@@ -54,9 +53,8 @@ export function VideoPlayer({
   }
 
   function readDuration(event: SyntheticEvent<HTMLVideoElement>) {
-    const { duration: value, videoWidth, videoHeight } = event.currentTarget
+    const { duration: value } = event.currentTarget
     setDuration(Number.isFinite(value) ? value : 0)
-    if (videoWidth > 0 && videoHeight > 0) setIntrinsic({ width: videoWidth, height: videoHeight })
   }
 
   function seek(seconds: number) {
@@ -74,41 +72,40 @@ export function VideoPlayer({
     onCommentAt(seconds)
   }
 
-  // Nothing describes the recording up front: it takes its shape from the loaded metadata.
-  const aspectRatio = intrinsic ? `${intrinsic.width} / ${intrinsic.height}` : '16 / 9'
-
   return (
-    <div className="flex flex-col gap-1" data-testid="video-player">
+    <div className="flex min-h-0 flex-1 flex-col gap-1" data-testid="video-player">
       <TimelineMarkers comments={comments} duration={duration} activeId={activeCommentId} onSeek={seek} />
-      <MediaController className="w-full overflow-hidden rounded-md bg-black" style={{ aspectRatio }}>
-        <video
-          ref={videoRef}
-          slot="media"
-          src={src}
-          preload="metadata"
-          playsInline
-          onTimeUpdate={readTime}
-          onSeeked={readTime}
-          onLoadedMetadata={readDuration}
-          onDurationChange={readDuration}
-          onPlay={() => setPaused(false)}
-          onPause={() => setPaused(true)}
-          className="h-full w-full"
-        />
-        <MediaControlBar>
-          <MediaPlayButton />
-          <MediaTimeRange />
-          <MediaTimeDisplay showDuration />
-          <MediaMuteButton />
-          <MediaFullscreenButton />
-        </MediaControlBar>
-      </MediaController>
-      <div className="flex items-center gap-3 pt-1">
-        <Button variant="outline" size="sm" onClick={commentAt}>
-          <MessageSquarePlus data-icon="inline-start" />
+      <div className={`min-h-[clamp(200px,40svh,420px)] flex-1 overflow-hidden rounded-xl border-fine border-line bg-sunken min-[900px]:min-h-0 ${MEDIA_THEME}`}>
+        <MediaController className="h-full w-full">
+          <video
+            ref={videoRef}
+            slot="media"
+            src={src}
+            preload="metadata"
+            playsInline
+            onTimeUpdate={readTime}
+            onSeeked={readTime}
+            onLoadedMetadata={readDuration}
+            onDurationChange={readDuration}
+            onPlay={() => setPaused(false)}
+            onPause={() => setPaused(true)}
+            className="h-full w-full object-contain"
+          />
+          <MediaControlBar className="border-t-fine border-line">
+            <MediaPlayButton />
+            <MediaTimeRange />
+            <MediaTimeDisplay showDuration />
+            <MediaMuteButton />
+            <MediaFullscreenButton />
+          </MediaControlBar>
+        </MediaController>
+      </div>
+      <div className="flex flex-none flex-wrap items-center gap-3 pt-1">
+        <Button size="sm" onClick={commentAt}>
+          <MessageSquarePlus aria-hidden />
           Comment at {formatDuration(time)}
         </Button>
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="font-mono text-xs text-ink-muted tabular-nums">
           {paused ? `paused at ${formatDuration(time)}` : 'playing'}
           {duration > 0 ? ` · ${formatDuration(duration)} total` : ''}
         </span>

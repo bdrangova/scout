@@ -1,6 +1,10 @@
 import type { AgentRun } from '@review-dash/shared'
+import { CopyIcon, ExternalLinkIcon, GitForkIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Notice } from '@/components/ui/notice'
+import { Panel, PanelBody, PanelFooter, PanelHeader, PanelTitle } from '@/components/ui/panel'
+import { StatusDot } from '@/components/ui/status-dot'
 import { applyReviewCommand, describeApiError, desktopNewSessionUrl, startRun, type SendTarget } from '@/lib/runs'
 import { cn } from '@/lib/utils'
 
@@ -49,41 +53,44 @@ export function PendingPanel({ sessionId, repoPath, mode, reason, onRun, classNa
     }
   }
 
-  const code = <code className="rounded bg-background px-1.5 py-0.5 font-mono text-xs">{command}</code>
+  const code = <code className="rounded-md border-fine border-line bg-paper-2 px-1.5 py-px font-mono text-xs">{command}</code>
 
   return (
-    <section
-      aria-label="Feedback pending"
-      className={cn('flex flex-col gap-3 rounded-xl border border-warn/50 bg-warn/10 px-5 py-4 text-[13px]', className)}
-    >
-      <div className="flex items-center gap-2.5">
-        <span className="size-2.5 rounded-full bg-warn" aria-hidden />
-        <h3 className="text-sm font-semibold">Feedback saved</h3>
-      </div>
-      {reason && <p className="text-muted-foreground">{reason}</p>}
-      {mode === 'new' ? (
-        <p>The new Claude Desktop session opens with {code} ready; confirm it there.</p>
-      ) : (
-        <p>Send any message in your open Claude Code session, or run {code} there, to pick it up.</p>
-      )}
-      <div className="flex flex-wrap items-center gap-2">
+    <Panel role="region" aria-label="Feedback pending" className={cn('border-warn-bd', className)}>
+      <PanelHeader className="bg-warn-bg">
+        <StatusDot tone="warn" label="" aria-hidden />
+        <PanelTitle>Feedback saved</PanelTitle>
+        <span className="text-[12.5px] font-medium text-ink-muted">no run started</span>
+      </PanelHeader>
+      <PanelBody className="flex flex-col gap-2 text-[13.5px] leading-[1.45]">
+        {reason && <p className="font-medium text-ink-muted">{reason}</p>}
+        {mode === 'new' ? (
+          <p>The new Claude Desktop session opens with {code} ready; confirm it there.</p>
+        ) : (
+          <p>Send any message in your open Claude Code session, or run {code} there, to pick it up.</p>
+        )}
+      </PanelBody>
+      <PanelFooter className="flex flex-wrap items-center gap-2">
         {mode === 'new' && (
           <a href={desktopNewSessionUrl(repoPath, sessionId)} className={buttonVariants({ size: 'sm' })}>
+            <ExternalLinkIcon aria-hidden />
             Open in Claude Desktop
           </a>
         )}
-        <Button size="sm" variant={mode === 'new' ? 'outline' : 'default'} onClick={copy}>
+        <Button size="sm" onClick={copy}>
+          <CopyIcon aria-hidden />
           {copied ? 'Copied' : 'Copy command'}
         </Button>
-        <Button size="sm" variant="outline" onClick={fork} disabled={starting}>
+        <Button size="sm" onClick={fork} disabled={starting} aria-busy={starting}>
+          <GitForkIcon aria-hidden />
           {starting ? 'Starting…' : 'Run as fork'}
         </Button>
         {error && (
-          <span role="alert" className="text-xs text-reject">
+          <Notice tone="err" className="basis-full">
             {error}
-          </span>
+          </Notice>
         )}
-      </div>
-    </section>
+      </PanelFooter>
+    </Panel>
   )
 }

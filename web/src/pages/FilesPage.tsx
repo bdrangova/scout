@@ -1,13 +1,15 @@
 import { effectiveVerdict, nextUnreviewedFile, type Scope, type TreeFile } from '@review-dash/shared'
+import { FileCheck } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
+import { EmptyState } from '@/components/common/EmptyState'
 import { CardDeck } from '@/components/diff/CardDeck'
+import { clearVerdictUndo, undoLastVerdict, useVerdictAction } from '@/components/diff/useVerdictAction'
 import { ScrollList } from '@/components/diff/ScrollList'
 import { FileGrid } from '@/components/files/FileGrid'
-import { FilesSidebar, SidebarToggle } from '@/components/files/FilesSidebar'
+import { FilesRailSection } from '@/components/files/FilesRailSection'
 import { ReviewComplete } from '@/components/files/ReviewComplete'
-import { useSidebarOpen } from '@/components/files/useSidebarOpen'
 import { CommitTimeline } from '@/components/timeline/CommitTimeline'
 import { useCommits, useScopeTree } from '@/lib/hooks'
 import { isCardMode, MODE_PARAM, parseMode, readLastCardMode, rememberCardMode } from '@/lib/mode'
@@ -27,12 +29,12 @@ function useLastValue<T>(value: T | null): T | null {
 
 export function FilesPage() {
   const { sessionId, detail } = useSessionContext()
-  const { state, dispatch, setVerdict: sendVerdict } = useReview()
+  const { state, dispatch } = useReview()
+  const sendVerdict = useVerdictAction()
   const params = useParams()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const sidebar = useSidebarOpen()
   const [mergesHidden, toggleMerges] = useMergesHidden()
   const mode = parseMode(searchParams.get(MODE_PARAM))
   const search = searchString(searchParams)
@@ -54,6 +56,9 @@ export function FilesPage() {
   const statePath = stateFile !== null && files.some((file) => file.path === stateFile) ? stateFile : null
   const [commentFocusToken, bumpCommentFocus] = useReducer((count: number) => count + 1, 0)
   const previousRef = useRef<{ url: string | null; state: string | null } | null>(null)
+
+  // The undo belongs to this page: leaving it drops the toast.
+  useEffect(() => clearVerdictUndo, [])
 
   // A scope the commit list cannot serve (a sha no longer in range): back to the full diff.
   useEffect(() => {
@@ -162,8 +167,8 @@ export function FilesPage() {
     ...(isCardMode(mode) ? (ended ? stepHotkeys : cardHotkeys) : {}),
     prevScope: () => selectScope(stepScope(commitsState.commits, scope, -1, mergesHidden)),
     nextScope: () => selectScope(stepScope(commitsState.commits, scope, 1, mergesHidden)),
+    undo: undoLastVerdict,
     cancel: () => dispatch({ type: 'CANCEL_REJECT' }),
-    toggleSidebar: sidebar.toggle,
     toggleMerges: () => toast.info(toggleMerges() ? 'Merge commits hidden' : 'Merge commits shown'),
   })
 
@@ -190,7 +195,6 @@ export function FilesPage() {
       onSelect={selectScope}
       scopeLoad={scope === null ? undefined : scopeTree}
       hideMerges={mergesHidden}
-      leading={<SidebarToggle sidebar={sidebar} />}
     />
   )
 
@@ -201,15 +205,21 @@ export function FilesPage() {
   let content: ReactNode
   if (!first) {
     content = (
-      <p className="px-8 py-16 text-center text-sm text-muted-foreground">
-        {scope === null ? (
-          <>
-            No files changed in the working tree against <code className="font-mono">{detail.tree.baseRef}</code>.
-          </>
-        ) : (
-          'No files changed in this scope.'
-        )}
-      </p>
+      <div className="px-8 py-12">
+        <EmptyState
+          icon={FileCheck}
+          title="No files changed"
+          description={
+            scope === null ? (
+              <>
+                Nothing differs in the working tree against <code className="font-mono text-ink">{detail.tree.baseRef}</code>.
+              </>
+            ) : (
+              'This commit scope has no file changes.'
+            )
+          }
+        />
+      </div>
     )
   } else if (mode === 'scroll') {
     content = <ScrollList {...shared} />
@@ -225,18 +235,16 @@ export function FilesPage() {
   }
 
   return (
-    <main className="flex flex-1 items-stretch" data-mode={mode} data-scope={scope ?? undefined}>
-      <FilesSidebar files={files} reviewFiles={fullFiles} currentPath={urlPath} onSelect={goTo} sidebar={sidebar} />
-      <div className="flex h-[calc(100dvh-6.25rem)] min-w-0 flex-1 flex-col">
-        {timeline}
-        {ended && first ? (
-          <ReviewComplete sessionId={sessionId} detail={detail} onBack={() => goTo(currentPath)}>
-            {content}
-          </ReviewComplete>
-        ) : (
-          content
-        )}
-      </div>
+    <main className="flex h-[calc(100dvh-var(--shell-h))] min-w-0 flex-1 flex-col" data-mode={mode} data-scope={scope ?? undefined}>
+      <FilesRailSection files={files} reviewFiles={fullFiles} currentPath={urlPath} onSelect={goTo} />
+      {timeline}
+      {ended && first ? (
+        <ReviewComplete sessionId={sessionId} detail={detail} onBack={() => goTo(currentPath)}>
+          {content}
+        </ReviewComplete>
+      ) : (
+        content
+      )}
     </main>
   )
 }

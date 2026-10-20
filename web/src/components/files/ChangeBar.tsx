@@ -26,11 +26,11 @@ function changeBarSquares(additions: number, deletions: number): ('add' | 'delet
 /** GitHub's five-square add/delete bar. */
 export function ChangeBar({ additions, deletions, className }: { additions: number; deletions: number; className?: string }) {
   return (
-    <span aria-hidden className={cn('inline-flex gap-px', className)}>
+    <span aria-hidden className={cn('inline-flex gap-0.5', className)}>
       {changeBarSquares(additions, deletions).map((kind, index) => (
         <span
           key={index}
-          className={cn('size-2 rounded-[2px]', kind === 'add' && 'bg-approve', kind === 'delete' && 'bg-reject', kind === 'none' && 'bg-border')}
+          className={cn('block size-[9px] rounded-[2px]', kind === 'add' && 'bg-green', kind === 'delete' && 'bg-red', kind === 'none' && 'bg-line/70')}
         />
       ))}
     </span>

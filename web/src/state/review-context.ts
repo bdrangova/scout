@@ -7,6 +7,7 @@ import type {
   ReviewState,
 } from '@review-dash/shared'
 import { createContext, useContext } from 'react'
+import type { UnsavedDraft } from '@/lib/comment-drafts'
 
 type StripNow<A> = A extends { now: string } ? Omit<A, 'now'> : A
 
@@ -26,6 +27,11 @@ export interface ReviewContextValue {
   draftFor: (path: string) => string
   setDraft: (path: string, text: string) => void
   /**
+   * Composers with text typed and not added (file cards, spec, extras and evidence cards; not line
+   * comment boxes, which close when the page is left). A send does not carry them.
+   */
+  unsavedDrafts: UnsavedDraft[]
+  /**
    * Approve or reject a file. A draft typed on it is sent along as its comment, so nothing typed is
    * lost, and a reject with a draft is final. Returns true when a comment went with the verdict.
    */
@@ -34,6 +40,11 @@ export interface ReviewContextValue {
   progress: { reviewed: number; total: number }
   resolutions: Resolutions | null
   saveStatus: SaveStatus
+  /**
+   * Commits the focused field, then saves the review and waits for the server to hold it. Resolves
+   * false when the save failed or hit a conflict (the review was reloaded): do not act on stale data.
+   */
+  flushSave: () => Promise<boolean>
   /** Refetch the review from the server (after a send, or when `resolutions.json` changed). */
   reload: () => void
 }

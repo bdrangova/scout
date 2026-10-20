@@ -1,4 +1,7 @@
-import { ArrowLeft, GitBranch } from 'lucide-react'
+import { ArrowLeft, Folder, GitBranch } from 'lucide-react'
+import { Tag } from '@/components/ui/tag'
+import { baseTooltip } from '@/lib/branch-tooltip'
+import { repoName } from '@/lib/paths'
 import { cn } from '@/lib/utils'
 
 interface BranchRefProps {
@@ -14,24 +17,21 @@ function splitRemote(name: string): [string, string] {
   return slash === -1 ? ['', name] : [name.slice(0, slash + 1), name.slice(slash + 1)]
 }
 
-/** A GitHub-style branch chip: branch icon plus the ref name in mono, truncating with the full name in `title`. */
+/** A mono branch tag: branch icon plus the ref name, truncating with the full name in `title`. */
 export function BranchRef({ name, title, className }: BranchRefProps) {
   const [remote, rest] = name === null ? ['', 'detached HEAD'] : splitRemote(name)
   return (
-    <span
+    <Tag
+      mono
       title={title ?? name ?? 'Detached HEAD: no branch is checked out'}
-      className={cn(
-        'inline-flex h-5 min-w-14 max-w-64 items-center gap-1 rounded-md border bg-background/60 px-1.5 font-mono text-[11px] leading-none text-foreground',
-        name === null && 'text-muted-foreground italic',
-        className,
-      )}
+      className={cn('min-w-14 max-w-64 text-ink', name === null && 'text-ink-muted italic', className)}
     >
-      <GitBranch className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+      <GitBranch className="text-ink-muted" aria-hidden />
       <span className="truncate">
-        {remote && <span className="text-muted-foreground">{remote}</span>}
+        {remote && <span className="text-ink-muted">{remote}</span>}
         {rest}
       </span>
-    </span>
+    </Tag>
   )
 }
 
@@ -45,23 +45,24 @@ interface BranchPairProps {
   className?: string
 }
 
-/** The base chip's tooltip: what the diff is taken against. */
-function baseTooltip(baseSha: string | undefined, baseVirtual = false): string {
-  if (!baseSha) return 'Base branch'
-  if (baseVirtual) {
-    return 'Base branch. The ref and HEAD have several merge bases, so the diff is against the virtual merge base git would use for a merge'
-  }
-  return `Base branch. The diff is against the merge-base ${baseSha.slice(0, 7)} of this ref and HEAD`
-}
-
 /** `[⎇ base] ← [⎇ branch]`: the branch merges into the base. Shrinks and truncates before wrapping. */
 export function BranchPair({ baseRef, baseSha, baseVirtual = false, branch, className }: BranchPairProps) {
   const baseTitle = baseTooltip(baseSha, baseVirtual)
   return (
-    <span className={cn('inline-flex min-w-0 items-center gap-1', className)}>
-      <BranchRef name={baseRef} title={baseTitle} />
-      <ArrowLeft className="size-3 shrink-0 text-muted-foreground" aria-label="merges into" />
+    <span className={cn('inline-flex min-w-0 items-center gap-1.5', className)}>
+      <BranchRef name={baseRef} title={baseTitle} className="shrink-0 max-w-40" />
+      <ArrowLeft className="size-3 shrink-0 text-ink-muted" aria-label="merges into" />
       <BranchRef name={branch} />
+    </span>
+  )
+}
+
+/** The repository folder: folder icon and its name, the full path in `title`. Precedes the branch tags. */
+export function RepoRef({ path, className }: { path: string; className?: string }) {
+  return (
+    <span className={cn('inline-flex min-w-0 shrink items-center gap-1 whitespace-nowrap', className)} title={`Repository: ${path}`} aria-label={`Repository ${repoName(path)}`}>
+      <Folder className="size-3.5 shrink-0" aria-hidden />
+      <span className="truncate">{repoName(path)} ·</span>
     </span>
   )
 }

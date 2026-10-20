@@ -3,6 +3,8 @@ import { X } from 'lucide-react'
 import { useEffect, useRef, type MouseEvent } from 'react'
 import { CommentBox } from '@/components/common/CommentBox'
 import { CommentList } from '@/components/common/CommentList'
+import { Tag } from '@/components/ui/tag'
+import { draftKey } from '@/lib/comment-drafts'
 import { formatDuration } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useReview } from '@/state/review-context'
@@ -41,7 +43,8 @@ export function EvidenceComments({
   onSeek,
   activeCommentId = null,
 }: EvidenceCommentsProps) {
-  const { dispatch } = useReview()
+  const { dispatch, draftFor, setDraft } = useReview()
+  const key = draftKey(target)
   const listRef = useRef<HTMLDivElement>(null)
 
   // CommentList owns the rows; the active highlight is applied from outside through a data attribute.
@@ -72,7 +75,7 @@ export function EvidenceComments({
           ref={listRef}
           onClick={onListClick}
           className={cn(
-            '[&_li[data-active="true"]]:border-info [&_li[data-active="true"]]:ring-1 [&_li[data-active="true"]]:ring-info/40',
+            '[&_li[data-active="true"]]:border-st-r [&_li[data-active="true"]]:bg-info-bg',
             onSeek && '[&_li[data-seekable="true"]]:cursor-pointer',
           )}
         >
@@ -87,23 +90,26 @@ export function EvidenceComments({
       )}
       <div className="flex flex-col gap-1.5">
         {pendingTimestamp !== null && (
-          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-info/10 px-2 py-0.5 font-mono text-[11px] font-medium text-info">
+          <Tag tone="info" mono pill className="w-fit gap-1.5 pr-1">
             attached to {formatDuration(pendingTimestamp)}
             <button
               type="button"
               aria-label="Detach timestamp"
+              title="Detach timestamp"
               onClick={onClearTimestamp}
-              className="rounded-full hover:bg-info/20"
+              className="inline-flex size-4 items-center justify-center rounded-full hover:bg-hover"
             >
-              <X className="size-3" />
+              <X aria-hidden />
             </button>
-          </span>
+          </Tag>
         )}
         <CommentBox
           label={`Comment on ${name}`}
           pendingReject={false}
           collapsible
           focusToken={focusToken}
+          draft={draftFor(key)}
+          onDraftChange={(text) => setDraft(key, text)}
           onSubmit={(body) => {
             dispatch({ type: 'ADD_COMMENT', target, body, timestampSec: pendingTimestamp })
             onClearTimestamp()

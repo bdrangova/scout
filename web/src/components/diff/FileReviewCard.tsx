@@ -1,25 +1,28 @@
 import { effectiveVerdict, fileIsUpdated, type CommentTarget, type LineAnchor, type TreeFile } from '@review-dash/shared'
-import { Check, MessageSquare, X } from 'lucide-react'
-import { useEffect, useMemo, useReducer, useState, type PointerEvent } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState, type PointerEvent } from 'react'
 import { CommentBox } from '@/components/common/CommentBox'
 import { CommentList } from '@/components/common/CommentList'
-import { Button } from '@/components/ui/button'
-import { BINARY_BADGE, UNTRACKED_BADGE, fileStatusBadge } from '@/lib/file-status'
-import { formatAdditions, formatDeletions } from '@/lib/format'
+import { PrFooterGroup } from '@/components/prcomments/PrFooterGroup'
+import { fileTypeClass, fileTypeOf } from '@/lib/file-type'
 import { isMarkdownPath, splitPath } from '@/lib/paths'
 import type { ScopeReview } from '@/lib/scope'
 import { cn } from '@/lib/utils'
 import { useReview } from '@/state/review-context'
-import type { DiffStyle } from './FileDiffView'
+import { usePrComments } from '@/state/pr-comments-context'
+import { useCommentActions } from '@/state/useCommentActions'
+import { CardActions } from './CardActions'
+import { CardHeader, type CardView } from './CardHeader'
 import { LargeFileGate } from './LargeFileGate'
 import { LineCommentsContext, type LineCommentsValue } from './line-comments'
 import { MarkdownPreview } from './MarkdownPreview'
+import { PrAnnotationsContext, type PrAnnotationsValue } from './pr-annotations'
+import { useVerdictAction } from './useVerdictAction'
 import { VerdictOverlay } from './VerdictOverlay'
 
 export interface FileReviewCardProps {
   file: TreeFile
   sessionId: string
-  /** `file 3 of 12` in the header. */
+  /** `8 / 12` in the header. */
   position?: { index: number; total: number }
   /** Highlighted (scroll mode's current card). */
   active?: boolean
@@ -37,16 +40,12 @@ export interface FileReviewCardProps {
   scope?: ScopeReview
 }
 
-/** What the card body shows: one of the diff layouts, or the rendered markdown of a `.md` file. */
-type CardView = DiffStyle | 'preview'
-
 const DIFF_VIEWS: readonly CardView[] = ['unified', 'split']
 const MARKDOWN_VIEWS: readonly CardView[] = [...DIFF_VIEWS, 'preview']
+const NO_VIEWS: readonly CardView[] = []
 
 /** How long the "changed just now" pulse stays on the header after the file moved on disk. */
 export const CHANGED_PULSE_MS = 2500
-
-const CHIP_CLASS = 'inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase'
 
 /** Header + diff + comments + verdict buttons; reads and dispatches through `useReview()`. */
 export function FileReviewCard({
@@ -60,16 +59,27 @@ export function FileReviewCard({
   bodyClassName,
   scope,
 }: FileReviewCardProps) {
-  const { state, dispatch, fileReview, commentsFor, draftFor, setDraft, setVerdict: sendVerdict } = useReview()
+  const { state, dispatch, fileReview, commentsFor, draftFor, setDraft } = useReview()
+  const sendVerdict = useVerdictAction()
+  const commentActions = useCommentActions()
   const [view, setView] = useState<CardView>('unified')
   const [localFocus, bumpLocalFocus] = useReducer((count: number) => count + 1, 0)
-  const { dir, name } = splitPath(file.path)
-  const badge = fileStatusBadge(file)
+  const { name } = splitPath(file.path)
   const target = useMemo<CommentTarget>(() => ({ kind: 'file', ref: file.path }), [file.path])
   // Every comment on the file; the anchored ones render inside the diff, the rest in the footer.
   const comments = commentsFor(target)
   const fileComments = useMemo(() => comments.filter((comment) => comment.target.anchor === undefined), [comments])
   const review = fileReview(file.path)
+  // GitHub threads on the file: the diff hangs them under their lines and reports which it placed; the footer lists the rest.
+  const { threadsFor, fileCounts } = usePrComments()
+  const prThreads = useMemo(() => threadsFor(file.path), [threadsFor, file.path])
+  const [placedIds, setPlacedIds] = useState<readonly string[]>([])
+  const onPlaced = useCallback(
+    (ids: readonly string[]) => setPlacedIds((previous) => (previous.length === ids.length && previous.every((id, index) => id === ids[index]) ? previous : ids)),
+    [],
+  )
+  const prAnnotations = useMemo<PrAnnotationsValue | null>(() => (prThreads.length > 0 ? { threads: prThreads, onPlaced } : null), [prThreads, onPlaced])
+  const footerThreads = useMemo(() => prThreads.filter((thread) => !placedIds.includes(thread.root.id)), [prThreads, placedIds])
   const pendingReject = state.pendingReject === file.path
   // Kept in the review state (not the comment box) so Approve and Reject send what is typed instead of dropping it.
   const draft = draftFor(file.path)
@@ -80,9 +90,9 @@ export function FileReviewCard({
   const updated = reviewFile !== null && fileIsUpdated(review, reviewFile)
   // A verdict pinned to an older fingerprint of a file that changed since no longer counts.
   const verdict = reviewFile === null ? 'none' : effectiveVerdict(review, reviewFile)
-  const renamedFrom = file.oldPath !== null && file.oldPath !== file.path ? file.oldPath : null
   const previewable = isMarkdownPath(file.path) && !file.binary && !file.omitted
-  const views = previewable ? MARKDOWN_VIEWS : DIFF_VIEWS
+  // No layout to choose for a file with no text diff (binary, omitted).
+  const views = previewable ? MARKDOWN_VIEWS : file.binary || file.omitted ? NO_VIEWS : DIFF_VIEWS
 
   // The file's content moved on disk while this card was mounted: pulse the header briefly
   // (the diff itself refetches through the fingerprint in `useFilePatch`'s key).
@@ -116,13 +126,10 @@ export function FileReviewCard({
         ? {
             comments: comments.filter((comment) => comment.target.anchor !== undefined),
             onAdd: (anchor: LineAnchor, body: string) => dispatch({ type: 'ADD_COMMENT', target: { ...target, anchor }, body }),
-            onEdit: (id, body) => dispatch({ type: 'EDIT_COMMENT', id, body }),
-            onDelete: (id) => dispatch({ type: 'DELETE_COMMENT', id }),
-            onResolve: (id) => dispatch({ type: 'RESOLVE_COMMENT', id }),
-            onReopen: (id) => dispatch({ type: 'REOPEN_COMMENT', id }),
+            ...commentActions,
           }
         : null,
-    [reviewable, comments, dispatch, target],
+    [reviewable, comments, dispatch, target, commentActions],
   )
 
   return (
@@ -133,116 +140,51 @@ export function FileReviewCard({
       data-verdict={verdict}
       data-changed={changedJustNow || undefined}
       className={cn(
-        'relative flex flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-[0_10px_28px_rgba(27,26,23,0.08)] transition-shadow',
-        active && 'border-foreground/40 ring-2 ring-foreground/15',
-        pendingReject && 'border-reject',
+        fileTypeClass(fileTypeOf(file.path).id),
+        'relative flex flex-col overflow-hidden rounded-2xl border-fine border-line bg-surface text-ink transition-[border-color]',
+        active && 'border-ink',
+        pendingReject && 'border-red',
         className,
       )}
     >
-      <VerdictOverlay
-        verdict={verdict}
-        commented={comments.some((comment) => comment.status === 'open')}
-        pendingReject={pendingReject}
+      <VerdictOverlay verdict={verdict} commented={comments.some((comment) => comment.status === 'open')} pendingReject={pendingReject} />
+
+      <CardHeader
+        file={file}
+        position={position}
+        updated={updated}
+        prComments={fileCounts.get(file.path)}
+        changedJustNow={changedJustNow}
+        view={view}
+        views={views}
+        onViewChange={setView}
+        onPointerDown={onHeaderPointerDown}
       />
 
-      <div
-        className={cn(
-          'flex shrink-0 items-start gap-3 border-b px-5 py-3 transition-colors duration-700',
-          changedJustNow && 'bg-warn/15',
-          onHeaderPointerDown && 'cursor-grab select-none',
-        )}
-        style={onHeaderPointerDown ? { touchAction: 'none' } : undefined}
-        onPointerDown={onHeaderPointerDown}
-      >
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          {dir && (
-            // `dir="rtl"` keeps the end of a long path visible: the leading folders are what gets cut.
-            <span className="truncate text-left font-mono text-xs text-muted-foreground" dir="rtl" title={dir}>
-              <bdi>{dir}</bdi>
-            </span>
-          )}
-          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="min-w-0 truncate font-mono text-sm font-semibold" title={file.path}>
-              {name}
-            </span>
-            <span className={cn(CHIP_CLASS, badge.className)}>{badge.label}</span>
-            {file.binary && <span className={cn(CHIP_CLASS, BINARY_BADGE.className)}>{BINARY_BADGE.label}</span>}
-            {file.untracked && (
-              <span className={cn(CHIP_CLASS, UNTRACKED_BADGE.className)} title="Not yet added to git">
-                {UNTRACKED_BADGE.label}
-              </span>
-            )}
-            {updated && (
-              <span className={cn(CHIP_CLASS, 'bg-warn/15 text-warn-foreground')} title="Changed on disk since you reviewed it">
-                updated
-              </span>
-            )}
-            {changedJustNow && (
-              <span role="status" className={cn(CHIP_CLASS, 'animate-pulse bg-warn text-white')}>
-                changed just now
-              </span>
-            )}
-          </span>
-          {renamedFrom && (
-            <span className="truncate font-mono text-xs text-muted-foreground" title={renamedFrom}>
-              renamed from {renamedFrom}
-            </span>
-          )}
-        </div>
-        <span className="flex shrink-0 items-center gap-2 self-start pt-0.5">
-          <span className="text-[13px] font-semibold text-approve tabular-nums whitespace-nowrap">{formatAdditions(file.additions)}</span>
-          <span className="text-[13px] font-semibold text-reject tabular-nums whitespace-nowrap">{formatDeletions(file.deletions)}</span>
-          {position && (
-            <span className="pl-1 text-xs text-muted-foreground tabular-nums whitespace-nowrap">
-              file {position.index + 1} of {position.total}
-            </span>
-          )}
-          <div role="group" aria-label="Diff layout" className="ml-1 flex overflow-hidden rounded-md border text-xs whitespace-nowrap">
-            {views.map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={view === option}
-                onClick={() => setView(option)}
-                className={cn(
-                  'h-7 shrink-0 px-2 font-semibold capitalize transition',
-                  view === option ? 'bg-muted text-foreground' : 'bg-card text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </span>
-      </div>
-
-      <div className={cn('min-h-0 flex-1 overflow-auto', bodyClassName)}>
+      <div className={cn('min-h-0 flex-1 overflow-auto bg-code', bodyClassName)}>
         {view === 'preview' && previewable ? (
           <MarkdownPreview file={file} sessionId={sessionId} scope={scope?.scope ?? null} />
         ) : (
           <LineCommentsContext.Provider value={lineComments}>
-            <LargeFileGate
-              file={file}
-              sessionId={sessionId}
-              scope={scope?.scope ?? null}
-              diffStyle={view === 'preview' ? 'unified' : view}
-              onApprove={reviewable ? () => setVerdict('approved') : undefined}
-            />
+            <PrAnnotationsContext.Provider value={prAnnotations}>
+              <LargeFileGate
+                file={file}
+                sessionId={sessionId}
+                scope={scope?.scope ?? null}
+                diffStyle={view === 'preview' ? 'unified' : view}
+                onApprove={reviewable ? () => setVerdict('approved') : undefined}
+              />
+            </PrAnnotationsContext.Provider>
           </LineCommentsContext.Provider>
         )}
       </div>
 
-      <section aria-label={`Comments on ${file.path}`} className="flex shrink-0 flex-col gap-3 border-t bg-background/60 px-5 py-3">
+      <section aria-label={`Comments on ${file.path}`} className="flex shrink-0 flex-col gap-3 border-t-fine border-line bg-surface px-4 pt-3.5 pb-4">
         {!reviewable && (
-          <p className="text-xs text-muted-foreground">No net change in the full diff: a later change undid this one, so it cannot be reviewed here.</p>
+          <p className="text-xs text-ink-muted">No net change in the full diff: a later change undid this one, so it cannot be reviewed here.</p>
         )}
-        <CommentList
-          comments={fileComments}
-          onEdit={(id, body) => dispatch({ type: 'EDIT_COMMENT', id, body })}
-          onDelete={(id) => dispatch({ type: 'DELETE_COMMENT', id })}
-          onResolve={(id) => dispatch({ type: 'RESOLVE_COMMENT', id })}
-          onReopen={(id) => dispatch({ type: 'REOPEN_COMMENT', id })}
-        />
+        <PrFooterGroup threads={footerThreads} path={file.path} />
+        <CommentList comments={fileComments} {...commentActions} />
         {reviewable && (
           <CommentBox
             label={pendingReject ? `Why reject ${name}?` : `Comment on ${name}`}
@@ -255,46 +197,16 @@ export function FileReviewCard({
             onCancelReject={() => dispatch({ type: 'CANCEL_REJECT' })}
           />
         )}
+        <CardActions
+          verdict={verdict}
+          pendingReject={pendingReject}
+          reviewable={reviewable}
+          hasDraft={draftBody !== ''}
+          onApprove={() => setVerdict('approved')}
+          onReject={() => (pendingReject && draftBody === '' ? dispatch({ type: 'CANCEL_REJECT' }) : setVerdict('rejected'))}
+          onComment={bumpLocalFocus}
+        />
       </section>
-
-      <footer className="flex shrink-0 items-center gap-3 border-t bg-muted/40 px-5 py-3">
-        {draftBody === '' ? (
-          <span className="hidden text-xs text-muted-foreground sm:inline">A approve · X reject · C comment</span>
-        ) : (
-          <span className="text-xs text-muted-foreground">Your comment is sent with the verdict.</span>
-        )}
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            disabled={!reviewable}
-            aria-pressed={verdict === 'rejected' || pendingReject}
-            onClick={() => (pendingReject && draftBody === '' ? dispatch({ type: 'CANCEL_REJECT' }) : setVerdict('rejected'))}
-            className={cn(
-              'border-reject/50 text-reject hover:bg-reject/10 hover:text-reject',
-              (verdict === 'rejected' || pendingReject) && 'bg-reject text-white hover:bg-reject/90 hover:text-white',
-            )}
-          >
-            <X data-icon="inline-start" aria-hidden />
-            Reject
-          </Button>
-          <Button variant="outline" disabled={!reviewable} onClick={bumpLocalFocus}>
-            <MessageSquare data-icon="inline-start" aria-hidden />
-            Comment
-          </Button>
-          <Button
-            disabled={!reviewable}
-            aria-pressed={verdict === 'approved'}
-            onClick={() => setVerdict('approved')}
-            className={cn(
-              'border-approve/50 bg-card text-approve hover:bg-approve/10',
-              verdict === 'approved' && 'bg-approve text-white hover:bg-approve/90',
-            )}
-          >
-            <Check data-icon="inline-start" aria-hidden />
-            Approve
-          </Button>
-        </div>
-      </footer>
     </article>
   )
 }

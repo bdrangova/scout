@@ -1,9 +1,9 @@
-import { buildSentSnapshot, emptyReview, renderSentMarkdown, stampSent } from '@review-dash/shared'
+import { buildSentPrReplies, buildSentSnapshot, derivePrComments, emptyReview, renderSentMarkdown, stampSent } from '@review-dash/shared'
 import type { AgentRun, SendRequest, SendResponse, SentSnapshot } from '@review-dash/shared'
 import type { AgentAdapter } from './agent/adapter.ts'
 import type { RunManager } from './agent/runs.ts'
 import { badRequest } from './errors.ts'
-import { concatPatches } from './store/index.ts'
+import { concatPatches, readPrComments, readPrReplies, readPrResolutions } from './store/index.ts'
 import type { Store } from './store/index.ts'
 
 export interface SendDeps {
@@ -23,17 +23,25 @@ export async function sendReview(deps: SendDeps, sessionId: string, request: Sen
   const { store, runs, adapter } = deps
   const session = await store.loadSession(sessionId)
   const [{ tree, patches }, artifacts] = await Promise.all([store.tree(session), store.artifacts(session)])
+  const [prComments, prResolutions, prReplies] = await Promise.all([
+    readPrComments(session.dir, sessionId).catch(() => null),
+    readPrResolutions(session.dir, sessionId).catch(() => null),
+    readPrReplies(session.dir, sessionId).catch(() => null),
+  ])
   let snapshot: SentSnapshot | null = null
 
   await store.updateReview(sessionId, async (current, resolutions) => {
     const review = current ?? emptyReview(sessionId)
     const now = (deps.now ?? (() => new Date().toISOString()))()
-    const sent = buildSentSnapshot({ review, tree, decision: request.decision, resolutions, now })
-    if (sent.comments.length === 0 && request.decision === 'undecided') {
-      throw badRequest('nothing to send: there are no open comments and no decision')
+    // The user's unposted PR-comment drafts travel with this Submit (instructions for open comments, replies approved to post).
+    const prViews = derivePrComments(prComments, prResolutions, now, prReplies)
+    const sent = buildSentSnapshot({ review, tree, decision: request.decision, resolutions, prReplies: buildSentPrReplies(prViews), now })
+    if (sent.comments.length === 0 && (sent.prReplies ?? []).length === 0 && request.decision === 'undecided') {
+      throw badRequest('nothing to send: there are no open comments, no PR comment drafts and no decision')
     }
     const patch = concatPatches(tree, patches)
-    const markdown = renderSentMarkdown(sent, { title: session.manifest.title, dashboardUrl: deps.dashboardUrl, patch, ...artifacts })
+    const prContext = prComments === null ? {} : { prComments: { sessionId, pr: prComments.pr, views: prViews } }
+    const markdown = renderSentMarkdown(sent, { title: session.manifest.title, dashboardUrl: deps.dashboardUrl, patch, ...artifacts, ...prContext })
     await store.writeSent(session.dir, sent, markdown, patch)
     snapshot = sent
     return stampSent(review, sent, now)

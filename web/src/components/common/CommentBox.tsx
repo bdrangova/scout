@@ -1,3 +1,4 @@
+import { MessageSquare } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
@@ -97,21 +98,24 @@ export function CommentBox({
       <button
         type="button"
         aria-label={label}
+        data-slot="comment-compose"
         onClick={() => setExpanded(true)}
         className={cn(
-          'flex h-9 w-full items-center gap-2 rounded-md border bg-background px-3 text-left text-[13px] text-muted-foreground transition hover:border-foreground/30 hover:text-foreground',
+          'flex min-h-[42px] w-full items-center gap-2.5 rounded-xl border-fine border-dashed border-line bg-paper pr-2.5 pl-3.5 text-left text-sm font-medium text-ink-muted transition-colors',
+          'hover:border-solid hover:bg-paper-2 hover:text-ink',
           className,
         )}
       >
-        <span className="flex-1 truncate">Leave a comment…</span>
+        <MessageSquare aria-hidden className="size-4 shrink-0" />
+        <span className="flex-1 truncate">{placeholder}</span>
         <Kbd>C</Kbd>
       </button>
     )
   }
 
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
-      <label htmlFor={id} className={cn('text-[13px] font-semibold', pendingReject ? 'text-reject' : 'text-foreground')}>
+    <div className={cn('flex flex-col gap-2', className)} data-slot="comment-box">
+      <label htmlFor={id} className={cn('text-[13px] font-bold', pendingReject ? 'text-red' : 'text-ink')}>
         {label}
       </label>
       <Textarea
@@ -122,28 +126,23 @@ export function CommentBox({
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         rows={2}
-        className={cn('min-h-14 resize-none bg-background text-[13px] leading-relaxed md:text-[13px]', pendingReject && 'border-reject/60')}
+        className={cn('min-h-14 resize-none text-[13px] leading-relaxed', pendingReject && 'border-red')}
       />
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-ink-muted">
           <KbdGroup>
             <Kbd>⌘</Kbd>
-            <Kbd>Enter</Kbd>
+            <Kbd>↵</Kbd>
           </KbdGroup>{' '}
           to submit{pendingReject || onCancel ? ' · Esc to cancel' : ''}
         </span>
         <div className="ml-auto flex items-center gap-2">
           {(pendingReject || onCancel) && (
-            <Button variant="outline" size="sm" onClick={pendingReject ? onCancelReject : onCancel}>
+            <Button size="sm" onClick={pendingReject ? onCancelReject : onCancel}>
               Cancel
             </Button>
           )}
-          <Button
-            size="sm"
-            disabled={body === ''}
-            onClick={submit}
-            className={cn(pendingReject && 'bg-reject text-white hover:bg-reject/90')}
-          >
+          <Button size="sm" variant={pendingReject ? 'reject' : 'default'} disabled={body === ''} onClick={submit}>
             {pendingReject ? 'Comment & Reject' : 'Comment'}
           </Button>
         </div>

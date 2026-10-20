@@ -2,6 +2,7 @@ import type { SpecItem } from '@review-dash/shared'
 import { ArtifactCard } from './ArtifactCard'
 import { JiraCard } from './JiraCard'
 import { MarkdownSpecCard } from './MarkdownSpecCard'
+import { TARGET_ATTR } from './rail-targets'
 
 export interface SpecPanelProps {
   spec: readonly SpecItem[]
@@ -19,19 +20,19 @@ export function SpecPanel({ spec, sessionId }: SpecPanelProps) {
       {jira.length > 0 && (
         <div className="flex min-w-0 flex-col gap-5">
           {jira.map((item) => (
-            <JiraCard key={item.path} item={item} sessionId={sessionId} />
+            <div key={item.path} {...{ [TARGET_ATTR]: item.path }}>
+              <JiraCard item={item} sessionId={sessionId} />
+            </div>
           ))}
         </div>
       )}
       {rest.length > 0 && (
         <div className="flex min-w-0 flex-col gap-5">
-          {rest.map((item) =>
-            item.type === 'artifact' ? (
-              <ArtifactCard key={item.path} item={item} sessionId={sessionId} />
-            ) : (
-              <MarkdownSpecCard key={item.path} item={item} sessionId={sessionId} />
-            ),
-          )}
+          {rest.map((item) => (
+            <div key={item.path} {...{ [TARGET_ATTR]: item.path }}>
+              {item.type === 'artifact' ? <ArtifactCard item={item} sessionId={sessionId} /> : <MarkdownSpecCard item={item} sessionId={sessionId} />}
+            </div>
+          ))}
         </div>
       )}
     </div>

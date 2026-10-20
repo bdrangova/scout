@@ -1,12 +1,17 @@
 import type { Decision } from '@review-dash/shared'
+import { MessageSquareWarningIcon, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { VERDICT_STYLE } from '@/lib/verdict'
 
 interface Option {
   value: Exclude<Decision, 'undecided'>
   label: string
   hint: string
-  labelClass: string
-  activeClass: string
+  icon: LucideIcon
+  /** Colour of the title (and its icon). */
+  titleClass: string
+  /** The notice tint the card takes when selected. */
+  selectedClass: string
 }
 
 const OPTIONS: readonly Option[] = [
@@ -14,22 +19,25 @@ const OPTIONS: readonly Option[] = [
     value: 'approve',
     label: 'Approve',
     hint: 'Ready for a PR to be opened.',
-    labelClass: 'text-approve',
-    activeClass: 'border-approve bg-approve/10',
+    icon: VERDICT_STYLE.approved.icon,
+    titleClass: VERDICT_STYLE.approved.className,
+    selectedClass: 'border-ok-bd bg-ok-bg',
   },
   {
     value: 'request-changes',
     label: 'Request changes',
     hint: 'Claude Code applies the open comments.',
-    labelClass: 'text-warn-foreground',
-    activeClass: 'border-warn bg-warn/15',
+    icon: MessageSquareWarningIcon,
+    titleClass: 'text-ink',
+    selectedClass: 'border-warn-bd bg-warn-bg',
   },
   {
     value: 'reject',
     label: 'Reject',
     hint: 'Stop here; the approach needs rethinking.',
-    labelClass: 'text-reject',
-    activeClass: 'border-reject bg-reject/10',
+    icon: VERDICT_STYLE.rejected.icon,
+    titleClass: VERDICT_STYLE.rejected.className,
+    selectedClass: 'border-err-bd bg-err-bg',
   },
 ]
 
@@ -40,41 +48,47 @@ export interface DecisionPickerProps {
   className?: string
 }
 
-/** Approve / request changes / reject as a radio group; clicking the chosen one again clears it. */
+/**
+ * Approve / request changes / reject as radio cards; the chosen one stays chosen when clicked again.
+ * Three columns only when the picker itself is wide enough (container query); otherwise full-width rows.
+ */
 export function DecisionPicker({ value, onChange, disabled = false, className }: DecisionPickerProps) {
   return (
-    <div role="radiogroup" aria-label="Decision" className={cn('flex gap-3', className)}>
-      {OPTIONS.map((option) => {
-        const selected = value === option.value
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            disabled={disabled}
-            onClick={() => onChange(selected ? 'undecided' : option.value)}
-            className={cn(
-              'flex flex-1 items-start gap-2.5 rounded-lg border-2 bg-card px-3.5 py-3 text-left transition outline-none',
-              'hover:bg-muted/60 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60',
-              selected ? option.activeClass : 'border-border',
-            )}
-          >
-            <span
-              aria-hidden
+    <div className={cn('@container', className)}>
+      <div role="radiogroup" aria-label="Decision" className="grid gap-2.5 @2xl:grid-cols-3">
+        {OPTIONS.map((option) => {
+          const selected = value === option.value
+          const Icon = option.icon
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              data-decision={option.value}
+              disabled={disabled}
+              onClick={() => onChange(option.value)}
               className={cn(
-                'mt-0.5 size-4 shrink-0 rounded-full border-2 bg-background',
-                selected ? 'border-[5px] border-current' : 'border-muted-foreground/40',
-                selected && option.labelClass,
+                'flex min-w-0 items-start gap-2.5 rounded-xl border-fine bg-surface px-3.5 py-3 text-left text-ink transition-colors',
+                'disabled:cursor-not-allowed disabled:opacity-60',
+                selected ? option.selectedClass : 'border-line hover:bg-hover',
               )}
-            />
-            <span className="flex flex-col gap-0.5">
-              <span className={cn('text-[13px] font-semibold', option.labelClass)}>{option.label}</span>
-              <span className="text-xs leading-snug text-muted-foreground">{option.hint}</span>
-            </span>
-          </button>
-        )
-      })}
+            >
+              <span
+                aria-hidden
+                className={cn('mt-0.5 size-4 shrink-0 rounded-full border-fine bg-paper', selected ? 'border-[5px] border-ink' : 'border-line')}
+              />
+              <span className="flex min-w-0 flex-col gap-[3px]">
+                <span className={cn('flex items-center gap-1.5 text-sm font-bold [&_svg]:size-[15px] [&_svg]:stroke-[2.75]', option.titleClass)}>
+                  <Icon aria-hidden />
+                  {option.label}
+                </span>
+                <span className={cn('text-[12.5px] leading-[1.35] font-medium', selected ? 'text-ink' : 'text-ink-muted')}>{option.hint}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

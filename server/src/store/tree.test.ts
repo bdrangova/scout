@@ -70,6 +70,48 @@ describe('TreeCache', () => {
     expect(calls).toBe(3)
   })
 
+  it('does not serve a tree known to be stale: a read after an invalidation waits for the recompute', async () => {
+    const fingerprints = ['1'.repeat(16), '2'.repeat(16)]
+    let calls = 0
+    const { cache, events } = make(async () => {
+      const fingerprint = fingerprints[Math.min(calls++, fingerprints.length - 1)] ?? ''
+      if (calls > 1) await sleep(60)
+      return result(fingerprint)
+    }, 20)
+    await cache.get(source)
+    // The repo watcher reported an edit; the debounced recompute has not run (or not finished) yet.
+    cache.invalidate(source.id)
+    const read = await cache.get(source)
+    expect(read.tree.fingerprint).toBe('2'.repeat(16))
+    expect(calls).toBe(2)
+    // The read took over the pending recompute: no second one, and watchers of the stream still hear of the change.
+    await sleep(60)
+    expect(calls).toBe(2)
+    expect(events).toEqual([{ type: 'tree.updated', sessionId: source.id, fingerprint: '2'.repeat(16), durationMs: 7 }])
+    // Clean again: served from the cache.
+    expect(await cache.get(source)).toBe(read)
+    expect(calls).toBe(2)
+  })
+
+  it('does not serve a tree stale while a recompute that started before a newer invalidation is in flight', async () => {
+    let calls = 0
+    const { cache } = make(({ signal }) => {
+      calls += 1
+      const mine = calls
+      return new Promise<WorkingTreeResult>((resolve, reject) => {
+        signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true })
+        setTimeout(() => resolve(result(String(mine).repeat(16))), mine === 1 ? 0 : 30)
+      })
+    })
+    await cache.get(source)
+    cache.invalidate(source.id)
+    await sleep(90)
+    expect(cache.peek(source.id)?.tree.fingerprint).toBe('2'.repeat(16))
+    // A second edit lands while the cache holds the result of a compute that began before it.
+    cache.invalidate(source.id)
+    expect((await cache.get(source)).tree.fingerprint).toBe('3'.repeat(16))
+  })
+
   it('aborts a compute superseded by an invalidation and hands waiters the newer result', async () => {
     let calls = 0
     const { cache } = make(({ signal }) => {

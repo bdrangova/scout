@@ -3,12 +3,18 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { commentFixture, reviewFixture } from '@/test/fixtures'
+import { ThemeContext } from '@/theme/ThemeContext'
 import { FileDiffView } from './FileDiffView'
 import { LineCommentsContext, type LineCommentsValue } from './line-comments'
+import { PrAnnotationsContext } from './pr-annotations'
+import { buildPrCommentsResponse } from '@review-dash/shared'
+import { makePrComment, makePrComments } from '@review-dash/shared/testing/fixtures'
+import { groupPrThreads } from '@/lib/pr-threads'
 
 interface MockProps {
   patch: string
   options?: {
+    themeType?: string
     onGutterUtilityClick?: (range: { start: number; side?: string; end: number; endSide?: string }) => void
     enableGutterUtility?: boolean
     loadDiffFiles?: (fileDiff: { name: string }) => Promise<unknown>
@@ -24,6 +30,7 @@ vi.mock('@pierre/diffs/react', () => ({
   PatchDiff: ({ patch, options, lineAnnotations, renderAnnotation, selectedLines }: MockProps) => (
     <div
       data-testid="patch-diff"
+      data-theme-type={options?.themeType}
       data-selected={selectedLines ? `${selectedLines.side ?? ''}:${selectedLines.start}-${selectedLines.end}` : undefined}
       data-expandable={options?.loadDiffFiles ? '' : undefined}
     >
@@ -96,6 +103,18 @@ describe('FileDiffView line comments', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Diff lines' })).not.toBeInTheDocument()
     expect(screen.getByTestId('patch-diff')).not.toHaveAttribute('data-expandable')
+  })
+
+  it('follows the app theme (light outside a provider, never the OS scheme)', () => {
+    const { rerender } = render(<FileDiffView patch={PATCH} diffStyle="unified" />)
+    expect(screen.getByTestId('patch-diff')).toHaveAttribute('data-theme-type', 'light')
+    rerender(
+      <ThemeContext.Provider value={{ theme: 'dark', resolved: 'dark', setTheme: vi.fn() }}>
+        <FileDiffView patch={PATCH} diffStyle="unified" />
+      </ThemeContext.Provider>,
+    )
+    expect(screen.getByTestId('patch-diff')).toHaveAttribute('data-theme-type', 'dark')
+    expect(screen.getByTestId('patch-diff').parentElement).toHaveAttribute('data-theme', 'dark')
   })
 
   it('offers the hidden context only with a sides loader; a comment on a revealed line moves under it once loaded', async () => {
@@ -190,5 +209,32 @@ describe('FileDiffView line comments', () => {
     expect(screen.getByTestId('patch-diff')).toHaveAttribute('data-selected', 'additions:2-3')
     fireEvent.keyDown(group, { key: 'Enter' })
     expect(within(screen.getByTestId('slot:additions:3')).getByRole('textbox', { name: 'Comment on lines 2–3' })).toBeInTheDocument()
+  })
+})
+
+describe('FileDiffView GitHub comments', () => {
+  function threads() {
+    const comments = [
+      makePrComment({ githubId: 1, path: 'src/a.ts', line: 3, body: 'Inline one.' }),
+      makePrComment({ githubId: 2, path: 'src/a.ts', line: 40, body: 'Past the hunk.' }),
+      makePrComment({ githubId: 3, path: 'src/a.ts', line: null, outdated: true, body: 'Outdated one.' }),
+    ]
+    return groupPrThreads(buildPrCommentsResponse(makePrComments(comments), null, null).comments)
+  }
+
+  it('hangs a thread under its line without a line-comments context (read-only) and reports what it placed', () => {
+    const onPlaced = vi.fn()
+    const { unmount } = render(
+      <PrAnnotationsContext.Provider value={{ threads: threads(), onPlaced }}>
+        <FileDiffView patch={PATCH} diffStyle="unified" />
+      </PrAnnotationsContext.Provider>,
+    )
+    expect(within(screen.getByTestId('slot:additions:3')).getByText('Inline one.')).toBeInTheDocument()
+    expect(screen.queryByText('Past the hunk.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Outdated one.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(onPlaced).toHaveBeenLastCalledWith(['rc1'])
+    unmount()
+    expect(onPlaced).toHaveBeenLastCalledWith([])
   })
 })

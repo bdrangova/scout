@@ -109,6 +109,35 @@ describe('Store.listSessions', () => {
     }
   })
 
+  it('summarises a session whose pr-comments.json is unreadable, and computes each tree once across repeated lists', async () => {
+    const reviewDir = path.join(fixtureSessionDir(fixture.home, FIXTURE_SESSION_ID), 'review')
+    fs.mkdirSync(reviewDir, { recursive: true })
+    fs.writeFileSync(path.join(reviewDir, 'pr-comments.json'), '{ not json')
+    let computes = 0
+    const store = new Store(fixture.home, {
+      log: () => undefined,
+      trees: {
+        compute: async (input) => {
+          computes += 1
+          return await import('@review-dash/shared/git/working-tree').then((m) => m.computeWorkingTree(input))
+        },
+      },
+    })
+    try {
+      // What the server does at startup, then the dashboard's first request (concurrent, like the real order).
+      const [, items] = await Promise.all([store.listSessions(), store.listSessions()])
+      const item = items.find((i) => i.id === FIXTURE_SESSION_ID)
+      expect(item).toMatchObject({ id: FIXTURE_SESSION_ID, pr: null, prComments: null })
+      const afterFirst = computes
+      await store.listSessions()
+      expect(computes).toBe(afterFirst)
+      expect(computes).toBeLessThanOrEqual(items.filter((i) => !('error' in i)).length)
+    } finally {
+      store.close()
+      fs.rmSync(path.join(reviewDir, 'pr-comments.json'), { force: true })
+    }
+  })
+
   it('returns an empty list when the store has no sessions folder', async () => {
     const store = new Store(path.join(fixture.home, 'nope'), { log: () => undefined })
     expect(await store.listSessions()).toEqual([])

@@ -1,0 +1,70 @@
+<main class="tp">
+  <header class="tp-h">
+    <h1>File types</h1>
+    <p>The card header and the stack peeks take the accent of the file's type, so a mixed review deck reads at a glance. Text on every accent is the ink colour (5.2:1 or better).</p>
+  </header>
+  <div class="sw-grid"><div class="sw ft-ts">
+  <div class="sw-top"><span class="sw-ext mono">ts</span><b>TypeScript</b></div>
+  <div class="sw-body">
+    <span class="mono sw-exts">.ts  .mts  .cts</span>
+    <span class="sw-role">Logic, hooks, utilities</span>
+    <span class="sw-hex mono"><i class="dotl"></i>#7C9BE8<i class="dotd"></i>#8FA9F0</span>
+  </div>
+</div><div class="sw ft-js">
+  <div class="sw-top"><span class="sw-ext mono">js</span><b>JavaScript</b></div>
+  <div class="sw-body">
+    <span class="mono sw-exts">.js  .mjs  .cjs</span>
+    <span class="sw-role">Scripts and build config</span>
+    <span class="sw-hex mono"><i class="dotl"></i>#F4D35E<i class="dotd"></i>#E8C95A</span>
+  </div>
+</div><div class="sw ft-react">
+  <div class="sw-top"><span class="sw-ext mono">tsx</span><b>React</b></div>
+  <div class="sw-body">
+    <span class="mono sw-exts">.tsx  .jsx</span>
+    <span class="sw-role">Components and pages</span>
+    <span class="sw-hex mono"><i class="dotl"></i>#4FC3D9<i class="dotd"></i>#5CCBD6</span>
+  </div>
+</div><div class="sw ft-yaml">
+  <div class="sw-top"><span class="sw-ext mono">yml</span><b>YAML</b></div>
+  <div class="sw-body">
+    <span class="mono sw-exts">.yml  .yaml</span>
+    <span class="sw-role">CI, deploys, config</span>
+    <span class="sw-hex mono"><i class="dotl"></i>#F29B5B<i class="dotd"></i>#F2A06A</span>
+  </div>
+</div><div class="sw ft-json">
+  <div class="sw-top"><span class="sw-ext mono">json</span><b>JSON</b></div>
+  <div class="sw-body">
+    <span class="mono sw-exts">.json  .jsonc</span>
+    <span class="sw-role">Manifests, schemas, data</span>
+    <span class="sw-hex mono"><i class="dotl"></i>#8ACB8F<i class="dotd"></i>#8FD39A</span>
+  </div>
+</div><div class="sw ft-css">
+  <div class="sw-top"><span class="sw-ext mono">css</span><b>CSS</b></div>
+  <div class="sw-body">
+    <span class="mono sw-exts">.css  .scss  .less</span>
+    <span class="sw-role">Styles and tokens</span>
+    <span class="sw-hex mono"><i class="dotl"></i>#EE8FB6<i class="dotd"></i>#F2A0C4</span>
+  </div>
+</div><div class="sw ft-other">
+  <div class="sw-top"><span class="sw-ext mono">md</span><b>Everything else</b></div>
+  <div class="sw-body">
+    <span class="mono sw-exts">.md  .png  .lock  …</span>
+    <span class="sw-role">Docs, images, unknown</span>
+    <span class="sw-hex mono"><i class="dotl"></i>#D9CDB5<i class="dotd"></i>#B9B2C6</span>
+  </div>
+</div>
+    <div class="sw-note">
+      <span class="sw-note-h">[[i:layers]]How it applies</span>
+      <ul>
+        <li><b>Header</b> fills with the type accent, ink text.</li>
+        <li><b>Peeks</b> behind the card use the type of the next files in the queue.</li>
+        <li><b>Unknown</b> extensions fall back to sand, never a random hue.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tp-rules">
+    <div class="rule">[[i:check]]<span><b>One accent per type.</b> React is split from plain TS because component files are the most common review.</span></div>
+    <div class="rule">[[i:minus]]<span><b>Status stays separate.</b> Added, modified, renamed and deleted keep their dot and chip colours; type only drives the card.</span></div>
+    <div class="rule">[[i:arrow-right-left]]<span><b>Light and dark pair.</b> Dark steps are lifted a little so the ink still holds 6.9:1 or better.</span></div>
+  </div>
+</main>

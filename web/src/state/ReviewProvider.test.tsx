@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import { useState } from 'react'
 import userEvent from '@testing-library/user-event'
 import { toast } from 'sonner'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
@@ -18,7 +19,8 @@ const P1 = F1.path
 const FP1 = F1.fingerprint
 
 function Probe() {
-  const { state, dispatch, comments, progress, draftFor, setDraft, setVerdict } = useReview()
+  const { state, dispatch, comments, progress, draftFor, setDraft, unsavedDrafts, setVerdict, flushSave } = useReview()
+  const [flushed, setFlushed] = useState('none')
   return (
     <div>
       {/* `fingerprint: null` lets the reducer pin the verdict to the tree's fingerprint. */}
@@ -30,6 +32,11 @@ function Probe() {
       <button onClick={() => setDraft(P0, ' Looks fine, rename x. ')}>type draft</button>
       <button onClick={() => setVerdict(P0, 'approved', null)}>approve with draft</button>
       <button onClick={() => setVerdict(P0, 'rejected', null)}>reject with draft</button>
+      <button onClick={() => void flushSave().then((ok) => setFlushed(String(ok)))}>flush</button>
+      <output data-testid="flushed">{flushed}</output>
+      <button onClick={() => setDraft('spec::plan.md', 'spec note')}>type spec draft</button>
+      <button onClick={() => setDraft(P0, '   ')}>blank draft</button>
+      <output data-testid="unsaved">{unsavedDrafts.map((draft) => `${draft.kind}:${draft.ref}`).join(',')}</output>
       <output data-testid="draft">{draftFor(P0)}</output>
       <output data-testid="pending">{state.pendingReject ?? 'none'}</output>
       <output data-testid="verdict">{state.review.files[P0]?.verdict ?? 'none'}</output>
@@ -69,6 +76,26 @@ describe('ReviewProvider + useAutosave', () => {
     vi.unstubAllGlobals()
   })
 
+  it('flushSave saves a pending comment at once and resolves true once the server has it', async () => {
+    const api = renderProvider()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'comment' }))
+    expect(api.puts).toHaveLength(0)
+    await user.click(screen.getByRole('button', { name: 'flush' }))
+    await waitFor(() => expect(screen.getByTestId('flushed')).toHaveTextContent('true'))
+    expect(api.puts).toHaveLength(1)
+    expect(api.puts[0]?.review.comments).toHaveLength(1)
+  })
+
+  it('flushSave resolves false after a conflict', async () => {
+    const api = renderProvider()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'comment' }))
+    api.queuePut({ ok: false, kind: 'conflict', current: reviewFixture({ nextCommentId: 9 }) })
+    await user.click(screen.getByRole('button', { name: 'flush' }))
+    await waitFor(() => expect(screen.getByTestId('flushed')).toHaveTextContent('false'))
+  })
+
   it('loads the review and PUTs a verdict pinned to the tree fingerprint immediately, with the loaded updatedAt as base', async () => {
     const api = renderProvider()
     const user = userEvent.setup()
@@ -101,6 +128,21 @@ describe('ReviewProvider + useAutosave', () => {
     await waitFor(() => expect(api.puts).toHaveLength(1))
     expect(api.puts[0]?.review.files[P0]?.verdict).toBe('approved')
     expect(api.puts[0]?.review.comments.map((comment) => [comment.target.ref, comment.body])).toEqual([[P0, 'Looks fine, rename x.']])
+  })
+
+  it('tracks composers with text typed and not added, and drops them once added or emptied', async () => {
+    renderProvider()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'type draft' }))
+    await user.click(screen.getByRole('button', { name: 'type spec draft' }))
+    expect(screen.getByTestId('unsaved')).toHaveTextContent(`file:${P0},spec:plan.md`)
+
+    await user.click(screen.getByRole('button', { name: 'blank draft' }))
+    expect(screen.getByTestId('unsaved')).toHaveTextContent('spec:plan.md')
+
+    await user.click(screen.getByRole('button', { name: 'type draft' }))
+    await user.click(screen.getByRole('button', { name: 'approve with draft' }))
+    expect(screen.getByTestId('unsaved')).toHaveTextContent('spec:plan.md')
   })
 
   it('rejecting with a typed draft is final at once; without one it waits for a comment', async () => {

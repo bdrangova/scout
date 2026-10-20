@@ -7,6 +7,13 @@ import { registerInit } from './commands/init.ts'
 import { registerInstall } from './commands/install.ts'
 import { registerOpen } from './commands/open.ts'
 import { registerPath } from './commands/path.ts'
+import { registerPrComments } from './commands/pr-comments.ts'
+import { registerPrTrust } from './commands/pr-trust.ts'
+import { registerPrLink } from './commands/pr-link.ts'
+import { registerPrReply } from './commands/pr-reply.ts'
+import { registerPrResolve } from './commands/pr-resolve.ts'
+import { registerPrSync } from './commands/pr-sync.ts'
+import { PrSyncError } from './pr/gh.ts'
 import { registerPending } from './commands/pending.ts'
 import { registerResolve } from './commands/resolve.ts'
 import { registerStatus } from './commands/status.ts'
@@ -24,6 +31,12 @@ registerFeedback(program)
 registerResolve(program)
 registerPending(program)
 registerStatus(program)
+registerPrSync(program)
+registerPrResolve(program)
+registerPrReply(program)
+registerPrLink(program)
+registerPrComments(program)
+registerPrTrust(program)
 registerOpen(program)
 registerArchive(program)
 registerInstall(program)
@@ -32,5 +45,5 @@ try {
   await program.parseAsync(process.argv)
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error))
-  process.exit(1)
+  process.exit(error instanceof PrSyncError ? error.exitCode : 1)
 }

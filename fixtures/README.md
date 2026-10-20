@@ -1,0 +1,53 @@
+# Fixture store
+
+`npm run fixture` rebuilds `fixtures/store` (git-ignored) from `scripts/make-fixture.ts` and the modules under
+`scripts/fixtures/`: real git repos under `store/repos/` (each with a local bare origin so `origin/master`
+resolves, a feature branch and the change set left uncommitted) and the Contract v2 sessions below under
+`store/sessions/` and `store/archive/`. `npm run dev:fixtures` serves it; the e2e run builds its own copy
+(`FIXTURE_OUT`). The script prints a summary of every session and its computed tree at the end.
+
+Inputs: `src/` (spec, extras and PR description of the trial-bar sessions), `media/` (screenshots and a recording
+rendered once with Playwright and cached; delete a file to re-render it), `agent-run.sample.jsonl` (a real
+`claude -p --output-format stream-json` transcript, used by the active-run session and the stream parser tests).
+
+## Repos
+
+| Repo | Content |
+| --- | --- |
+| `trial-app` | 12 changed files: staged renames/deletes/adds, two unstaged edits, one untracked test, a binary, a collapsed lockfile and a collapsed 2,000-line generated file. Shared by every session that only reads it. |
+| `trial-app-2`, `trial-app-all-verdicts`, `trial-app-runs`, `trial-app-long` | Copies of `trial-app` for sessions whose fixture edits the tree, pins verdicts to it or renames the branch. |
+| `variety-app` | 26 changed files: at least two each of `.ts .tsx .js .jsx .yaml/.yml .json .css .md`, one `.png`; added, modified, deleted, renamed-with-edits and untracked; `src/data/countries.ts` (2,100 added lines → collapsed, `too-many-changed-lines`, the 413 large-file gate) and `package-lock.json` (collapsed, generated). |
+| `clean-app` | The trial-app base commit with a feature branch and no changes at all. |
+
+## Sessions
+
+Ids are constants in `scripts/fixtures/ids.ts`. The first two are what `e2e/smoke.spec.ts` drives; do not change them.
+
+| Id | Session | What it exercises |
+| --- | --- | --- |
+| `20260926-1200-qi-15472-trial-bar-f1a0` | trial bar, unreviewed | The default review flow; every file state in one small tree; "Awaiting review" in the list. |
+| `20260926-1300-qi-15472-trial-bar-f2a0` | trial bar, reviewed | Approved/rejected verdicts, file + evidence (0:02.5) + overall comments, a send (`review/sent/*.json\|.md\|.patch`), agent resolutions (one resolved, one reply), two files edited after the send → "updated" chips and status `updated`. |
+| `20261001-0900-var-201-comments-on-posts-a1b2` | types-variety | The file grid, the file-type filter and the sidebar tree with 26 files of every type and status; a binary modified in place; the collapsed lockfile and the >2,000-line file (413 unless `?force=1`); a Jira spec only. |
+| `20261001-0930-qi-15490-hotfix-no-notes-e5e0` | empty-spec-extras | A diff but no `spec/`, `extras/`, `evidence/` or `pr-description.md`: the empty state of every tab. |
+| `20261001-1000-var-201-comments-rich-spec-c3d4` | rich-spec | Spec: Jira card, markdown plan with a mermaid block, HTML artifact, plus an unindexed markdown file. Extras: `.md` (with mermaid), `.html`, `.mmd`, `.mermaid`, plus an unindexed note (title from its heading). Evidence: five images (one in a nested folder, one unindexed), a video, a 180-character caption and a 400-character description. Two ticket chips. |
+| `20261001-1030-qi-15472-trial-bar-all-verdicts-a11e` | all-verdicts | Every file approved, rejected (with a file comment) or commented (verdict `none` + file comment); three line comments (`new` range, `new` single line, `old` side on a deleted file); evidence and spec comments; an overall comment drafted with the decision still `undecided` and nothing sent: the Review-Complete screen. |
+| `20261001-1100-qi-15472-trial-bar-failed-run-f41d` | failed-run | Sent back as "request changes"; `review/runs/` holds an earlier succeeded run (cost, turns, result text, resolved c1) and the latest run `failed` with exit code 1, an `error` and stderr lines in its `.jsonl`. |
+| `20261001-1115-qi-15472-trial-bar-active-run-ac71` | active-run | Sent back; the run record says `running` with a pid, so the list shows the review state (Changes sent) plus an "Agent working" chip (`status` is `agent-working`). Its log starts with real stream-json lines from `agent-run.sample.jsonl`. The server marks runs left `running` by a previous process as failed the first time `GET /sessions/:id/runs` is hit (the Submit tab), so the state survives only until then; `npm run fixture` restores it. |
+| `20260920-0800-qi-15301-workspace-export-a7c1` | archived | Lives under `store/archive/<id>/` with `archived.json`; approved and sent before archiving. Listed by `GET /sessions/archived`, never computed. |
+| `20261001-1130-qi-15472-trial-bar-branch-changed-b7c0` | branch-changed | The manifest says `feature/trial-bar-v1`, the shared `trial-app` repo has `feature/trial-bar` checked out: the "Branch changed" pill (`repo.branch` ≠ `repo.sessionBranch`). |
+| `20261001-1145-ops-7-rotate-signing-key-0c0c` | no-changes | `clean-app`: zero files in the tree, `dirty: false`, progress 0/0; a spec without `index.json` and a ticket without a URL. |
+| `20261001-1200-qi-15472-trial-bar-long-title-10f6` | long-title | A 160-character title, six ticket chips (one without a URL, one with a 14-character key), a 150-character branch name: overflow and truncation. |
+| `20261001-1215-qi-15472-trial-bar-changes-sent-5e17` | changes-sent | All 12 files approved, sent as request-changes with an overall comment: the list says "Changes sent" although the bar is fully green. |
+| `20261001-1230-qi-15472-trial-bar-approved-a99d` | approved | All 12 files approved and an Approve decision sent: the only route to "Approved". |
+| `20261001-1245-qi-15472-trial-bar-in-progress-77c3` | in-progress | Four files approved and one comment, nothing sent: "In progress". |
+| `20261005-0900-var-201-pr-comments-b4e1` | pr-mixed | GitHub PR comments: PR #482 on `variety-app` with 13 threads plus a reply, two of them from untrusted authors (a CONTRIBUTOR nit, and a FIRST_TIME_CONTRIBUTOR comment that is a prompt-injection attempt: a fake closing marker, `curl | sh`, `$(...)`; the sent `.md` leaves both out). Addressed (3 in the last send, one in an earlier send), declined with a reason, outdated, resolved on GitHub, 4 open; Copilot line comments (one with a `suggestion`), human nits, a thread with a reply, a Copilot overview and a human "changes requested" summary, a general comment. Every line comment sits on a line of the real diff (`src/api/comments.ts`, `CommentList.tsx`, `Avatar.tsx`, `config/cache.yaml`, `src/utils/time.ts`); the outdated one has no current line. Sent as request-changes, so `lastSend` and the sent `.md` (with its `## GitHub PR comments` section) exist. |
+| `20261005-0930-qi-15472-trial-bar-pr-fresh-c5d2` | pr-fresh | A draft PR #131, synced once: Copilot suggestion on `TrialBar.tsx`, a human nit with a reply on `config.ts`, a Copilot overview; all open, nothing reviewed or sent. |
+| `20261005-1000-qi-15472-trial-bar-pr-no-comments-d6f3` | pr-no-comments | PR #133 is known (`review/pr-comments.json` with zero comments) and nothing else: the PR tab link with no comments to show. |
+| `20261005-1030-qi-15472-trial-bar-pr-merged-e7a4` | pr-merged | Merged PR #127; three comments all addressed in the approved send (with commit shas), every file approved. |
+
+`pr-mixed` also shows the reply loop (`review/pr-resolutions.json` `proposedReply`, `review/pr-replies.json`): proposed replies on `rc9001`, `rc9003`, `rc9005` (declined) and `ic9201`; drafts: `rc9001` an edited `reply`, not yet posted; `rc9002` an `instruction` on an open comment; `rc9003` a `reply` already posted (`postedAt`, `githubUrl`); `rc9005` and `ic9201` have a proposal but no draft yet. The sent snapshot of this session predates them, so it has no `prReplies`; a new Submit from the UI lists the unposted drafts.
+
+The four `pr-*` sessions (`scripts/fixtures/pr-sessions.ts`) write `review/pr-comments.json` and `review/pr-resolutions.json` directly, as `ai-review pr-sync` / `pr-resolve` would; `pr-mixed` shares `variety-app`, the others `trial-app`.
+
+Three sessions (`empty-spec-extras`, `branch-changed`, `archived`) and the first session share the `trial-app` repo;
+`types-variety` and `rich-spec` share `variety-app`; `failed-run` and `active-run` share `trial-app-runs`.

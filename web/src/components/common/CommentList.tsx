@@ -1,6 +1,8 @@
 import { anchorLabel, type CommentWithStatus } from '@review-dash/shared'
+import { ChevronDown, ChevronRight, CircleCheck } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Tag } from '@/components/ui/tag'
 import { Textarea } from '@/components/ui/textarea'
 import { formatDuration, formatRelativeTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -23,6 +25,7 @@ export function CommentList({ comments, onEdit, onDelete, onResolve, onReopen, c
   const open = comments.filter((comment) => comment.status === 'open')
   const resolved = comments.filter((comment) => comment.status === 'resolved')
   if (comments.length === 0) return null
+  const Chevron = showResolved ? ChevronDown : ChevronRight
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -38,10 +41,13 @@ export function CommentList({ comments, onEdit, onDelete, onResolve, onReopen, c
           <button
             type="button"
             aria-expanded={showResolved}
+            aria-label={`${showResolved ? 'Hide' : 'Show'} ${resolved.length} resolved`}
             onClick={() => setShowResolved((value) => !value)}
-            className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="inline-flex items-center gap-1.5 self-start rounded-md text-[12.5px] font-semibold text-ink-muted tabular-nums transition-colors hover:text-ink"
           >
-            {showResolved ? 'Hide' : 'Show'} {resolved.length} resolved
+            <Chevron aria-hidden className="size-3.5" />
+            <CircleCheck aria-hidden className="size-3.5 text-green" />
+            {resolved.length} resolved
           </button>
           {showResolved && (
             <ul className="flex flex-col gap-2" aria-label="Resolved comments">
@@ -58,25 +64,36 @@ export function CommentList({ comments, onEdit, onDelete, onResolve, onReopen, c
 
 function Timestamp({ seconds }: { seconds: number | null }) {
   if (seconds === null) return null
-  return <span className="font-mono text-[11px] text-info">at {formatDuration(seconds)}</span>
+  return <span className="font-mono text-[11px] text-st-r">at {formatDuration(seconds)}</span>
 }
 
 function Meta({ comment }: { comment: CommentWithStatus }) {
   return (
-    <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
+    <span className="flex flex-wrap items-center gap-2 text-[11px] text-ink-muted">
       <span className="font-mono">{comment.id}</span>
-      {comment.target.anchor && <span className="font-mono text-info">{anchorLabel(comment.target.anchor)}</span>}
+      {comment.target.anchor && <span className="font-mono text-st-r">{anchorLabel(comment.target.anchor)}</span>}
       <Timestamp seconds={comment.timestampSec} />
       <time dateTime={comment.updatedAt ?? comment.createdAt}>
         {formatRelativeTime(comment.updatedAt ?? comment.createdAt)}
         {comment.updatedAt ? ' · edited' : ''}
       </time>
       {comment.sentAt && (
-        <span className="rounded-full bg-info/10 px-1.5 py-px font-semibold text-info" title={`Sent ${comment.sentAt}`}>
+        <Tag tone="info" size="sm" pill title={`Sent ${comment.sentAt}`}>
           Sent
-        </span>
+        </Tag>
       )}
     </span>
+  )
+}
+
+/** A flat text action in the comment's meta row. */
+function TextAction({ className, ...props }: React.ComponentProps<'button'>) {
+  return (
+    <button
+      type="button"
+      className={cn('rounded-sm text-xs font-semibold text-ink-muted underline-offset-[3px] transition-colors hover:text-ink hover:underline', className)}
+      {...props}
+    />
   )
 }
 
@@ -98,9 +115,9 @@ function OpenComment({ comment, onEdit, onDelete, onResolve }: OpenCommentProps)
   }
 
   return (
-    <li className="flex gap-2.5 rounded-lg border bg-card px-3 py-2 text-[13px]" aria-label={`Comment ${comment.id}`}>
+    <li className="flex gap-2.5 rounded-lg border-fine border-line bg-paper px-3 py-2 text-[13px]" aria-label={`Comment ${comment.id}`}>
       <span
-        className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground text-[10px] font-semibold text-background"
+        className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-fine border-fill-line bg-ink text-[9px] font-bold text-paper"
         aria-hidden
       >
         You
@@ -114,14 +131,14 @@ function OpenComment({ comment, onEdit, onDelete, onResolve }: OpenCommentProps)
               rows={2}
               autoFocus
               aria-label={`Edit comment ${comment.id}`}
-              className="min-h-12 text-[13px] md:text-[13px]"
+              className="min-h-12 text-[13px]"
             />
             <div className="flex gap-2">
-              <Button size="xs" onClick={save} disabled={draft.trim() === ''}>
+              <Button size="sm" onClick={save} disabled={draft.trim() === ''}>
                 Save
               </Button>
               <Button
-                size="xs"
+                size="sm"
                 variant="ghost"
                 onClick={() => {
                   setDraft(comment.body)
@@ -138,18 +155,16 @@ function OpenComment({ comment, onEdit, onDelete, onResolve }: OpenCommentProps)
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <Meta comment={comment} />
           {!editing && (
-            <span className="ml-auto flex gap-2 text-xs">
-              <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setEditing(true)}>
-                Edit
-              </button>
+            <span className="ml-auto flex gap-2.5">
+              <TextAction onClick={() => setEditing(true)}>Edit</TextAction>
               {comment.sentAt === null && (
-                <button type="button" className="text-muted-foreground hover:text-reject" onClick={() => onDelete(comment.id)}>
+                <TextAction className="hover:text-red" onClick={() => onDelete(comment.id)}>
                   Delete
-                </button>
+                </TextAction>
               )}
-              <button type="button" className="text-muted-foreground hover:text-approve" onClick={() => onResolve(comment.id)}>
+              <TextAction className="hover:text-green" onClick={() => onResolve(comment.id)}>
                 Mark resolved
-              </button>
+              </TextAction>
             </span>
           )}
         </div>
@@ -163,25 +178,21 @@ function ResolvedComment({ comment, onReopen }: { comment: CommentWithStatus; on
   const byAgent = comment.resolution !== null && comment.resolution.status === 'resolved'
   return (
     <li
-      className="flex flex-col gap-1 rounded-lg border border-dashed bg-muted/40 px-3 py-2 text-[13px] text-muted-foreground"
+      className="flex flex-col gap-1 rounded-lg border-fine border-dashed border-line bg-paper-2 px-3 py-2 text-[13px] text-ink-muted"
       aria-label={`Resolved comment ${comment.id}`}
     >
       <p className="whitespace-pre-wrap">{comment.body}</p>
       {note && (
         <p className="flex gap-1.5 text-xs">
-          <span className="font-semibold text-approve">{byAgent ? 'Claude Code:' : 'Note:'}</span>
+          <span className="font-bold text-green">{byAgent ? 'Claude Code:' : 'Note:'}</span>
           <span>{note}</span>
         </p>
       )}
       <div className="flex flex-wrap items-center gap-x-3">
         <Meta comment={comment} />
-        <button
-          type="button"
-          className="ml-auto text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => onReopen(comment.id)}
-        >
+        <TextAction className="ml-auto" onClick={() => onReopen(comment.id)}>
           Reopen
-        </button>
+        </TextAction>
       </div>
     </li>
   )

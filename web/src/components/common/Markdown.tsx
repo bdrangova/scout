@@ -1,51 +1,78 @@
 import { code } from '@streamdown/code'
 import { mermaid } from '@streamdown/mermaid'
-import { Streamdown } from 'streamdown'
+import { useMemo } from 'react'
+import { createCssVariablesTheme } from 'shiki'
+import { Streamdown, type LinkSafetyModalProps, type ThemeInput } from 'streamdown'
+import { useMermaidConfig } from '@/lib/mermaid-theme'
 import { cn } from '@/lib/utils'
+import { LinkSafetyDialog, SafeImage } from './UntrustedParts'
+import { UNTRUSTED_REHYPE_PLUGINS } from './untrusted-markdown'
+import './markdown.css'
 
 export interface MarkdownProps {
   source: string
   className?: string
   /** Mermaid blocks take most of the viewport (pan/zoom inside); the text keeps its usual flow. */
   tallDiagrams?: boolean
+  /**
+   * `untrusted` is for third-party text (GitHub comments, trusted authors included): links ask for
+   * confirmation and show their host, only GitHub-hosted images load, no raw HTML, no diagrams.
+   * `trusted` (default) is the reviewer's own agent output.
+   */
+  variant?: 'trusted' | 'untrusted'
 }
 
 const PLUGINS = { code, mermaid }
+const CODE_ONLY = { code }
+const UNTRUSTED_COMPONENTS = { img: SafeImage }
+const UNTRUSTED_LINK_SAFETY = { enabled: true, renderModal: (props: LinkSafetyModalProps) => <LinkSafetyDialog {...props} /> }
 const LINK_SAFETY = { enabled: false }
 
-/** Typography for agent-written markdown; no Tailwind typography plugin, so the rules live here. */
-const PROSE =
-  'prose-rd text-sm leading-relaxed text-foreground ' +
-  '[&>:first-child]:mt-0 [&>:last-child]:mb-0 ' +
-  '[&_h1]:mt-5 [&_h1]:mb-2 [&_h1]:text-lg [&_h1]:font-semibold [&_h1]:tracking-tight ' +
-  '[&_h2]:mt-5 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:tracking-tight ' +
-  '[&_h3]:mt-4 [&_h3]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold ' +
-  '[&_h4]:mt-3 [&_h4]:mb-1 [&_h4]:text-sm [&_h4]:font-semibold [&_h4]:text-muted-foreground ' +
-  '[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 [&_li]:my-0.5 ' +
-  '[&_a]:text-info [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-info/80 ' +
-  '[&_strong]:font-semibold [&_hr]:my-4 [&_hr]:border-border ' +
-  '[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground ' +
-  '[&_:not(pre)>code]:rounded [&_:not(pre)>code]:bg-muted [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-px [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.85em] ' +
-  '[&_table]:my-2 [&_table]:w-full [&_table]:text-[13px] [&_th]:border [&_th]:border-border [&_th]:bg-muted/60 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold ' +
-  '[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1 [&_img]:max-w-full [&_img]:rounded-md'
+/**
+ * One Shiki theme whose colours are `var(--shiki-token-*)`: markdown.css points those at the
+ * design's syntax tokens, so highlighted code follows the light/dark switch without re-rendering.
+ * Streamdown wants a [light, dark] pair; both are this theme.
+ */
+const CSS_VARIABLES_THEME = createCssVariablesTheme({ name: 'review-dash', variablePrefix: '--shiki-', fontStyle: true })
+const SHIKI_THEMES: [ThemeInput, ThemeInput] = [CSS_VARIABLES_THEME, CSS_VARIABLES_THEME]
 
 /**
- * Streamdown's diagram box is as tall as its content; without a height the SVG shrinks to the
- * replaced-element default and a graph becomes a thumbnail. These give the pan/zoom box a viewport
- * height and let the SVG fill its width, capped at that height.
+ * Static (non-streaming) GFM markdown with Shiki code blocks and Mermaid diagrams, typeset by
+ * `markdown.css` on the design tokens. Streamdown's link-safety modal is off: the content is the
+ * reviewer's own agent output, and plain anchors keep links readable (and testable) as links.
  */
-const TALL_DIAGRAMS =
-  '[&_[data-streamdown=mermaid]>div]:min-h-[70vh] [&_[data-streamdown=mermaid]_[role=img]]:w-full ' +
-  '[&_[data-streamdown=mermaid]_[role=img]>svg]:max-h-[70vh] [&_[data-streamdown=mermaid]_[role=img]>svg]:w-full'
+export function Markdown({ variant = 'trusted', ...props }: MarkdownProps) {
+  return variant === 'untrusted' ? <UntrustedMarkdown {...props} /> : <TrustedMarkdown {...props} />
+}
 
-/**
- * Static (non-streaming) GFM markdown with Shiki code blocks and Mermaid diagrams. Streamdown's
- * link-safety modal is off: the content is the reviewer's own agent output, and plain anchors keep
- * links readable (and testable) as links.
- */
-export function Markdown({ source, className, tallDiagrams = false }: MarkdownProps) {
+function UntrustedMarkdown({ source, className }: Omit<MarkdownProps, 'variant'>) {
   return (
-    <Streamdown mode="static" plugins={PLUGINS} linkSafety={LINK_SAFETY} className={cn(PROSE, tallDiagrams && TALL_DIAGRAMS, className)}>
+    <Streamdown
+      mode="static"
+      plugins={CODE_ONLY}
+      shikiTheme={SHIKI_THEMES}
+      linkSafety={UNTRUSTED_LINK_SAFETY}
+      rehypePlugins={UNTRUSTED_REHYPE_PLUGINS}
+      components={UNTRUSTED_COMPONENTS}
+      className={cn('prose-rd', className)}
+    >
+      {source}
+    </Streamdown>
+  )
+}
+
+function TrustedMarkdown({ source, className, tallDiagrams = false }: Omit<MarkdownProps, 'variant'>) {
+  const config = useMermaidConfig()
+  const mermaidOptions = useMemo(() => ({ config }), [config])
+  return (
+    <Streamdown
+      mode="static"
+      plugins={PLUGINS}
+      shikiTheme={SHIKI_THEMES}
+      mermaid={mermaidOptions}
+      linkSafety={LINK_SAFETY}
+      className={cn('prose-rd', tallDiagrams && 'prose-rd--tall', className)}
+    >
       {source}
     </Streamdown>
   )

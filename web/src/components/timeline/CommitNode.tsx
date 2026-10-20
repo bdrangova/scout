@@ -10,7 +10,7 @@ import { formatAbsoluteDate, truncateSubject } from './commit-format'
 /** The width of one column; every node has it, so the line segments meet at the centres. */
 const NODE_WIDTH_CLASS = 'w-[7.5rem]'
 
-/** A segment of the line: solid between pushed commits, dashed into a commit that is not on the remote. */
+/** A segment of the line: solid between pushed commits, dashed amber into a commit that is not on the remote. */
 export type LineStyle = 'solid' | 'dashed'
 
 /** Shared chrome of a timeline node: the line segments behind it, the node itself and the two text lines. */
@@ -36,10 +36,11 @@ function Segment({ style, side }: { style: LineStyle | null; side: 'left' | 'rig
   return (
     <span
       aria-hidden
+      data-segment={style}
       className={cn(
-        'absolute top-[9px] border-t',
+        'absolute top-[11px] border-t-fine group-data-compact/tl:max-lg:hidden',
         side === 'left' ? 'right-1/2 left-0' : 'right-0 left-1/2',
-        style === 'dashed' ? 'border-dashed border-warn/70' : 'border-border',
+        style === 'dashed' ? 'border-dashed border-st-m' : 'border-line',
       )}
     />
   )
@@ -47,7 +48,7 @@ function Segment({ style, side }: { style: LineStyle | null; side: 'left' | 'rig
 
 export function NodeShell({ selected, incoming, outgoing, label, node, primary, secondary, tooltip, onSelect, ...rest }: NodeShellProps) {
   return (
-    <li className={cn('relative flex shrink-0 flex-col items-center', NODE_WIDTH_CLASS)}>
+    <li className={cn('relative flex shrink-0 flex-col items-center group-data-compact/tl:max-lg:w-auto', NODE_WIDTH_CLASS)}>
       <Segment style={incoming} side="left" />
       <Segment style={outgoing} side="right" />
       <Tooltip>
@@ -57,15 +58,18 @@ export function NodeShell({ selected, incoming, outgoing, label, node, primary, 
               type="button"
               aria-pressed={selected}
               aria-label={label}
+              title={label}
               data-scope={rest['data-scope']}
               onClick={onSelect}
-              className="relative z-10 flex w-full flex-col items-center gap-1 rounded-md pb-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="group/node relative z-10 flex min-h-8 w-full flex-col items-center gap-1 rounded-md pb-1 text-ink group-data-compact/tl:max-lg:flex-row group-data-compact/tl:max-lg:gap-2 group-data-compact/tl:max-lg:px-2 group-data-compact/tl:max-lg:pb-0"
             />
           }
         >
-          <span className="flex h-5 items-center">{node}</span>
-          <span className="flex max-w-full items-center gap-1 font-mono text-[11px] leading-none">{primary}</span>
-          <span className="max-w-full truncate px-1 text-[11px] leading-none text-muted-foreground tabular-nums">{secondary}</span>
+          <span className="flex h-[22px] items-center">{node}</span>
+          <span className="flex max-w-full items-center gap-1 font-mono text-[11.5px] leading-none group-hover/node:underline group-hover/node:underline-offset-[3px]">
+            {primary}
+          </span>
+          <span className="max-w-full truncate px-1 text-[11px] leading-[1.1] text-ink-muted tabular-nums group-data-compact/tl:max-lg:max-w-[11rem]">{secondary}</span>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="flex-col items-start gap-0.5 text-left">
           {tooltip}
@@ -75,24 +79,33 @@ export function NodeShell({ selected, incoming, outgoing, label, node, primary, 
   )
 }
 
-const SELECTED_NODE = 'border-foreground bg-foreground text-background ring-2 ring-foreground/25 ring-offset-2 ring-offset-card'
+/** Selected: ink fill, paper glyph, a paper gap then a fine ring (`0 0 0 2px paper-2, 0 0 0 3.5px line`). */
+const SELECTED_NODE = 'border-ink bg-ink text-paper ring-[1.5px] ring-line ring-offset-2 ring-offset-paper-2'
 
-/** A hollow circle, filled with a ring when selected. */
+/** A hollow 14px circle (dashed for the uncommitted changes), filled ink when selected. */
 export function Dot({ selected, dashed = false }: { selected: boolean; dashed?: boolean }) {
   return (
     <span
       aria-hidden
-      className={cn('flex size-3.5 items-center justify-center rounded-full border-2 bg-card transition', dashed && 'border-dashed', selected ? SELECTED_NODE : 'border-muted-foreground')}
+      className={cn(
+        'flex size-3.5 items-center justify-center rounded-full border-fine bg-surface transition-colors',
+        dashed ? 'border-dashed border-ink-muted' : 'border-line',
+        selected && SELECTED_NODE,
+      )}
     />
   )
 }
 
-/** The larger node with an icon inside: the merge commit and the full diff. */
-export function Ring({ selected, children }: { selected: boolean; children: ReactNode }) {
+/** The 22px node with an icon inside: the full diff, and the merge commit (pink). */
+export function Ring({ selected, merge = false, children }: { selected: boolean; merge?: boolean; children: ReactNode }) {
   return (
     <span
       aria-hidden
-      className={cn('flex size-5 items-center justify-center rounded-full border-2 bg-card transition', selected ? SELECTED_NODE : 'border-muted-foreground text-muted-foreground')}
+      className={cn(
+        'flex size-[22px] items-center justify-center rounded-full border-fine bg-surface text-ink-muted transition-colors [&_svg]:size-3 [&_svg]:stroke-[2.5]',
+        merge ? 'border-fill-line bg-pink text-hdr-ink' : 'border-line',
+        selected && SELECTED_NODE,
+      )}
     >
       {children}
     </span>
@@ -101,9 +114,9 @@ export function Ring({ selected, children }: { selected: boolean; children: Reac
 
 export function PushedIcon({ pushed, remoteRef }: { pushed: boolean; remoteRef: string | null }) {
   if (pushed) {
-    return <CloudCheck role="img" aria-label={`Pushed to ${remoteRef ?? 'the remote'}`} strokeWidth={2.5} className="size-3.5 shrink-0 text-approve" />
+    return <CloudCheck role="img" aria-label={`Pushed to ${remoteRef ?? 'the remote'}`} strokeWidth={2.75} className="size-[13px] shrink-0 text-green" />
   }
-  return <CloudUpload role="img" aria-label="Not pushed yet" className="size-3.5 shrink-0 text-warn" />
+  return <CloudUpload role="img" aria-label="Not pushed yet" className="size-[13px] shrink-0 text-st-m" />
 }
 
 interface CommitNodeProps {
@@ -127,8 +140,8 @@ export function CommitNode({ commit, remote, selected, incoming, outgoing, onSel
       onSelect={onSelect}
       node={
         commit.merge ? (
-          <Ring selected={selected}>
-            <GitMerge className="size-3" />
+          <Ring selected={selected} merge>
+            <GitMerge />
           </Ring>
         ) : (
           <Dot selected={selected} />
@@ -136,7 +149,7 @@ export function CommitNode({ commit, remote, selected, incoming, outgoing, onSel
       }
       primary={
         <>
-          <span className={cn(selected && 'font-semibold')}>{sha}</span>
+          <span className={cn(selected && 'font-bold')}>{sha}</span>
           <PushedIcon pushed={commit.pushed} remoteRef={remote.ref} />
         </>
       }
@@ -149,7 +162,7 @@ export function CommitNode({ commit, remote, selected, incoming, outgoing, onSel
 function CommitTooltip({ commit, remote }: { commit: Commit; remote: Remote }) {
   return (
     <>
-      <span className="font-medium">{commit.subject}</span>
+      <span className="font-bold">{commit.subject}</span>
       <span className="opacity-80">
         {commit.author} · {formatRelativeTime(commit.authoredAt)} · {formatAbsoluteDate(commit.authoredAt)}
       </span>
@@ -159,7 +172,7 @@ function CommitTooltip({ commit, remote }: { commit: Commit; remote: Remote }) {
       <span className="opacity-80">{commit.pushed && remote.ref !== null ? `On ${remote.ref}` : 'Not pushed yet'}</span>
       {commit.merge && (
         <span className="opacity-80">
-          <span className="rounded-sm bg-background/20 px-1 font-mono text-[10px] uppercase">merge</span>
+          <span className="rounded-sm bg-paper/20 px-1 font-mono text-[10px] uppercase">merge</span>
           {' of '}
           <span className="font-mono">{commit.parents.map(shortSha).join(', ')}</span>
         </span>

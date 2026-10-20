@@ -3,11 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import { SessionContext } from '@/lib/session-context'
 import { ReviewProvider } from '@/state/ReviewProvider'
-import { commentFixture, reviewFixture, reviewResponseFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
+import { commentFixture, makeTreeFile, reviewFixture, reviewResponseFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
 import { mockReviewApi } from '@/test/mock-api'
 import { FileTree } from './FileTree'
 
-vi.mock('sonner', () => ({ toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() } }))
+vi.mock('sonner', async () => (await import('@/test/mock-sonner')).sonnerModuleMock())
 
 const files = sessionDetailFixture.tree.files
 const [P0 = '', P1 = '', , P3 = ''] = files.map((file) => file.path)
@@ -45,6 +45,27 @@ function rowNames() {
   return screen.getAllByRole('treeitem').map((row) => row.dataset['id'])
 }
 
+describe('FileTree fold', () => {
+  it('shows only the header while collapsed and offers the chevron to bring the tree back', async () => {
+    mockReviewApi(reviewResponseFixture(reviewFixture({})))
+    const onToggle = vi.fn()
+    render(
+      <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
+        <ReviewProvider>
+          <FileTree files={files} currentPath={null} onSelect={() => {}} collapsed onToggleCollapsed={onToggle} />
+        </ReviewProvider>
+      </SessionContext.Provider>,
+    )
+    const chevron = await screen.findByRole('button', { name: 'Expand files' })
+    expect(chevron).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('tree')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /all/i })).not.toBeInTheDocument()
+    await userEvent.click(chevron)
+    expect(onToggle).toHaveBeenCalledOnce()
+  })
+})
+
 describe('FileTree', () => {
   afterAll(() => {
     vi.unstubAllGlobals()
@@ -70,10 +91,62 @@ describe('FileTree', () => {
     expect(client).toHaveAttribute('aria-expanded', 'true')
     const current = screen.getByRole('treeitem', { name: 'TrialBar.tsx approved' })
     expect(current).toHaveAttribute('aria-selected', 'true')
-    expect(current).toHaveAttribute('title', P0)
+    expect(current).toHaveAttribute('title', `${P0} · Added`)
+    expect(current).toHaveAttribute('data-current', 'true')
     expect(within(current).getByRole('img', { name: 'approved' })).toBeInTheDocument()
+    expect(within(current).getByTitle('Approved')).toBeInTheDocument()
+    // The dot at the left is the file type (React for .tsx), decorative.
+    expect(current.querySelector('[data-slot="file-type-dot"]')).toHaveAttribute('data-type', 'react')
     const hook = screen.getByRole('treeitem', { name: /useTrial\.ts/ })
     expect(within(hook).getByTitle('1 open comment')).toHaveTextContent('1')
+    expect(hook.querySelector('[data-slot="file-type-dot"]')).toHaveAttribute('data-type', 'ts')
+    // A deleted file is struck through and says so in its title.
+    const deleted = screen.getByRole('treeitem', { name: /legacyTrialBanner/ })
+    expect(deleted).toHaveAttribute('title', 'src/main/client/trial/legacyTrialBanner.tsx · Deleted')
+    expect(within(deleted).getByText('legacyTrialBanner.tsx')).toHaveClass('line-through')
+  })
+
+  it('has one expand/collapse toggle in the header that flips with the state, and the file count', async () => {
+    renderTree(P0)
+    await tree()
+    expect(screen.getByText('Files')).toBeInTheDocument()
+    expect(screen.getByText(String(files.length))).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Expand all' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse all' }))
+    expect(screen.queryByRole('button', { name: 'Collapse all' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Expand all' }))
+    expect(screen.getByRole('button', { name: 'Collapse all' })).toBeInTheDocument()
+  })
+
+  it('shows an empty state for a tree with no files', async () => {
+    mockReviewApi(reviewResponseFixture(reviewFixture()))
+    render(
+      <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
+        <ReviewProvider>
+          <FileTree files={[]} currentPath={null} onSelect={vi.fn()} />
+        </ReviewProvider>
+      </SessionContext.Provider>,
+    )
+    await tree()
+    expect(screen.getByText('No files changed.')).toBeInTheDocument()
+    expect(screen.queryAllByRole('treeitem')).toHaveLength(0)
+  })
+
+  it('opens only the way to the current file above the expand-all threshold', async () => {
+    const many = Array.from({ length: 80 }, (_, index) => makeTreeFile({ path: `src/dir${index % 8}/sub/file${index}.ts` }))
+    const current = many[12]?.path ?? ''
+    mockReviewApi(reviewResponseFixture(reviewFixture()))
+    render(
+      <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
+        <ReviewProvider>
+          <FileTree files={many} currentPath={current} onSelect={vi.fn()} />
+        </ReviewProvider>
+      </SessionContext.Provider>,
+    )
+    await tree()
+    expect(screen.getByRole('treeitem', { name: /file12\.ts/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByRole('treeitem', { name: /file13\.ts/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Expand all' })).toBeInTheDocument()
   })
 
   it('selects a clicked file and toggles a clicked folder', async () => {

@@ -1,5 +1,6 @@
 import type { SpecItem } from '@review-dash/shared'
-import { ExternalLink } from 'lucide-react'
+import { ClipboardList, ExternalLink } from 'lucide-react'
+import { IconLink } from '@/components/common/IconLink'
 import { Markdown } from '@/components/common/Markdown'
 import { useContent } from '@/lib/useContent'
 import { SpecCardShell } from './SpecCardShell'
@@ -23,25 +24,21 @@ export function JiraCard({ item, sessionId, className }: JiraCardProps) {
   return (
     <SpecCardShell
       kind="Jira"
+      kindLabel="Jira ticket"
+      icon={ClipboardList}
       item={item}
       className={className}
       title={
         <>
-          {key && <span className="mr-2 font-mono text-info">{key}</span>}
+          {key && <span className="mr-1 font-mono font-bold text-focus">{key}</span>}
           {rest || (key ? '' : item.title)}
         </>
       }
       actions={
         item.url && (
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 text-xs font-medium text-info hover:underline"
-          >
-            Open in Jira
-            <ExternalLink className="size-3" />
-          </a>
+          <IconLink showLabel href={item.url} label="Open in Jira">
+            <ExternalLink aria-hidden />
+          </IconLink>
         )
       }
       content={content}

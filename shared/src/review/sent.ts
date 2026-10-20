@@ -1,5 +1,6 @@
 import type { Resolutions } from '../schemas/resolutions.ts'
 import type { Comment, Decision, Review } from '../schemas/review.ts'
+import type { SentPrReply } from '../schemas/pr-comments.ts'
 import type { SentSnapshot } from '../schemas/sent.ts'
 import type { WorkingTree } from '../schemas/tree.ts'
 import { SCHEMA_VERSION } from '../constants.ts'
@@ -31,6 +32,8 @@ export function buildSentSnapshot(input: {
   tree: WorkingTree
   decision: Decision
   resolutions: Resolutions | null
+  /** The user's unposted PR-comment drafts (`buildSentPrReplies`). */
+  prReplies?: readonly SentPrReply[]
   now: string
 }): SentSnapshot {
   const { review, tree, decision, resolutions, now } = input
@@ -72,6 +75,7 @@ export function buildSentSnapshot(input: {
     patchPath: sentPatchPath(now),
     files,
     comments,
+    ...(input.prReplies !== undefined && input.prReplies.length > 0 ? { prReplies: [...input.prReplies] } : {}),
     counts,
   }
 }

@@ -13,6 +13,7 @@ import {
 import { useCallback, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { apiGet } from '@/lib/api'
+import { unsavedDraftsOf } from '@/lib/comment-drafts'
 import { useAsync } from '@/lib/hooks'
 import { useSessionContext } from '@/lib/session-context'
 import { ReviewStateContext, sameTarget, type ReviewContextValue, type ReviewInput } from './review-context'
@@ -41,18 +42,16 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
   if (error) {
     return (
       <main className="mx-auto flex max-w-md flex-col items-start gap-3 px-6 py-24">
-        <h1 className="text-lg font-semibold">Couldn't load the review</h1>
-        <p className="text-sm text-muted-foreground">{error.message}</p>
-        <Button variant="outline" onClick={reload}>
-          Retry
-        </Button>
+        <h1 className="m-0 text-lg font-bold text-ink">Couldn't load the review</h1>
+        <p className="m-0 text-sm text-ink-muted">{error.message}</p>
+        <Button onClick={reload}>Retry</Button>
       </main>
     )
   }
 
   if (!data) {
     return (
-      <main className="px-6 py-24 text-center text-sm text-muted-foreground" aria-busy="true">
+      <main className="px-6 py-24 text-center text-sm text-ink-muted" aria-busy="true">
         Loading review…
       </main>
     )
@@ -110,6 +109,7 @@ function LoadedReviewProvider({ sessionId, tree, response, reload, children }: L
       return { ...current, [path]: text }
     })
   }, [])
+  const unsavedDrafts = useMemo(() => unsavedDraftsOf(drafts), [drafts])
   const setVerdict = useCallback(
     (path: string, verdict: 'approved' | 'rejected', fingerprint: string | null) => {
       const comment = (drafts[path] ?? '').trim()
@@ -120,12 +120,23 @@ function LoadedReviewProvider({ sessionId, tree, response, reload, children }: L
     [drafts, dispatch, setDraft],
   )
 
-  const saveStatus = useAutosave({
+  const autosave = useAutosave({
     sessionId,
     review: state.review,
     initialBase: response.review.updatedAt,
     dispatch: rawDispatch,
   })
+  const saveStatus = autosave.status
+  const flushAutosave = autosave.flush
+  const flushSave = useCallback(async () => {
+    // A field still focused (a send by keyboard) commits on blur; let that render and its effects settle.
+    const active = document.activeElement
+    if (active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement) {
+      active.blur()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    }
+    return flushAutosave()
+  }, [flushAutosave])
 
   const value = useMemo<ReviewContextValue>(
     () => ({
@@ -136,13 +147,15 @@ function LoadedReviewProvider({ sessionId, tree, response, reload, children }: L
       fileReview,
       draftFor,
       setDraft,
+      unsavedDrafts,
       setVerdict,
       progress: reviewed,
       resolutions,
       saveStatus,
+      flushSave,
       reload,
     }),
-    [state, dispatch, comments, commentsFor, fileReview, draftFor, setDraft, setVerdict, reviewed, resolutions, saveStatus, reload],
+    [state, dispatch, comments, commentsFor, fileReview, draftFor, setDraft, unsavedDrafts, setVerdict, reviewed, resolutions, saveStatus, flushSave, reload],
   )
 
   return <ReviewStateContext.Provider value={value}>{children}</ReviewStateContext.Provider>

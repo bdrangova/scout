@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MotionGlobalConfig } from 'motion/react'
 import { StrictMode } from 'react'
-import { MemoryRouter, Outlet, Route, Routes } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { SessionShell } from '@/components/layout/SessionShell'
 import { SessionContext } from '@/lib/session-context'
 import { ReviewProvider } from '@/state/ReviewProvider'
 import {
@@ -19,6 +20,8 @@ import {
   sessionDetailFixture,
 } from '@/test/fixtures'
 import { mockReviewApi, type ReviewApiMockOptions } from '@/test/mock-api'
+import { stubEventSource } from '@/test/mock-event-source'
+import { ThemeProvider } from '@/theme/ThemeProvider'
 import { makeTree } from '@review-dash/shared/testing/fixtures'
 import { FilesPage } from './FilesPage'
 
@@ -27,7 +30,7 @@ vi.mock('@pierre/diffs/react', () => ({
   WorkerPoolContextProvider: ({ children }: { children: React.ReactNode }) => children,
 }))
 
-vi.mock('sonner', () => ({ toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() } }))
+vi.mock('sonner', async () => (await import('@/test/mock-sonner')).sonnerModuleMock())
 
 // happy-dom has no layout: render every row instead of measuring the scroller.
 vi.mock('@tanstack/react-virtual', async () => (await import('@/test/mock-virtualizer')).virtualizerModuleMock())
@@ -37,28 +40,31 @@ const P0 = files[0]?.path ?? ''
 const P1 = files[1]?.path ?? ''
 
 function renderFiles(initialPath: string, response = reviewResponseFixture(), options: ReviewApiMockOptions = {}) {
+  stubEventSource()
   const api = mockReviewApi(response, options)
-  // StrictMode double-invokes effects on mount, like the dev build does.
+  // StrictMode double-invokes effects on mount, like the dev build does. The page sits in the real shell (bar and rail).
   render(
     <StrictMode>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <Routes>
-        <Route
-          path="/s/:id"
-          element={
-            <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
-              <ReviewProvider>
-                <Outlet />
-              </ReviewProvider>
-            </SessionContext.Provider>
-          }
-        >
-          <Route path="files" element={<FilesPage />} />
-          <Route path="files/*" element={<FilesPage />} />
-          <Route path="submit" element={<h2>Submit page</h2>} />
-        </Route>
-      </Routes>
-      </MemoryRouter>
+      <ThemeProvider defaultTheme="light">
+        <MemoryRouter initialEntries={[initialPath]}>
+          <Routes>
+            <Route
+              path="/s/:id"
+              element={
+                <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
+                  <ReviewProvider>
+                    <SessionShell />
+                  </ReviewProvider>
+                </SessionContext.Provider>
+              }
+            >
+              <Route path="files" element={<FilesPage />} />
+              <Route path="files/*" element={<FilesPage />} />
+              <Route path="submit" element={<h2>Submit page</h2>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </ThemeProvider>
     </StrictMode>,
   )
   return api
@@ -149,6 +155,43 @@ describe('FilesPage', () => {
     expect(api.patchRequests[0]).toBe(`/api/sessions/${SESSION_ID}/files/${P0}/patch`)
   })
 
+  it('announces a verdict with one Undo toast that restores the file; Z undoes too and a second verdict replaces the toast', async () => {
+    const { toast } = await import('sonner')
+    const api = renderFiles(`/s/${SESSION_ID}/files`)
+    const card = await firstCard()
+    const name = P0.split('/').pop()
+    await userEvent.setup().click(within(card).getByRole('button', { name: 'Approve' }))
+    expect(await screen.findByText('2 / 6')).toBeInTheDocument()
+    expect(toast).toHaveBeenLastCalledWith(`Approved ${name}`, expect.objectContaining({ id: 'verdict-undo', action: expect.objectContaining({ label: 'Undo' }) }))
+
+    // The toast's Undo: the verdict is gone and the deck is back on the file.
+    const action = vi.mocked(toast).mock.lastCall?.[1]?.action
+    if (action === undefined || action === null || typeof action !== 'object' || !('onClick' in action)) throw new Error('the toast has no Undo action')
+    act(() => action.onClick(new MouseEvent('click') as never))
+    expect(await screen.findByText('1 / 6')).toBeInTheDocument()
+    expect(screen.getByRole('article', { name: P0 })).toHaveAttribute('data-verdict', 'none')
+    await waitFor(() => expect(api.puts.at(-1)?.review.files[P0]?.verdict ?? 'none').toBe('none'))
+
+    // Z undoes the last verdict; with nothing left it does nothing.
+    fireEvent.keyDown(window, { key: 'a' })
+    await waitFor(() => expect(screen.getByRole('article', { name: P1 })).toBeInTheDocument())
+    fireEvent.keyDown(window, { key: 'z' })
+    expect(await screen.findByRole('article', { name: P0 })).toHaveAttribute('data-verdict', 'none')
+    fireEvent.keyDown(window, { key: 'z' })
+    expect(screen.getByRole('article', { name: P0 })).toBeInTheDocument()
+  })
+
+  it('does not fire a verdict for keys typed into a field', async () => {
+    renderFiles(`/s/${SESSION_ID}/files`)
+    const card = await firstCard()
+    const field = document.createElement('textarea')
+    document.body.append(field)
+    fireEvent.keyDown(field, { key: 'a' })
+    field.remove()
+    expect(card).toHaveAttribute('data-verdict', 'none')
+    expect(screen.getByText('1 / 6')).toBeInTheDocument()
+  })
+
   it('X starts a reject: the comment box is focused, an empty submit is blocked, ⌘+Enter stores the reject and advances', async () => {
     const api = renderFiles(`/s/${SESSION_ID}/files`)
     await firstCard()
@@ -225,7 +268,7 @@ describe('FilesPage', () => {
     expect(card).toHaveAttribute('data-verdict', 'approved')
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     const third = await screen.findByRole('article', { name: files[2]?.path ?? '' })
-    expect(within(third).getByText('updated')).toBeInTheDocument()
+    expect(within(third).getByText('updated since sent')).toBeInTheDocument()
     expect(third).toHaveAttribute('data-verdict', 'none')
   })
 
@@ -243,7 +286,11 @@ describe('FilesPage', () => {
       expect(await panel()).toBeInTheDocument()
       expect(screen.queryByText('Submit page')).not.toBeInTheDocument()
       expect(screen.getByRole('link', { name: 'Submit' })).toHaveAttribute('href', `/s/${SESSION_ID}/submit`)
-      expect(screen.getByRole('link', { name: 'Evidence 2' })).toBeInTheDocument()
+      // The end panel's section links and the bar's tabs.
+      expect(screen.getAllByRole('link', { name: 'Evidence 2' })).toHaveLength(2)
+      // The bar's Submit tab turns green (named ready) and the rail stays live and says the same thing.
+      expect(within(screen.getByRole('banner')).getByRole('link', { name: /^Submit, ready/ })).toBeInTheDocument()
+      expect(within(screen.getByRole('complementary', { name: 'Session panel' })).getByText('Ready to submit')).toBeInTheDocument()
       // The deck is still there, out of reach.
       expect(screen.queryByRole('article')).not.toBeInTheDocument()
       expect(screen.getByRole('article', { hidden: true })).toHaveAttribute('data-verdict', 'approved')
@@ -317,16 +364,32 @@ describe('FilesPage', () => {
     expect(await screen.findByRole('article', { name: files[3]?.path ?? '' })).toBeInTheDocument()
   })
 
-  it('B hides and shows the sidebar, the timeline row offers it back and the choice is remembered', async () => {
+  it('B and the bar toggle hide and show the rail; the closed toggle wears the progress and the choice is remembered', async () => {
     renderFiles(`/s/${SESSION_ID}/files`)
     await firstCard()
-    expect(screen.getByRole('complementary', { name: 'Files sidebar' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Show files sidebar' })).not.toBeInTheDocument()
+    const bar = screen.getByRole('banner')
+    expect(screen.getByRole('complementary', { name: 'Session panel' })).toBeInTheDocument()
+    expect(within(bar).getByRole('button', { name: 'Hide sidebar' })).toHaveAttribute('aria-expanded', 'true')
+    expect(within(bar).queryByTitle(/^Reviewed \d+ of \d+$/)).not.toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'b' })
-    expect(screen.queryByRole('complementary', { name: 'Files sidebar' })).not.toBeInTheDocument()
-    expect(window.localStorage.getItem('review-dash:files-sidebar')).toBe('closed')
-    fireEvent.click(within(screen.getByRole('region', { name: 'Commits' })).getByRole('button', { name: 'Show files sidebar' }))
-    expect(screen.getByRole('complementary', { name: 'Files sidebar' })).toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Session panel' })).not.toBeInTheDocument()
+    expect(window.localStorage.getItem('review-dash:rail')).toBe('closed')
+    const show = within(bar).getByRole('button', { name: 'Show sidebar' })
+    expect(show).toHaveAttribute('aria-expanded', 'false')
+    expect(within(show).getByText('0/6')).toBeInTheDocument()
+    fireEvent.click(show)
+    expect(screen.getByRole('complementary', { name: 'Session panel' })).toBeInTheDocument()
+    expect(window.localStorage.getItem('review-dash:rail')).toBe('open')
+  })
+
+  it('has the timeline in the page column on the page background, with no hide button on the tree header', async () => {
+    renderFiles(`/s/${SESSION_ID}/files`)
+    await firstCard()
+    const timeline = screen.getByRole('region', { name: 'Commits' })
+    expect(screen.getByRole('main')).toContainElement(timeline)
+    expect(screen.getByRole('complementary', { name: 'Session panel' })).not.toContainElement(timeline)
+    expect(within(timeline).queryByRole('button', { name: /sidebar/i })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('complementary', { name: 'Session panel' })).queryByRole('button', { name: /^Hide/ })).not.toBeInTheDocument()
   })
 
   it('grid mode shows a tile per file, ignores the card keys and opens a tile in the last card mode', async () => {
@@ -376,7 +439,7 @@ describe('FilesPage', () => {
     it('shows the timeline with the live commits and an inline note when the commits route fails', async () => {
       renderFiles(`/s/${SESSION_ID}/files?mode=grid`)
       await screen.findByRole('list', { name: 'All files' })
-      expect(await screen.findByRole('status')).toHaveTextContent("Couldn't load the commits")
+      expect(await within(screen.getByRole('region', { name: 'Commits' })).findByRole('status')).toHaveTextContent("Couldn't load the commits")
       expect(screen.getByRole('button', { name: /^Full diff: 6 files/ })).toHaveAttribute('aria-pressed', 'true')
     })
 
@@ -392,7 +455,7 @@ describe('FilesPage', () => {
       expect(within(tree).getAllByRole('treeitem', { selected: true })).toHaveLength(1)
       expect(within(tree).getByRole('treeitem', { name: /reverted\.ts/ })).toBeInTheDocument()
       expect(within(tree).queryByRole('treeitem', { name: /useTrial/ })).toBeInTheDocument()
-      expect(within(screen.getByRole('complementary', { name: 'Files sidebar' })).getByText('3')).toBeInTheDocument()
+      expect(within(screen.getByRole('complementary', { name: 'Session panel' })).getByText('3')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: `Commit ${short}: add shell breadcrumb/title helpers, wire up BasePage` })).toHaveAttribute('aria-pressed', 'true')
 
       const reverted = grid().querySelector(`[data-path="${REVERTED}"]`)
@@ -486,18 +549,21 @@ describe('FilesPage', () => {
       )
     })
 
-    it('the toggle in the timeline row opens the files drawer and picking a file closes it', async () => {
+    it('the bar toggle opens the rail as a drawer; picking a file or Escape closes it', async () => {
       renderFiles(`/s/${SESSION_ID}/files`)
       await firstCard()
-      expect(screen.queryByRole('complementary', { name: 'Files sidebar' })).not.toBeInTheDocument()
-      const row = screen.getByRole('region', { name: 'Commits' })
-      const toggle = within(row).getByRole('button', { name: 'Show files sidebar' })
+      expect(screen.queryByRole('complementary', { name: 'Session panel' })).not.toBeInTheDocument()
+      const toggle = within(screen.getByRole('banner')).getByRole('button', { name: 'Show sidebar' })
       expect(toggle).toHaveAttribute('aria-expanded', 'false')
       fireEvent.click(toggle)
-      const drawer = await screen.findByRole('complementary', { name: 'Files sidebar' })
+      const drawer = await screen.findByRole('complementary', { name: 'Session panel' })
       fireEvent.click(within(drawer).getByRole('treeitem', { name: /useTrial\.ts/ }))
-      await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Files sidebar' })).not.toBeInTheDocument())
+      await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Session panel' })).not.toBeInTheDocument())
       expect(await screen.findByText('2 / 6')).toBeInTheDocument()
+      fireEvent.click(toggle)
+      await screen.findByRole('complementary', { name: 'Session panel' })
+      fireEvent.keyDown(window, { key: 'Escape' })
+      await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Session panel' })).not.toBeInTheDocument())
     })
   })
 })

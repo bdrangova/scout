@@ -1,8 +1,8 @@
 import type { SpecItem } from '@review-dash/shared'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, FileText, HardDrive } from 'lucide-react'
 import { useState } from 'react'
+import { KindTag } from '@/components/common/KindTag'
 import { Markdown } from '@/components/common/Markdown'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { splitPath } from '@/lib/paths'
 import { useContent } from '@/lib/useContent'
@@ -35,23 +35,17 @@ export function MarkdownSpecCard({ item, sessionId, className }: MarkdownSpecCar
   return (
     <SpecCardShell
       kind="Markdown"
+      icon={FileText}
       item={item}
       className={className}
-      title={
-        <>
-          <span className="font-mono">{name}</span>
-          {item.title && item.title !== name && <span className="ml-2 font-normal text-muted-foreground">{item.title}</span>}
-        </>
-      }
+      title={<span className="font-mono">{name}</span>}
+      subtitle={item.title && item.title !== name ? item.title : undefined}
       actions={
         sourcePath && (
           <>
-            <Badge variant="outline" title={sourcePath} className="font-mono text-[11px]">
-              local file
-            </Badge>
-            <Button variant="ghost" size="xs" onClick={() => void copyPath()} title={sourcePath}>
-              {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
-              {copied ? 'Copied' : 'Copy path'}
+            <KindTag icon={HardDrive} label="Local file" pill title={`Local file: ${sourcePath}`} />
+            <Button size="icon-sm" aria-label={copied ? 'Copied' : 'Copy path'} title={copied ? 'Copied' : `Copy path: ${sourcePath}`} onClick={() => void copyPath()}>
+              {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
             </Button>
           </>
         )

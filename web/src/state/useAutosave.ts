@@ -6,6 +6,15 @@ import type { SaveStatus } from './review-context'
 
 export const AUTOSAVE_DELAY_MS = 250
 
+export interface Autosave {
+  status: SaveStatus
+  /**
+   * Saves now whatever is pending, waiting for a save already in flight. Resolves true when the
+   * server holds the latest review; false after a failure or a 409 (which reloads the server's copy).
+   */
+  flush: () => Promise<boolean>
+}
+
 export interface AutosaveOptions {
   sessionId: string
   review: Review
@@ -51,13 +60,13 @@ function sendKeepalive(sessionId: string, body: PutReviewRequest): void {
  * and with `keepalive` when the page hides or the provider unmounts. `baseUpdatedAt` follows the
  * server's last `updatedAt`; a 409 replaces the local review with the server's copy.
  */
-export function useAutosave({ sessionId, review, initialBase, dispatch, paused = false }: AutosaveOptions): SaveStatus {
+export function useAutosave({ sessionId, review, initialBase, dispatch, paused = false }: AutosaveOptions): Autosave {
   const [status, setStatus] = useState<SaveStatus>('idle')
   const baseRef = useRef(initialBase)
   /** The last review known to match the server (loaded, saved, or reloaded after a 409). */
   const syncedRef = useRef(review)
   const latestRef = useRef(review)
-  const inFlightRef = useRef(false)
+  const inFlightRef = useRef<Promise<boolean> | null>(null)
   const queuedRef = useRef(false)
   const timerRef = useRef<number | null>(null)
 
@@ -65,14 +74,15 @@ export function useAutosave({ sessionId, review, initialBase, dispatch, paused =
     latestRef.current = review
   })
 
-  const flush = useCallback(async (): Promise<void> => {
+  const flush = useCallback((): Promise<boolean> => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current)
       timerRef.current = null
     }
     if (inFlightRef.current) {
+      // The running loop saves again once more before it resolves.
       queuedRef.current = true
-      return
+      return inFlightRef.current
     }
 
     async function saveOnce(): Promise<boolean> {
@@ -105,20 +115,23 @@ export function useAutosave({ sessionId, review, initialBase, dispatch, paused =
       }
     }
 
-    inFlightRef.current = true
-    try {
+    const run = (async (): Promise<boolean> => {
       // Changes made while a save was in flight are saved right after it (unless it failed:
       // then the next change retries).
+      let ok = true
       let again = true
       while (again) {
         queuedRef.current = false
-        const ok = await saveOnce()
+        ok = await saveOnce()
         again = ok && queuedRef.current
       }
-    } finally {
+      return ok
+    })().finally(() => {
       queuedRef.current = false
-      inFlightRef.current = false
-    }
+      inFlightRef.current = null
+    })
+    inFlightRef.current = run
+    return run
   }, [sessionId, dispatch])
 
   useEffect(() => {
@@ -153,5 +166,5 @@ export function useAutosave({ sessionId, review, initialBase, dispatch, paused =
     }
   }, [sessionId])
 
-  return status
+  return { status, flush }
 }

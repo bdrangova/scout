@@ -26,12 +26,16 @@ describe('ReviewComplete', () => {
     expect(screen.getByRole('link', { name: 'Spec 1' })).toHaveAttribute('href', `/s/${SESSION_ID}/spec`)
     expect(screen.getByRole('link', { name: 'Extras 1' })).toHaveAttribute('href', `/s/${SESSION_ID}/extras`)
     expect(screen.getByRole('link', { name: 'Submit' })).toHaveAttribute('href', `/s/${SESSION_ID}/submit`)
+    // Icon-first: the word is the tooltip, the count is what shows.
+    expect(screen.getByRole('link', { name: 'Evidence 2' })).toHaveAttribute('title', 'Evidence')
+    expect(screen.getByRole('link', { name: 'Evidence 2' })).toHaveTextContent('2')
 
     expect(screen.queryByRole('article')).not.toBeInTheDocument()
     const card = screen.getByRole('article', { hidden: true })
     const backdrop = card.parentElement
     expect(backdrop).toHaveAttribute('aria-hidden', 'true')
     expect(backdrop).toHaveAttribute('inert')
+    expect(backdrop?.closest('[data-review-complete]')).not.toBeNull()
   })
 
   it('skips the empty sections and calls back from "Back to files"', () => {

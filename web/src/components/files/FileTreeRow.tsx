@@ -1,14 +1,21 @@
 import type { Verdict } from '@review-dash/shared'
-import { Check, ChevronRight, Folder, FolderOpen, MessageSquare, X } from 'lucide-react'
+import { Check, ChevronDown, Folder, FolderOpen, MessageSquare, X } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
-import { fileStatusDotClass } from '@/lib/file-status'
+import { FileTypeDot } from '@/components/ui/file-type-dot'
+import { PrCount } from '@/components/prcomments/PrCount'
+import { StatusDot } from '@/components/ui/status-dot'
 import type { FlatRow } from '@/lib/file-tree'
+import { fileTypeOf } from '@/lib/file-type'
+import type { PrFileCounts } from '@/lib/pr-threads'
+import { STATUS_TONE } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'
 
 export interface FileRowState {
   verdict: Verdict
   openComments: number
   updated: boolean
+  /** GitHub threads on the file (absent when none). */
+  prComments?: PrFileCounts
 }
 
 interface FileTreeRowProps {
@@ -24,13 +31,18 @@ interface FileTreeRowProps {
   onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
 }
 
-const INDENT_PX = 14
+const INDENT_PX = 18
 
-/** One `treeitem` row: a folder with its chevron and count, or a file with its status and verdict. */
+/**
+ * One `treeitem` row (32px, fine transparent line, yellow when current): a folder with its chevron
+ * and `reviewed/total`, or a file with its type dot, mono name and the review marks at the right
+ * (changed since reviewed, open comments, the verdict). A deleted file's name is struck through.
+ */
 export function FileTreeRow({ row, expanded, current, focused, count, state, onActivate, onFocus, onKeyDown }: FileTreeRowProps) {
   const { node, depth } = row
   const folder = node.kind === 'folder'
-  const Icon = folder ? (expanded ? FolderOpen : Folder) : null
+  const FolderIcon = expanded ? FolderOpen : Folder
+  const status = folder ? null : STATUS_TONE.file(node.file.status)
 
   return (
     <div
@@ -41,47 +53,74 @@ export function FileTreeRow({ row, expanded, current, focused, count, state, onA
       aria-selected={folder ? undefined : current}
       data-id={node.id}
       data-current={current || undefined}
-      title={folder ? undefined : node.id}
+      title={folder ? undefined : `${node.id} · ${status?.label}`}
       style={{ paddingLeft: 8 + depth * INDENT_PX }}
       onClick={onActivate}
       onFocus={onFocus}
       onKeyDown={onKeyDown}
       className={cn(
-        'flex h-7 cursor-pointer items-center gap-1.5 rounded-md pr-2 text-[13px] outline-none select-none',
-        'hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/60',
-        current && 'bg-foreground/8 font-medium',
+        'flex h-8 shrink-0 cursor-pointer items-center gap-[7px] rounded-[9px] border-fine border-transparent pr-2 text-[13px] font-medium whitespace-nowrap text-ink transition-colors select-none',
+        'hover:bg-hover [&_svg]:size-[15px] [&_svg]:shrink-0 [&_svg]:stroke-[2.25] [&_svg]:text-ink-muted',
+        folder && 'font-bold',
+        current && 'border-line bg-yellow font-bold text-on-yellow hover:bg-yellow [&_svg]:text-on-yellow',
       )}
     >
       {folder ? (
         <>
-          <ChevronRight aria-hidden className={cn('size-3.5 shrink-0 text-muted-foreground transition-transform', expanded && 'rotate-90')} />
-          {Icon && <Icon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />}
-          <span className="min-w-0 truncate">{node.name}</span>
+          <ChevronDown aria-hidden className={cn('size-[13px]! transition-transform', !expanded && '-rotate-90')} />
+          <FolderIcon aria-hidden />
+          <span className="min-w-0 flex-1 truncate">{node.name}</span>
           {count && (
-            <span className="ml-auto shrink-0 text-[11px] text-muted-foreground tabular-nums">
+            <span className={cn('shrink-0 text-[11.5px] font-semibold tabular-nums', current ? 'text-on-yellow' : 'text-ink-muted')}>
               {count.reviewed}/{count.total}
             </span>
           )}
         </>
       ) : (
         <>
-          <span aria-hidden className={cn('ml-[5px] size-2 shrink-0 rounded-full', fileStatusDotClass(node.file))} />
-          <span className="min-w-0 truncate font-mono text-xs">{node.name}</span>
-          <span className="ml-auto flex shrink-0 items-center gap-1">
+          <FileTypeDot type={fileTypeOf(node.id).id} size="sm" aria-hidden className={cn('mx-px', current && 'ring-[1.5px] ring-on-yellow')} />
+          <span
+            className={cn(
+              'min-w-0 flex-1 truncate font-mono text-[12.5px]',
+              node.file.status === 'deleted' && 'line-through',
+              node.file.status === 'deleted' && !current && 'text-ink-muted',
+            )}
+          >
+            {node.name}
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5">
             {state?.updated && (
-              <span role="img" aria-label="updated" title="Changed on disk since you reviewed it" className="size-1.5 rounded-full bg-warn" />
+              <StatusDot
+                tone="warn"
+                size="sm"
+                role="img"
+                aria-label="updated"
+                title="Changed on disk since you reviewed it"
+                className={cn(current && 'bg-on-yellow')}
+                label=""
+              />
             )}
             {state && state.openComments > 0 && (
               <span
                 title={`${state.openComments} open ${state.openComments === 1 ? 'comment' : 'comments'}`}
-                className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 text-[10px] font-semibold text-muted-foreground tabular-nums"
+                className="inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums"
               >
-                <MessageSquare aria-hidden className="size-2.5" />
+                <MessageSquare aria-hidden className="size-3!" />
                 {state.openComments}
+                <span className="sr-only">open {state.openComments === 1 ? 'comment' : 'comments'}</span>
               </span>
             )}
-            {state?.verdict === 'approved' && <Check role="img" aria-label="approved" className="size-3.5 text-approve" />}
-            {state?.verdict === 'rejected' && <X role="img" aria-label="rejected" className="size-3.5 text-reject" />}
+            {state?.prComments && <PrCount counts={state.prComments} />}
+            {state?.verdict === 'approved' && (
+              <span title="Approved" className="inline-flex">
+                <Check role="img" aria-label="approved" className={cn('size-3.5! stroke-[3]!', !current && 'text-green!')} />
+              </span>
+            )}
+            {state?.verdict === 'rejected' && (
+              <span title="Changes requested" className="inline-flex">
+                <X role="img" aria-label="rejected" className={cn('size-3.5! stroke-[3]!', !current && 'text-red!')} />
+              </span>
+            )}
           </span>
         </>
       )}

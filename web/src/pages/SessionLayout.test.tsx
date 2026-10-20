@@ -3,14 +3,17 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MotionGlobalConfig } from 'motion/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { toast } from 'sonner'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fp, makeTreeFile, reviewFixture, reviewResponseFixture, SESSION_ID, sessionDetailFixture, withChangedFile } from '@/test/fixtures'
 import { mockReviewApi, urlOf } from '@/test/mock-api'
 import { MockEventSource, stubEventSource } from '@/test/mock-event-source'
+import { ThemeProvider } from '@/theme/ThemeProvider'
 import { FilesPage } from './FilesPage'
 import { SessionLayout } from './SessionLayout'
 
-vi.mock('sonner', () => ({ toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() } }))
+vi.mock('sonner', () => ({
+  toast: Object.assign(vi.fn(), { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn(), dismiss: vi.fn() }),
+}))
 
 vi.mock('@pierre/diffs/react', () => ({
   PatchDiff: ({ patch }: { patch: string }) => <pre data-testid="patch-diff">{patch}</pre>,
@@ -48,15 +51,17 @@ function renderLayout({ review = reviewResponseFixture(), detail = sessionDetail
     return base(input, init)
   })
   render(
-    <MemoryRouter initialEntries={[`/s/${SESSION_ID}/files`]}>
-      <Routes>
-        <Route path="/" element={<p>Sessions list</p>} />
-        <Route path="/s/:id" element={<SessionLayout />}>
-          <Route path="files" element={<FilesPage />} />
-          <Route path="files/*" element={<FilesPage />} />
-        </Route>
-      </Routes>
-    </MemoryRouter>,
+    <ThemeProvider defaultTheme="light">
+      <MemoryRouter initialEntries={[`/s/${SESSION_ID}/files`]}>
+        <Routes>
+          <Route path="/" element={<p>Sessions list</p>} />
+          <Route path="/s/:id" element={<SessionLayout />}>
+            <Route path="files" element={<FilesPage />} />
+            <Route path="files/*" element={<FilesPage />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </ThemeProvider>,
   )
   return {
     api,
@@ -71,10 +76,20 @@ function renderLayout({ review = reviewResponseFixture(), detail = sessionDetail
 }
 
 const header = () => screen.findByRole('banner')
+const rail = () => screen.findByRole('complementary', { name: 'Session panel' })
+
+async function archiveFromMenu(banner: HTMLElement) {
+  fireEvent.click(within(banner).getByRole('button', { name: 'More actions' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Archive session' }))
+}
 
 describe('SessionLayout', () => {
   beforeAll(() => {
     MotionGlobalConfig.skipAnimations = true
+  })
+
+  beforeEach(() => {
+    window.localStorage.clear()
   })
 
   afterEach(() => {
@@ -85,19 +100,34 @@ describe('SessionLayout', () => {
     vi.unstubAllGlobals()
   })
 
-  it('derives the status pill from the live review and shows the N/total progress and the tree stats', async () => {
+  it('puts the identity, the status and the progress in the rail (roomy) and none of them in the bar', async () => {
+    window.localStorage.setItem('review-dash:rail-density:files', 'roomy')
     renderLayout()
     const banner = await header()
-    expect(within(banner).getByText('Awaiting review')).toBeInTheDocument()
-    expect(within(banner).getByText('0/6')).toBeInTheDocument()
-    expect(within(banner).getByText('+2,556')).toBeInTheDocument()
-    expect(within(banner).getByText('qbdvision ·')).toBeInTheDocument()
-    expect(within(banner).getByTitle(/^Base branch\. The diff is against the merge-base bbbbbbb/)).toHaveTextContent('origin/main')
-    expect(within(banner).getByTitle('bojana-QI-15472-trial-bar')).toBeInTheDocument()
+    const side = await rail()
+    expect(within(side).getByText('Awaiting review')).toBeInTheDocument()
+    expect(within(side).getByText('0/6')).toBeInTheDocument()
+    expect(within(side).getByText('+2,556')).toBeInTheDocument()
+    expect(within(side).getByLabelText('Repository qbdvision')).toBeInTheDocument()
+    expect(within(side).getByTitle(/^Base branch\. The diff is against the merge-base bbbbbbb/)).toHaveTextContent('origin/main')
+    expect(within(side).getByTitle('bojana-QI-15472-trial-bar')).toBeInTheDocument()
     expect(within(banner).getByRole('link', { name: /Evidence/ })).toHaveTextContent('2')
+    expect(within(banner).queryByText('Awaiting review')).not.toBeInTheDocument()
+    expect(within(banner).queryByText('+2,556')).not.toBeInTheDocument()
   })
 
-  it('archives the session from the header button and goes back to the list', async () => {
+  it('shows the title alone on Files by default and remembers the chevron per page group', async () => {
+    renderLayout()
+    const side = await rail()
+    expect(within(side).getByText(sessionDetailFixture.manifest.title)).toBeInTheDocument()
+    expect(within(side).queryByText('+2,556')).not.toBeInTheDocument()
+    fireEvent.click(within(side).getByRole('button', { name: 'Expand session details' }))
+    expect(within(side).getByText('+2,556')).toBeInTheDocument()
+    expect(window.localStorage.getItem('review-dash:rail-density:files')).toBe('roomy')
+    expect(window.localStorage.getItem('review-dash:rail-density:other')).toBeNull()
+  })
+
+  it('archives the session from the overflow menu, offers Undo and goes back to the list', async () => {
     const { api } = renderLayout()
     const banner = await header()
     const base = api.fetchMock.getMockImplementation()
@@ -106,11 +136,12 @@ describe('SessionLayout', () => {
       if (!base) return json(404, {})
       return base(input, init)
     })
-    fireEvent.click(within(banner).getByRole('button', { name: 'Archive session' }))
+    await archiveFromMenu(banner)
     await waitFor(() =>
       expect(api.fetchMock).toHaveBeenCalledWith(`/api/sessions/${SESSION_ID}/archive`, expect.objectContaining({ method: 'POST' })),
     )
     expect(await screen.findByText('Sessions list')).toBeInTheDocument()
+    expect(toast).toHaveBeenCalledWith('Session archived', expect.objectContaining({ action: expect.objectContaining({ label: 'Undo' }) }))
   })
 
   it('stays on the session and toasts when archiving is refused (409 run-active)', async () => {
@@ -122,10 +153,11 @@ describe('SessionLayout', () => {
       if (!base) return json(404, {})
       return base(input, init)
     })
-    fireEvent.click(within(banner).getByRole('button', { name: 'Archive session' }))
+    await archiveFromMenu(banner)
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Claude Code is still working on this session'))
     expect(screen.queryByText('Sessions list')).not.toBeInTheDocument()
-    expect(within(banner).getByRole('button', { name: 'Archive session' })).toBeEnabled()
+    fireEvent.click(within(banner).getByRole('button', { name: 'More actions' }))
+    expect(await screen.findByRole('menuitem', { name: 'Archive session' })).not.toHaveAttribute('aria-disabled', 'true')
   })
 
   it('opens the grouped shortcut help from the header link and with ?', async () => {
@@ -146,7 +178,7 @@ describe('SessionLayout', () => {
 
     publish({ ...sessionDetailFixture, activeRunId: 'run-20260926180000-ab12' })
     events().emit('message', { type: 'run.updated', sessionId: SESSION_ID, runId: 'run-20260926180000-ab12' })
-    expect(await screen.findByText('Sent · Claude Code working')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Agent working')).toHaveAttribute('data-run', 'working')
     expect(detailGets()).toBe(before + 1)
 
     publish({ ...sessionDetailFixture, extras: [...sessionDetailFixture.extras, { path: 'flow.mmd', type: 'mermaid', title: 'Flow' }] })
@@ -164,11 +196,11 @@ describe('SessionLayout', () => {
   it('on tree.updated refetches the detail, resets a verdict pinned to the old fingerprint, refetches the patch and toasts', async () => {
     const review = reviewFixture({ files: { [P0]: { verdict: 'approved', fingerprint: F0.fingerprint, viewed: true } } })
     const { api, publish, detailGets, events } = renderLayout({ review: reviewResponseFixture(review) })
-    const banner = await header()
+    const side = await rail()
     const card = await screen.findByRole('article', { name: P0 })
     expect(card).toHaveAttribute('data-verdict', 'approved')
-    expect(within(banner).getByText('1/6')).toBeInTheDocument()
-    expect(within(banner).getByText('In progress · 1 of 6')).toBeInTheDocument()
+    expect(within(side).getByText('1/6')).toBeInTheDocument()
+    expect(within(side).getByText('In progress · 1 of 6')).toBeInTheDocument()
     await waitFor(() => expect(api.patchRequests).toHaveLength(1))
     const before = detailGets()
 
@@ -182,12 +214,12 @@ describe('SessionLayout', () => {
     events().emit('message', { type: 'tree.updated', sessionId: SESSION_ID, fingerprint: changed.tree.fingerprint, durationMs: 40 })
     await waitFor(() => expect(card).toHaveAttribute('data-verdict', 'none'))
     expect(detailGets()).toBe(before + 1)
-    expect(within(card).getByText('updated')).toBeInTheDocument()
+    expect(within(card).getByText(/updated since sent/i)).toBeInTheDocument()
     expect(within(card).getByText('changed just now')).toBeInTheDocument()
     expect(within(card).getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'false')
-    expect(within(banner).getByText('0/6')).toBeInTheDocument()
+    expect(within(side).getByText('0/6')).toBeInTheDocument()
     // A judged file that changed on disk flips the session to Updated (plain label: no open comments).
-    expect(within(banner).getByText('Updated')).toBeInTheDocument()
+    expect(within(side).getByText('Updated since sent')).toBeInTheDocument()
     await waitFor(() => expect(api.patchRequests).toHaveLength(2))
     expect(toast.info).toHaveBeenCalledWith('1 file changed on disk', expect.objectContaining({ duration: expect.any(Number) }))
     // The review entry is kept (the stale verdict is simply not effective), nothing is written for it.
@@ -215,8 +247,11 @@ describe('SessionLayout', () => {
     })
     expect(await screen.findByRole('heading', { level: 1, name: "Couldn't load this session" })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent('repository not found: /Users/bojana/Projects/qbdvision is not a git checkout')
-    expect(screen.getByText(SESSION_ID)).toBeInTheDocument()
+    // The id is in the bar (with a Sessions link) and in the panel.
+    expect(screen.getAllByText(SESSION_ID)).toHaveLength(2)
+    expect(screen.getByRole('banner')).toHaveTextContent('Sessions')
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(screen.getByRole('main')).toHaveAttribute('aria-labelledby', 'session-error-title')
     fireEvent.click(screen.getByRole('link', { name: 'Back to sessions' }))
     expect(await screen.findByText('Sessions list')).toBeInTheDocument()
   })
@@ -227,5 +262,21 @@ describe('SessionLayout', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('/Users/bojana/Projects/gone is gone or is no longer a git checkout.')
     expect(screen.queryByText('Loading session…')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+  })
+
+  it('names an archived session and offers Unarchive instead of a raw not-found', async () => {
+    const { api } = renderLayout({ detail: json(404, { error: `session ${SESSION_ID} not found` }) })
+    const base = api.fetchMock.getMockImplementation()
+    api.fetchMock.mockImplementation(async (input, init) => {
+      const url = urlOf(input)
+      if (url.endsWith('/sessions/archived')) return json(200, [{ id: SESSION_ID, title: 'Trial countdown bar', tickets: [], repo: { path: '/r', branch: null, baseRef: null }, createdAt: '2026-09-26T16:53:00.000Z', updatedAt: '2026-09-26T16:53:00.000Z', archivedAt: '2026-09-27T09:00:00.000Z' }])
+      if (init?.method === 'POST' && url.endsWith('/unarchive')) return json(200, { id: SESSION_ID })
+      return base ? base(input, init) : json(404, {})
+    })
+    expect(await screen.findByRole('heading', { level: 1, name: 'This session is archived' }, { timeout: 3000 })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Unarchive' }))
+    await waitFor(() =>
+      expect(api.fetchMock).toHaveBeenCalledWith(`/api/sessions/${SESSION_ID}/unarchive`, expect.objectContaining({ method: 'POST' })),
+    )
   })
 })

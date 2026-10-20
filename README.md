@@ -53,7 +53,7 @@ server watches the folder and the repo, so there is nothing to publish.
 
 Session status, in order: `agent-working` while a run is active; `updated` when a judged file changed since
 its verdict or the agent answered after the send; `approved` when the last send approved and every file is
-still effectively approved; `sent`; `in-progress`; `unreviewed`.
+still effectively approved; `sent` (a decision was sent, shown as "Changes sent"); `ready` (every file reviewed, nothing sent); `in-progress`; `unreviewed`. Approved is only ever the result of sending Approve; the list summary carries the optional `lastSend` (`{ at, decision }`).
 
 ## Development
 

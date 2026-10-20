@@ -1,0 +1,1621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PR link options</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* ===== tokens: copied from web/src/index.css (:root = light, .dark = dark) ===== */
+.th-light {
+  --paper: #FDF3EC; --paper-2: #F1E9DB; --surface: #F7F1E6; --sunken: #EBE2D2;
+  --ink: #2B2A33; --ink-muted: #5E5A58;
+  --line: rgba(43, 42, 51, .34); --fill-line: rgba(43, 42, 51, .36); --sh: rgba(43, 42, 51, .2); --hover: rgba(43, 42, 51, .08);
+  --hdr-bg: #F6B21E; --hdr-ink: #2B2A33; --hdr-chip: #F7F1E6;
+  --yellow: #F6B21E; --on-yellow: #2B2A33; --blue: #A9B7E0; --on-blue: #2B2A33; --pink: #F58FAB; --cyan: #2FB8B0;
+  --red: #B8341F; --red-solid: #CF3F2B; --coral: #EE5A45; --on-red: #FFFFFF; --green: #2A7A58; --mint: #BFE3B4;
+  --warn-bg: #FCEBC3; --warn-bd: #9A6A00; --warn-ic: #F6B21E;
+  --info-bg: #E2E8F8; --info-bd: #4B63B0; --info-ic: #A9B7E0;
+  --ok-bg: #DCEFD9; --ok-bd: #2A7A58; --ok-ic: #8CD3A0;
+  --err-bg: #FBDDD6; --err-bd: #B8341F; --err-ic: #EE5A45;
+  --focus: #2F5DA8;
+  --diff-add: #DCEBD6; --diff-add-gutter: #BBD9B3; --diff-del: #FBDDD6; --code-bg: #F7F1E6;
+  --tk-k: #A63A6E; --tk-s: #276B44; --tk-f: #2F5DA8; --tk-t: #1E7070; --tk-n: #9A4513; --tk-p: #645F5A; --tk-i: #2B2A33;
+  --st-a: #2A7A58; --st-m: #D9930D; --st-r: #4B63B0; --st-d: #B8341F;
+  --ft-ts: #7C9BE8; --ft-js: #F4D35E; --ft-react: #4FC3D9; --ft-yaml: #F29B5B; --ft-json: #8ACB8F; --ft-css: #EE8FB6; --ft-other: #D9CDB5;
+  --scrim: rgba(43, 42, 51, .34);
+}
+.th-dark {
+  --paper: #23212B; --paper-2: #2A2833; --surface: #2E2B38; --sunken: #1D1B24;
+  --ink: #F3ECDD; --ink-muted: #B3ADC0;
+  --line: rgba(176, 168, 214, .58); --fill-line: rgba(35, 33, 43, .42); --sh: rgba(0, 0, 0, .38); --hover: rgba(243, 236, 221, .08);
+  --hdr-bg: #8DA5E8; --hdr-ink: #23212B; --hdr-chip: #F3ECDD;
+  --yellow: #86A3EC; --on-yellow: #23212B; --blue: #CBD5F3; --on-blue: #23212B; --pink: #F2A0B8; --cyan: #4DBDB6;
+  --red: #F58B79; --red-solid: #F07A67; --coral: #F07A67; --on-red: #23212B; --green: #8CD3A0; --mint: #8CD3A0;
+  --warn-bg: rgba(134, 163, 236, .16); --warn-bd: #86A3EC; --warn-ic: #86A3EC;
+  --info-bg: rgba(169, 183, 224, .15); --info-bd: #A9B7E0; --info-ic: #A9B7E0;
+  --ok-bg: rgba(140, 211, 160, .15); --ok-bd: #8CD3A0; --ok-ic: #8CD3A0;
+  --err-bg: rgba(240, 122, 103, .15); --err-bd: #F07A67; --err-ic: #F07A67;
+  --focus: #A9B7E0;
+  --diff-add: rgba(140, 211, 160, .12); --diff-add-gutter: rgba(140, 211, 160, .26); --diff-del: rgba(240, 122, 103, .12); --code-bg: #26242F;
+  --tk-k: #F2A0C4; --tk-s: #9ADFAE; --tk-f: #9DB6F2; --tk-t: #6FD2CC; --tk-n: #F2B27A; --tk-p: #A39DB5; --tk-i: #F3ECDD;
+  --st-a: #8CD3A0; --st-m: #E8A27C; --st-r: #9DB6F2; --st-d: #F58B79;
+  --ft-ts: #8FA9F0; --ft-js: #E8C95A; --ft-react: #5CCBD6; --ft-yaml: #F2A06A; --ft-json: #8FD39A; --ft-css: #F2A0C4; --ft-other: #B9B2C6;
+  --scrim: rgba(0, 0, 0, .5);
+}
+
+/* ===== frame (a themed screen) ===== */
+.fr { --header-control-h: 34px; width: 1440px; height: 900px; position: relative; overflow: hidden; display: flex; flex-direction: column;
+  background: var(--paper); color: var(--ink); font: 14px/1.4 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.fr.f800 { width: 800px; }
+.fr *, .fr *::before, .fr *::after { box-sizing: border-box; border-color: var(--line); }
+.fr .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+.fr .mono, .fr .mono * { font-family: 'Geist Mono', ui-monospace, Menlo, monospace; }
+.fr .sp { flex: 1; min-width: 0; }
+.fr .mut { color: var(--ink-muted); }
+.fr .trunc { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr .dim { color: var(--ink-muted); }
+.fr strong, .fr b { font-weight: 700; }
+
+/* header band */
+.hdr { display: flex; align-items: center; gap: 12px; padding: 0 20px; background: var(--hdr-bg); color: var(--hdr-ink); border-bottom: 1.5px solid var(--line);
+  --line: color-mix(in srgb, var(--hdr-ink) 34%, transparent); --sh: color-mix(in srgb, var(--hdr-ink) 20%, transparent); flex: none; position: relative; z-index: 5; }
+.hdr.top { align-items: flex-start; }
+.hb { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: none; height: 34px; min-width: 34px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--hdr-chip); color: var(--hdr-ink);
+  box-shadow: 1.5px 1.5px 0 var(--sh); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.hb.lab { padding: 0 12px; }
+.tk { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 34px; padding: 0 11px; border: 1.5px solid var(--fill-line); border-radius: 10px; background: var(--blue); color: var(--on-blue);
+  font: 700 13px 'Geist Mono', monospace; box-shadow: 1.5px 1.5px 0 var(--sh); letter-spacing: .01em; }
+.tk .ic { width: 13px; height: 13px; stroke-width: 2.5; }
+.tk.sm { height: 28px; padding: 0 9px; font-size: 12px; border-radius: 9px; }
+.tk.more { background: var(--hdr-chip); color: var(--hdr-ink); padding: 0 8px; border-color: var(--line); }
+.tks { display: flex; gap: 8px; min-width: 0; flex: none; }
+.tks.tkpeek { max-width: 190px; overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 78%, transparent); mask-image: linear-gradient(to right, #000 78%, transparent); }
+.ttl { font-weight: 700; font-size: 17px; line-height: 22px; letter-spacing: -.005em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.idc { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 280px; padding-top: 0; }
+.idl { display: flex; align-items: center; gap: 6px; font: 500 12px/18px 'Geist Mono', monospace; min-width: 0; }
+.rp { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex: none; }
+.tag { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--paper-2); color: var(--ink);
+  font-size: 11.5px; font-weight: 700; white-space: nowrap; min-width: 0; }
+.tag .ic { width: 12px; height: 12px; stroke-width: 2.5; }
+.tag.mono { font-family: 'Geist Mono', monospace; font-weight: 500; letter-spacing: .02em; }
+.tag.sm { height: 20px; padding: 0 7px; font-size: 11px; }
+.tag.mint { background: var(--mint); color: var(--hdr-ink); border-color: var(--fill-line); }
+.tag.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 50%, transparent); }
+.tag.info { background: var(--info-bg); border-color: color-mix(in srgb, var(--info-bd) 50%, transparent); }
+.tag.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 50%, transparent); }
+.tag.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-bd) 50%, transparent); }
+.arr { color: var(--ink-muted); }
+.hdr .arr { color: color-mix(in srgb, var(--hdr-ink) 70%, transparent); width: 12px; height: 12px; }
+.sep { width: 1.5px; height: 24px; background: var(--line); border-radius: 2px; flex: none; }
+
+/* arrow tabs: verbatim from index.css (.step-tab) */
+.tabs { display: flex; align-items: stretch; flex: none; filter: drop-shadow(2px 2px 0 var(--sh)); }
+.step-tab { --pt: 12px; --h: 34px; --b: 1.5px; --k: .706; --d: 1.84px; --bk: calc(var(--b) * var(--k));
+  position: relative; display: flex; height: var(--h); margin-left: calc(var(--pt) * -1); background: var(--line); clip-path: var(--outer); font-size: 13px; font-weight: 700; white-space: nowrap; color: var(--ink);
+  --outer: polygon(0 0, calc(100% - var(--pt)) 0, 100% 50%, calc(100% - var(--pt)) 100%, 0 100%, var(--pt) 50%);
+  --inner: polygon(calc(var(--bk) + var(--d)) 0, calc(100% - var(--pt) + var(--bk)) 0, 100% 50%, calc(100% - var(--pt) + var(--bk)) 100%, calc(var(--bk) + var(--d)) 100%, calc(var(--pt) + var(--d)) 50%); }
+.step-tab-in { display: flex; align-items: center; flex: 1; margin: var(--b) 0; padding: 0 14px 0 calc(var(--pt) + 10px); clip-path: var(--inner); background: var(--surface); }
+.step-tab-c { display: flex; align-items: center; gap: 6px; }
+.step-tab .ic { width: 15px; height: 15px; }
+.step-tab .tc { font-style: normal; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.step-tab.on { color: var(--hdr-bg); }
+.step-tab.on .step-tab-in { background: var(--hdr-ink); }
+.step-tab.on .tc { color: inherit; opacity: .8; }
+.step-tab.ready .step-tab-in { background: var(--green); }
+.step-tab.ready { color: var(--paper); }
+.step-tab:first-child { margin-left: 0;
+  --outer: polygon(10px 0, calc(100% - var(--pt)) 0, 100% 50%, calc(100% - var(--pt)) 100%, 10px 100%, 6.17px calc(100% - .76px), 2.93px calc(100% - 2.93px), .76px calc(100% - 6.17px), 0 calc(100% - 10px), 0 10px, .76px 6.17px, 2.93px 2.93px, 6.17px .76px);
+  --inner: polygon(10px 0, calc(100% - var(--pt) + var(--bk)) 0, 100% 50%, calc(100% - var(--pt) + var(--bk)) 100%, 10px 100%, 6.73px calc(100% - .65px), 3.99px calc(100% - 2.49px), 2.15px calc(100% - 5.24px), 1.5px calc(100% - 8.5px), 1.5px 8.5px, 2.15px 5.24px, 3.99px 2.49px, 6.73px .65px); }
+.step-tab:first-child .step-tab-in { padding-left: 13px; }
+.step-tab:last-child {
+  --outer: polygon(0 0, calc(100% - var(--pt) - 1.5px) 0, calc(100% - var(--pt) + 1.4px) 2px, calc(100% - 3.26px) calc(50% - 4.6px), calc(100% - 2.17px) calc(50% - 2.4px), calc(100% - 1.8px) 50%, calc(100% - 2.17px) calc(50% + 2.4px), calc(100% - 3.26px) calc(50% + 4.6px), calc(100% - var(--pt) + 1.4px) calc(100% - 2px), calc(100% - var(--pt) - 1.5px) 100%, 0 100%, var(--pt) 50%);
+  --inner: polygon(calc(var(--bk) + var(--d)) 0, calc(100% - var(--pt) + var(--bk) - var(--d) - 1.5px) 0, calc(100% - var(--pt) + var(--bk) - var(--d) + 1.4px) 2px, calc(100% - 4.48px) calc(50% - 3.73px), calc(100% - 3.6px) calc(50% - 1.95px), calc(100% - 3.3px) 50%, calc(100% - 3.6px) calc(50% + 1.95px), calc(100% - 4.48px) calc(50% + 3.73px), calc(100% - var(--pt) + var(--bk) - var(--d) + 1.4px) calc(100% - 2px), calc(100% - var(--pt) + var(--bk) - var(--d) - 1.5px) 100%, calc(var(--bk) + var(--d)) 100%, calc(var(--pt) + var(--d)) 50%); }
+.tabs.icons .step-tab:not(.on) .tl { display: none; }
+.tabs.icons .step-tab:not(.on) .step-tab-in { padding-right: 12px; }
+
+/* theme toggle */
+.theme { display: inline-flex; gap: 2px; padding: 2px; flex: none; border: 1.5px solid var(--line); border-radius: 10px; background: var(--hdr-chip); box-shadow: 1.5px 1.5px 0 var(--sh); height: 34px; }
+.theme i { display: grid; place-items: center; width: 28px; border-radius: 7px; color: var(--hdr-ink); font-style: normal; }
+.theme i.on { background: var(--hdr-ink); color: var(--hdr-chip); }
+
+/* buttons / seg / notice / progress / badge */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: none; height: 32px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink);
+  font-weight: 700; font-size: 13px; white-space: nowrap; box-shadow: 2px 2px 0 var(--sh); }
+.btn.sq { width: 32px; padding: 0; }
+.btn.lg { height: 40px; border-radius: 12px; padding: 0 18px; font-size: 14px; }
+.btn.pri { background: var(--yellow); color: var(--on-yellow); border-color: var(--fill-line); }
+.btn.dis { opacity: .5; box-shadow: 2px 2px 0 var(--sh); }
+.btn.rej { color: var(--red); }
+.btn.ghost { border-color: transparent; background: transparent; box-shadow: none; }
+.btn.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 60%, transparent); }
+.seg { color: var(--ink); display: inline-flex; gap: 2px; flex: none; padding: 2px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); }
+.seg > b { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 6px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.seg > b .ic { width: 15px; height: 15px; }
+.seg > b.on { background: var(--ink); color: var(--paper); }
+.seg > b em { font-style: normal; font-weight: 600; font-variant-numeric: tabular-nums; opacity: .75; }
+.seg.scope > b.mono, .seg.scope > b .mono { font-family: 'Geist Mono', monospace; font-weight: 600; font-size: 12px; }
+.sdot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-muted); flex: none; }
+.sdot.un { background: transparent; border: 1.5px dashed var(--ink-muted); }
+.seg > b.on .sdot { background: var(--paper); border-color: var(--paper); }
+.seg > b.on .sdot.un { background: transparent; }
+.nt { display: inline-flex; align-items: center; gap: 8px; flex: none; min-height: 30px; padding: 3px 12px 3px 4px; border: 1px solid; border-radius: 8px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.nt i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--n); color: var(--hdr-ink); flex: none; }
+.nt i .ic { width: 12px; height: 12px; stroke-width: 3; }
+.nt.flat { background: var(--paper-2); border-color: var(--line); --n: var(--sunken); }
+.nt.flat i { color: var(--ink); }
+.nt.info { background: var(--info-bg); border-color: color-mix(in srgb, var(--info-bd) 50%, transparent); --n: var(--info-ic); }
+.nt.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-bd) 50%, transparent); --n: var(--ok-ic); }
+.nt.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 50%, transparent); --n: var(--warn-ic); }
+.nt.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 50%, transparent); --n: var(--err-ic); }
+.nt.sm { min-height: 26px; font-size: 12px; padding-right: 10px; }
+.nt.sm i { width: 18px; height: 18px; } .nt.sm i .ic { width: 10px; height: 10px; }
+.prog { position: relative; display: block; flex: none; width: 110px; height: 14px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); overflow: hidden; }
+.prog > i { display: block; height: 100%; background: var(--ink); }
+.vbar { display: flex; flex: none; height: 14px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); overflow: hidden; }
+.vbar > i { display: block; height: 100%; }
+.vbar > i + i { border-left: 1.5px solid var(--paper-2); }
+.vbar .a { background: var(--green); } .vbar .r { background: var(--red-solid); } .vbar .c { background: var(--st-m); }
+.bd { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--pink); color: var(--hdr-ink); border: 1.5px solid var(--fill-line); font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bd.ink { background: var(--ink); color: var(--paper); border-color: transparent; }
+.stat { font: 700 13px 'Geist Mono', monospace; display: inline-flex; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.stat .a { color: var(--green); } .stat .d { color: var(--red); }
+.nm { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: var(--ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nm strong { color: var(--ink); }
+.vc { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vc .ic { width: 14px; height: 14px; stroke-width: 3; }
+.vc.a { color: var(--green); } .vc.r { color: var(--red); } .vc.c { color: var(--st-m); } .vc.n { color: var(--ink-muted); }
+.kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--paper); font: 600 11px 'Space Grotesk', sans-serif; box-shadow: 1px 1px 0 var(--sh); color: var(--ink); }
+.eb { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-muted); }
+
+/* status bar / today */
+.status { display: flex; align-items: center; gap: 16px; height: 54px; padding: 0 20px; background: var(--paper); border-bottom: 1.5px solid var(--line); font-size: 13px; flex: none; }
+.body { flex: 1; min-height: 0; display: flex; position: relative; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.strip { height: 79px; flex: none; display: flex; align-items: flex-start; padding: 7px 20px 0 22px; background: var(--paper-2); border-bottom: 1.5px solid var(--line); overflow: hidden; }
+.tn { position: relative; display: flex; flex-direction: column; align-items: center; width: 118px; flex: none; }
+.tn .nd { position: relative; z-index: 1; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--paper-2); }
+.tn .nd.ring { background: var(--ink); color: var(--paper); border: 1.5px solid var(--ink); box-shadow: 0 0 0 2px var(--paper-2), 0 0 0 3.5px var(--ink); }
+.tn .nd.ring .ic { width: 12px; height: 12px; }
+.tn .nd.dot::after { content: ''; width: 13px; height: 13px; border-radius: 50%; background: var(--ink-muted); border: 1.5px solid var(--ink-muted); }
+.tn .nd.dot.un::after { background: var(--paper-2); border: 1.5px dashed var(--ink-muted); }
+.tn::before { content: ''; position: absolute; top: 11px; left: -59px; width: 118px; border-top: 1.5px solid var(--line); }
+.tn.un::before { border-top-style: dashed; }
+.tn:first-child::before { display: none; }
+.tn .p { margin-top: 5px; font: 600 11.5px/14px 'Geist Mono', monospace; }
+.tn .s { font-size: 10.5px; line-height: 14px; color: var(--ink-muted); white-space: nowrap; }
+.tn.on .p { font-weight: 700; }
+
+/* sidebar */
+.side { flex: none; width: 272px; display: flex; flex-direction: column; min-height: 0; background: var(--paper-2); border-right: 1.5px solid var(--line); padding: 14px 10px 6px; overflow: hidden; }
+.side .sh { display: flex; align-items: center; gap: 8px; padding: 0 8px 10px; }
+.side .sh strong { font-size: 15px; }
+.ghost { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-style: normal; color: var(--ink); }
+.ghost .ic { width: 14px; height: 14px; }
+.filter { display: flex; align-items: center; gap: 8px; height: 36px; flex: none; margin: 0 0 10px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink-muted); font-size: 13.5px; }
+.scopebtn { display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; flex: none; margin: 0 0 10px; padding: 0 10px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 2px 2px 0 var(--sh); font-size: 13px; font-weight: 700; }
+.scopebtn .m { color: var(--ink-muted); font-weight: 600; font-size: 12px; white-space: nowrap; }
+.scopebtn .eb { font-size: 10px; letter-spacing: .08em; }
+.tree { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 0; }
+.tr { display: flex; align-items: center; gap: 7px; height: 32px; flex: none; padding: 0 8px; border: 1.5px solid transparent; border-radius: 9px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.tr .ic { width: 15px; height: 15px; color: var(--ink-muted); stroke-width: 2.25; }
+.tr.fo { font-weight: 700; }
+.tr .chev { width: 13px; height: 13px; }
+.tr .nmx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tr .cnt { font-size: 11.5px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.tr.file .nmx { font: 500 12.5px 'Geist Mono', monospace; }
+.tr.del .nmx { text-decoration: line-through; color: var(--ink-muted); }
+.tr.cur { background: var(--yellow); color: var(--on-yellow); border-color: var(--line); font-weight: 700; }
+.tr.cur .ic, .tr.cur .cnt { color: var(--on-yellow); }
+.ftd { width: 10px; height: 10px; border-radius: 50%; background: var(--ft); border: 1.5px solid var(--fill-line); flex: none; margin: 0 1px; }
+.tr.cur .ftd { box-shadow: 0 0 0 1.5px var(--on-yellow); }
+.tr .okc { color: var(--green); width: 14px; height: 14px; stroke-width: 3; }
+.tr .rjc { color: var(--red); width: 14px; height: 14px; stroke-width: 3; }
+.tr .cm { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 700; }
+.tr .cm .ic { width: 12px; height: 12px; color: inherit; }
+.ft-ts { --ft: var(--ft-ts); } .ft-js { --ft: var(--ft-js); } .ft-react { --ft: var(--ft-react); } .ft-yaml { --ft: var(--ft-yaml); } .ft-json { --ft: var(--ft-json); } .ft-css { --ft: var(--ft-css); } .ft-other { --ft: var(--ft-other); }
+
+/* deck */
+.main { flex: 1; min-height: 0; min-width: 0; position: relative; padding: 45px 0 var(--mb, 50px); display: flex; justify-content: center; }
+.deckw { position: relative; width: 980px; max-width: calc(100% - 188px); height: 100%; }
+.f800 .deckw { max-width: calc(100% - 188px); }
+.peek { position: absolute; height: 40px; border: 1.5px solid var(--line); border-radius: 14px 14px 0 0; }
+.peek.p1 { top: -13px; left: 16px; right: 16px; background: var(--ft-json); }
+.peek.p2 { top: -26px; left: 32px; right: 32px; background: var(--ft-other); }
+.card { position: relative; height: 100%; display: flex; flex-direction: column; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 6px 6px 0 var(--sh); overflow: hidden; }
+.chd { display: flex; align-items: flex-start; gap: 12px; flex: none; padding: 12px 16px; background: var(--ft); color: var(--hdr-ink); border-bottom: 1.5px solid var(--fill-line); }
+.chd .dir { font: 400 12px/16px 'Geist Mono', monospace; opacity: .9; }
+.chd .fn { font: 700 16px/22px 'Geist Mono', monospace; }
+.chd .tag { border-color: var(--fill-line); }
+.chd .seg { background: var(--surface); color: var(--ink); }
+.chd .pos { font-weight: 700; font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.code { flex: 1; min-height: 0; overflow: hidden; background: var(--code-bg); font: 13px/21px 'Geist Mono', monospace; padding-top: 0; }
+.ln { display: flex; height: 21px; white-space: pre; background: var(--diff-add); }
+.ln .g { flex: none; width: 36px; text-align: right; padding-right: 10px; color: var(--ink-muted); background: var(--diff-add-gutter); border-left: 3px solid var(--green); }
+.ln .t { padding-left: 14px; }
+.ln .t i { font-style: normal; }
+.ln .k { color: var(--tk-k); } .ln .s { color: var(--tk-s); } .ln .f { color: var(--tk-f); } .ln .ty { color: var(--tk-t); } .ln .n { color: var(--tk-n); } .ln .p { color: var(--tk-p); }
+.cmt { flex: none; margin: 0 16px; height: 42px; border: 1.5px dashed var(--line); border-radius: 12px; display: flex; align-items: center; gap: 10px; padding: 0 14px; color: var(--ink-muted); font-size: 14px; }
+.cmt .kbd { margin-left: auto; }
+.acts { flex: none; display: flex; justify-content: flex-end; gap: 10px; padding: 12px 16px 16px; border-top: 0; }
+.cmt + .acts { padding-top: 14px; }
+.arrow { position: absolute; top: 50%; width: 46px; height: 46px; margin-top: -23px; border: 1.5px solid var(--line); border-radius: 50%; background: var(--surface); box-shadow: 2px 2px 0 var(--sh); display: grid; place-items: center; color: var(--ink-muted); }
+.arrow.l { left: -66px; } .arrow.r { right: -66px; }
+.pgr { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+.pop { position: absolute; z-index: 20; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); border-radius: 14px; box-shadow: 4px 4px 0 var(--sh); padding: 14px 16px; }
+.pop .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pop h4 { margin: 10px 0 8px; font-size: 16px; line-height: 21px; }
+.pop .kv { display: grid; grid-template-columns: 76px 1fr; gap: 7px 10px; align-items: center; font-size: 12.5px; margin-top: 12px; padding-top: 12px; border-top: 1.5px solid var(--line); }
+.pop .kv > span:nth-child(odd) { color: var(--ink-muted); font-weight: 600; }
+.menu { position: absolute; z-index: 20; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); border-radius: 14px; box-shadow: 4px 4px 0 var(--sh); padding: 8px; }
+.menu .lab { padding: 4px 8px 6px; }
+.mi { position: relative; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 9px; border: 1.5px solid transparent; font-size: 13px; }
+.mi.on { background: var(--yellow); color: var(--on-yellow); border-color: var(--line); }
+.mi .nd { position: relative; z-index: 1; width: 18px; display: grid; place-items: center; flex: none; align-self: stretch; }
+.mi .nd::after { content: ''; width: 11px; height: 11px; border-radius: 50%; background: var(--ink-muted); border: 1.5px solid var(--ink-muted); }
+.mi.un .nd::after { background: var(--surface); border: 1.5px dashed var(--ink-muted); }
+.mi.on .nd::after { background: var(--on-yellow); border-color: var(--on-yellow); }
+.mi.full .nd::after { display: none; }
+.mi .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mi .l1 { display: flex; gap: 8px; align-items: baseline; font-weight: 600; min-width: 0; }
+.mi .l1 .sha { font: 700 12px 'Geist Mono', monospace; flex: none; }
+.mi .l2 { font-size: 11.5px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.mi.on .l2 { color: inherit; opacity: .8; }
+.mi.sepl { border-top: 1.5px solid var(--line); border-radius: 0; margin-top: 4px; padding-top: 8px; }
+.mi:not(.first):not(.full):not(.sepl)::before { content: ''; position: absolute; left: 16px; top: -9px; height: 14px; border-left: 1.5px solid var(--line); }
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 15; }
+.drawer { position: absolute; left: 0; top: 0; bottom: 0; z-index: 16; display: flex; box-shadow: 4px 0 0 var(--sh); }
+.tbadge { position: absolute; right: -7px; top: -9px; z-index: 2; display: inline-grid; place-items: center; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--ink); color: var(--paper); border: 1.5px solid var(--hdr-bg); font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ===================== header B on every page: new styles ===================== */
+
+/* ---- document (not themed) ---- */
+:root { --pg: #D6D2CA; --pg-ink: #23212B; --pg-mut: #5d5a63; --pg-line: rgba(35,33,43,.25); --pg-card: #ECE8E0; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--pg); color: var(--pg-ink); font: 14px/1.5 'Space Grotesk', system-ui, sans-serif; }
+.doc { max-width: 2100px; margin: 0 auto; padding: 28px 32px 110px; }
+.doc h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -.01em; }
+.doc h2 { font-size: 21px; margin: 0; }
+.doc .lede { color: var(--pg-mut); max-width: 100ch; margin: 0 0 14px; }
+.doc code { font: 500 12.5px 'Geist Mono', monospace; background: rgba(35,33,43,.08); padding: 1px 5px; border-radius: 4px; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 14px 0 6px; position: sticky; top: 0; z-index: 50; padding: 8px 0; background: var(--pg); }
+.toc a { font: 600 12px 'Geist Mono', monospace; padding: 3px 10px; border-radius: 999px; background: var(--pg-card); border: 1.5px solid var(--pg-line); color: var(--pg-ink); text-decoration: none; }
+.toc a:hover { background: #fff; }
+.sect { margin-top: 56px; scroll-margin-top: 54px; }
+.sect-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.sect-h .n { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; border-radius: 10px; background: var(--pg-ink); color: #fff; font-weight: 700; font-size: 16px; }
+.sect-h .tag2 { font: 600 12px 'Geist Mono', monospace; padding: 3px 9px; border-radius: 999px; background: var(--pg-card); border: 1.5px solid var(--pg-line); }
+.sect-idea { max-width: 112ch; margin: 2px 0 14px; color: #34323a; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 880px), 1fr)); gap: 18px; align-items: start; }
+.trip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr)); gap: 18px; align-items: start; }
+.cell { min-width: 0; }
+.cap { font: 600 11px 'Geist Mono', monospace; color: var(--pg-mut); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 5px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.cap a { color: var(--pg-ink); text-transform: none; letter-spacing: 0; font-weight: 500; }
+.cap .meas { text-transform: none; letter-spacing: 0; font-weight: 600; color: #1c6b3f; }
+.fw { position: relative; overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1.5px rgba(35,33,43,.35), 0 14px 26px -16px rgba(0,0,0,.5); background: #000; }
+.fw > .fr { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.sub { font-size: 15px; font-weight: 700; margin: 26px 0 8px; }
+.note { font-size: 12.5px; color: var(--pg-mut); max-width: 112ch; margin: 8px 0 0; }
+.dec { margin: 14px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 8px 26px; font-size: 13px; }
+.dec li { display: flex; gap: 9px; align-items: flex-start; }
+.dec li > b:first-child { flex: none; min-width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: var(--pg-ink); color: #fff; font: 700 11.5px 'Geist Mono', monospace; }
+.rtab { border-collapse: collapse; width: 100%; max-width: 1500px; background: var(--pg-card); border-radius: 10px; overflow: hidden; font-size: 13px; margin-top: 14px; }
+.rtab th, .rtab td { text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--pg-line); vertical-align: top; }
+.rtab th { background: #e0dbd1; font-weight: 700; }
+.rtab td:first-child { font-weight: 700; white-space: nowrap; }
+.solo-body { margin: 0; background: #000; }
+
+/* ---- frame additions ---- */
+.fr.f800 { width: 800px; }
+.fr .ic.s { width: 13px; height: 13px; }
+.fr .gap { flex: none; }
+.fr kbd { font: inherit; }
+.hdr.bar { height: 52px; align-items: center; padding: 0 20px; gap: 12px; }
+.hdr.bar .hb { height: 34px; }
+.hb.rel { position: relative; overflow: visible; }
+.hb .kb { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border: 1.5px solid var(--line); border-radius: 5px; font: 700 11px 'Space Grotesk', sans-serif; background: var(--hdr-bg); }
+.wordmark { font-weight: 700; font-size: 20px; letter-spacing: -.01em; }
+.tabs { margin-left: 4px; }
+.step-tab.err .step-tab-in { background: var(--red-solid); }
+.step-tab.err { color: var(--on-red); }
+.step-tab.err .tc { color: inherit; }
+.step-tab.ready .tc { color: inherit; opacity: .85; }
+.step-tab .pip { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); border: 1.5px solid var(--surface); margin-left: -2px; }
+.tabs.icons .step-tab:not(.on) .tl { display: none; }
+.tabs.icons .step-tab:not(.on) .step-tab-in { padding-right: 12px; }
+.tbadge { position: absolute; right: -9px; top: -7px; z-index: 2; display: inline-grid; place-items: center; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--ink); color: var(--paper); border: 1.5px solid var(--hdr-bg); font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.body { flex: 1; min-height: 0; display: flex; position: relative; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+
+/* ---- the rail ---- */
+.rail { flex: none; width: 296px; display: flex; flex-direction: column; min-height: 0; background: var(--paper-2); border-right: 1.5px solid var(--line); overflow: hidden; position: relative; }
+.rid { flex: none; padding: 12px 14px; border-bottom: 1.5px solid var(--line); }
+.rid-top { display: flex; align-items: center; gap: 8px; }
+.rid .tks { flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.rid-t { font-weight: 700; font-size: 15px; line-height: 20px; margin: 9px 0 7px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rid-m { display: flex; align-items: center; gap: 8px; font: 500 12px/18px 'Geist Mono', monospace; margin-bottom: 7px; }
+.rid-b { display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
+.rid-b .brl { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rid-b .brl .lbl { width: 38px; flex: none; font-size: 10.5px; }
+.rid.c { padding: 0; }
+.rid-1 { display: flex; align-items: center; gap: 4px; height: 40px; padding: 0 8px 0 8px; font-weight: 700; font-size: 13.5px; min-width: 0; }
+.rid-1 .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ghost.bx { border: 1.5px solid transparent; }
+.ghost.bx:hover, .ghost.hv { background: var(--hover); border-color: var(--line); }
+.rrev { flex: none; padding: 12px 14px; border-bottom: 1.5px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.rr1 { display: flex; align-items: center; gap: 10px; }
+.rr1 strong { font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rr1 .vbar { flex: 1; min-width: 0; }
+.rr2 { display: flex; gap: 11px; align-items: center; flex-wrap: wrap; }
+.rr4 { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
+.rsec { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 10px 0; position: relative; }
+.rh { display: flex; align-items: center; gap: 8px; padding: 0 6px 9px; flex: none; }
+.rh strong { font-size: 15px; }
+.rh .ghost { width: 28px; height: 28px; }
+.vbar.empty > i:last-child { background: transparent; }
+.ri { position: relative; display: flex; align-items: center; gap: 9px; min-height: 40px; padding: 5px 8px; border: 1.5px solid transparent; border-radius: 10px; font-size: 13px; font-weight: 600; flex: none; min-width: 0; }
+.ri .box { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; border: 1.5px solid var(--line); background: var(--paper); }
+.ri .box .ic { width: 14px; height: 14px; }
+.ri .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ri .l1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 17px; }
+.ri .l1.two { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ri .l2 { font-size: 11.5px; font-weight: 500; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ri .l2.m { font-family: 'Geist Mono', monospace; font-size: 11px; }
+.ri .cnt { font-size: 11.5px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ri .cm { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.ri .cm .ic { width: 12px; height: 12px; }
+.ri.cur { background: var(--yellow); color: var(--on-yellow); border-color: var(--line); }
+.ri.cur .l2, .ri.cur .cnt { color: var(--on-yellow); opacity: .8; }
+.ri.cur .box { background: var(--on-yellow); color: var(--yellow); border-color: var(--on-yellow); }
+.ri.cur .cm { color: var(--on-yellow); }
+.ri.h { min-height: 28px; padding-left: 43px; font-size: 12.5px; font-weight: 500; color: var(--ink-muted); }
+.ri.h::before { content: ''; position: absolute; left: 20px; top: -6px; bottom: 50%; width: 12px; border-left: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line); border-bottom-left-radius: 7px; }
+.ri.h.on { color: var(--ink); font-weight: 700; }
+.ri.un .box { border-style: dashed; }
+.thumb { flex: none; width: 56px; height: 40px; border: 1.5px solid var(--line); border-radius: 7px; overflow: hidden; background: #fff; position: relative; }
+.thumb i { position: absolute; left: 0; right: 0; top: 0; height: 8px; background: #E2E8F8; }
+.thumb b { position: absolute; left: 5px; top: 13px; width: 20px; height: 3px; background: #c9ccd6; border-radius: 2px; box-shadow: 0 6px 0 #c9ccd6, 0 12px 0 #d8dae2; }
+.thumb u { position: absolute; left: 30px; top: 14px; right: 5px; bottom: 5px; background: #f1f2f6; border-radius: 3px; }
+.thumb.dark { background: #1d2540; } .thumb.dark i { background: #3a4a86; } .thumb.dark u { background: #2b3562; }
+.thumb.vid { background: #23212B; display: grid; place-items: center; color: #F3ECDD; }
+.thumb.vid .ic { width: 16px; height: 16px; fill: currentColor; }
+.thumb.wide { width: 56px; } .thumb.tall b { left: 12px; }
+.ri.ev { min-height: 52px; }
+.ri .n { flex: none; width: 16px; font-size: 11px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; text-align: right; }
+.rsum { display: grid; grid-template-columns: 1fr auto; gap: 7px 10px; padding: 2px 8px 10px; font-size: 12.5px; }
+.rsum span:nth-child(odd) { color: var(--ink-muted); font-weight: 600; }
+.rsum span:nth-child(even) { font-weight: 700; font-variant-numeric: tabular-nums; }
+.rdiv { height: 0; border-top: 1.5px solid var(--line); margin: 6px 6px 8px; flex: none; }
+.runrow { display: flex; align-items: center; gap: 9px; min-height: 40px; padding: 5px 8px; border-radius: 10px; font-size: 12.5px; flex: none; }
+.runrow .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.runrow .l1 { font-weight: 700; } .runrow .l2 { color: var(--ink-muted); font-size: 11.5px; }
+.sdot2 { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--st-a); }
+.sdot2.err { background: var(--st-d); } .sdot2.info { background: var(--st-r); }
+.tree { position: relative; }
+.tree::after { content: ''; position: absolute; right: 1px; top: 4px; width: 5px; height: 58%; border-radius: 9px; background: var(--line); opacity: .8; }
+.tr .vm { display: inline-flex; align-items: center; gap: 4px; }
+.tr .del-mark { color: var(--ink-muted); }
+.filter b { font-weight: 500; }
+.filter .k { margin-left: auto; }
+
+/* ---- the commit timeline: today's CommitTimeline/CommitNode, flush on the page background (no band) ---- */
+.cxl { flex: none; height: 79px; padding: 8px 20px 0 14px; display: flex; align-items: flex-start; overflow: hidden; }
+.cx-ul { display: flex; align-items: stretch; flex: none; padding: 0 8px; }
+.cx { position: relative; flex: none; width: 120px; display: flex; flex-direction: column; align-items: center; }
+.cx-seg { position: absolute; top: 11px; border-top: 1.5px solid var(--line); }
+.cx-seg.l { left: 0; right: 50%; } .cx-seg.r { left: 50%; right: 0; }
+.cx-seg.d { border-top-style: dashed; border-top-color: var(--st-m); }
+.cx-b { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; min-height: 32px; padding-bottom: 4px; border-radius: 6px; color: var(--ink); }
+.cx-n { display: flex; align-items: center; height: 22px; }
+.cx-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); }
+.cx-dot.un { border-style: dashed; border-color: var(--ink-muted); }
+.cx-ring { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-muted); }
+.cx-ring svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.cx-ring.mg { border-color: var(--fill-line); background: var(--pink); color: var(--hdr-ink); }
+.cx.on .cx-dot, .cx.on .cx-ring { border-color: var(--ink); background: var(--ink); color: var(--paper); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--line); }
+.cx-p { display: flex; align-items: center; gap: 4px; max-width: 100%; font: 400 11.5px/1 'Geist Mono', ui-monospace, Menlo, monospace; }
+.cx.on .cx-p > span { font-weight: 700; }
+.cx-ic { width: 13px; height: 13px; flex: none; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke: currentColor; stroke-width: 2; }
+.cx-ic.ok { color: var(--green); stroke-width: 2.75; } .cx-ic.up { color: var(--st-m); }
+.cx-s { max-width: 100%; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; line-height: 1.1; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+/* ---- deck deltas ---- */
+.main { padding: 40px 0 var(--mb, 46px); }
+.deckw { width: 980px; max-width: calc(100% - 190px); }
+.f800 .main { padding-top: 36px; }
+.f800 .deckw { max-width: calc(100% - 120px); width: 100%; }
+.f800 .arrow { width: 40px; height: 40px; margin-top: -20px; }
+.f800 .arrow.l { left: -50px; } .f800 .arrow.r { right: -50px; }
+.f800 .acts .btn.lg .lbl { display: none; }
+.f800 .acts .btn.lg.pri .lbl { display: inline; }
+
+/* ---- generic page pieces ---- */
+.page { flex: 1; min-height: 0; overflow: hidden; padding: 24px 28px 0; display: flex; flex-direction: column; gap: 16px; position: relative; }
+.f800 .page { padding: 18px 16px 0; }
+.phead { display: flex; align-items: center; gap: 12px; flex: none; flex-wrap: wrap; }
+.phead h1 { margin: 0; font-size: 27px; line-height: 32px; letter-spacing: -.01em; }
+.phead .meta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted); }
+.panel { border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 4px 4px 0 var(--sh); display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.panel.card6 { box-shadow: 6px 6px 0 var(--sh); }
+.ph { display: flex; align-items: center; gap: 10px; min-height: 48px; flex: none; padding: 0 14px 0 16px; background: var(--paper-2); border-bottom: 1.5px solid var(--line); font-weight: 700; font-size: 15px; }
+.pb { padding: 16px; min-width: 0; }
+.pf { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1.5px solid var(--line); background: var(--paper-2); }
+.ibox { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--paper); box-shadow: 1px 1px 0 var(--sh); }
+.ibox .ic { width: 15px; height: 15px; }
+.md { font-size: 14px; line-height: 23px; }
+.md h1 { font-size: 21px; line-height: 27px; margin: 0 0 10px; }
+.md h2 { font-size: 16.5px; margin: 16px 0 6px; }
+.md p { margin: 0 0 8px; }
+.md ul, .md ol { margin: 0 0 8px; padding-left: 22px; }
+.md li { margin: 4px 0; }
+.md code { font: 500 12.5px 'Geist Mono', monospace; background: var(--paper-2); border: 1.5px solid var(--line); border-radius: 6px; padding: 0 5px; }
+.md a { color: var(--st-r); text-decoration: underline; }
+.cbox { flex: none; margin: 0 16px 14px; height: 42px; border: 1.5px dashed var(--line); border-radius: 12px; display: flex; align-items: center; gap: 10px; padding: 0 14px; color: var(--ink-muted); font-size: 14px; background: transparent; }
+.cbox .kbd { margin-left: auto; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; min-height: 0; flex: 1; }
+.mer { border: 1.5px solid var(--line); border-radius: 12px; background: var(--code-bg); overflow: hidden; margin: 10px 0 12px; position: relative; }
+.mer .mh { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px 0 14px; background: var(--paper-2); border-bottom: 1.5px solid var(--line); font: 500 12px 'Geist Mono', monospace; color: var(--ink-muted); }
+.mer .mh .btn.sq { width: 28px; height: 26px; border-radius: 8px; box-shadow: 1.5px 1.5px 0 var(--sh); }
+.mer svg.dg { display: block; width: 100%; height: auto; }
+.mer .zoom { position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); }
+.dg rect.nb { fill: var(--info-bg); stroke: var(--info-bd); stroke-width: 1.2; }
+.dg text { fill: var(--ink); font: 500 11px 'Geist Mono', monospace; text-anchor: middle; }
+.dg path.ed { stroke: var(--ink-muted); fill: none; stroke-width: 1.3; }
+.dg .lbl { fill: var(--ink-muted); font-size: 10px; }
+.shot { background: #fff; color: #1b1d2a; font: 12px/1.3 system-ui, sans-serif; width: 100%; height: 100%; }
+.shot .tb { background: #E4ECFB; padding: 9px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.shot .tb i { margin-left: auto; font-style: normal; background: #1F4FB2; color: #fff; padding: 4px 11px; border-radius: 4px; font-weight: 700; }
+.shot .ah { display: flex; padding: 14px 16px; border-bottom: 1px solid #e6e8ef; font-size: 14px; }
+.shot .ah span { margin-left: auto; font-size: 12px; }
+.shot .ab { display: flex; height: 100%; background: #f4f5f9; }
+.shot .an { width: 150px; padding: 14px 12px; background: #fff; border-right: 1px solid #e6e8ef; display: flex; flex-direction: column; gap: 9px; font-size: 12.5px; }
+.shot .am { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.shot .am div { background: #fff; border: 1px solid #e6e8ef; border-radius: 6px; padding: 10px 12px; font-size: 12.5px; line-height: 1.35; }
+.tile { position: relative; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; min-width: 0; }
+.tile::before { content: ''; display: block; height: 8px; background: var(--ft); border-bottom: 1.5px solid var(--fill-line); }
+.tile .tb2 { padding: 8px 13px 10px; display: flex; flex-direction: column; gap: 4px; }
+.tile .td { font: 400 12px/16px 'Geist Mono', monospace; color: var(--ink-muted); height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .tn2 { font: 700 14.5px/19px 'Geist Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .ts { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; }
+.tile .ts .stt { display: inline-flex; align-items: center; gap: 6px; }
+.tile .ts .sd { width: 9px; height: 9px; border-radius: 50%; }
+.tile .ts .pm { font: 700 12px 'Geist Mono', monospace; margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tile .ts .pm .a { color: var(--green); } .tile .ts .pm .d { color: var(--red); }
+.cbars { display: inline-flex; gap: 2px; }
+.cbars i { width: 9px; height: 9px; border-radius: 2px; background: var(--sunken); }
+.cbars i.a { background: var(--green); } .cbars i.d { background: var(--red-solid); }
+.tile .tv { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-muted); font-weight: 600; min-height: 22px; }
+.tile .tv .ic { width: 14px; height: 14px; stroke-width: 3; }
+.tile .tv.a { color: var(--green); } .tile .tv.r { color: var(--red); } .tile .tv.c { color: var(--ink); }
+.tile .tv .tag { margin-left: auto; }
+.tile.cur { outline: 3px solid var(--ink); outline-offset: -1.5px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.menu .mck { display: flex; align-items: center; gap: 12px; padding: 7px 10px; border-radius: 9px; font-size: 13.5px; font-weight: 600; }
+.menu .mck .bx { width: 16px; height: 16px; border: 1.5px solid var(--line); border-radius: 5px; background: var(--paper); flex: none; }
+.menu .mck .bx.on { background: var(--ink); border-color: var(--ink); }
+.menu .mck .sw { width: 13px; height: 13px; border-radius: 50%; background: var(--ft); border: 1.5px solid var(--fill-line); flex: none; }
+.menu .mck .ex { margin-left: auto; font: 500 11.5px 'Geist Mono', monospace; color: var(--ink-muted); }
+.menu .mck .ct { width: 22px; text-align: right; color: var(--ink-muted); font-variant-numeric: tabular-nums; font-weight: 600; }
+.menu .clr { border-top: 1.5px solid var(--line); margin: 6px -8px -8px; padding: 10px 18px; color: var(--ink-muted); font-weight: 600; font-size: 13px; background: var(--paper-2); border-radius: 0 0 12px 12px; }
+.sendbar { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 16px; height: 64px; padding: 0 24px; background: var(--paper-2); border-top: 1.5px solid var(--line); font-size: 13px; font-weight: 600; }
+.split { display: inline-flex; }
+.split .btn { border-radius: 12px 0 0 12px; height: 40px; padding: 0 18px; font-size: 14px; }
+.split .btn + .btn { border-radius: 0 12px 12px 0; padding: 0 11px; border-left-width: 0; margin-left: -1.5px; box-shadow: 2px 2px 0 var(--sh); }
+.radio { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px; flex: 1; min-width: 0; }
+.radio .rb { width: 18px; height: 18px; border: 1.5px solid var(--line); border-radius: 50%; flex: none; margin-top: 1px; background: var(--paper); }
+.radio.on { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 60%, transparent); }
+.radio.on .rb { border: 5px solid var(--ink); }
+.radio .rt { font-weight: 700; display: flex; gap: 6px; align-items: center; }
+.radio .rd { font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; font-weight: 500; }
+.ta { border: 1.5px solid var(--line); border-radius: 12px; background: var(--paper); padding: 11px 13px; min-height: 76px; font-size: 14px; line-height: 21px; }
+.cmtc { border: 1.5px solid var(--line); border-radius: 12px; background: var(--paper); padding: 11px 13px 8px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 19px; }
+.cmtc .av { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font: 700 9px 'Space Grotesk', sans-serif; }
+.cmtc .ft { display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--ink-muted); }
+.cmtc .ft b { margin-left: auto; font-weight: 700; color: var(--ink); } .cmtc .ft b + b { margin-left: 0; }
+.fh { display: flex; align-items: center; gap: 8px; margin: 12px 0 8px; font: 700 13.5px 'Geist Mono', monospace; }
+.dlg { position: absolute; left: 50%; top: 50%; width: 460px; transform: translate(-50%, -52%); z-index: 20; }
+.blur { filter: blur(7px); transform: scale(1.02); pointer-events: none; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.veil { position: absolute; inset: 0; background: color-mix(in srgb, var(--sunken) 55%, transparent); z-index: 10; }
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 15; }
+.drawer { position: absolute; left: 0; top: 0; bottom: 0; z-index: 16; display: flex; box-shadow: 4px 0 0 var(--sh); }
+.drawer .rail { height: 100%; }
+.errwrap { flex: 1; display: grid; place-items: start center; padding-top: 96px; }
+.errwrap .panel { width: 512px; }
+.cell .stk { display: flex; flex-direction: column; gap: 12px; }
+.rolist { display: flex; flex-direction: column; flex: none; }
+.lrow { display: grid; grid-template-columns: minmax(0, 1fr) 190px 170px 230px 90px 24px; gap: 14px; align-items: center; padding: 14px 18px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 4px 4px 0 var(--sh); min-height: 92px; }
+.lrow .who { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.lrow .who .t1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lrow .who .t1 .ttl { font-size: 16.5px; }
+.lhead { display: grid; grid-template-columns: minmax(0, 1fr) 190px 170px 230px 90px 24px; gap: 14px; padding: 0 18px; font-size: 12px; font-weight: 700; color: var(--ink-muted); }
+.lhead span { display: inline-flex; align-items: center; gap: 6px; }
+.pillf { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 1.5px solid var(--line); border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; background: transparent; }
+.pillf.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pillf em { font-style: normal; opacity: .75; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pillf .ic { width: 15px; height: 15px; }
+.f800 .tiles { grid-template-columns: repeat(2, 1fr); }
+.badge-sm { display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--pink); color: var(--hdr-ink); border: 1.5px solid var(--fill-line); font-size: 11px; font-weight: 700; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--st-r); flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-r) 25%, transparent); }
+.ann-tag { position: absolute; z-index: 40; font: 700 11px 'Geist Mono', monospace; background: #D12F1F; color: #fff; padding: 2px 7px; border-radius: 6px; pointer-events: none; box-shadow: 0 0 0 2px #fff; }
+.no-ann .ann-tag { display: none; }
+.ctl { display: flex; gap: 18px; align-items: center; margin: 8px 0 0; font-size: 13px; }
+.ctl label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.pcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.frow { display: flex; align-items: center; gap: 12px; }
+
+.btn.gh { border-color: transparent; background: transparent; box-shadow: none; }
+
+.rrev.compact { gap: 8px; padding: 10px 14px 12px; }
+.rrev.compact .rr1 { gap: 8px; }
+.rrev.compact .rr1 .vbar { min-width: 60px; }
+.rid-top .tks { flex-wrap: nowrap; }
+
+/* ===================== PR link mock: new styles ===================== */
+.fr .prc { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font-weight: 700; font-size: 12px; white-space: nowrap; min-width: 0; flex: none; }
+.fr .prc .ic { width: 14px; height: 14px; stroke-width: 2.5; }
+.fr .prc .ic.s { width: 12px; height: 12px; }
+.fr .prc .w { font-weight: 600; opacity: .85; }
+.fr .prc .nm2 { font-family: 'Geist Mono', monospace; font-weight: 600; }
+.fr .prc.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-bd) 55%, transparent); }
+.fr .prc.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 55%, transparent); }
+.fr .prc.info { background: var(--info-bg); border-color: color-mix(in srgb, var(--info-bd) 55%, transparent); }
+.fr .prc.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 55%, transparent); }
+.fr .prc.dash { border-style: dashed; background: transparent; }
+.fr .prc.sm { height: 22px; padding: 0 7px; font-size: 11.5px; border-radius: 6px; gap: 5px; }
+.fr .prc.sm .ic { width: 12px; height: 12px; }
+.fr .tag.dash { border-style: dashed; background: transparent; }
+.fr .pkv { display: grid; grid-template-columns: 88px 1fr; gap: 8px 12px; font-size: 13px; align-items: center; }
+.fr .pkv > span:nth-child(odd) { color: var(--ink-muted); font-weight: 600; }
+.fr .pkv > span:nth-child(even) { min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 500; }
+.fr .prt { display: flex; align-items: baseline; gap: 8px; font-size: 15px; flex-wrap: wrap; }
+.fr .prn { font: 700 14px 'Geist Mono', monospace; color: var(--st-r); }
+.fr .lnk { color: var(--st-r); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.fr .cmd { font: 500 12px/1.5 'Geist Mono', monospace; background: var(--code-bg); border: 1.5px solid var(--line); border-radius: 10px; padding: 7px 10px; white-space: normal; overflow-wrap: anywhere; }
+.fr .brs { display: inline-flex; gap: 6px; align-items: center; min-width: 0; flex-wrap: wrap; }
+.fr .pbd { display: flex; flex-direction: column; gap: 12px; }
+.fr .pf .split .btn { height: 34px; font-size: 13px; padding: 0 14px; }
+.fr .pf .split .btn + .btn { padding: 0 9px; }
+.fr .wnt { display: flex; align-items: flex-start; gap: 8px; padding: 6px 12px 6px 6px; border: 1px solid; border-radius: 8px; font-size: 12.5px; font-weight: 500; line-height: 18px; }
+.fr .wnt i { flex: none; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--n); color: var(--hdr-ink); }
+.fr .wnt i .ic { width: 12px; height: 12px; stroke-width: 3; }
+.fr .wnt.flat { background: var(--paper-2); border-color: var(--line); --n: var(--sunken); } .fr .wnt.flat i { color: var(--ink); }
+.fr .wnt.info { background: var(--info-bg); border-color: color-mix(in srgb, var(--info-bd) 50%, transparent); --n: var(--info-ic); }
+.fr .wnt.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-bd) 50%, transparent); --n: var(--ok-ic); }
+.fr .wnt.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 50%, transparent); --n: var(--warn-ic); }
+.fr .wnt.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 50%, transparent); --n: var(--err-ic); }
+.fr .prpop .pfoot .sp, .fr .prpop .pfoot .mut { display: none; }
+.fr .prpop { width: 420px; padding: 14px 16px 14px; }
+.fr .prpop .pbd { margin-top: 12px; }
+.fr .prpop .pfoot { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+.fr .cb { display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--line); border-radius: 5px; background: var(--paper); flex: none; }
+.fr .chkl { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.fr .btn.sm { height: 28px; padding: 0 10px; font-size: 12.5px; border-radius: 9px; }
+.fr .btn.sm .ic { width: 14px; height: 14px; }
+
+/* rail row (option C) */
+.fr .prw { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 44px; padding: 6px 8px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--paper); font-size: 13px; }
+.fr .prw.dash { border-style: dashed; background: transparent; }
+.fr .prw .pi { flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--n, var(--sunken)); color: var(--hdr-ink); }
+.fr .prw .pi .ic { width: 14px; height: 14px; stroke-width: 2.5; }
+.fr .prw .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 17px; }
+.fr .prw .tx b { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fr .prw .tx .l2 { font-size: 11.5px; font-weight: 500; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fr .prw.ok { --n: var(--ok-ic); } .fr .prw.info { --n: var(--info-ic); } .fr .prw.warn { --n: var(--warn-ic); background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 50%, transparent); } .fr .prw.err { --n: var(--err-ic); background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 50%, transparent); }
+.fr .prw.flat { --n: var(--sunken); } .fr .prw.flat .pi { color: var(--ink); }
+
+/* bar chip (option D) */
+.fr .pbar { position: relative; display: inline-flex; align-items: center; gap: 7px; flex: none; height: 34px; padding: 0 12px; margin-left: 10px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--hdr-chip); color: var(--hdr-ink); box-shadow: 1.5px 1.5px 0 var(--sh); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.fr .pbar .ic { width: 15px; height: 15px; }
+.fr .pbar .d { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--ink-muted)); border: 1.5px solid color-mix(in srgb, var(--hdr-ink) 45%, transparent); flex: none; }
+.fr .pbar .nm2 { font-family: 'Geist Mono', monospace; font-weight: 700; }
+.fr .pbar .w { font-weight: 600; opacity: .8; }
+.fr .pbar.ok { --c: var(--st-a); } .fr .pbar.info { --c: var(--st-r); } .fr .pbar.warn { --c: var(--st-m); } .fr .pbar.err { --c: var(--st-d); } .fr .pbar.flat { --c: var(--ink-muted); }
+.fr .pbar.ready { background: var(--hdr-ink); color: var(--hdr-chip); border-color: var(--hdr-ink); }
+.fr .pbar.error { background: var(--red-solid); color: var(--on-red); border-color: color-mix(in srgb, var(--hdr-ink) 40%, transparent); }
+.fr .pbar.dim { }
+.fr .pdot { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--paper); }
+.fr .pdot .ic { width: 13px; height: 13px; stroke-width: 2.5; }
+.fr .pdot.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-bd) 55%, transparent); color: var(--green); }
+.fr .pdot.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 55%, transparent); }
+.fr .pdot.info { background: var(--info-bg); border-color: color-mix(in srgb, var(--info-bd) 55%, transparent); }
+.fr .pdot.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 55%, transparent); color: var(--red); }
+.fr .pdot.dash { border-style: dashed; background: transparent; }
+
+/* timeline */
+.fr .cx-ic.pr { stroke-width: 2.5; }
+.fr .cx-ic.pr.ok, .fr .cx-ic.pr.external, .fr .cx-ic.pr.open { color: var(--green); }
+.fr .cx-ic.pr.updated { color: var(--st-m); } .fr .cx-ic.pr.merged { color: var(--st-r); } .fr .cx-ic.pr.closed { color: var(--st-d); } .fr .cx-ic.pr.draft { color: var(--ink-muted); }
+.fr .nwd { width: 7px; height: 7px; border-radius: 50%; background: var(--coral); flex: none; }
+.fr .cx-ring.t-ok { background: var(--mint); color: var(--hdr-ink); border-color: var(--fill-line); }
+.fr .cx-ring.t-info { background: var(--blue); color: var(--hdr-ink); border-color: var(--fill-line); }
+.fr .cx-ring.t-warn { background: var(--yellow); color: var(--on-yellow); border-color: var(--fill-line); }
+.fr .cx-ring.t-err { background: var(--coral); color: var(--hdr-ink); border-color: var(--fill-line); }
+.fr .cx-ring.dsh { border-style: dashed; border-color: var(--ink-muted); background: transparent; }
+
+.fr .hist { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1.5px solid var(--line); }
+.fr .hist .hr { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+.fr .hist .hi { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--paper); flex: none; }
+.fr .hist .hi .ic { width: 12px; height: 12px; }
+.fr .hist .tx { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 16px; }
+.fr .hist .tx span { color: var(--ink-muted); font-size: 11.5px; }
+.fr .radio .rd .mono, .fr .rd .mono { font-family: 'Geist Mono', monospace; font-size: 12px; }
+/* B: checks list */
+.fr .chk { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1.5px solid var(--line); font-size: 13px; }
+.fr .chk:last-child { border-bottom: 0; }
+.fr .chk .ci { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.fr .chk .ci .ic { width: 12px; height: 12px; stroke-width: 3.2; }
+.fr .chk .ci.p { background: var(--ok-ic); color: var(--hdr-ink); } .fr .chk .ci.r { background: var(--warn-ic); color: var(--hdr-ink); } .fr .chk .ci.f { background: var(--err-ic); color: var(--hdr-ink); }
+.fr .chk .nm3 { font: 600 12.5px 'Geist Mono', monospace; flex: 1; min-width: 0; }
+.fr .chk .tm { font-size: 12px; color: var(--ink-muted); font-weight: 600; }
+.fr .rvr { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1.5px solid var(--line); font-size: 13px; font-weight: 600; }
+.fr .rvr .av { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font: 700 9px 'Space Grotesk', sans-serif; flex: none; }
+
+/* list */
+.lrow.pr7 { grid-template-columns: minmax(0, 1fr) 190px 170px 230px 120px 90px 24px; }
+.lhead.pr7 { grid-template-columns: minmax(0, 1fr) 190px 170px 230px 120px 90px 24px; }
+.lrow.nar { grid-template-columns: minmax(0, 1fr) auto 24px; padding: 12px 14px; min-height: 84px; }
+.lrow .stk2 { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.lrow .stc { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.f800 .lrow .who .t1 .ttl { font-size: 15px; }
+.f800 .page.lp { padding: 18px 16px 0; gap: 12px; }
+
+/* doc extras */
+.mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px 18px; margin-top: 8px; }
+.mcell { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.mst { font: 700 12px 'Geist Mono', monospace; background: var(--pg-ink); color: #fff; padding: 2px 9px; border-radius: 999px; align-self: flex-start; }
+.opts { margin: 6px 0 14px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 10px 22px; font-size: 13px; max-width: 1500px; }
+.opts li { background: var(--pg-card); border-radius: 10px; padding: 8px 12px; }
+.opts li b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--pg-mut); margin-bottom: 2px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="defs"></defs></svg>
+<div class="doc" id="app"></div>
+<script>
+const ICONS = {
+  'chev-u': '<path d="m18 15-6-6-6 6"/>', 'chev-l': '<path d="m15 18-6-6 6-6"/>', 'chev-r': '<path d="m9 18 6-6-6-6"/>', 'chev-d': '<path d="m6 9 6 6 6-6"/>', 'chev-ud': '<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>',
+  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/>',
+  box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  img: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  files: '<path d="M15 2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V6z"/><path d="M15 2v4h4M4 7v13a2 2 0 0 0 2 2h9"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>', 'check2': '<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  archive: '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-2.93 1.41-1.41m11.32-11.32 1.41-1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  monitor: '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  kbd: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/>',
+  layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  branch: '<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+  folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  folderopen: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+  'arr-l': '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>', 'arr-r': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  msg: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>', panelx: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>', panelo: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  lchecks: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8M13 12h8M13 18h8"/>',
+  help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>',
+  ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+  plus: '<path d="M5 12h14M12 5v14"/>',
+  swipe: '<path d="M2 3v18"/><rect width="12" height="18" x="6" y="3" rx="2"/><path d="M22 3v18"/>',
+  grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  rows: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>', cols: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>', bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>',
+  cdash: '<circle cx="12" cy="12" r="9" stroke-dasharray="3.6 3"/>', lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+};
+
+Object.assign(ICONS, {
+  filter: '<path d="M22 3H2l8 9.46V19l4 2v-8.54z"/>',
+  play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+  film: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18M3 7.5h4M3 12h18M3 16.5h4M17 3v18M17 7.5h4M17 16.5h4"/>',
+  folderx: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="m9.5 10.5 5 5M14.5 10.5l-5 5"/>',
+  restore: '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h2"/><path d="M20 8v11a2 2 0 0 1-2 2h-2"/><path d="m9 15 3-3 3 3"/><path d="M12 12v9"/>',
+  ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  max: '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
+  minus: '<path d="M5 12h14"/>',
+  clip: '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  list: '<path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  dl: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+  history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  zin: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/>',
+  trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  mdi: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  hash: '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+});
+Object.assign(ICONS, {gpr:'<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>',gprd:'<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M18 6h.01"/><path d="M6 9v12"/><path d="M18 9v6"/>',gprc:'<circle cx="6" cy="6" r="3"/><path d="M6 9v12"/><path d="m21 3-6 6"/><path d="m21 9-6-6"/><path d="M18 11.5V15"/><circle cx="18" cy="18" r="3"/>',gmerge:'<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>'});
+document.getElementById('defs').innerHTML = Object.entries(ICONS).map(([k, v]) => `<symbol id="i-${k}" viewBox="0 0 24 24">${v}</symbol>`).join('');
+const ic = (n, c = '') => `<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+
+/* =================== content model: real fixture sessions =================== */
+const COMMITS = [ // illustrative: the fixtures have no commits (as in header-options.html)
+  { sha: 'a3f9c21', subject: 'Add comment model and migration', pushed: true },
+  { sha: '7be04d8', subject: 'Wire up the comments list endpoint', pushed: false },
+  { sha: 'c91e5a0', subject: 'Render comments under each post', pushed: false },
+  { sha: '4d02be7', subject: "Merge branch 'master' into feature", pushed: false, merge: true },
+];
+const VAR = { tickets: ['VAR-201', 'VAR-188'], title: 'VAR-201: Comments on posts', repo: 'variety-app', base: 'origin/master', head: 'feature/comments-on-posts',
+  add: '+2,216', del: '−30', files: 26, rev: { total: 26, approved: 7, rejected: 1, commented: 1 }, tabs: { Spec: 4, Extras: 5, Evidence: 7, Files: 26 }, open: 2,
+  commits: COMMITS, unc: 3, pos: '13 / 26' };
+const ALLV = { tickets: ['QI-15472'], title: 'QI-15472: Trial bar', repo: 'trial-app-all-verdicts', base: 'origin/master', head: 'feature/trial-bar',
+  add: '+2,154', del: '−2,010', files: 12, rev: { total: 12, approved: 7, rejected: 2, commented: 3 }, tabs: { Spec: 3, Extras: 2, Evidence: 2, Files: 12 }, open: 10, commits: [], unc: 12, pos: '12 / 12' };
+const FAIL = { ...ALLV, repo: 'trial-app-runs', rev: { total: 12, approved: 1, rejected: 1, commented: 0 }, open: 2 };
+const LONG = { ...ALLV, tickets: ['QI-15472', 'QI-15488', 'PLATFORM-22017', 'DES-77', 'SEC-1040', 'OPS-311'],
+  title: 'QI-15472: Trial bar with amber warning variant, session-scoped dismissal, direct upgrade path and plan badges for free-plan workspaces (second attempt, rebased)',
+  repo: 'trial-app-long', head: 'feature/QI-15472-trial-bar-with-amber-warning-variant-session-scoped-dismissal-and-a-direct-upgrade-path', rev: { total: 12, approved: 3, rejected: 1, commented: 0 } };
+const reviewed = (m) => m.rev.approved + m.rev.rejected + m.rev.commented;
+
+/* =================== small components =================== */
+const chip = (k, ext = true, sm = false) => `<span class="tk ${sm ? 'sm' : ''}">${k}${ext ? ic('ext') : ''}</span>`;
+const tickets = (m, max = 2, sm = true) => (m.tickets.length > max ? (max = 1) : 0, `<span class="tks">${m.tickets.slice(0, max).map((k) => chip(k, true, sm)).join('')}${m.tickets.length > max ? `<span class="tk more ${sm ? 'sm' : ''}" title="${m.tickets.slice(max).join(', ')}">+${m.tickets.length - max}</span>` : ''}</span>`);
+const branchTag = (name, cls = '') => {
+  const i = name.indexOf('/');
+  const pre = i === -1 ? '' : `<span class="dim">${name.slice(0, i + 1)}</span>`;
+  return `<span class="tag mono ${cls}" style="${cls.includes('shrink') ? 'flex:0 1 auto' : 'flex:none'}">${ic('branch')}<span class="trunc">${pre}${i === -1 ? name : name.slice(i + 1)}</span></span>`;
+};
+const tabsNav = (m, o = {}) => {
+  const items = [['Spec', 'doc'], ['Extras', 'box'], ['Evidence', 'img'], ['Files', 'files'], ['Submit', 'send']];
+  if (PRC.opt === 'B' && PRS[PRC.st]) items.push(['PR', 'gpr']);
+  return `<nav class="tabs ${o.icons ? 'icons' : ''}" aria-label="Sections">${items.map(([n, i]) => {
+    if (n === 'PR') return prTab(o);
+    const c = n === 'Submit' ? (m.open || null) : m.tabs[n];
+    const on = o.page === n.toLowerCase();
+    const ready = n === 'Submit' && o.ready && !on;
+    const err = n === 'Submit' && o.err && !on;
+    return `<a class="step-tab ${on ? 'on' : ''} ${ready ? 'ready' : ''} ${err ? 'err' : ''}"><span class="step-tab-in"><span class="step-tab-c">${ic(ready ? 'check' : err ? 'alert' : i)}<span class="tl">${n}</span>${c != null ? `<i class="tc">${c}</i>` : ''}</span></span></a>`;
+  }).join('')}</nav>`;
+};
+const themeToggle = () => `<span class="theme" title="Theme: system"><i>${ic('sun')}</i><i>${ic('moon')}</i><i class="on">${ic('monitor')}</i></span>`;
+const themeBtn = () => `<span class="hb" title="Theme: system">${ic('monitor')}</span>`;
+const modeSeg = (grid = false, icons = false) => `<span class="seg"><b class="${grid ? '' : 'on'}">${ic('swipe')}${icons ? '' : 'Swipe'}</b><b class="${grid ? 'on' : ''}">${ic('grid')}${icons ? '' : 'Grid'}</b></span>`;
+const notice = (tone, icon, text, sm = false) => `<span class="nt ${tone} ${sm ? 'sm' : ''}"><i>${ic(icon)}</i>${text}</span>`;
+const stats = (m) => `<span class="stat"><span class="a">${m.add}</span><span class="d">${m.del}</span></span>`;
+const vbar = (m, w) => {
+  const r = m.rev, left = r.total - reviewed(m);
+  return `<span class="vbar" ${w ? `style="width:${w}px"` : ''} role="img" aria-label="${r.approved} approved, ${r.rejected} rejected, ${r.commented} commented, ${left} not reviewed">` +
+    `<i class="a" style="flex:${r.approved}"></i><i class="r" style="flex:${r.rejected}"></i><i class="c" style="flex:${r.commented}"></i><i style="flex:${left}"></i></span>`;
+};
+const decTag = (t) => t === 'Approve' ? `<span class="tag ok sm" style="height:22px">${ic('check')}Approve</span>` : `<span class="tag err sm" style="height:22px">${ic('x')}Request changes</span>`;
+const kbdc = (k) => `<span class="kbd">${k}</span>`;
+const btn = (label, o = {}) => `<span class="btn ${o.cls || ''}">${o.icon ? ic(o.icon) : ''}${label ? `<span class="lbl">${label}</span>` : ''}${o.kbd ? kbdc(o.kbd) : ''}</span>`;
+
+/* =================== the thin top bar =================== */
+function topBar(m, o = {}) {
+  const w = o.w || 1440;
+  if (o.kind === 'list') {
+    return `<header class="hdr bar" data-chrome><span class="wordmark">Review Dash</span><span class="sp"></span>
+      <span class="hb lab" title="Keyboard shortcuts (?)">${ic('kbd')}<span class="hl">Shortcuts</span><span class="kb">?</span></span>${themeToggle()}</header>`;
+  }
+  if (o.kind === 'error') {
+    return `<header class="hdr bar" data-chrome><span class="hb lab">${ic('chev-l')}Sessions</span><span class="mono" style="font-size:12px;opacity:.85;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.id}</span><span class="sp"></span>${themeToggle()}</header>`;
+  }
+  const t = { page: o.page, ready: o.ready, err: o.err };
+  // The sidebar toggle: always the leftmost control. >=1024px it collapses/expands the rail; below it opens the drawer.
+  const railOpen = w <= 800 ? !!o.drawer : !o.collapsed;
+  const sbt = `<span class="hb rel sbt" role="button" aria-label="${railOpen ? 'Hide sidebar' : 'Show sidebar'}" aria-pressed="${railOpen}" title="${railOpen ? 'Hide sidebar' : 'Show sidebar'} (B)" style="${w <= 800 && railOpen ? 'background:var(--hdr-ink);color:var(--hdr-chip)' : ''}">${ic(railOpen ? 'panelx' : 'panelo')}${railOpen ? '' : `<span class="tbadge">${reviewed(m)}/${m.rev.total}</span>`}</span>`;
+  if (w <= 800) {
+    return `<header class="hdr bar" data-chrome style="gap:10px;padding:0 14px">
+      ${sbt}
+      <span class="hb" title="Sessions">${ic('chev-l')}</span>
+      ${tabsNav(m, { ...t, icons: true })}${prBarChip(true)}<span class="sp"></span>${o.page === 'files' ? modeSeg(o.grid, true) : ''}<span class="hb" title="More: shortcuts, theme, archive">${ic('more')}</span></header>`;
+  }
+  return `<header class="hdr bar" data-chrome>
+    ${sbt}<span class="hb lab" title="Sessions">${ic('chev-l')}Sessions</span>${tabsNav(m, t)}${prBarChip(false)}<span class="sp"></span>
+    ${o.page === 'files' ? modeSeg(o.grid) : ''}
+    <span class="hb lab" title="Keyboard shortcuts (?)">${ic('kbd')}<span class="hl">Shortcuts</span><span class="kb">?</span></span>${themeToggle()}
+    <span class="hb ${o.menu ? 'hov' : ''}" title="More" style="${o.menu ? 'background:var(--hdr-ink);color:var(--hdr-chip)' : ''}">${ic('more')}</span></header>`;
+}
+
+/* =================== files tree data =================== */
+// [depth, kind, name, ftype, flags, count]   flags: a r cN cur del ren
+const T_VAR = [
+  [0, 'fo', '.github/workflows', '', '', '1/1'], [1, 'f', 'ci.yml', 'yaml', 'a'],
+  [0, 'fo', 'assets', '', '', '1/1'], [1, 'f', 'logo.png', 'other', 'a'],
+  [0, 'fo', 'config', '', '', '2/2'], [1, 'f', 'cache.yaml', 'yaml', 'a'], [1, 'f', 'features.json', 'json', 'a'],
+  [0, 'fo', 'docs', '', '', '0/1'], [1, 'f', 'comments.md', 'other', ''],
+  [0, 'fo', 'scripts', '', '', '0/2'], [1, 'f', 'build.js', 'js', ''], [1, 'f', 'lint-staged.js', 'js', ''],
+  [0, 'fo', 'src', '', '', '2/14'],
+  [1, 'fo', 'api', '', '', '1/2'], [2, 'f', 'comments.ts', 'ts', 'cur'], [2, 'f', 'users.ts', 'ts', 'r'],
+  [1, 'fo', 'components', '', '', '1/4'], [2, 'f', 'Avatar.tsx', 'react', ''], [2, 'f', 'CommentList.tsx', 'react', 'c1'], [2, 'f', 'Legacy.tsx', 'react', 'del'], [2, 'f', 'UserCard.tsx', 'react', ''],
+  [1, 'fo', 'data', '', '', '0/1'], [2, 'f', 'countries.ts', 'ts', ''],
+  [1, 'fo', 'legacy', '', '', '0/2'], [2, 'f', 'Toolbar.legacy.jsx', 'react', ''], [2, 'f', 'widget.jsx', 'react', ''],
+  [1, 'fo', 'styles', '', '', '0/3'], [2, 'f', 'base.css', 'css', ''], [2, 'f', 'comments.css', 'css', ''], [2, 'f', 'old.css', 'css', 'del'],
+  [1, 'fo', 'utils', '', '', '0/1'], [2, 'f', 'time.ts', 'ts', ''],
+  [1, 'f', 'index.ts', 'ts', ''],
+  [0, 'f', '.prettierrc.json', 'json', 'a'], [0, 'f', 'CONTRIBUTING.md', 'other', 'a del'], [0, 'f', 'README.md', 'other', 'a'], [0, 'f', 'package-lock.json', 'json', ''], [0, 'f', 'package.json', 'json', ''],
+];
+const T_ALLV = [
+  [0, 'fo', 'src', '', '', '9/9'],
+  [1, 'fo', 'assets', '', '', '1/1'], [2, 'f', 'trial-bar.png', 'other', 'a'],
+  [1, 'fo', 'components', '', '', '3/3'], [2, 'f', 'Header.tsx', 'react', 'a'], [2, 'f', 'Notice.tsx', 'react', 'a'], [2, 'f', 'TrialBar.tsx', 'react', 'c2 r'],
+  [1, 'fo', 'legacy', '', '', '1/1'], [2, 'f', 'OldBanner.ts', 'ts', 'c1 del'],
+  [1, 'fo', 'styles', '', '', '1/1'], [2, 'f', 'trial-bar.css', 'css', 'c1'],
+  [1, 'f', 'app.ts', 'ts', 'a'], [1, 'f', 'big.generated.ts', 'ts', 'a'], [1, 'f', 'config.ts', 'ts', 'c2 r'],
+  [0, 'fo', 'test', '', '', '1/1'], [1, 'f', 'trial-bar.test.ts', 'ts', 'c1'],
+  [0, 'f', 'package-lock.json', 'json', 'a'], [0, 'f', 'README.md', 'other', 'a cur'],
+];
+const treeRow = ([d, kind, name, ft, st, cnt]) => {
+  const pad = 8 + d * 18;
+  if (kind === 'fo') return `<div class="tr fo" style="padding-left:${pad}px">${ic('chev-d', 'chev')}${ic('folderopen')}<span class="nmx">${name}</span><span class="cnt">${cnt}</span></div>`;
+  const f = st.split(' ');
+  const cur = f.includes('cur'), del = f.includes('del');
+  const cm = f.find((x) => /^c\d/.test(x));
+  const marks = (cm ? `<span class="cm">${ic('msg')}${cm.slice(1)}</span>` : '') + (f.includes('a') ? ic('check', 'okc') : f.includes('r') ? ic('x', 'rjc') : '');
+  return `<div class="tr file ft-${ft} ${cur ? 'cur' : ''} ${del ? 'del' : ''}" style="padding-left:${pad}px"><span class="ftd"></span><span class="nmx">${name}</span>${marks}</div>`;
+};
+const treeHTML = (rows) => `<div class="tree" role="tree" data-tree>${rows.map(treeRow).join('')}</div>`;
+const filterBox = (txt = 'Filter files…') => `<div class="filter" style="margin:0 2px 10px">${ic('search')}<span>${txt}</span></div>`;
+
+/* =================== the rail =================== */
+const identityExpanded = (m) => `<div class="rid" data-rid="x">
+  <div class="rid-top">${tickets(m, 2)}<span class="ghost bx hv" title="Collapse identity (remembered)">${ic('chev-u')}</span></div>
+  <div class="rid-t" title="${m.title}">${m.title}</div>
+  <div class="rid-m"><span class="rp" style="min-width:0;flex:0 1 auto">${ic('folder')}<span class="trunc">${m.repo}</span></span><span class="sp"></span><span style="flex:none">${stats(m)}</span></div>
+  <div class="rid-b"><div class="brl"><span class="eb lbl">into</span>${branchTag(m.base)}</div><div class="brl"><span class="eb lbl">from</span>${branchTag(m.head, 'shrink')}</div>${prRailRow()}</div></div>`;
+const identityCollapsed = (m) => `<div class="rid c" data-rid="c"><div class="rid-1" title="${m.title}"><span class="ghost bx">${ic('chev-r')}</span><span class="t">${m.title}</span>${prCompactChip()}</div></div>`;
+
+function reviewBlock(m, st, compact = false) {
+  const r = m.rev, rv = reviewed(m), left = r.total - rv;
+  const sug = r.rejected + r.commented > 0 ? 'Request changes' : r.approved > 0 ? 'Approve' : null;
+  let nt, sg = '';
+  if (st === 'approved') nt = notice('ok', 'check', 'Approved · sent', true);
+  else if (st === 'updated') nt = notice('warn', 'refresh', 'Updated since sent', true);
+  else if (st === 'ready') nt = notice('ok', 'check', 'Ready to submit', true);
+  else if (st === 'failed') nt = notice('err', 'alert', `Run failed <span style="font-weight:500">· ${m.open} open comments</span>`, true);
+  else if (st === 'working') nt = notice('info', 'bot', 'Claude Code is working…', true) + '<span class="pulse" title="Live"></span>';
+  else if (rv === 0) nt = notice('info', 'clock', 'Awaiting review', true);
+  else nt = notice('flat', 'lchecks', 'In progress', true);
+  if (st === 'working') sg = '';
+  else if (st === 'approved' || st === 'updated' || (st === 'ready' && PRC.opt === 'C')) sg = prReviewRow();
+  else if (sug) sg = `<div class="rr4"><span>${st === 'ready' ? 'Decision' : 'Suggested decision'}</span>${decTag(sug)}</div>`;
+  else sg = `<div class="rr4"><span>Suggested decision</span><span style="font-weight:500">after your first verdict</span></div>`;
+  if (compact) {
+    const sgc = st === 'approved' || st === 'updated' ? prReviewCompact() : st === 'working' ? '' : sug ? decTag(sug) : '';
+    return `<div class="rrev compact" data-rrev="${st}">
+    <div class="rr1"><strong>${rv}/${r.total}</strong>${vbar(m)}<span class="vc a">${ic('check')}${r.approved}</span><span class="vc r">${ic('x')}${r.rejected}</span><span class="vc c">${ic('msg')}${r.commented}</span></div>
+    <div class="rr3" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${nt}${sgc}</div></div>`;
+  }
+  return `<div class="rrev" data-rrev="${st}">
+    <div class="rr1"><strong>${rv}/${r.total}</strong>${vbar(m)}</div>
+    <div class="rr2"><span class="vc a">${ic('check')}${r.approved}</span><span class="vc r">${ic('x')}${r.rejected}</span><span class="vc c">${ic('msg')}${r.commented}</span><span class="vc n">${left} not reviewed</span></div>
+    <div class="rr3" style="display:flex;gap:8px;align-items:center">${nt}</div>${sg}</div>`;
+}
+
+const railHead = (title, count, right = '') => `<div class="rh"><strong>${title}</strong>${count != null ? `<span class="bd">${count}</span>` : ''}<span class="sp"></span>${right}</div>`;
+
+// ---- section-specific blocks ----
+const secFiles = (rows, o = {}) => `<div class="rsec" style="padding-bottom:0">${railHead('Files', o.count, `<span class="ghost bx" title="Collapse all folders">${ic('chev-ud')}</span>`)}${filterBox(o.filter)}${treeHTML(rows)}</div>`;
+
+const secSpec = () => `<div class="rsec">${railHead('Spec', 4, `<span class="eb">sources</span>`)}
+  <div class="ri cur"><span class="box">${ic('ticket')}</span><span class="tx"><span class="l1">VAR-201: Comments on posts</span><span class="l2">Jira ticket</span></span></div>
+  <div class="ri h">Description</div><div class="ri h">Acceptance criteria</div>
+  <div class="ri"><span class="box">${ic('doc')}</span><span class="tx"><span class="l1">Implementation plan</span><span class="l2 m">plan.md</span></span><span class="cm">${ic('msg')}1</span></div>
+  <div class="ri h on">Approach</div><div class="ri h">Steps</div>
+  <div class="ri"><span class="box">${ic('globe')}</span><span class="tx"><span class="l1">Comments design</span><span class="l2">Exported artifact · HTML</span></span></div>
+  <div class="ri un" title="In the spec folder but not in index.json"><span class="box">${ic('doc')}</span><span class="tx"><span class="l1">Rollout notes</span><span class="l2 m">rollout.md · not indexed</span></span></div></div>`;
+
+const secExtras = () => `<div class="rsec">${railHead('Extras', 5)}
+  <div class="ri cur"><span class="box">${ic('doc')}</span><span class="tx"><span class="l1 two">Architecture (markdown with a mermaid block)</span><span class="l2 m">architecture.md</span></span></div>
+  <div class="ri"><span class="box">${ic('globe')}</span><span class="tx"><span class="l1">Test report (HTML)</span><span class="l2 m">report.html</span></span></div>
+  <div class="ri"><span class="box">${ic('branch')}</span><span class="tx"><span class="l1">Add-comment sequence (.mmd)</span><span class="l2 m">sequence.mmd</span></span></div>
+  <div class="ri"><span class="box">${ic('branch')}</span><span class="tx"><span class="l1">Comment loading states</span><span class="l2 m">state.mermaid</span></span></div>
+  <div class="ri un"><span class="box">${ic('doc')}</span><span class="tx"><span class="l1">Review notes from the agent</span><span class="l2 m">notes.md · not indexed</span></span></div></div>`;
+
+const EV = [
+  ['feed-neutral.png', 'Feed with the trial bar, neutral variant', '', 'cur'],
+  ['feed-warning.png', 'Amber variant at two days left', '', ''],
+  ['plan-picker.png', 'Plan picker open over the dashboard after clicking Upgrade…', 'dark', ''],
+  ['plan-confirmed.png', 'Pro selected: inline confirmation, trial bar hidden', 'dark', '1'],
+  ['mobile/warning-390.png', 'Narrow viewport (390px): the bar wraps under the text', 'tall', ''],
+  ['upgrade-flow.webm', 'Recording of the whole upgrade flow · 0:03', 'vid', ''],
+  ['unindexed-overflow-check.png', 'not indexed', '', 'un'],
+];
+const secEvidence = () => `<div class="rsec">${railHead('Evidence', 7, `<span class="eb">6 images · 1 video</span>`)}
+  ${EV.map(([f, cap, k, x], i) => `<div class="ri ev ${x === 'cur' ? 'cur' : ''} ${x === 'un' ? 'un' : ''}"><span class="thumb ${k}">${k === 'vid' ? ic('play') : '<i></i><b></b><u></u>'}</span><span class="tx"><span class="l1" style="font:600 12px 'Geist Mono',monospace">${f.split('/').pop()}</span><span class="l2">${cap}</span></span>${/^\d$/.test(x) ? `<span class="cm">${ic('msg')}${x}</span>` : `<span class="n">${i + 1}</span>`}</div>`).join('')}</div>`;
+
+const COMMENT_FILES = [['TrialBar.tsx', 2, 'r'], ['config.ts', 2, 'r'], ['OldBanner.ts', 1, 'c'], ['trial-bar.css', 1, 'c'], ['trial-bar.test.ts', 1, 'c']];
+const secSubmit = (kind) => {
+  const sum = kind === 'failed'
+    ? [['Files', '1 comment · 1 file'], ['Spec / Evidence', '1'], ['Overall note', 'sent']]
+    : [['Files', '7 comments · 5 files'], ['Lines', '3 of them'], ['Spec', '1'], ['Evidence', '1 · 0:02.5'], ['Overall note', 'draft']];
+  const runs = kind === 'failed'
+    ? `<div class="runrow"><span class="sdot2 err"></span><span class="tx"><span class="l1">Run 2 · failed</span><span class="l2">exit 1 · workspace trust check</span></span><span class="ghost bx hv">${ic('refresh')}</span></div>
+       <div class="runrow"><span class="sdot2"></span><span class="tx"><span class="l1">Run 1 · succeeded</span><span class="l2">resolved 1 comment · 2.4k tokens</span></span></div>`
+    : `<div class="runrow" style="color:var(--ink-muted)"><span class="sdot2" style="background:transparent;border:1.5px dashed var(--ink-muted)"></span><span class="tx"><span class="l1" style="font-weight:600">Nothing sent yet</span><span class="l2">Runs appear here after Submit</span></span></div>`;
+  const files = kind === 'failed' ? [['app.ts', 1, 'r']] : COMMENT_FILES;
+  return `<div class="rsec">${railHead('Will be sent', m_open(kind), '')}
+    <div class="rsum">${sum.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('')}</div>
+    <div class="rdiv"></div>
+    ${files.map(([f, n, v]) => `<div class="ri" style="min-height:34px"><span class="tx"><span class="l1" style="font:600 12.5px 'Geist Mono',monospace">${f}</span></span><span class="cm">${ic('msg')}${n}</span>${v === 'r' ? `<span class="tag err sm">${ic('x')}</span>` : `<span class="tag sm" style="color:var(--ink)">${ic('msg')}</span>`}</div>`).join('')}
+    <div class="rdiv"></div>${railHead('Runs', null, `<span class="eb">history</span>`)}${runs}</div>`;
+};
+const m_open = (kind) => kind === 'failed' ? 2 : 10;
+
+function rail(m, o) {
+  const id = o.idc ? identityCollapsed(m) : identityExpanded(m);
+  const sec = { files: () => secFiles(o.tree, { count: m.files, filter: o.filter }), spec: secSpec, extras: secExtras, evidence: secEvidence, submit: () => (o.sub === 'done' ? secSubmitDone() : secSubmit(o.sub)), pr: secPR }[o.page]();
+  return `<aside class="rail" aria-label="Session panel" data-rail>${id}${reviewBlock(m, o.rv || 'progress', !!o.idc)}${sec}</aside>`;
+}
+
+/* =================== the commit timeline (mirrors CommitTimeline.tsx / CommitNode.tsx / commit-format.ts) =================== */
+const TK_ICONS = {
+  layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  merge: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>',
+  ok: '<path d="m17 15-5.5 5.5L9 18"/><path d="M5.516 16.07A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 3.501 7.327"/>',
+  up: '<path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/>',
+};
+TK_ICONS.pr = '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>';
+const tkSvg = (n, cls = '') => `<svg viewBox="0 0 24 24" aria-hidden="true" ${cls ? `class="${cls}"` : ''}>${TK_ICONS[n]}</svg>`;
+const truncSubject = (t, max = 24) => (t.length <= max ? t : t.slice(0, max - 1).trimEnd() + '…');
+/* =================== deck / grid content =================== */
+const CODE = [
+  "import { db } from '../db'", "import { HttpError } from '../errors'", "import type { Comment, NewComment } from '../types'", '',
+  'const MAX_BODY = 4000', '',
+  'export async function listComments(postId: string): Promise<Comment[]> {', '  return db.comment.findMany({', '    where: { postId, deletedAt: null },',
+  "    orderBy: { createdAt: 'asc' },", '    include: { author: { select: { id: true, name: true, avatarUrl: true } } },', '  })', '}', '',
+  'export async function addComment(input: NewComment): Promise<Comment> {', '  const body = input.body.trim()',
+  "  if (body.length === 0) throw new HttpError(422, 'Write something first')", "  if (body.length > MAX_BODY) throw new HttpError(422, 'Comment is too long')",
+  '  return db.comment.create({ data: { ...input, body } })', '}', '',
+  'export async function deleteComment(id: string, userId: string): Promise<void> {', '  const found = await db.comment.findUnique({ where: { id } })',
+  "  if (!found || found.authorId !== userId) throw new HttpError(404, 'No such comment')", '  await db.comment.update({ where: { id }, data: { deletedAt: new Date() } })', '}', '',
+  'export async function countComments(postId: string): Promise<number> {', '  return db.comment.count({ where: { postId, deletedAt: null } })', '}',
+];
+const hl = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/('[^']*')|\b(import|export|from|async|function|const|return|if|throw|await|new|type)\b|\b([A-Z][A-Za-z]*)\b|\b([a-z][A-Za-z]*)(?=\()|\b(\d+)\b/g,
+  (x, str, kw, ty, fn, num) => str ? `<i class="s">${str}</i>` : kw ? `<i class="k">${kw}</i>` : ty ? `<i class="ty">${ty}</i>` : fn ? `<i class="f">${fn}</i>` : `<i class="n">${num}</i>`);
+const codeLines = () => CODE.map((l, i) => `<div class="ln"><span class="g">${i + 1}</span><span class="t">${hl(l) || ' '}</span></div>`).join('');
+function deck(m, o = {}) {
+  const nar = o.narrow;
+  return `<div class="main" style="${o.mb != null ? `--mb:${o.mb}px` : ''}"><div class="deckw" ${o.wide ? 'style="width:1180px"' : ''}>
+  <div class="peek p2"></div><div class="peek p1"></div>
+  <div class="card ft-ts" data-card>
+    <div class="chd"><div style="min-width:0;flex:1;display:flex;flex-direction:column;gap:3px"><span class="dir trunc">src/api/</span><span style="display:flex;gap:8px;align-items:center"><span class="fn">comments.ts</span><span class="tag mint">${ic('plus')}${nar ? '' : 'Added'}</span></span></div>
+      <span class="stat" style="margin-top:2px;color:var(--hdr-ink)">+23 −0</span><span class="pos" style="margin-top:3px;display:inline-flex;gap:5px;align-items:center">${ic('files')} ${m.pos}</span>
+      <span class="seg"><b class="on">${ic('rows')}${nar ? '' : 'Unified'}</b><b>${ic('cols')}${nar ? '' : 'Split'}</b></span></div>
+    <div class="code">${codeLines()}</div>
+    <div class="cmt">${ic('msg')}Leave a comment…<span class="kbd">C</span></div>
+    <div class="acts"><span class="btn lg rej">${ic('x')}<span class="lbl">Reject</span>${nar ? '' : kbdc('X')}</span><span class="btn lg">${ic('msg')}<span class="lbl">Comment</span>${nar ? '' : kbdc('C')}</span><span class="btn lg pri">${ic('check')}<span class="lbl">Approve</span>${nar ? '' : kbdc('A')}</span></div>
+  </div>
+  <span class="arrow l">${ic('chev-l')}</span><span class="arrow r">${ic('chev-r')}</span>
+</div><div class="pgr">${m.pos}</div></div>`;
+}
+
+const FILES = [ // path, type, status, +, −, verdict, tag
+  ['.github/workflows/ci.yml', 'yaml', 'M', 2, 0, 'a'], ['.prettierrc.json', 'json', 'A', 5, 0, 'a'], ['CONTRIBUTING.md', 'other', 'D', 0, 5, 'a'], ['README.md', 'other', 'M', 4, 0, 'a'],
+  ['assets/logo.png', 'other', 'M', 0, 0, 'a', 'Binary'], ['config/cache.yaml', 'yaml', 'A', 6, 0, 'a'], ['config/features.json', 'json', 'M', 3, 2, 'a'], ['docs/comments.md', 'other', 'A', 12, 0, ''],
+  ['package-lock.json', 'json', 'M', 6, 0, '', 'Collapsed'], ['package.json', 'json', 'M', 2, 1, ''], ['scripts/build.js', 'js', 'M', 3, 2, ''], ['scripts/lint-staged.js', 'js', 'A', 6, 0, ''],
+  ['src/api/comments.ts', 'ts', 'A', 23, 0, '', '', 'cur'], ['src/api/users.ts', 'ts', 'M', 2, 0, 'r'], ['src/components/Avatar.tsx', 'react', 'M', 3, 0, ''], ['src/components/CommentList.tsx', 'react', 'A', 18, 0, 'c'],
+  ['src/components/Legacy.tsx', 'react', 'D', 0, 14, ''], ['src/components/UserCard.tsx', 'react', 'M', 4, 1, ''], ['src/data/countries.ts', 'ts', 'A', 2109, 0, '', 'Large'], ['src/index.ts', 'ts', 'M', 3, 1, ''],
+  ['src/legacy/Toolbar.legacy.jsx', 'react', 'R', 1, 0, ''], ['src/legacy/widget.jsx', 'react', 'M', 2, 2, ''], ['src/styles/base.css', 'css', 'M', 1, 0, ''], ['src/styles/comments.css', 'css', 'A', 3, 0, ''],
+  ['src/styles/old.css', 'css', 'D', 0, 2, ''], ['src/utils/time.ts', 'ts', 'R', 4, 0, ''],
+];
+const STAT = { M: ['Modified', 'var(--st-m)'], A: ['Added', 'var(--st-a)'], D: ['Deleted', 'var(--st-d)'], R: ['Renamed', 'var(--st-r)'] };
+const cbars = (a, d) => { const t = a + d; if (!t) return `<span class="cbars"><i></i><i></i><i></i><i></i><i></i></span>`; const ga = Math.max(a ? 1 : 0, Math.round(5 * a / t)), gd = 5 - ga; return `<span class="cbars">${'<i class="a"></i>'.repeat(ga)}${'<i class="d"></i>'.repeat(gd)}</span>`; };
+const tile = ([p, ft, s, a, d, v, tag, cur]) => {
+  const i = p.lastIndexOf('/'), dir = i < 0 ? '' : p.slice(0, i + 1), nm = p.slice(i + 1);
+  const vv = v === 'a' ? `<span class="tv a">${ic('check')}Approved</span>` : v === 'r' ? `<span class="tv r">${ic('x')}Rejected</span>` : v === 'c' ? `<span class="tv c">${ic('msg')}Commented · 1</span>` : `<span class="tv">Unreviewed${tag ? `<span class="tag sm">${tag}</span>` : ''}</span>`;
+  return `<div class="tile ft-${ft} ${cur ? 'cur' : ''}"><div class="tb2"><span class="td">${dir}</span><span class="tn2">${nm}</span><span class="ts"><span class="stt"><span class="sd" style="background:${STAT[s][1]}"></span>${STAT[s][0]}</span><span class="pm"><span class="a">+${a.toLocaleString('en-US')}</span> <span class="d">−${d}</span></span>${cbars(a, d)}</span>${vv}</div></div>`;
+};
+const gridFilter = () => `<div class="frow" style="flex:none"><span class="seg"><b class="on">All <em>26</em></b><b>Unreviewed <em>16</em></b><b>Commented <em>1</em></b><b>Approved <em>7</em></b><b>Rejected <em>1</em></b></span><span class="sp"></span>
+  <span class="btn" style="height:34px">${ic('filter')}File types${ic('chev-d')}</span></div>`;
+const typesMenu = (style) => `<div class="menu" style="${style}"><div class="lab eb" style="padding:4px 10px 8px">File types</div>
+  ${[['ts', 'TypeScript', '.ts', 5], ['js', 'JavaScript', '.js', 2], ['react', 'React', '.tsx .jsx', 6], ['yaml', 'YAML', '.yml .yaml', 2], ['json', 'JSON', '.json', 4], ['css', 'CSS', '.css', 3], ['other', 'Everything else', '.md .png', 4]].map(([t, n, e, c], i) => `<div class="mck ft-${t}"><span class="bx ${false ? 'on' : ''}">${false ? `<svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px;color:var(--paper);stroke-width:3.5;display:block;margin:0.5px"><use href="#i-check"/></svg>` : ''}</span><span class="sw"></span>${n}<span class="ex">${e}</span><span class="ct">${c}</span></div>`).join('')}
+  <div class="clr">Clear</div></div>`;
+
+/* =================== spec / extras / evidence main content =================== */
+const dgSvg = (kind) => kind === 'seq'
+  ? `<svg class="dg" viewBox="0 0 520 190"><g><rect class="nb" x="26" y="10" width="110" height="30"/><text x="81" y="29">UserCard.tsx</text><rect class="nb" x="205" y="10" width="110" height="30"/><text x="260" y="29">comments.ts</text><rect class="nb" x="372" y="10" width="130" height="30"/><text x="437" y="29">/api/…/comments</text></g>
+     <g stroke="var(--ink-muted)" stroke-dasharray="2 3"><path d="M81 40V180M260 40V180M437 40V180"/></g>
+     <path class="ed" d="M81 70H258"/><text class="lbl" x="170" y="64">listComments(postId)</text><path class="ed" d="M260 98H435"/><text class="lbl" x="348" y="92">GET</text><path class="ed" stroke-dasharray="4 3" d="M435 126H262"/><text class="lbl" x="348" y="120">Comment[]</text><path class="ed" stroke-dasharray="4 3" d="M258 154H83"/><text class="lbl" x="170" y="148">Comment[]</text></svg>`
+  : `<svg class="dg" viewBox="0 0 640 250"><g><rect class="nb" x="28" y="104" width="86" height="34"/><text x="71" y="125">index.ts</text><rect class="nb" x="200" y="18" width="110" height="34"/><text x="255" y="39">api/users.ts</text><rect class="nb" x="200" y="68" width="110" height="34"/><text x="255" y="89">api/posts.ts</text><rect class="nb" x="200" y="148" width="116" height="34"/><text x="258" y="169">UserCard.tsx</text><rect class="nb" x="200" y="204" width="130" height="34"/><text x="265" y="225">api/comments.ts</text><rect class="nb" x="400" y="120" width="96" height="34"/><text x="448" y="141">Avatar.tsx</text><rect class="nb" x="400" y="170" width="124" height="34"/><text x="462" y="191">CommentList.tsx</text><rect class="nb" x="560" y="170" width="70" height="34"/><text x="595" y="191">time.ts</text></g>
+     <path class="ed" d="M114 112C160 70 170 40 200 36M114 118C150 100 170 90 200 86M114 130C150 150 170 160 200 165M114 136C150 190 160 215 200 221M316 165C350 160 370 140 400 137M316 168C350 180 370 186 400 187M524 187H560"/></svg>`;
+
+const specPage = () => `<main class="page" data-main>
+  <div class="phead"><h1>Spec</h1><span class="meta">${ic('files', 's')} 4 sources · read-only</span></div>
+  <div class="two">
+    <div class="panel" style="height:100%">
+      <div class="ph"><span class="ibox">${ic('ticket')}</span><span style="min-width:0"><span class="mono" style="color:var(--st-r)">VAR-201</span> Comments on posts</span><span class="sp"></span><span class="btn" style="height:30px">${ic('ext')}Open in Jira</span></div>
+      <div class="pb md" style="overflow:hidden;flex:1"><h1>VAR-201: Comments on posts</h1>
+        <ul><li><b>Status:</b> In Review</li><li><b>Assignee:</b> Sam Okafor</li><li><b>Type:</b> Story</li><li><b>Priority:</b> High</li><li><b>Link:</b> <a>https://example.atlassian.net/browse/VAR-201</a></li></ul>
+        <h2>Description</h2><p>Readers cannot respond to posts. Add comments under each post, loaded lazily per post and cached for a minute, with relative timestamps (“3 min ago”). Avatars should load lazily now that a feed can hold hundreds of them, and the user record gains a country so the dial code can be shown later.</p>
+        <h2>Acceptance criteria</h2><ol><li>Comments render under their post, oldest first, with a relative timestamp.</li><li>Adding a comment posts to <code>/api/posts/:id/comments</code> and appends it without a reload.</li><li>The legacy table view and its stylesheet are gone.</li><li>CI lints staged files on pull requests.</li></ol></div>
+      <div style="padding-top:14px;flex:none"><div class="cbox">${ic('msg')}Leave a comment…${kbdc('C')}</div></div></div>
+    <div class="panel" style="height:100%">
+      <div class="ph"><span class="ibox">${ic('doc')}</span><span class="mono">plan.md</span><span class="mut" style="font-weight:500;font-size:13px">Implementation plan</span><span class="sp"></span><span class="btn sq" style="height:30px;width:30px">${ic('copy')}</span></div>
+      <div class="pb md" style="overflow:hidden;flex:1"><h1>Implementation plan: comments (VAR-201)</h1><h2>Approach</h2>
+        <p>Fetch comments per post after the feed loads so the first paint is not blocked. The cache TTL lives in <code>config/cache.yaml</code>; the feature is behind <code>features.comments</code>.</p>
+        <div class="mer"><div class="mh">mermaid<span class="sp"></span><span class="btn sq">${ic('dl')}</span><span class="btn sq">${ic('copy')}</span><span class="btn sq">${ic('max')}</span></div>${dgSvg('seq')}</div>
+        <h2>Steps</h2><ol><li><code>src/api/comments.ts</code>: list and add.</li><li><code>CommentList.tsx</code> and <code>comments.css</code>.</li></ol></div></div>
+  </div></main>`;
+
+const extrasPage = () => `<main class="page" data-main style="align-items:center">
+  <div style="width:100%;max-width:960px;display:flex;flex-direction:column;gap:16px;min-height:0;flex:1">
+  <div class="phead"><h1>Extras</h1><span class="meta">${ic('files', 's')} 5 items</span></div>
+  <div class="panel" style="flex:1">
+    <div class="ph"><span class="ibox">${ic('doc')}</span>Architecture (markdown with a mermaid block)<span class="sp"></span><span class="mono mut" style="font-size:12px;font-weight:500">architecture.md</span></div>
+    <div class="pb md" style="flex:1;overflow:hidden"><h1>Comments architecture</h1>
+      <div class="mer" style="margin-top:6px"><div class="mh">mermaid<span class="sp"></span><span class="btn sq">${ic('dl')}</span><span class="btn sq">${ic('copy')}</span><span class="btn sq">${ic('max')}</span></div><div style="max-width:700px;margin:0 auto">${dgSvg('arch')}</div><div class="zoom"><span class="btn sq" style="width:30px;height:30px">${ic('zin')}</span><span class="btn sq" style="width:30px;height:30px">${ic('minus')}</span><span class="btn sq" style="width:30px;height:30px">${ic('refresh')}</span></div></div>
+    </div></div></div></main>`;
+
+const evidencePage = () => `<main class="page" data-main style="padding-bottom:26px">
+  <div class="phead"><h1>Evidence</h1><span class="meta">${ic('img', 's')} 6 screenshots</span><span class="meta">${ic('film', 's')} 1 recording</span><span class="sp"></span>
+    <span class="meta" style="color:var(--ink)"><b>1 / 7</b></span><span class="btn sq" style="height:28px;width:28px;border-radius:50%">${ic('arr-l')}</span><span class="btn sq" style="height:28px;width:28px;border-radius:50%">${ic('arr-r')}</span><span class="meta">Previous / next</span><span class="meta">${kbdc('C')} Comment</span></div>
+  <div class="panel card6" style="flex:1;min-height:0">
+    <div style="display:flex;flex:1;min-height:0">
+      <div style="flex:1;min-width:0;padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px"><span class="ibox">${ic('img')}</span><span class="mono" style="font-weight:700">feed-neutral.png</span><span class="mut">Feed with the trial bar, neutral variant</span><span class="sp"></span><span class="btn" style="height:32px">${ic('ext')}Open original</span></div>
+        <div style="flex:1;min-height:0;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;position:relative;background:repeating-conic-gradient(#e3e3e3 0 25%,#f6f6f6 0 50%) 0 0/20px 20px">
+          <div style="position:absolute;left:0;right:0;top:56px;bottom:0"><div class="shot"><div class="tb">Your trial ends in <b>7 days</b>. Keep your workspace by upgrading.<i>Upgrade</i></div><div class="ah"><b>Acme Console</b><span>Alex Rivera · free</span></div><div class="ab"><div class="an"><span>Dashboard</span><span>Workspaces</span><span>Settings</span></div><div class="am"><div><b>Workspaces</b><br>3 active · 12 members</div><div><b>Recent activity</b><br>Import finished · 2 minutes ago</div></div></div></div></div>
+          <span class="seg" style="position:absolute;right:12px;top:10px;padding:3px;gap:6px;align-items:center"><b style="font-weight:600;color:var(--ink-muted)">77%</b><b class="btn sq" style="height:26px;width:26px;padding:0">${ic('minus')}</b><b class="btn sq" style="height:26px;width:26px;padding:0">${ic('plus')}</b><b class="btn sq" style="height:26px;width:26px;padding:0">${ic('max')}</b></span></div>
+        <div style="flex:none;display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--paper-2)"><span class="ibox" style="width:26px;height:26px">${ic('bot')}</span>Baseline before any interaction.</div></div>
+      <aside style="width:300px;flex:none;border-left:1.5px solid var(--line);background:var(--paper-2);padding:16px;display:flex;flex-direction:column;gap:12px"><strong style="font-size:15px">Comments</strong><div class="cbox" style="margin:0">${ic('msg')}Leave a comment…${kbdc('C')}</div></aside></div></div></main>`;
+
+/* =================== submit =================== */
+const OPEN = [
+  ['TrialBar.tsx', 'err', 'Changes requested', [['The warning copy and the neutral copy differ only in the second sentence; pull the sentence out of the template literal so translators see one string per variant.', 'c1', ''], ['Prefer a &lt;section aria-label="Trial"&gt; here: role="status" on a container with a link and a button reads oddly.', 'c2', 'lines 17–19']]],
+  ['config.ts', 'err', 'Changes requested', [['warnAtDays and upgradeUrl should come from the server settings endpoint, not be baked into the bundle.', 'c3', '']]],
+  ['OldBanner.ts', '', 'Commented', [['Nothing imports this any more: good riddance.', 'c5', '']]],
+];
+const cmtCard = (txt, id, lines, sent) => `<div class="cmtc"><div style="display:flex;gap:10px"><span class="av">You</span><span>${txt}</span></div><div class="ft"><span>${id}</span>${lines ? `<span class="mono" style="color:var(--st-r)">${lines}</span>` : ''}<span>2 weeks ago</span>${sent ? `<span class="tag info sm">Sent</span>` : ''}<span style="flex:1"></span><b style="font-weight:600;color:var(--ink-muted)">Edit</b><b style="font-weight:600;color:var(--ink-muted)">${sent ? '' : 'Delete'}</b><b>Mark resolved</b></div></div>`;
+const openPanel = (kind, narrow) => `<div class="panel" style="${narrow ? '' : 'flex:1;min-width:0'}"><div class="ph">Open comments<span class="badge-sm" style="background:var(--warn-bg);color:var(--ink);border-color:color-mix(in srgb,var(--warn-bd) 50%,transparent);display:inline-flex;gap:4px;align-items:center;padding:0 8px;height:22px">${ic('msg', 's')}${m_open(kind)}</span></div>
+  <div class="pb" style="padding-top:12px"><div class="eb" style="display:flex;gap:6px;align-items:center">${ic('files', 's')}Files</div><div style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 2px;font-weight:500">${kind === 'failed' ? '1 approved · 1 rejected · 0 commented · 10 not reviewed' : '7 approved · 2 rejected · 3 commented · 0 not reviewed'}</div>
+  ${(kind === 'failed' ? [['app.ts', 'err', 'Changes requested', [['dismissTrialBar re-renders the whole root; only the bar needs to go away.', 'c1', '', true]]]] : OPEN).map(([f, tone, lab, cs]) => `<div class="fh">${f}<span class="tag ${tone} sm">${tone === 'err' ? ic('x') : ic('msg')}${lab}</span></div><div style="display:flex;flex-direction:column;gap:10px">${cs.map(([t, id, ln, sent]) => cmtCard(t, id, ln, sent)).join('')}</div>`).join('')}</div></div>`;
+const composePanels = (kind) => `<div class="panel"><div class="ph">Overall feedback</div><div class="pb"><div class="ta">${kind === 'failed' ? 'Please also run the full test suite before resolving.' : 'Solid change. Two blockers in TrialBar.tsx and config.ts, the rest are suggestions. Draft, not sent yet.'}</div>${kind === 'failed' ? `<div style="margin-top:8px;font-size:12.5px;color:var(--ink-muted);display:flex;gap:6px;align-items:center">${ic('check', 's')}Sent · still open, edits go with the next send</div>` : ''}</div></div>
+  <div class="panel"><div class="ph">Decision</div><div class="pb" style="display:flex;gap:12px"><div class="radio"><span class="rb"></span><div><div class="rt" style="color:var(--green)">${ic('check')}Approve</div><div class="rd">Ready for a PR to be opened.</div></div></div><div class="radio on"><span class="rb"></span><div><div class="rt">${ic('msg')}Request changes</div><div class="rd">Claude Code applies the open comments.</div></div></div><div class="radio"><span class="rb"></span><div><div class="rt" style="color:var(--red)">${ic('x')}Reject</div><div class="rd">Stop here; the approach needs rethinking.</div></div></div></div></div>
+  <div class="panel"><div class="ph">PR description<span class="sp"></span><span class="tag mono">${ic('doc')}pr-description.md</span></div><div class="pb md"><h1 style="font-size:19px">QI-15472: Trial bar</h1><p>Adds a persistent trial bar above the header for free-plan users, with an amber variant when three or fewer days remain and a direct path into the upgrade flow.</p><h2>Changes</h2><ul><li><code>TrialBar.tsx</code> + <code>trial-bar.css</code>: the bar, its neutral/amber variants and the dismiss control.</li></ul></div></div>`;
+const failNotice = `<div style="display:flex;flex-direction:column;gap:10px;flex:none"><div class="nt err" style="white-space:normal;max-width:100%;align-self:flex-start;padding:5px 14px 5px 5px"><i>${ic('alert')}</i><span><b>The last Claude Code run failed.</b> claude exited with code 1: Error: Session claude-session-f41d could not be resumed (workspace trust check failed)</span></div>
+  <div style="display:flex;gap:10px">${btn('Retry', { cls: 'pri', icon: 'refresh' })}${btn('View run')}</div></div>`;
+const sendBar = (kind, narrow) => `<footer class="sendbar" data-sendbar style="${narrow ? 'padding:0 14px;gap:10px' : ''}">${narrow ? `<span style="color:var(--ink);margin-right:auto;font-size:12.5px">${kind === 'failed' ? '2 comments · Request changes' : '10 comments · Request changes'}</span>` : `<span style="color:var(--ink)">${kind === 'failed' ? 'Send 2 comments + Request changes to the current session · 10 files not reviewed' : 'Send 10 comments + Request changes to the current session'}</span>`}
+  <span class="split"><span class="btn pri" style="${narrow ? 'padding:0 14px' : ''}">${ic('send')}Submit to current session</span><span class="btn pri">${ic('chev-d')}</span></span></footer>`;
+function submitPage(kind, w = 1440) {
+  const narrow = w <= 800;
+  return `<main class="page" data-main style="${narrow ? 'overflow:hidden' : ''}"><div class="phead"><h1>Submit</h1></div>${kind === 'failed' ? failNotice : ''}
+    ${narrow ? `<div style="display:flex;flex-direction:column;gap:14px;min-height:0">${openPanel(kind, true)}${composePanels(kind).split('<div class="panel">').slice(1, 2).map((x) => '<div class="panel">' + x).join('')}</div>`
+      : `<div style="display:flex;gap:22px;align-items:flex-start;min-height:0;flex:1"><div class="pcol" style="flex:1.1;min-width:0">${composePanels(kind)}</div>${openPanel(kind)}</div>`}</main>${sendBar(kind, narrow)}`;
+}
+
+/* =================== list + errors =================== */
+const listRows = [
+  [['QI-15472'], 'QI-15472: Trial bar', 'trial-app-all-verdicts', 'feature/trial-bar', '+2,154', '−2,010', 12, 12, 12, 'ok', 'check', 'Ready to submit'],
+  [['VAR-201', 'VAR-188'], 'VAR-201: Comments on posts', 'variety-app', 'feature/comments-on-posts', '+2,216', '−30', 26, 9, 26, 'flat', 'lchecks', 'In progress'],
+  [['QI-15472', 'QI-15488', '+4'], 'QI-15472: Trial bar with amber warning variant, session-scoped dismissal…', 'trial-app-long', 'feature/QI-15472-trial-bar-wi…', '+2,154', '−2,010', 12, 4, 12, 'flat', 'lchecks', 'In progress'],
+  [['QI-15472'], 'QI-15472: Trial bar', 'trial-app-runs', 'feature/trial-bar', '+2,154', '−2,010', 12, 2, 12, 'err', 'alert', 'Run failed'],
+  [['QI-15472'], 'QI-15472: Trial bar', 'trial-app-runs', 'feature/trial-bar', '+2,154', '−2,010', 12, 2, 12, 'info', 'bot', 'Claude Code working…'],
+  [['QI-15472'], 'QI-15472: Trial bar (started on the v1 branch)', 'trial-app', 'feature/trial-bar', '+2,154', '−2,010', 12, 0, 12, 'info', 'clock', 'Awaiting review', true],
+  [['OPS-7'], 'OPS-7: Rotate the signing key (nothing changed yet)', 'clean-app', 'feature/rotate-signing-key', '+0', '−0', 0, 0, 0, 'info', 'clock', 'Nothing to review'],
+];
+const listRow = ([tk, title, repo, head, a, d, files, rv, tot, tone, icn, st, chg]) => `<div class="lrow"><div class="who"><div class="t1">${tk.map((k) => k[0] === '+' ? `<span class="tk more sm">${k}</span>` : chip(k, true, true)).join('')}<span class="ttl trunc" style="font-size:16px;font-weight:700">${title}</span></div>
+  <div class="idl"><span class="rp">${ic('folder')}${repo} ·</span>${branchTag('origin/master')}${ic('arr-l', 'arr')}${branchTag(head, 'shrink')}</div>${chg ? `<div><span class="tag warn sm">${ic('alert')}Branch changed <span style="font-weight:500">· now on feature/trial-bar-v2</span></span></div>` : ''}</div>
+  <span class="stat"><span class="a">${a}</span><span class="d">${d}</span><span class="nm" style="margin-left:6px">${ic('files')}${files}</span></span>
+  <span class="nm">${ic('check2')}<strong>${rv}/${tot}</strong><span class="prog" style="width:70px"><i style="width:${tot ? rv / tot * 100 : 0}%;${rv === tot && tot ? 'background:var(--green)' : ''}"></i></span></span>
+  <span>${notice(tone, icn, st, true)}</span><span class="mut" style="font-size:13px">just now</span>${ic('chev-r', 'mut')}</div>`;
+const listPage = () => `<main class="page" data-main style="padding:26px 52px 0;gap:14px">
+  <div class="phead" style="gap:14px"><h1 style="font-size:28px">Review sessions</h1>
+    <span class="pillf on">${ic('list')}All <em>11</em></span><span class="pillf">${ic('clock')}Awaiting review <em>6</em></span><span class="pillf">${ic('cdash')}In progress <em>2</em></span><span class="pillf">${ic('send')}Sent <em>2</em></span><span class="pillf">${ic('refresh')}Updated since sent <em>1</em></span><span class="pillf">${ic('check2')}Approved <em>0</em></span>
+    <span class="sp"></span><span class="pillf" style="border-color:transparent">${ic('archive')}Archived <em>1</em></span></div>
+  <div class="lhead"><span>${ic('layers', 's')}Session</span><span>${ic('plus', 's')}Changes</span><span>${ic('check2', 's')}Reviewed</span><span>${ic('cdash', 's')}Status</span><span>${ic('clock', 's')}Updated</span><span></span></div>
+  <div style="display:flex;flex-direction:column;gap:14px">${listRows.map(listRow).join('')}</div></main>`;
+
+const errorPanel = (kind) => {
+  const arch = kind === 'archived';
+  return `<div class="errwrap"><div class="panel"><div class="ph" style="min-height:48px">${ic('folderx')}<span style="font-size:15px">${arch ? 'This session is archived' : 'Repository missing'}</span></div>
+  <div class="pb" style="display:flex;flex-direction:column;gap:12px"><span class="mono mut" style="font-size:12px">${arch ? '20260920-0800-qi-15301-workspace-export-a7c1' : '20261001-0900-var-201-comments-on-posts-a1b2'}</span>
+  ${arch ? `<p style="margin:0;font-size:13px;font-weight:500;color:var(--ink-muted)">Archived sessions are not reviewable. Unarchive it to open the review again.</p>`
+    : `<div class="nt err" style="white-space:normal;align-self:stretch;padding:5px 12px 5px 5px"><i>${ic('alert')}</i><span style="overflow-wrap:anywhere">/Users/sam/Projects/variety-app is gone or is no longer a git checkout.</span></div>`}</div>
+  <div class="pf" style="justify-content:flex-end"><span class="btn gh">${ic('arr-l')}Back to sessions</span>${arch ? btn('Unarchive', { cls: 'pri', icon: 'restore' }) : btn('Retry', { cls: 'pri', icon: 'refresh' })}</div></div></div>`;
+};
+
+/* =================== review complete =================== */
+const completeDlg = () => `<div class="veil"></div><section class="panel card6 dlg" aria-label="Review complete"><div class="ph" style="justify-content:center;min-height:52px;font-size:18px">Review complete</div>
+  <div class="pb" style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:26px 28px 22px">${notice('ok', 'check', 'Ready to submit')}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><span class="btn" title="Evidence">${ic('img')}<span style="color:var(--ink-muted);font-weight:600;font-size:12px">2</span></span><span class="btn" title="Spec">${ic('doc')}<span style="color:var(--ink-muted);font-weight:600;font-size:12px">3</span></span><span class="btn" title="Extras">${ic('box')}<span style="color:var(--ink-muted);font-weight:600;font-size:12px">2</span></span><span class="btn pri">${ic('send')}Submit</span></div>
+  <span class="ghost bx" style="color:var(--ink-muted)" title="Back to files">${ic('arr-l')}</span></div></section>`;
+
+/* =================== page builders (one per screen) =================== */
+const idcFiles = true;   // Files: identity collapsed by default (remembered separately from the other pages)
+const P = {
+  list: (m, w) => `${topBar(m, { kind: 'list' })}<div class="body"><div class="col">${listPage()}</div></div>`,
+  spec: (m, w, o = {}) => `${topBar(m, { page: 'spec' })}<div class="body">${rail(m, { page: 'spec', idc: o.idc })}<div class="col">${specPage()}</div></div>`,
+  extras: (m, w, o = {}) => `${topBar(m, { page: 'extras' })}<div class="body">${rail(m, { page: 'extras', idc: o.idc })}<div class="col">${extrasPage()}</div></div>`,
+  evidence: (m, w, o = {}) => `${topBar(m, { page: 'evidence' })}<div class="body">${rail(m, { page: 'evidence', idc: o.idc })}<div class="col">${evidencePage()}</div></div>`,
+  deck: (m, w, o = {}) => `${topBar(m, { page: 'files', w })}<div class="body">${rail(m, { page: 'files', tree: T_VAR, idc: o.idc ?? idcFiles })}<div class="col">${strip(m, w)}${deck(m, { narrow: false })}</div></div>`,
+  grid: (m, w, o = {}) => `${topBar(m, { page: 'files', grid: true })}<div class="body">${rail(m, { page: 'files', tree: T_VAR, idc: idcFiles })}<div class="col">${strip(m, w)}<div class="page" style="padding:16px 24px 0;gap:14px">${gridFilter()}<div class="tiles">${FILES.slice(0, 24).map(tile).join('')}</div></div></div>${typesMenu('right:24px;top:138px;width:330px')}</div>`,
+  complete: (m0, w, m = ALLV) => `${topBar(m, { page: 'files', ready: true })}<div class="body">${rail(m, { page: 'files', tree: T_ALLV, idc: idcFiles, rv: 'ready' })}<div class="col"><div class="blur">${strip(m, w)}${deck(m, {})}</div>${completeDlg()}</div></div>`,
+  submit: (m0, w, m = ALLV) => `${topBar(m, { page: 'submit' })}<div class="body">${rail(m, { page: 'submit', sub: 'ok', rv: 'ready' })}<div class="col">${submitPage('ok')}</div></div>`,
+  submitFail: (m0, w, m = FAIL) => `${topBar(m, { page: 'submit', err: true })}<div class="body">${rail(m, { page: 'submit', sub: 'failed', rv: 'failed' })}<div class="col">${submitPage('failed')}</div></div>`,
+  archived: () => `${topBar(VAR, { kind: 'error', id: '20260920-0800-qi-15301-workspace-export-a7c1' })}<div class="body"><div class="col">${errorPanel('archived')}</div></div>`,
+  missing: () => `${topBar(VAR, { kind: 'error', id: '20261001-0900-var-201-comments-on-posts-a1b2' })}<div class="body"><div class="col">${errorPanel('missing')}</div></div>`,
+};
+
+/* =================== 800px frames =================== */
+const drawerRail = (m, tree, o = {}) => `<div class="scrim"></div><div class="drawer">${rail(m, { page: 'files', tree, idc: true, ...o })}</div>`;
+P.deckc = (m, w) => `${topBar(m, { page: 'files', w, collapsed: true })}<div class="body"><div class="col">${strip(m, w)}${deck(m, { narrow: false, wide: true })}</div></div>`;
+P.deck800 = (m, w, o = {}) => `${topBar(m, { page: 'files', w: 800, drawer: o.open })}<div class="body"><div class="col">${strip(m, 800)}${deck(m, { narrow: true })}</div>${o.open ? drawerRail(m, T_VAR) : ''}</div>`;
+P.submit800 = (m, w, o = {}) => `${topBar(m, { page: 'submit', w: 800, drawer: o.open })}<div class="body"><div class="col">${submitPage('ok', 800)}</div>${o.open ? `<div class="scrim"></div><div class="drawer">${rail(m, { page: 'submit', sub: 'ok', rv: 'ready' })}</div>` : ''}</div>`;
+
+/* rail-only crops (states) */
+const railTop = (m, st, idc) => `<aside class="rail" style="width:296px;border-right:0;height:100%" data-rail>${idc ? identityCollapsed(m) : identityExpanded(m)}${reviewBlock(m, st)}${reviewBlock(m, st, true)}</aside>`;
+const VAR0 = { ...VAR, rev: { total: 26, approved: 0, rejected: 0, commented: 0 } };
+const FAILW = { ...FAIL, rev: { total: 12, approved: 9, rejected: 2, commented: 1 } };
+
+/* overflow-menu crop */
+P.menu = (m) => `${topBar(m, { page: 'files', menu: true })}<div style="position:absolute;inset:52px 0 0 0;background:var(--paper)"></div>
+  <div class="menu" style="right:20px;top:58px;width:310px"><div class="mi first">${ic('archive')}<span class="tx"><span class="l1">Archive session</span><span class="l2">Moves it out of the list. A toast offers Undo.</span></span></div></div>`;
+P.menu800 = (m) => `${topBar(m, { page: 'files', w: 800 })}<div style="position:absolute;inset:52px 0 0 0;background:var(--paper)"></div>
+  <div class="menu" style="right:14px;top:58px;width:290px"><div class="mi first">${ic('kbd')}<span class="tx"><span class="l1">Keyboard shortcuts</span></span><span class="kbd">?</span></div>
+  <div class="mi first"><span class="theme" style="box-shadow:none;height:30px;margin-left:-2px"><i>${ic('sun')}</i><i>${ic('moon')}</i><i class="on">${ic('monitor')}</i></span><span class="tx"><span class="l1">Theme</span></span></div>
+  <div class="mi sepl" style="margin-top:4px">${ic('archive')}<span class="tx"><span class="l1">Archive session</span><span class="l2">A toast offers Undo.</span></span></div></div>`;
+P.tabs = (m, w, st) => `<div style="position:relative;height:100%">${topBar(m, { page: 'files', ready: st === 'ready', err: st === 'err' })}</div>`;
+
+
+/* =================== PR link mock: vocabulary =================== */
+const PRN = 231;
+let PRC = { opt: 'A', st: 'open' };
+const PRS = {
+  ready:    { tone: 'info', ic: 'gpr',    tag: 'Not opened yet', dash: true },
+  creating: { tone: 'info', ic: 'refresh', tag: 'Opening…' },
+  open:     { tone: 'ok',   ic: 'gpr',    tag: 'Open' },
+  draft:    { tone: '',     ic: 'gprd',   tag: 'Draft' },
+  updated:  { tone: 'warn', ic: 'gpr',    tag: 'Open · re-review' },
+  merged:   { tone: 'info', ic: 'gmerge', tag: 'Merged' },
+  closed:   { tone: 'err',  ic: 'gprc',   tag: 'Closed' },
+  external: { tone: 'ok',   ic: 'gpr',    tag: 'Open · detected' },
+  error:    { tone: 'err',  ic: 'alert',  tag: 'Not opened' },
+  none:     null,
+};
+const ALLST = ['ready', 'creating', 'open', 'draft', 'updated', 'merged', 'closed', 'external', 'error', 'none'];
+const hasPR = (st) => ['open', 'draft', 'updated', 'merged', 'closed', 'external'].includes(st);
+const prTag = (st, o = {}) => { const s = PRS[st]; return s ? `<span class="tag ${s.tone} ${s.dash ? 'dash' : ''} ${o.sm ? 'sm' : ''}">${ic(s.ic)}${o.txt ?? s.tag}</span>` : ''; };
+const WORD = { open: 'open', draft: 'draft', updated: '2 new commits', merged: 'merged', closed: 'closed', external: 'open' };
+function prChip(st, o = {}) {
+  const s = PRS[st]; if (!s) return '';
+  const n = o.n ?? PRN;
+  const lead = hasPR(st) ? `<span class="nm2">#${n}</span>` : { ready: 'Create PR', creating: 'Opening PR…', error: 'PR failed' }[st];
+  return `<span class="prc ${s.tone} ${s.dash ? 'dash' : ''} ${o.sm ? 'sm' : ''}" ${o.anchor ? 'data-anchor="pr"' : ''}>${ic(s.ic)}${lead}${hasPR(st) && !o.compact ? `<span class="w">${o.short && st === 'updated' ? 'updated' : WORD[st]}</span>` : ''}${o.chev ? ic('chev-d', 's') : ''}</span>`;
+}
+const wnt = (tone, icon, html) => `<div class="wnt ${tone}"><i>${ic(icon)}</i><span>${html}</span></div>`;
+const KV = (rows) => `<div class="pkv">${rows.map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}</div>`;
+const brs = () => `<span class="brs">${branchTag('master')}${ic('arr-l', 'arr')}${branchTag('feature/trial-bar', 'shrink')}</span>`;
+const CHK = { open: [5, 1, 0], external: [5, 1, 0], draft: [6, 0, 0], updated: [0, 6, 0], merged: [6, 0, 0], closed: [5, 0, 1] };
+const chkHtml = (st) => { const [p, r, f] = CHK[st] || [0, 0, 0]; return [p ? `<span class="vc a">${ic('check')}${p} passed</span>` : '', r ? `<span class="vc c">${ic('refresh')}${r} running</span>` : '', f ? `<span class="vc r">${ic('x')}${f} failed</span>` : ''].join(''); };
+const REV = { open: '1 approved · 1 pending', external: '0 of 1 requested', draft: 'none: draft', updated: '1 approved <span class="mut">(before the new commits)</span>', merged: '2 approved', closed: '1 requested changes' };
+const CMT = { open: '3 on GitHub · 2 unresolved <span class="lnk">Address</span>', external: 'none yet', draft: 'none yet', updated: '3 on GitHub · 2 unresolved <span class="lnk">Address</span>', merged: '3 on GitHub · all resolved', closed: '3 on GitHub · 3 unresolved' };
+const BYA = 'Claude Code · <span class="mono">gh pr create</span> · 2 h ago';
+const chkText = (st) => { const [p, r, f] = CHK[st] || [0, 0, 0]; return [p ? p + ' passed' : '', r ? r + ' running' : '', f ? f + ' failed' : ''].filter(Boolean).join(' · '); };
+const cmtText = (st) => CMT[st].replace(/ <span class="lnk">.*?<\/span>/, '').replace(/<[^>]+>/g, '');
+const prRows = (st) => [['Opened', st === 'external' ? 'sam, on GitHub · 35 min ago <span class="tag sm">detected</span>' : BYA], ['Checks', chkHtml(st)], ['Reviews', REV[st]], ['Comments', CMT[st]], ['Iteration', (PRC.prior ? 'new PR · earlier #204 merged' : st === 'updated' ? '1 → 2 (commits pending re-review)' : 'iteration 1')]];
+const prTitleRow = () => `<div class="prt"><span class="prn">#${PRN}</span><b>QI-15472: Trial bar</b><span class="lnk" style="font-size:12px">github.com/acme/trial-app/pull/${PRN} ${ic('ext', 's')}</span></div>`;
+
+/* body + footer of the PR panel / popover per state */
+function prParts(st, nar) {
+  const gh = btn('Open on GitHub', { icon: 'ext' }), ghp = btn('Open on GitHub', { cls: 'pri', icon: 'ext' }), cp = btn('Copy link', { cls: 'gh', icon: 'copy' });
+  switch (st) {
+    case 'ready': return {
+      body: `<div class="prt"><b>QI-15472: Trial bar</b><span class="mut" style="font-size:12px;font-weight:500">title and body from pr-description.md</span></div>
+        ${KV([['Into / from', brs()], ['Branch', `1 commit not pushed yet <span class="mut">· pushed first</span>`], ['Reviewers', '<span class="mut">none · set on GitHub</span>']])}
+        <div class="cmd">$ gh pr create --base master --title "QI-15472: Trial bar" --body-file pr-description.md</div>`,
+      foot: `<span class="split"><span class="btn pri">${ic('gpr')}Create PR</span><span class="btn pri" title="Open as draft">${ic('chev-d')}</span></span><span class="chkl"><i class="cb"></i>Draft</span><span class="sp"></span><span class="mut" style="font-size:12px;font-weight:600">Claude Code runs it</span>` };
+    case 'creating': return {
+      body: `${wnt('info', 'bot', '<b>Claude Code is opening the pull request.</b> It pushes the branch, then runs <span class="mono">gh pr create</span> with pr-description.md.')}<div class="cmd">$ gh pr create --base master --body-file pr-description.md</div>`,
+      foot: `${btn('View run', { icon: 'bot' })}<span class="sp"></span><span class="mut" style="font-size:12px;font-weight:600">usually under 20 s</span>` };
+    case 'open': case 'external': case 'draft': return {
+      body: `${prTitleRow()}<span class="brs">${brs()}</span>${st === 'draft' ? wnt('flat', 'gprd', 'Draft. Reviewers are not notified until it is marked ready on GitHub.') : ''}${KV(prRows(st))}`,
+      foot: `${ghp}${cp}<span class="sp"></span><span class="mut" style="font-size:12px;font-weight:600">synced 20 s ago</span>` };
+    case 'updated': return {
+      body: `${prTitleRow()}${wnt('warn', 'refresh', '<b>2 commits since the PR opened.</b> One is pushed (checks are re-running), one is not pushed. Review them, then push.')}${KV(prRows(st))}`,
+      foot: `${btn('Review 2 new commits', { cls: 'pri', icon: 'files' })}${gh}` };
+    case 'merged': return {
+      body: `${prTitleRow()}${wnt('info', 'gmerge', '<b>Merged into master</b> by mika, 40 min ago · <span class="mono">a91f3c2</span>. Nothing more to review here.')}${KV(prRows(st).filter((r) => r[0] !== 'Opened'))}`,
+      foot: `${btn('Archive session', { cls: 'pri', icon: 'archive' })}${gh}` };
+    case 'closed': return {
+      body: `${prTitleRow()}${wnt('err', 'gprc', '<b>Closed without merging</b> by mika, 1 h ago.')}${KV(prRows(st))}`,
+      foot: `${btn('Create a new PR', { cls: 'pri', icon: 'gpr' })}${gh}` };
+    case 'error': return {
+      body: `${wnt('err', 'alert', '<b>Could not open the pull request.</b> <span class="mono">gh</span> is not signed in to github.com. Run <span class="mono">gh auth login</span> in a terminal, then retry.')}<div class="cmd">$ gh auth login</div><span class="mut" style="font-size:12px;font-weight:500">Other causes: push rejected, no upstream, or a PR for this branch already exists (it is then detected instead).</span>`,
+      foot: `${btn('Retry', { cls: 'pri', icon: 'refresh' })}${btn('Copy command', { cls: 'gh', icon: 'copy' })}` };
+    default: return { body: '', foot: '' };
+  }
+}
+function prPanel(st, nar = false, o = {}) {
+  const s = PRS[st]; if (!s) return '';
+  const { body, foot } = prParts(st, nar);
+  if (o.pop) return `<div class="pop prpop" data-pop-anchor="pr" data-side="${o.side || 'right'}"><div class="row">${prTag(st)}<span class="sp"></span><span class="mut" style="font-size:12px;font-weight:600">Pull request</span></div><div class="pbd">${body}</div><div class="pfoot">${foot}</div></div>`;
+  return `<div class="panel" data-prpanel><div class="ph"><span class="ibox">${ic(s.ic === 'refresh' || s.ic === 'alert' ? 'gpr' : s.ic)}</span>${o.title || 'Pull request'}<span class="sp"></span>${prTag(st)}</div><div class="pb pbd">${body}${prHist(st)}</div><div class="pf" style="flex-wrap:wrap">${foot}</div></div>`;
+}
+
+/* =================== fixtures =================== */
+const TRIAL = { tickets: ['QI-15472'], title: 'QI-15472: Trial bar', repo: 'trial-app', base: 'origin/master', head: 'feature/trial-bar', add: '+2,154', del: '−2,010', files: 12,
+  rev: { total: 12, approved: 12, rejected: 0, commented: 0 }, tabs: { Spec: 3, Extras: 2, Evidence: 2, Files: 12 }, open: 0, commits: [], unc: 0, pos: '12 / 12' };
+function trialM(st) {
+  const noPR = ['ready', 'creating', 'error', 'none'].includes(st);
+  const commits = [{ sha: 'e41b7c0', subject: 'Add TrialBar component', pushed: true }, { sha: '0c9d2a5', subject: 'Amber variant, dismissal', pushed: !noPR, pr: !noPR }];
+  if (st === 'updated') commits.push({ sha: '5fa8e13', subject: 'Fix aria-label on the bar', pushed: true, nw: true }, { sha: 'b7720de', subject: 'Dismiss on Escape', pushed: false, nw: true });
+  return { ...TRIAL, commits, rev: st === 'updated' ? { total: 12, approved: 11, rejected: 0, commented: 0 } : TRIAL.rev };
+}
+
+/* =================== hooks used by the copied shell =================== */
+function prTab(o) {
+  const st = PRC.st, on = o.page === 'pr';
+  const c = { ready: { cls: 'ready', lab: 'Create PR', ic: 'gpr' }, creating: { lab: 'Opening PR', ic: 'refresh' }, open: { lab: 'PR', c: '#231', ic: 'gpr' }, draft: { lab: 'PR', c: '#231', ic: 'gprd' }, updated: { lab: 'PR', c: '#231', ic: 'gpr', pip: true },
+    merged: { lab: 'Merged', c: '#231', ic: 'gmerge' }, closed: { cls: 'err', lab: 'Closed', c: '#231', ic: 'gprc' }, external: { lab: 'PR', c: '#231', ic: 'gpr' }, error: { cls: 'err', lab: 'PR failed', ic: 'alert' } }[st];
+  return `<a class="step-tab ${on ? 'on' : ''} ${on ? '' : c.cls || ''}"><span class="step-tab-in"><span class="step-tab-c">${ic(c.ic)}<span class="tl">${c.lab}</span>${c.c ? `<i class="tc">${c.c}</i>` : ''}${c.pip ? '<i class="pip"></i>' : ''}</span></span></a>`;
+}
+function prBarChip(narrow) {
+  if (PRC.opt !== 'D' || !PRS[PRC.st]) return '';
+  const st = PRC.st, s = PRS[st];
+  const txt = hasPR(st) ? `<span class="nm2">#${PRN}</span>` : { ready: narrow ? 'Create' : 'Create PR', creating: narrow ? '…' : 'Opening PR…', error: narrow ? 'Retry' : 'PR failed' }[st];
+  const word = { open: 'open', draft: 'draft', updated: '2 new', merged: 'merged', closed: 'closed', external: 'open' }[st];
+  const lead = hasPR(st) ? `<i class="d"></i>` : st === 'creating' ? ic('refresh') : ic(st === 'error' ? 'alert' : 'gpr');
+  const mid = hasPR(st) ? ic(s.ic) : '';
+  return `<span class="pbar ${hasPR(st) ? s.tone || 'flat' : st}" data-anchor="pr" role="button" aria-label="Pull request: ${s.tag}">${hasPR(st) ? lead + mid : lead}${txt}${word && !narrow ? `<span class="w">${word}</span>` : ''}${hasPR(st) && !narrow && st !== 'updated' ? ic('ext', 's') : ''}</span>`;
+}
+const prRailRow = () => PRC.opt === 'A' && PRS[PRC.st] ? `<div class="brl"><span class="eb lbl">PR</span>${prChip(PRC.st, { anchor: true, chev: true })}${['open', 'external', 'updated', 'draft'].includes(PRC.st) ? `<span class="mut" style="font-size:11.5px;font-weight:600;white-space:nowrap">${CHK[PRC.st][0] ? CHK[PRC.st][0] + '/6 checks' : 'checks re-running'}</span>` : ''}</div>` : '';
+const prCompactChip = () => PRC.opt === 'A' && PRS[PRC.st] ? `<span style="margin-right:8px">${prChip(PRC.st, { anchor: true, compact: true, sm: true })}</span>` : '';
+function prRowCard(st) {
+  const s = PRS[st]; if (!s) return '';
+  const T = { ready: ['No PR yet', 'Description is ready', 'dash'], creating: ['Opening PR…', 'Claude Code: gh pr create', ''], open: [`PR #${PRN} · open`, '5 of 6 checks · 1 pending review', ''], draft: [`PR #${PRN} · draft`, '6 of 6 checks · not ready for review', ''],
+    updated: [`PR #${PRN} · 2 new commits`, 'Re-review before you push', ''], merged: [`PR #${PRN} · merged`, 'into master · 40 min ago', ''], closed: [`PR #${PRN} · closed`, 'without merging · 1 h ago', ''], external: [`PR #${PRN} · open`, 'opened by sam on GitHub · detected', ''],
+    error: ['Could not open the PR', 'gh is not signed in', ''] }[st];
+  const act = st === 'ready' ? `<span class="btn sm">${ic('gpr')}Create PR</span>` : st === 'error' ? `<span class="btn sm">${ic('refresh')}Retry</span>` : st === 'creating' ? '' : ic('ext', 'mut');
+  return `<div class="prw ${s.tone} ${T[2]}"><span class="pi">${ic(s.ic)}</span><span class="tx"><b>${T[0]}</b><span class="l2">${T[1]}</span></span>${act}</div>`;
+}
+const prReviewRow = () => PRC.opt !== 'C' || !PRS[PRC.st] ? '' : `<div class="rr4" style="flex-direction:column;align-items:stretch;gap:6px"><span>Pull request</span>${prRowCard(PRC.st)}</div>`;
+const prReviewCompact = () => PRC.opt !== 'C' || !PRS[PRC.st] ? '' : prChip(PRC.st, { sm: true });
+
+/* =================== timeline (replaces the copied strip) =================== */
+const PRNODE = { ready: ['Open PR', 'not yet'], creating: ['Opening…', 'gh pr create'], open: ['PR #231', 'open · 5/6'], draft: ['PR #231', 'draft'], updated: ['PR #231', '2 commits behind'], merged: ['PR #231', 'merged'], closed: ['PR #231', 'closed'], external: ['PR #231', 'open · detected'], error: ['Open PR', 'failed'] };
+const strip = (m, w = 1440) => {
+  const showPR = PRC.opt === 'B' && PRS[PRC.st];
+  const items = [{ k: 'full' }, ...m.commits.map((c) => ({ k: 'commit', c })), ...(m.unc ? [{ k: 'unc' }] : []), ...(showPR ? [{ k: 'pr' }] : [])];
+  const into = (it) => (!it || it.k === 'full' ? null : it.k === 'pr' ? (hasPR(PRC.st) ? 's' : 'd') : it.k === 'commit' && it.c.pushed ? 's' : 'd');
+  const seg = (side, st) => (st ? `<span class="cx-seg ${side} ${st === 'd' ? 'd' : ''}"></span>` : '');
+  const html = items.map((it, i) => {
+    const segs = seg('l', into(it)) + seg('r', into(items[i + 1]));
+    let node, p, s, title, on = '';
+    if (it.k === 'full') { on = 'on'; title = `Full diff: ${m.files} files`; node = `<span class="cx-ring">${tkSvg('layers')}</span>`; p = '<span>Full diff</span>'; s = `${m.files} files ${m.add} ${m.del}`; }
+    else if (it.k === 'unc') { title = 'Uncommitted'; node = '<span class="cx-dot un"></span>'; p = '<span>Uncommitted</span>'; s = `${m.unc} files`; }
+    else if (it.k === 'pr') {
+      const t = PRS[PRC.st]; title = `Pull request: ${t.tag}`;
+      node = `<span class="cx-ring ${hasPR(PRC.st) ? 't-' + (t.tone || 'info') : 'dsh'}">${tkSvg(PRC.st === 'merged' ? 'merge' : 'pr')}</span>`; p = `<span>${PRNODE[PRC.st][0]}</span>`; s = PRNODE[PRC.st][1];
+    } else {
+      const c = it.c; title = `Commit ${c.sha}: ${c.subject}`;
+      node = '<span class="cx-dot"></span>';
+      const prm = c.pr && PRC.opt === 'A' ? tkSvg('pr', `cx-ic pr ${PRC.st}`) : '';
+      p = `<span>${c.sha}</span>${tkSvg(c.pushed ? 'ok' : 'up', 'cx-ic ' + (c.pushed ? 'ok' : 'up'))}${prm}${c.nw ? '<i class="nwd" title="since the PR opened"></i>' : ''}`; s = truncSubject(c.subject);
+    }
+    return `<div class="cx ${on}">${segs}<div class="cx-b" title="${title}"><span class="cx-n">${node}</span><span class="cx-p">${p}</span><span class="cx-s">${s}</span></div></div>`;
+  });
+  return `<section class="cxl" aria-label="Commits" data-chrome-col data-strip><div class="cx-ul">${html.join('')}</div></section>`;
+};
+
+/* =================== rail blocks =================== */
+const secSubmitDone = () => {
+  const st = PRC.st;
+  const runs = [['Run 1 · approval sent', 'succeeded · 12 files approved', '']];
+  if (st === 'creating') runs.unshift(['Run 2 · open PR', 'running · gh pr create', 'info']);
+  if (st === 'error') runs.unshift(['Run 2 · open PR · failed', 'gh: not signed in (exit 4)', 'err']);
+  if (['open', 'draft', 'updated', 'merged', 'closed'].includes(st)) runs.unshift(['Run 2 · open PR', 'succeeded · opened #231 · 14 s', '']);
+  return `<div class="rsec">${railHead('Sent', null, '')}<div class="rsum"><span>Decision</span><span>Approve</span><span>Sent</span><span>2 min ago</span><span>Files</span><span>12 approved</span><span>Comments</span><span>10 resolved</span></div><div class="rdiv"></div>${railHead('Runs', null, '<span class="eb">history</span>')}
+    ${runs.map(([a, b, c]) => `<div class="runrow"><span class="sdot2 ${c}"></span><span class="tx"><span class="l1">${a}</span><span class="l2">${b}</span></span></div>`).join('')}</div>`;
+};
+const secPR = () => {
+  const st = PRC.st, made = hasPR(st);
+  const row = (icn, t, sub, un, extra = '') => `<div class="ri ${un ? 'un' : ''}"><span class="box">${ic(icn)}</span><span class="tx"><span class="l1">${t}</span><span class="l2">${sub}</span></span>${extra}</div>`;
+  const chk = { open: ['refresh', 'Checks', '5 passed · 1 running'], external: ['refresh', 'Checks', '5 passed · 1 running'], draft: ['check', 'Checks', '6 passed'], updated: ['refresh', 'Checks', 're-running after the new push'], merged: ['check', 'Checks', '6 passed'], closed: ['x', 'Checks', '5 passed · 1 failed'] }[st];
+  return `<div class="rsec">${railHead('Pull request', null, `<span class="eb">pipeline</span>`)}
+    ${row('check', 'Branch pushed', st === 'updated' ? '3 of 4 commits · 1 not pushed' : st === 'ready' || st === 'creating' || st === 'error' ? '1 commit not pushed yet' : '2 commits · feature/trial-bar', false)}
+    ${row('gpr', made ? `PR #${PRN} opened` : st === 'creating' ? 'Opening…' : st === 'error' ? 'Could not open' : 'Open the PR', made ? (st === 'external' ? 'by sam on GitHub · detected' : 'by Claude Code · 2 h ago') : st === 'error' ? 'gh is not signed in' : 'from pr-description.md', !made)}
+    ${chk ? row(chk[0], chk[1], chk[2], false) : row('refresh', 'Checks', 'after the PR opens', true)}
+    ${made ? row('msg', 'Reviews', REV[st].replace(/<[^>]+>/g, ''), false) : row('msg', 'Reviews', 'after the PR opens', true)}
+    ${row('gmerge', 'Merged', st === 'merged' ? 'into master · 40 min ago' : st === 'closed' ? 'closed without merging' : 'not merged', st !== 'merged')}</div>`;
+};
+
+/* =================== pages =================== */
+function submitDone(st, w = 1440) {
+  const nar = w <= 800, A = PRC.opt === 'A';
+  const compose = `<div class="panel"><div class="ph">Overall feedback<span class="sp"></span><span class="tag info sm">Sent</span></div><div class="pb"><div class="ta" style="min-height:48px">Looks good, ship it once CI is green. Two small suggestions are in the comments.</div></div></div>
+    <div class="panel"><div class="ph">Decision<span class="sp"></span><span class="tag ok sm">${ic('check')}Sent 2 min ago</span></div><div class="pb"><div class="radio on" style="background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok-bd) 60%,transparent)"><span class="rb"></span><div><div class="rt" style="color:var(--green)">${ic('check')}Approve</div><div class="rd">Ready for a PR to be opened.</div></div></div></div></div>
+    <div class="panel"><div class="ph">PR description<span class="sp"></span><span class="tag mono">${ic('doc')}pr-description.md</span></div><div class="pb md"><h1 style="font-size:19px">QI-15472: Trial bar</h1><p>Adds a persistent trial bar above the header for free-plan users, with an amber variant when three or fewer days remain and a direct path into the upgrade flow.</p><h2>Changes</h2><ul><li><code>TrialBar.tsx</code> + <code>trial-bar.css</code>: the bar, its variants and the dismiss control.</li></ul></div></div>`;
+  const open = `<div class="panel"><div class="ph">Open comments<span class="badge-sm" style="background:var(--ok-bg);color:var(--ink);border-color:color-mix(in srgb,var(--ok-bd) 50%,transparent);display:inline-flex;gap:4px;align-items:center;padding:0 8px;height:22px">${ic('check', 's')}0</span></div><div class="pb" style="font-size:13px;color:var(--ink-muted);font-weight:500">Nothing open. Claude Code resolved all 10 comments in run 1.</div></div>`;
+  const prp = A ? prPanel(st, nar) : '';
+  return `<main class="page" data-main style="overflow:hidden"><div class="phead"><h1>Submit</h1>${notice('ok', 'check', 'Approved · sent 2 min ago', true)}</div>
+    ${nar ? `<div class="pcol">${prp}${compose.split('<div class="panel">').slice(1, 3).map((x) => '<div class="panel">' + x).join('')}</div>`
+      : `<div style="display:flex;gap:22px;align-items:flex-start;min-height:0;flex:1"><div class="pcol" style="flex:1.15;min-width:0">${prp}${compose}</div><div class="pcol" style="flex:.85;min-width:0">${open}</div></div>`}</main>${sendBarDone(st, nar)}`;
+}
+function prSendCtl(st, nar) {
+  const b = { ready: btn('Create PR', { cls: 'pri', icon: 'gpr' }), creating: btn('Opening…', { cls: 'dis', icon: 'refresh' }), open: btn(nar ? 'Open #231' : 'Open PR #231 on GitHub', { cls: 'pri', icon: 'ext' }), external: btn(nar ? 'Open #231' : 'Open PR #231 on GitHub', { cls: 'pri', icon: 'ext' }),
+    draft: btn(nar ? 'Open #231' : 'Open PR #231 on GitHub', { cls: 'pri', icon: 'ext' }), updated: btn(nar ? 'Review 2' : 'Review 2 new commits', { cls: 'pri', icon: 'files' }), merged: btn('Archive session', { cls: 'pri', icon: 'archive' }), closed: btn('Create a new PR', { cls: 'pri', icon: 'gpr' }), error: btn('Retry', { cls: 'pri', icon: 'refresh' }) }[st];
+  const msg = { ready: 'Approved and sent. No PR yet', creating: 'Claude Code is running gh pr create', open: 'PR #231 open · 5 of 6 checks', external: 'PR #231 opened by sam · detected', draft: 'PR #231 is a draft', updated: 'PR #231 · 2 new commits to re-review', merged: 'PR #231 merged into master', closed: 'PR #231 closed without merging', error: 'Could not open the PR: gh is not signed in' }[st];
+  return { b, msg, tone: PRS[st].tone };
+}
+function sendBarDone(st, nar) {
+  if (PRC.opt === 'C' && PRS[st]) {
+    const { b, msg, tone } = prSendCtl(st, nar);
+    return `<footer class="sendbar" style="${nar ? 'padding:0 14px;gap:10px' : ''}"><span class="prc ${tone} ${st === 'ready' ? 'dash' : ''}" style="margin-right:auto">${ic(PRS[st].ic)}${msg}</span>${st === 'ready' ? `<span class="chkl"><i class="cb"></i>Draft</span>` : ''}${b}</footer>`;
+  }
+  return `<footer class="sendbar" style="${nar ? 'padding:0 14px' : ''}"><span style="color:var(--ink-muted);margin-right:auto">Approved and sent 2 min ago · nothing new to send</span><span class="btn dis">${ic('send')}Submit to current session</span></footer>`;
+}
+const CHECKS = (st) => { const nm = [['build', '1m 12s'], ['lint', '38s'], ['typecheck', '52s'], ['unit (node 22)', '2m 04s'], ['e2e (chromium)', '3m 20s'], ['coverage', '41s']];
+  return nm.map(([n, t], i) => [n, st === 'updated' ? 'r' : st === 'closed' && i === 4 ? 'f' : (st === 'open' || st === 'external') && i === 4 ? 'r' : 'p', st === 'updated' || ((st === 'open' || st === 'external') && i === 4) ? 'running' : t]); };
+function prPage(st, nar) {
+  const made = hasPR(st);
+  const desc = `<div class="panel"><div class="ph">${made ? 'Description on GitHub' : 'Description to be used'}<span class="sp"></span><span class="tag mono">${ic('doc')}pr-description.md</span></div><div class="pb md"><h1 style="font-size:19px">QI-15472: Trial bar</h1><p>Adds a persistent trial bar above the header for free-plan users, with an amber variant when three or fewer days remain and a direct path into the upgrade flow.</p><h2>Changes</h2><ul><li><code>TrialBar.tsx</code> + <code>trial-bar.css</code>: the bar, its variants and the dismiss control.</li></ul></div></div>`;
+  const checks = made ? `<div class="panel"><div class="ph">Checks<span class="sp"></span><span class="mut" style="font-size:12.5px;font-weight:600">${chkText(st)}</span></div>${CHECKS(st).map(([n, s, t]) => `<div class="chk"><span class="ci ${s}">${ic(s === 'p' ? 'check' : s === 'f' ? 'x' : 'refresh')}</span><span class="nm3">${n}</span><span class="tm">${t}</span></div>`).join('')}</div>` : '';
+  const rev = made ? `<div class="panel"><div class="ph">Reviews and comments</div>
+    <div class="rvr"><span class="av">MT</span>Mika Tran<span class="sp"></span>${st === 'external' ? '<span class="mut">requested</span>' : '<span class="tag ok sm">approved</span>'}</div><div class="rvr"><span class="av">DO</span>Dee Okoro<span class="sp"></span><span class="tag sm">pending</span></div>
+    <div class="pb" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="font-size:13px;font-weight:600">${cmtText(st)}</span><span class="sp"></span>${st === 'external' || st === 'draft' ? '' : btn('Address GitHub comments', { icon: 'msg' })}</div></div>` : '';
+  return `<main class="page" data-main style="overflow:hidden"><div class="phead"><h1>Pull request</h1>${made ? `<span class="meta">${ic('gpr', 's')} #${PRN} · trial-app</span>` : ''}</div>
+    ${nar ? `<div class="pcol">${prPanel(st, true, { title: 'Status' })}${checks}</div>` : `<div style="display:flex;gap:22px;align-items:flex-start;min-height:0;flex:1"><div class="pcol" style="flex:1.1;min-width:0">${prPanel(st, false, { title: 'Status' })}${desc}</div><div class="pcol" style="flex:.9;min-width:0">${made ? checks + rev : ''}</div></div>`}</main>`;
+}
+
+/* =================== sessions list with PR =================== */
+const LROWS = [
+  { tk: ['QI-15472'], title: 'QI-15472: Trial bar', repo: 'trial-app', head: 'feature/trial-bar', a: '+2,154', d: '−2,010', files: 12, rv: 12, tot: 12, tone: 'ok', icn: 'check', st: 'Approved · sent', pr: 'ready', upd: '2 min ago' },
+  { tk: ['VAR-201', 'VAR-188'], title: 'VAR-201: Comments on posts', repo: 'variety-app', head: 'feature/comments-on-posts', a: '+2,216', d: '−30', files: 26, rv: 9, tot: 26, tone: 'flat', icn: 'lchecks', st: 'In progress', pr: 'none', upd: 'just now' },
+  { tk: ['QI-15390'], title: 'QI-15390: Workspace export', repo: 'export-service', head: 'feature/ws-export', a: '+640', d: '−88', files: 9, rv: 9, tot: 9, tone: 'ok', icn: 'check', st: 'Approved · sent', pr: 'open', n: 88, upd: '2 h ago' },
+  { tk: ['DES-77'], title: 'DES-77: Design tokens v2', repo: 'design-tokens', head: 'feature/tokens-v2', a: '+312', d: '−140', files: 7, rv: 6, tot: 7, tone: 'warn', icn: 'refresh', st: 'Updated since sent', pr: 'updated', n: 118, upd: '20 min ago' },
+  { tk: ['OPS-9'], title: 'OPS-9: Rotate the signing key', repo: 'infra-keys', head: 'feature/rotate-signing-key', a: '+48', d: '−12', files: 4, rv: 4, tot: 4, tone: 'ok', icn: 'check', st: 'Approved · sent', pr: 'merged', n: 207, upd: '1 d ago' },
+  { tk: ['SEC-1040'], title: 'SEC-1040: Session fixation fix', repo: 'auth-lib', head: 'fix/session-fixation', a: '+96', d: '−21', files: 5, rv: 2, tot: 5, tone: 'flat', icn: 'lchecks', st: 'In progress', pr: 'external', n: 412, upd: '35 min ago' },
+  { tk: ['QI-15500'], title: 'QI-15500: Billing page copy', repo: 'billing-web', head: 'feature/billing-copy', a: '+38', d: '−30', files: 3, rv: 3, tot: 3, tone: 'ok', icn: 'check', st: 'Approved · sent', pr: 'error', upd: '5 min ago' },
+];
+const pdot = (r) => { const s = PRS[r.pr]; return s ? `<span class="pdot ${s.tone} ${s.dash ? 'dash' : ''}" title="PR ${s.tag}">${ic(s.ic)}</span>` : ''; };
+const lnkPR = (r) => hasPR(r.pr) ? `<span class="lnk" style="font-size:12.5px;${r.pr === 'updated' ? 'color:var(--ink)' : ''}">#${r.n} ${ic('ext', 's')}</span>` : r.pr === 'error' ? `<span class="lnk" style="font-size:12.5px;color:var(--red)">PR failed</span>` : '';
+const badgeFor = (opt, r) => !PRS[r.pr] ? '' : opt === 'A' || opt === 'B' ? prChip(r.pr, { sm: true, n: r.n, short: true }) : opt === 'C' ? lnkPR(r) : '';
+function listRowPR(opt, r, narrow) {
+  const who = `<div class="who"><div class="t1">${r.tk.map((k) => chip(k, true, true)).join('')}<span class="ttl trunc" style="font-size:16px;font-weight:700">${r.title}</span>${opt === 'D' ? pdot(r) : ''}</div>
+    <div class="idl"><span class="rp">${ic('folder')}${r.repo} ·</span>${branchTag('origin/master')}${ic('arr-l', 'arr')}${branchTag(r.head, 'shrink')}${opt === 'A' && !narrow ? badgeFor('A', r) : ''}</div></div>`;
+  const status = notice(r.tone, r.icn, r.st, true);
+  if (narrow) return `<div class="lrow nar">${who}<div class="stk2">${status}${opt === 'D' ? '' : badgeFor(opt === 'C' ? 'C' : 'A', r)}</div>${ic('chev-r', 'mut')}</div>`;
+  const prog = `<span class="nm">${ic('check2')}<strong>${r.rv}/${r.tot}</strong><span class="prog" style="width:70px"><i style="width:${r.rv / r.tot * 100}%;${r.rv === r.tot ? 'background:var(--green)' : ''}"></i></span></span>`;
+  const stat = `<span class="stat"><span class="a">${r.a}</span><span class="d">${r.d}</span><span class="nm" style="margin-left:6px">${ic('files')}${r.files}</span></span>`;
+  const stc = opt === 'C' ? `<div class="stc">${status}${lnkPR(r)}</div>` : `<span>${status}</span>`;
+  return `<div class="lrow ${opt === 'B' ? 'pr7' : ''}">${who}${stat}${prog}${stc}${opt === 'B' ? `<span>${badgeFor('B', r) || ''}</span>` : ''}<span class="mut" style="font-size:13px">${r.upd}</span>${ic('chev-r', 'mut')}</div>`;
+}
+function listPR(opt, narrow) {
+  const pills = narrow ? `<span class="pillf on">${ic('list')}All <em>11</em></span><span class="pillf">${ic('gpr')}PR open <em>3</em></span><span class="pillf">${ic('gpr')}Needs PR <em>2</em></span>`
+    : `<span class="pillf on">${ic('list')}All <em>11</em></span><span class="pillf">${ic('clock')}Awaiting review <em>6</em></span><span class="pillf">${ic('cdash')}In progress <em>2</em></span><span class="pillf">${ic('send')}Sent <em>2</em></span><span class="pillf">${ic('refresh')}Updated <em>1</em></span><span class="pillf">${ic('gpr')}PR open <em>3</em></span><span class="pillf">${ic('cdash')}Needs PR <em>2</em></span><span class="sp"></span><span class="pillf" style="border-color:transparent">${ic('archive')}Archived <em>1</em></span>`;
+  const head = narrow ? '' : `<div class="lhead ${opt === 'B' ? 'pr7' : ''}"><span>${ic('layers', 's')}Session</span><span>${ic('plus', 's')}Changes</span><span>${ic('check2', 's')}Reviewed</span><span>${ic('cdash', 's')}Status</span>${opt === 'B' ? `<span>${ic('gpr', 's')}PR</span>` : ''}<span>${ic('clock', 's')}Updated</span><span></span></div>`;
+  return `<main class="page lp" data-main style="${narrow ? '' : 'padding:24px 52px 0;'}gap:12px"><div class="phead" style="gap:${narrow ? 8 : 12}px"><h1 style="font-size:${narrow ? 24 : 28}px">Review sessions</h1>${pills}</div>${head}
+    <div style="display:flex;flex-direction:column;gap:${narrow ? 10 : 12}px">${LROWS.slice(0, narrow ? 6 : 7).map((r) => listRowPR(opt, r, narrow)).join('')}</div></main>`;
+}
+const rowFor = (st) => ({ ...LROWS[2], pr: st, n: hasPR(st) ? 88 : null, tone: st === 'updated' ? 'warn' : st === 'ready' || st === 'external' || st === 'none' ? (st === 'external' || st === 'none' ? 'flat' : 'ok') : 'ok',
+  icn: st === 'updated' ? 'refresh' : st === 'external' || st === 'none' ? 'lchecks' : 'check', st: st === 'updated' ? 'Updated since sent' : st === 'external' || st === 'none' ? 'In progress' : 'Approved · sent' });
+
+/* =================== screens =================== */
+const mk = (opt, st, page, o = {}) => (m0, w) => {
+  PRC = { opt, st, prior: !!o.prior };
+  const m = trialM(st), narrow = w <= 800, rv = st === 'updated' ? 'updated' : 'approved';
+  if (page === 'list') return `${topBar(m, { kind: 'list' })}<div class="body"><div class="col">${listPR(opt, narrow)}</div></div>`;
+  const pre = page === 'pre', pg = pre ? 'submit' : page;
+  const railHTML = (idc) => rail(m, { page: pg, tree: T_ALLV, idc, sub: pre ? 'ok' : 'done', rv: pre ? 'ready' : rv });
+  const main = pre ? submitPre(st, w, o) : page === 'submit' ? submitDone(st, w) : page === 'pr' ? prPage(st, narrow) : strip(m, w) + deck(m, { narrow });
+  const pop = o.pop ? prPanel(st, false, { pop: true, side: opt === 'D' ? 'below' : 'right' }) : '';
+  return `${topBar(m, { page: pg, w, drawer: o.drawer })}<div class="body">${narrow ? '' : railHTML(page === 'files' || o.idc)}<div class="col">${main}</div>${o.drawer ? `<div class="scrim"></div><div class="drawer">${railHTML(false)}</div>` : ''}</div>${pop}${o.menu ? cMenu(st, o.sel || defaultSel(st)) : ''}`;
+};
+const elemRail = (fn) => (m) => `<aside class="rail" style="width:296px;height:100%;border-right:0">${fn(m)}</aside>`;
+
+/* =================== doc plumbing =================== */
+const frames = [];
+function slot(id, label, th, w, h, build, o = {}) {
+  const key = `${id}-${th}-${w}`;
+  frames.push({ id: key, th, w, h, build, ...o });
+  return `<div class="cell"><div class="cap">${label} · ${w}x${h} <a href="#solo=${key}" target="_blank">100%</a></div><div class="fw" data-frame="${key}"></div></div>`;
+}
+const pairOf = (id, build, o = {}) => `<div class="pair">${slot(id, o.l || 'light', 'light', o.w || 1440, o.h || 900, build, o)}${slot(id, o.d || 'dark', 'dark', o.w || 1440, o.h || 900, build, o)}</div>`;
+const sect = (id, n, title, idea, body, tag = '') => `<section class="sect" id="${id}"><div class="sect-h"><span class="n">${n}</span><h2>${title}</h2>${tag ? `<span class="tag2">${tag}</span>` : ''}</div><p class="sect-idea">${idea}</p>${body}</section>`;
+const facts = (a) => `<ul class="opts">${a.map(([k, v]) => `<li><b>${k}</b>${v}</li>`).join('')}</ul>`;
+
+function matrix(opt, th, elems, listCrop) {
+  return `<div class="mgrid">${ALLST.map((st) => `<div class="mcell"><span class="mst">${st}</span>${elems.map(([lab, w, h, fn]) => slot(`${opt}-e${lab.replace(/\W+/g, '')}-${st}`, lab, th, w, h, () => { PRC = { opt, st }; return fn(trialM(st)); })).join('')}
+    ${listCrop ? slot(`${opt}-l-${st}`, 'list row', th, listCrop.w, 124, () => { PRC = { opt, st }; return `<div style="position:absolute;left:${14 - listCrop.x}px;top:14px;width:1336px">${listRowPR(opt, rowFor(st), false)}</div>`; }) : ''}</div>`).join('')}</div>`;
+}
+const barOnly = (page) => (m) => topBar(m, { page, w: 1440 });
+
+/* =================== integration choice at Submit (update the PR | open a new PR | approve only) =================== */
+const PRIOR = () => !!PRC.prior;
+const prHist = (st) => {
+  if (!hasPR(st)) return '';
+  const rows = [];
+  if (PRIOR()) rows.push(['gmerge', '#204 · QI-15472 part 1', 'merged · 3 d ago', 'earlier PR']);
+  rows.push(['gpr', `#${PRN} opened${PRIOR() ? ' (new PR)' : ''}`, st === 'external' ? 'by sam · 35 min ago' : 'by Claude Code · 2 h ago', 'iteration 1']);
+  if (st === 'updated') rows.push(['refresh', '2 commits pushed after review', '1 not pushed · 20 min ago', 'iteration 2']);
+  if (st === 'merged') rows.push(['gmerge', 'merged into master', '40 min ago', '']);
+  if (st === 'closed') rows.push(['gprc', 'closed without merging', '1 h ago', '']);
+  return `<div class="hist"><span class="eb">History</span>${rows.map(([i, t, s, k]) => `<div class="hr"><span class="hi">${ic(i)}</span><span class="tx"><b>${t}</b><span>${s}</span></span>${k ? `<span class="tag sm">${k}</span>` : ''}</div>`).join('')}</div>`;
+};
+const livePR = (st) => ['open', 'draft', 'updated', 'external'].includes(st);
+const defaultSel = (st) => (livePR(st) ? 'push' : 'new');
+function integCards(st, sel, o = {}) {
+  const live = livePR(st), dead = st === 'merged' || st === 'closed';
+  const card = (id, title, desc, extra, dis) => `<div class="radio ${sel === id ? 'on' : ''}" style="${dis ? 'opacity:.55' : ''}"><span class="rb"></span><div style="min-width:0;flex:1"><div class="rt">${title}${sel === id && !dis ? '<span class="tag sm" style="margin-left:auto">default</span>'.replace('default', defaultSel(st) === id ? 'default' : 'chosen') : ''}${dis ? '<span class="tag sm" style="margin-left:auto">not available</span>' : ''}</div><div class="rd">${desc}</div>${extra && sel === id ? extra : ''}</div></div>`;
+  const pushCmd = `<div class="cmd" style="margin-top:8px">$ git commit -am "QI-15472: Trial bar" &amp;&amp; git push origin feature/trial-bar</div>`;
+  const newCmd = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><span class="eb">branch</span><span class="tag mono" style="height:26px;border-style:dashed">${ic('branch')}feature/trial-bar-2</span><span class="eb">title</span><span class="tag" style="height:26px">QI-15472: Trial bar</span></div><div class="cmd" style="margin-top:8px">$ git switch -c feature/trial-bar-2 &amp;&amp; git push -u origin HEAD &amp;&amp; gh pr create --base master --body-file pr-description.md</div>`;
+  const p = card('push', live ? `Update PR #${PRN}` : `Push to feature/trial-bar`,
+    live ? `Commits and pushes to <span class="mono">feature/trial-bar</span>. The PR updates and its checks re-run; the session becomes "Updated: N new commits" for re-review. No <span class="mono">gh pr create</span>.`
+      : dead ? `PR #${PRN} is ${st}: pushing would not update it, so only a new PR makes sense.` : `Commits and pushes to <span class="mono">feature/trial-bar</span> only. No PR is opened.`, pushCmd, dead);
+  const n = card('new', 'Open new PR', `For a separate piece of work. New branch, push, then <span class="mono">gh pr create --base master</span> with the title and body from pr-description.md.`, newCmd, false);
+  const z = card('none', 'Approve only', 'Nothing is committed or pushed. You can integrate later.', '', false);
+  return `<div style="display:flex;flex-direction:column;gap:10px">${p}${n}${z}</div>${(o.edges || []).map((e) => integEdge(e)).join('')}`;
+}
+function integEdge(e) {
+  return { dirty: wnt('warn', 'pencil', '<b>3 uncommitted files.</b> Claude Code commits them with the message above before pushing. Review them in Files, scope "Uncommitted".'),
+    behind: wnt('warn', 'refresh', '<b>origin/feature/trial-bar is 2 commits ahead.</b> Claude Code rebases first; a conflict stops the run and says so here.'),
+    auth: wnt('err', 'alert', '<b>gh is not signed in.</b> Open new PR will fail; pushing still works. Run <span class="mono">gh auth login</span> to enable it.'),
+    working: wnt('info', 'bot', '<b>Claude Code is working.</b> Submit is disabled until the run ends.'),
+    dead: wnt('info', 'gmerge', `<b>PR #${PRN} is ${PRC.st}.</b> Only "Open new PR" or "Approve only" apply.`) }[e] || '';
+}
+const integPanel = (st, sel, o = {}) => `<div class="panel"><div class="ph">After approval<span class="sp"></span><span class="mut" style="font-size:12.5px;font-weight:600">what happens to the code</span></div><div class="pb">${integCards(st, sel, o)}</div></div>`;
+const SELTXT = { push: (st) => (livePR(st) ? `update PR #${PRN}` : 'push feature/trial-bar'), new: () => 'open new PR from feature/trial-bar-2', none: () => 'no code changes' };
+const SELBTN = { push: (st) => (livePR(st) ? 'Approve and update PR' : 'Approve and push'), new: () => 'Approve and open new PR', none: () => 'Approve' };
+function submitPre(st, w, o = {}) {
+  const nar = w <= 800, sel = o.sel || defaultSel(st), edges = o.edges || [], C = PRC.opt === 'C', working = edges.includes('working');
+  const compose = `<div class="panel"><div class="ph">Overall feedback<span class="sp"></span><span class="tag sm">draft</span></div><div class="pb"><div class="ta" style="min-height:48px">Looks good, ship it once CI is green.</div></div></div>
+    <div class="panel"><div class="ph">Decision</div><div class="pb"><div class="radio on" style="background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok-bd) 60%,transparent)"><span class="rb"></span><div><div class="rt" style="color:var(--green)">${ic('check')}Approve</div><div class="rd">Suggested: every file is approved.</div></div></div></div></div>`;
+  const cards = C ? '' : integPanel(st, sel, { edges });
+  const send = C ? `<span class="split"><span class="btn pri">${ic('send')}${SELBTN[sel](st)}</span><span class="btn pri">${ic('chev-d')}</span></span>` : `<span class="split"><span class="btn pri ${working ? 'dis' : ''}">${ic('send')}${SELBTN[sel](st)}</span><span class="btn pri ${working ? 'dis' : ''}">${ic('chev-d')}</span></span>`;
+  const bar = `<footer class="sendbar" style="${nar ? 'padding:0 14px;gap:10px' : ''}"><span style="color:var(--ink);margin-right:auto;font-size:${nar ? 12.5 : 13}px">${nar ? 'Approve · ' + SELTXT[sel](st) : 'Send Approve to the current session, then ' + SELTXT[sel](st)}</span>${send}</footer>`;
+  const prp = PRC.opt === 'A' ? prPanel(st, nar) : '';
+  const cEdges = C ? edges.map(integEdge).join('') : '';
+  return `<main class="page" data-main style="overflow:hidden"><div class="phead"><h1>Submit</h1>${notice('ok', 'check', 'Ready to submit', true)}</div>
+    ${nar ? `<div class="pcol"><div class="panel">${compose.split('<div class="panel">')[2]}${C ? cEdges : cards}</div>` : `<div style="display:flex;gap:22px;align-items:flex-start;min-height:0;flex:1"><div class="pcol" style="flex:1.1;min-width:0">${prp}${compose}${cEdges}</div><div class="pcol" style="flex:.9;min-width:0">${C ? '' : cards}</div></div>`}</main>${bar}`;
+}
+const cMenu = (st, sel) => `<div class="menu" style="right:24px;bottom:74px;width:430px"><div class="lab eb" style="padding:4px 10px 8px">After approval</div>${['push', 'new', 'none'].map((id) => { const live = livePR(st), dead = st === 'merged' || st === 'closed';
+  const t = id === 'push' ? (live ? `Update PR #${PRN}` : 'Push to feature/trial-bar') : id === 'new' ? 'Open new PR' : 'Approve only';
+  const d = id === 'push' ? (live ? 'Commit and push; the PR updates and checks re-run.' : dead ? `Not available: PR #${PRN} is ${st}.` : 'Commit and push only. No PR.') : id === 'new' ? 'New branch feature/trial-bar-2, push, gh pr create.' : 'Nothing is committed or pushed.';
+  const dis = id === 'push' && dead;
+  return `<div class="mi first ${sel === id ? 'on' : ''}" style="${dis ? 'opacity:.55' : ''}"><span class="tx"><span class="l1">${t}${defaultSel(st) === id ? '<span class="tag sm" style="margin-left:6px">default</span>' : ''}</span><span class="l2">${d}</span></span>${sel === id ? ic('check') : ''}</div>`; }).join('')}</div>`;
+
+/* =================== the document =================== */
+const stateTable = `<table class="rtab"><thead><tr><th>State</th><th>Tone / icon</th><th>What it means</th><th>Where it comes from</th></tr></thead><tbody>
+  <tr><td>ready</td><td>info, dashed · pull-request</td><td>Approved and sent, no PR on the branch. "Create PR" is offered.</td><td>sent.decision = approve, <code>gh pr list --head &lt;branch&gt;</code> empty</td></tr>
+  <tr><td>creating</td><td>info · spinner</td><td>Claude Code is running <code>gh pr create</code>.</td><td>an active run of kind open-pr</td></tr>
+  <tr><td>open</td><td>ok · pull-request</td><td>PR exists and is open and ready for review.</td><td><code>gh pr view --json number,url,state,isDraft,…</code></td></tr>
+  <tr><td>draft</td><td>flat · pull-request-draft</td><td>Open but marked draft.</td><td>isDraft = true</td></tr>
+  <tr><td>updated</td><td>warn · refresh dot</td><td>Open, but the branch has commits newer than the PR or than the last review. Re-review.</td><td>branch HEAD ≠ PR headRefOid or ≠ reviewed head (existing "Updated" status)</td></tr>
+  <tr><td>merged</td><td>info · git-merge</td><td>Done. Offer Archive.</td><td>state = MERGED</td></tr>
+  <tr><td>closed</td><td>err · pull-request-closed</td><td>Closed without merging. Offer "Create a new PR".</td><td>state = CLOSED</td></tr>
+  <tr><td>external</td><td>as open + "detected"</td><td>A PR for this branch that nobody created through the app.</td><td>same query as open; manifest.pr.openedBy = "github"</td></tr>
+  <tr><td>error</td><td>err · alert</td><td>The run failed (gh not signed in, push rejected). Retry.</td><td>failed open-pr run + its message</td></tr>
+  <tr><td>none (hidden)</td><td>nothing</td><td>No GitHub remote, a multi-repo session, or <code>gh</code> missing. Nothing renders anywhere.</td><td>manifest.repo.remote is not github.com</td></tr></tbody></table>`;
+
+function buildPage() {
+  const secs = [];
+  const sharedPanels = (th) => `<div class="mgrid" style="grid-template-columns:repeat(auto-fill,minmax(560px,1fr))">${ALLST.filter((s) => s !== 'none').map((st) => `<div class="mcell"><span class="mst">${st}</span>${slot('V-' + st, 'Pull request panel / popover body', th, 640, st === 'ready' ? 330 : st === 'error' ? 330 : 360, () => { PRC = { opt: 'A', st }; return `<div style="padding:16px">${prPanel(st)}</div>`; })}</div>`).join('')}</div>`;
+  secs.push(sect('vocab', 0, 'Shared vocabulary: ten PR states', 'All four options draw the same states from one map (a new <code>STATUS_TONE.pr(state)</code>: tone, icon, label), exactly as session and run status do today. They differ in <em>where</em> the state is shown and how much of it. The panel below is the full detail (title, base ← head, who opened it, checks, reviews, comments, next action); options A and D show it as a popover, A and B as a panel on Submit or its own page, C shows only the first line.', stateTable + `<div class="sub">Detail body per state, light</div>${sharedPanels('light')}<div class="sub">dark</div>${sharedPanels('dark')}`, 'one map, four layouts'));
+
+  const ic1 = (id, st, sel, edges, h) => slot(id, `${st}${edges.length ? ' + ' + edges.join(', ') : ''}`, 'light', 640, h, () => { PRC = { opt: 'A', st }; return `<div style="padding:16px">${integPanel(st, sel, { edges })}</div>`; });
+  secs.push(sect('integ', 'I', 'The choice at Submit: update the PR, open a new one, or just approve', 'When the decision is Approve, Submit asks what happens to the code. <b>Update PR #231</b> commits and pushes to the same branch (the PR updates, checks re-run, the session turns "Updated: N new commits" for re-review; this is also how "address the GitHub comments" iterations land). <b>Open new PR</b> is for a separate piece of work: new branch (suggested, editable), push, <code>gh pr create</code> with the title and body from pr-description.md. <b>Approve only</b> changes nothing. Default: update when a PR is open for the branch, else open a new one. Merged or closed PR: pushing is disabled with the reason. The control is the same in all four options except C, which keeps it in the send bar (split button) to stay minimal. Cards: Claude Code runs it as a run; the command it will run is shown under the selected card.',
+    `<div class="mgrid" style="grid-template-columns:repeat(auto-fill,minmax(600px,1fr))">${[['open, default', 'open', 'push', ['dirty']], ['open, new PR chosen', 'open', 'new', []], ['no PR yet, default new', 'ready', 'new', ['behind']], ['merged: only new', 'merged', 'new', ['dead']], ['gh not signed in', 'ready', 'push', ['auth']], ['agent working', 'updated', 'push', ['working']]].map(([l, st, sel, e], i) => `<div class="mcell"><span class="mst">${l}</span>${ic1('I' + i, st, sel, e, 640)}</div>`).join('')}</div>
+     <div class="sub">What the send button says, per choice</div><table class="rtab"><thead><tr><th>Choice</th><th>Button</th><th>Does</th><th>Result you see</th></tr></thead><tbody>
+     <tr><td>Update PR #231</td><td>Approve and update PR</td><td>commit uncommitted changes (message: pr-description.md title), rebase if behind, push the same branch</td><td>PR state "updated · N new commits"; checks re-run; history gets iteration n+1</td></tr>
+     <tr><td>Push (no PR)</td><td>Approve and push</td><td>commit, push, no gh</td><td>timeline commits turn pushed (solid connector); "Create PR" stays offered</td></tr>
+     <tr><td>Open new PR</td><td>Approve and open new PR</td><td>new branch from HEAD, push -u, <code>gh pr create --base master</code></td><td>new PR becomes current; the old one moves to History</td></tr>
+     <tr><td>Approve only</td><td>Approve</td><td>nothing</td><td>as today</td></tr></tbody></table>
+     <div class="sub">Where the outcome shows: a run row ("Run 2 · update PR #231 · pushed 2 commits"), the PR state in the option's own surface, and the timeline (pushed icons, PR marker).</div>`, 'one control, all options'));
+
+  /* ---------------- A ---------------- */
+  secs.push(sect('A', 'A', 'PR chip in the rail identity, Submit panel, list badge', 'The PR lives next to the facts it belongs to: a chip under "from <branch>" in the rail identity block (inline on the single line when the identity is compact). The chip opens a popover with the details and the next action. The Submit page, where you end a review, gets a "Pull request" panel above the compose panels. Timeline: the commit the PR points at carries a small PR icon.',
+    facts([['Create', 'After Approve is sent, the chip reads dashed "Create PR". Click: popover with the title from pr-description.md, base ← head, the exact <code>gh pr create</code> command and a Create PR button (Draft toggle). The same button sits in the Submit panel. Claude Code runs it as a run; the chip shows "Opening PR…".'], ['Link', 'Chip → popover → "Open on GitHub". Submit panel: title row with the full URL. Timeline icon: hover for the number.'], ['List row', 'Small PR chip after the branches (#88 open, dashed "Create PR" when approved without a PR, red "PR failed"). Filter pills: PR open, Needs PR.'], ['800px', 'The rail is a drawer, so the chip is inside it; the Submit panel and the list chip stay visible. The sidebar button could wear an amber dot for "updated".'], ['Update or new', 'Decision panel gets "After approval" cards; the PR panel lists iterations and earlier PRs under History. The send button names the choice.'], ['Cost', 'Roomy identity grows by 23px (tree 457 to 434); compact identity is unchanged.']]) +
+    `<div class="sub">A1 · Create: approved and sent, no PR yet (Submit)</div>${pairOf('A1', mk('A', 'ready', 'submit'))}
+     <div class="sub">A2 · Opened: the chip in the rail, the Pull request panel on Submit</div>${pairOf('A2', mk('A', 'open', 'submit'))}
+     <div class="sub">A3 · New commits after the PR: re-review (Files, compact identity with the amber chip; the timeline marks the PR commit and the two new ones)</div>${pairOf('A3', mk('A', 'updated', 'files'))}
+     <div class="sub">A4 · Every state: the rail identity chip, the timeline and the list chip (light, then dark)</div>${matrix('A', 'light', [['identity', 296, 196, elemRail(identityExpanded)], ['timeline', 640, 79, (m) => strip(m)]], { w: 760, x: 0 })}${matrix('A', 'dark', [['identity', 296, 196, elemRail(identityExpanded)], ['timeline', 640, 79, (m) => strip(m)]], { w: 760, x: 0 })}
+     <div class="sub">A5 · Sessions list</div>${pairOf('A5', mk('A', 'open', 'list'))}
+     <div class="sub">A6 · 800px: Submit (ready), drawer open with the popover, list</div><div class="trip">${slot('A6a', 'Submit · ready', 'light', 800, 900, mk('A', 'ready', 'submit'))}${slot('A6b', 'drawer open · popover', 'light', 800, 900, mk('A', 'open', 'submit', { drawer: true, pop: true }))}${slot('A6c', 'list', 'dark', 800, 900, mk('A', 'open', 'list'))}</div>
+     <div class="sub">A7 · Choose at Submit: open PR, default "Update PR #231", iterations in the panel history</div>${pairOf('A7', mk('A', 'open', 'pre', { edges: ['dirty'] }))}
+     <div class="sub">A8 · After "Open new PR": #232 is current, #204 (earlier work) stays in History</div>${pairOf('A8', mk('A', 'open', 'submit', { prior: true }), { prior: true })}
+     <div class="sub">A9 · 800px: choice at Submit (merged: only new), choice with the popover state "updated"</div><div class="trip">${slot('A9a', 'Submit · merged PR', 'light', 800, 900, mk('A', 'merged', 'pre', { sel: 'new' }))}${slot('A9b', 'Submit · no PR', 'dark', 800, 900, mk('A', 'ready', 'pre', { edges: ['auth'] }))}</div>`, 'where it belongs: with branches'));
+
+  /* ---------------- B ---------------- */
+  secs.push(sect('B', 'B', 'The PR as the sixth step: arrow tab and its own page', 'Review, approve, send, then open the PR: it is the last step of the same journey, so it is the last arrow tab. The tab carries the state (green "Create PR" when it is time, amber dot when the branch moved, "Merged" when done). The page has the full detail (checks list, reviewers, GitHub comments entry point) and the rail block is a five-row pipeline. The timeline ends in a PR node, dashed until the PR exists.',
+    facts([['Create', 'Once the approval is sent the PR tab turns green "Create PR" on every page. On the PR page the panel shows the preview and the Create PR button; the run appears in the rail Runs history.'], ['Link', 'PR tab → page → title row has the URL and Open on GitHub. The timeline end node is also a link.'], ['List row', 'A dedicated PR column (chip with number and state). Good for scanning "which sessions have PRs".'], ['800px', 'Tabs are icons below 1024px, so the PR tab keeps only its icon and number (green for ready, amber dot for updated). The page is one column: panel, then checks.'], ['Update or new', 'Same cards at Submit. The PR page shows the outcome: iteration history, "2 commits behind" end node, and is where a new PR replaces the current one.'], ['Cost', 'A sixth tab (about 110px more in the bar; fits at 1440, at 800 the icon-only tabs still fit) and a new page and route.']]) +
+    `<div class="sub">B1 · Create: PR tab green, panel with preview</div>${pairOf('B1', mk('B', 'ready', 'pr'))}
+     <div class="sub">B2 · Opened: the PR page (checks, reviews, GitHub comments entry)</div>${pairOf('B2', mk('B', 'open', 'pr'))}
+     <div class="sub">B3 · New commits after the PR: amber dot on the tab, end node, Files page</div>${pairOf('B3', mk('B', 'updated', 'files'))}
+     <div class="sub">B4 · Every state: the bar and the timeline (light, then dark)</div>${matrix('B', 'light', [['bar', 900, 52, barOnly('submit')], ['timeline', 880, 79, (m) => strip(m)]], { w: 560, x: 880 })}${matrix('B', 'dark', [['bar', 900, 52, barOnly('submit')], ['timeline', 880, 79, (m) => strip(m)]], { w: 560, x: 880 })}
+     <div class="sub">B5 · Sessions list: PR column</div>${pairOf('B5', mk('B', 'open', 'list'))}
+     <div class="sub">B6 · 800px: PR page (ready), PR page (open, dark), list</div><div class="trip">${slot('B6a', 'PR · ready', 'light', 800, 900, mk('B', 'ready', 'pr'))}${slot('B6b', 'PR · open', 'dark', 800, 900, mk('B', 'open', 'pr'))}${slot('B6c', 'list', 'light', 800, 900, mk('B', 'open', 'list'))}</div>
+     <div class="sub">B7 · Choose at Submit (default "Update PR #231"); the PR tab and page then show the outcome</div>${pairOf('B7', mk('B', 'open', 'pre', { edges: ['behind'] }))}
+     <div class="sub">B8 · After pushing: PR page with iteration history, tab dot, end node</div>${pairOf('B8', mk('B', 'updated', 'pr'))}
+     <div class="sub">B9 · 800px: choice at Submit, PR page after pushing</div><div class="trip">${slot('B9a', 'Submit · choice', 'light', 800, 900, mk('B', 'open', 'pre'))}${slot('B9b', 'PR · updated', 'dark', 800, 900, mk('B', 'updated', 'pr'))}</div>`, 'where it belongs: the journey'));
+
+  /* ---------------- C ---------------- */
+  secs.push(sect('C', 'C', 'Minimal: one row in the review block, one line in the send bar', 'No new surface. After approval the review block replaces "Suggested decision" with a "Pull request" row: "No PR yet [Create PR]", then "PR #231 · open ↗" with a one-line detail. On Submit the send bar, the place you already look after approving, carries the same state and the same primary action. The list gets a small "#88 ↗" link next to the status.',
+    facts([['Create', 'Rail row button or the send bar button (primary once the approval is sent). Draft check beside it. A run is started, the row shows "Opening PR…".'], ['Link', 'The row is a link to GitHub (↗). No popover, no detail: checks and reviews are one line of text.'], ['List row', 'The "#88 ↗" link after the status notice; nothing for "ready" (a filter pill finds those).'], ['800px', 'The rail is a drawer, but the send bar on Submit still shows state and action, so nothing is lost on the page where it matters. On Files at 800 the PR is only in the drawer.'], ['Update or new', 'Only in the send bar: a split button, its menu lists the three choices with a line each. Edge notices appear above the bar. No history list (the row says "#232 · earlier #204 merged").'], ['Cost', 'Smallest. No detail view, no checks or comments summary; the comments feature has no PR-level entry point except the row.']]) +
+    `<div class="sub">C1 · Create: rail row and send bar</div>${pairOf('C1', mk('C', 'ready', 'submit'))}
+     <div class="sub">C2 · Opened: rail row is the link, send bar says it too</div>${pairOf('C2', mk('C', 'open', 'submit'))}
+     <div class="sub">C3 · New commits after the PR: amber row, "Updated since sent" notice (Files)</div>${pairOf('C3', mk('C', 'updated', 'files'))}
+     <div class="sub">C4 · Every state: the review block, then the send bar (light, then dark)</div>${matrix('C', 'light', [['review block', 296, 250, elemRail((m) => reviewBlock(m, 'approved'))], ['send bar', 900, 64, (m) => `<div style="position:absolute;left:0;right:0;top:0">${sendBarDone(PRC.st, false)}</div>`]], { w: 560, x: 880 })}${matrix('C', 'dark', [['review block', 296, 250, elemRail((m) => reviewBlock(m, 'approved'))], ['send bar', 900, 64, (m) => `<div style="position:absolute;left:0;right:0;top:0">${sendBarDone(PRC.st, false)}</div>`]], { w: 560, x: 880 })}
+     <div class="sub">C5 · Sessions list</div>${pairOf('C5', mk('C', 'open', 'list'))}
+     <div class="sub">C6 · 800px: Submit (ready), Submit (open), list</div><div class="trip">${slot('C6a', 'Submit · ready', 'light', 800, 900, mk('C', 'ready', 'submit'))}${slot('C6b', 'Submit · open', 'dark', 800, 900, mk('C', 'open', 'submit'))}${slot('C6c', 'list', 'light', 800, 900, mk('C', 'open', 'list'))}</div>
+     <div class="sub">C7 · Choose in the send bar: split button with its menu open (default "Update PR #231")</div>${pairOf('C7', mk('C', 'open', 'pre', { menu: true, edges: ['dirty'] }))}
+     <div class="sub">C8 · Merged PR: update is disabled, only "Open new PR" (menu open); and no PR yet</div>${pairOf('C8', mk('C', 'merged', 'pre', { menu: true, sel: 'new' }))}
+     <div class="sub">C9 · 800px</div><div class="trip">${slot('C9a', 'Submit · choice', 'light', 800, 900, mk('C', 'open', 'pre', { menu: true }))}${slot('C9b', 'Submit · no PR', 'dark', 800, 900, mk('C', 'ready', 'pre', { menu: true }))}</div>`, 'where it belongs: status'));
+
+  /* ---------------- D ---------------- */
+  secs.push(sect('D', 'D', 'A bar element that morphs through the states', 'One control right of the tabs on every session page: dashed-ink "Create PR" when it is time, "Opening PR…", then "#231 open ↗" with a state dot, an amber "2 new" when the branch moved, "merged", red "PR failed · Retry". Click opens the same popover as A. Always visible, whatever page you are on, including Files.',
+    facts([['Create', 'Ink-filled "Create PR" in the bar (the loudest control in the bar, only when it is time). Click: popover with preview and the Create button, so it is never one accidental click.'], ['Link', 'Chip → popover → Open on GitHub. The ↗ glyph on the chip says the destination is external.'], ['List row', 'Round tone-coloured PR icon after the title (dashed when "Create PR" is due). Pills filter.'], ['800px', 'The chip shrinks to icon, dot and number (or "Create"/"Retry"); it stays in the bar, so the state is visible on every page and in the same place, unlike A.'], ['Update or new', 'Cards at Submit; the bar chip follows the outcome ("2 new" after an update, "Create PR" after a plain push, new number after a new PR). History in the popover row.'], ['Cost', 'Breaks the "no status in the bar" rule from header B (decision 1) and spends 90 to 150px of bar width; it competes with the tabs and the Submit state.']]) +
+    `<div class="sub">D1 · Create: "Create PR" in the bar, popover preview</div>${pairOf('D1', mk('D', 'ready', 'submit', { pop: true }))}
+     <div class="sub">D2 · Opened: the chip (light), with its popover (dark)</div><div class="pair">${slot('D2', 'light', 'light', 1440, 900, mk('D', 'open', 'submit'))}${slot('D2p', 'dark · popover', 'dark', 1440, 900, mk('D', 'open', 'submit', { pop: true }))}</div>
+     <div class="sub">D3 · New commits after the PR: amber "2 new" in the bar on Files</div>${pairOf('D3', mk('D', 'updated', 'files', { pop: true }))}
+     <div class="sub">D4 · Every state: the bar (light, then dark)</div>${matrix('D', 'light', [['bar', 1100, 52, barOnly('submit')]], { w: 760, x: 0 })}${matrix('D', 'dark', [['bar', 1100, 52, barOnly('submit')]], { w: 760, x: 0 })}
+     <div class="sub">D5 · Sessions list</div>${pairOf('D5', mk('D', 'open', 'list'))}
+     <div class="sub">D6 · 800px: Files (ready, popover), Submit (open), list</div><div class="trip">${slot('D6a', 'Files · ready · popover', 'light', 800, 900, mk('D', 'ready', 'files', { pop: true }))}${slot('D6b', 'Submit · open', 'dark', 800, 900, mk('D', 'open', 'submit'))}${slot('D6c', 'list', 'light', 800, 900, mk('D', 'open', 'list'))}</div>
+     <div class="sub">D7 · Choose at Submit; the bar chip changes to "Create PR" or "#231 open" depending on the choice's outcome</div>${pairOf('D7', mk('D', 'open', 'pre'))}
+     <div class="sub">D8 · After pushing: amber "2 new" in the bar (popover shows iteration)</div>${pairOf('D8', mk('D', 'updated', 'submit', { pop: true }))}
+     <div class="sub">D9 · 800px</div><div class="trip">${slot('D9a', 'Submit · choice', 'light', 800, 900, mk('D', 'open', 'pre'))}${slot('D9b', 'Submit · merged', 'dark', 800, 900, mk('D', 'merged', 'pre', { sel: 'new' }))}</div>`, 'where it belongs: the bar'));
+
+  const cmp = `<table class="rtab"><thead><tr><th>Flow</th><th>A chip + panel</th><th>B sixth tab</th><th>C status row</th><th>D bar element</th></tr></thead><tbody>
+    <tr><td>Know a PR exists</td><td>Chip in the rail (rail open), panel on Submit</td><td>Tab label on every page</td><td>Rail row, send bar</td><td>Bar, every page, rail closed too</td></tr>
+    <tr><td>Open it</td><td>Chip → popover → GitHub (2 clicks)</td><td>Tab → page → GitHub (2 clicks), node on timeline</td><td>Row is the link (1 click)</td><td>Chip → popover → GitHub (2 clicks)</td></tr>
+    <tr><td>Create it</td><td>Chip popover or Submit panel</td><td>PR page</td><td>Row button or send bar</td><td>Bar chip → popover</td></tr>
+    <tr><td>See new commits need re-review</td><td>Amber chip, timeline dots</td><td>Amber tab dot, end node</td><td>Amber row, "Updated" notice</td><td>Amber "2 new" in the bar</td></tr>
+    <tr><td>Find sessions with PRs</td><td>Chip in rows + pills</td><td>PR column + pills</td><td>#n link + pills</td><td>Icon + pills</td></tr>
+    <tr><td>Choose update vs new PR</td><td>cards at Submit, history in panel</td><td>cards at Submit, outcome on PR page</td><td>split button in the send bar</td><td>cards at Submit, chip follows</td></tr>
+    <tr><td>Effort</td><td>M</td><td>L (page, route, tab, rail block)</td><td>S</td><td>M</td></tr>
+    <tr><td>Fit with header B</td><td>Good: identity is where facts live</td><td>Good for the journey; sixth tab is heavy</td><td>Best: no new surface</td><td>Breaks "no status in the bar"</td></tr></tbody></table>`;
+  secs.push(sect('cmp', 'Σ', 'Comparison and recommendation', 'Recommendation: ship C now (split button for update, new PR or approve only), grow into A. C is small and covers choose, create, link and re-review on the page where you finish a review. A adds the popover details once checks and the GitHub-comments feature need a home. Details in <code>docs/pr-link-options.md</code>.', cmp, ''));
+
+  document.getElementById('app').innerHTML = `<h1>PR link: where "a pull request was opened" shows up</h1>
+    <p class="lede">Four ways to record and show the pull request for a session (Spec, Extras, Evidence, Files, Submit exist today). Same shell as header-b-pages.html (52px bar, 296px rail, flush timeline), same tokens, light and dark. Session: QI-15472 trial-app, approved and sent; PR #231 into master from feature/trial-bar. Fixture data is invented. Static mocks: nothing is clickable; popovers are shown open where they matter.</p>
+    <nav class="toc">${[['vocab', 'states'], ['A', 'A chip + panel'], ['B', 'B sixth tab'], ['C', 'C status row'], ['D', 'D bar element'], ['cmp', 'compare']].map(([i, t]) => `<a href="#${i}">${t}</a>`).join('')}</nav>${secs.join('')}`;
+}
+
+/* =================== render =================== */
+function placePops(fr) {
+  const fer = fr.getBoundingClientRect();
+  fr.querySelectorAll('[data-pop-anchor]').forEach((p) => {
+    const a = fr.querySelector(`[data-anchor="${p.dataset.popAnchor}"]`);
+    if (!a) return;
+    const r = a.getBoundingClientRect(), pw = p.offsetWidth;
+    if (p.dataset.side === 'below') { p.style.left = Math.max(8, Math.min(r.left - fer.left, fer.width - pw - 8)) + 'px'; p.style.top = (r.bottom - fer.top + 10) + 'px'; }
+    else { p.style.left = Math.min(r.right - fer.left + 12, fer.width - pw - 8) + 'px'; p.style.top = (r.top - fer.top - 10) + 'px'; }
+  });
+}
+function renderFrame(f) {
+  const el = document.createElement('div');
+  el.className = `fr th-${f.th} f${f.w}`;
+  el.style.width = f.w + 'px'; el.style.height = f.h + 'px';
+  el.innerHTML = f.build(null, f.w);
+  if (f.prior) el.innerHTML = el.innerHTML.replaceAll('#231', '#232').replaceAll('/pull/231', '/pull/232');
+  return el;
+}
+function layout() {
+  document.querySelectorAll('.fw').forEach((fw) => {
+    const f = frames.find((x) => x.id === fw.dataset.frame);
+    const s = Math.min(1, fw.closest('.cell').clientWidth / f.w);
+    fw.firstElementChild.style.transform = `scale(${s})`;
+    fw.style.width = f.w * s + 'px'; fw.style.height = f.h * s + 'px';
+  });
+}
+function init() {
+  const solo = (location.hash.match(/solo=([\w.-]+)/) || [])[1];
+  buildPage();
+  if (solo) {
+    document.body.className = 'solo-body';
+    const f = frames.find((x) => x.id === solo);
+    const app = document.getElementById('app');
+    app.style.cssText = 'padding:0;max-width:none;margin:0';
+    app.innerHTML = '<div id="soloFw"></div>';
+    const fr = renderFrame(f);
+    const fw = document.getElementById('soloFw'); fw.style.cssText = `width:${f.w}px;height:${f.h}px;overflow:hidden;position:relative`;
+    fw.appendChild(fr); placePops(fr);
+    window.__ready = true; return;
+  }
+  document.querySelectorAll('.fw').forEach((fw) => { const f = frames.find((x) => x.id === fw.dataset.frame); fw.appendChild(renderFrame(f)); });
+  document.querySelectorAll('.fw').forEach((fw) => placePops(fw.firstElementChild));
+  layout();
+  window.addEventListener('resize', layout);
+  new ResizeObserver(layout).observe(document.querySelector('.doc'));
+  window.__ready = true;
+}
+document.fonts.ready.then(() => requestAnimationFrame(init));
+</script>
+</body>
+</html>

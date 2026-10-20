@@ -1,0 +1,97 @@
+  [[HEADER:files]]
+  [[BAR:grid]]
+  <div class="main">
+    [[SIDEBAR:grid]]
+    <main class="page gridpage">
+      <div class="content" style="--cw:1200px">
+        <div class="frow">
+          <div class="seg filters" role="group" aria-label="Show files">
+            <button class="on" type="button" aria-pressed="true">All <span class="ct">12</span></button>
+            <button type="button" aria-pressed="false">Unreviewed <span class="ct">11</span></button>
+            <button type="button" aria-pressed="false">Commented <span class="ct">0</span></button>
+            <button type="button" aria-pressed="false">Approved <span class="ct">1</span></button>
+            <button type="button" aria-pressed="false">Rejected <span class="ct">0</span></button>
+          </div>
+          <div class="tdd">
+            <button class="dd-btn on" type="button" aria-haspopup="listbox" aria-expanded="true" aria-controls="ft-menu">[[i:funnel]]File types<span class="n">2</span>[[i:chevron-down]]</button>
+            <div class="tmenu panel" id="ft-menu" role="listbox" aria-multiselectable="true" aria-label="File types">
+              <div class="tm-h"><b>File types</b><button class="link-btn" type="button">Clear</button></div>
+              <ul>
+                <li role="option" aria-selected="true" class="tm-o sel"><span class="chk">[[i:check]]</span><i class="tdot ft-ts"></i><span class="tlab">TypeScript</span><span class="te mono">.ts</span><span class="tc">5</span></li>
+                <li role="option" aria-selected="true" class="tm-o sel"><span class="chk">[[i:check]]</span><i class="tdot ft-react"></i><span class="tlab">React</span><span class="te mono">.tsx</span><span class="tc">3</span></li>
+                <li role="option" aria-selected="false" class="tm-o"><span class="chk"></span><i class="tdot ft-json"></i><span class="tlab">JSON</span><span class="te mono">.json</span><span class="tc">1</span></li>
+                <li role="option" aria-selected="false" class="tm-o"><span class="chk"></span><i class="tdot ft-css"></i><span class="tlab">CSS</span><span class="te mono">.css</span><span class="tc">1</span></li>
+                <li role="option" aria-selected="false" class="tm-o"><span class="chk"></span><i class="tdot ft-other"></i><span class="tlab">Everything else</span><span class="te mono">.md .png</span><span class="tc">2</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <ul class="tiles" aria-label="All files">
+        <li class="tile ft-ts" data-path="src/app.ts">
+          <button class="tile-main" type="button" aria-label="src/app.ts" title="src/app.ts">
+            <span class="tp"><span class="pth mono">src/</span><span class="fn mono">app.ts</span></span>
+            <span class="trow"><span class="stt s-m"><i></i>Modified</span><span class="dl mono"><span class="a">+29</span><span class="r">−6</span></span><span class="sq" aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i><i class="x"></i></span></span>
+            <span class="tx"><span class="seen">Viewed</span></span>
+          </button>
+          <button class="icon-btn appr" type="button" aria-label="Approve app.ts" title="Approve (A)">[[i:check]]</button>
+        </li>
+        <li class="tile ft-ts" data-path="src/big.generated.ts">
+          <button class="tile-main" type="button" aria-label="src/big.generated.ts" title="src/big.generated.ts">
+            <span class="tp"><span class="pth mono">src/</span><span class="fn mono">big.generated.ts</span></span>
+            <span class="trow"><span class="stt s-m"><i></i>Modified</span><span class="dl mono"><span class="a">+1,996</span><span class="r">−1,996</span></span><span class="sq" aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="x"></i><i class="x"></i></span></span>
+            <span class="tx"><span class="seen dim">Unreviewed</span><span class="chip neu">Collapsed</span></span>
+          </button>
+          <button class="icon-btn appr" type="button" aria-label="Approve big.generated.ts" title="Approve (A)">[[i:check]]</button>
+        </li>
+        <li class="tile ft-react" data-path="src/components/Header.tsx">
+          <button class="tile-main" type="button" aria-label="src/components/Header.tsx" title="src/components/Header.tsx">
+            <span class="tp"><span class="pth mono">src/components/</span><span class="fn mono">Header.tsx</span></span>
+            <span class="trow"><span class="stt s-m"><i></i>Modified</span><span class="dl mono"><span class="a">+5</span><span class="r">−2</span></span><span class="sq" aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i><i class="x"></i></span></span>
+            <span class="tx"><span class="seen dim">Unreviewed</span></span>
+          </button>
+          <button class="icon-btn appr" type="button" aria-label="Approve Header.tsx" title="Approve (A)">[[i:check]]</button>
+        </li>
+        <li class="tile ft-react" data-path="src/components/Notice.tsx">
+          <button class="tile-main" type="button" aria-label="src/components/Notice.tsx" title="src/components/Notice.tsx">
+            <span class="tp"><span class="pth mono">src/components/</span><span class="fn mono">Notice.tsx</span></span>
+            <span class="trow"><span class="stt s-r"><i></i>Renamed</span><span class="dl mono"><span class="a">+2</span><span class="r">−2</span></span><span class="sq" aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="x"></i><i class="x"></i></span></span>
+            <span class="tx"><span class="seen dim">Unreviewed</span></span>
+          </button>
+          <button class="icon-btn appr" type="button" aria-label="Approve Notice.tsx" title="Approve (A)">[[i:check]]</button>
+        </li>
+        <li class="tile ft-react sel" data-path="src/components/TrialBar.tsx">
+          <button class="tile-main" type="button" aria-label="src/components/TrialBar.tsx" title="src/components/TrialBar.tsx" aria-current="true">
+            <span class="tp"><span class="pth mono">src/components/</span><span class="fn mono">TrialBar.tsx</span></span>
+            <span class="trow"><span class="stt s-a"><i></i>Added</span><span class="dl mono"><span class="a">+39</span><span class="r">−0</span></span><span class="sq" aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i></span></span>
+            <span class="tx"><span class="seen">Viewed</span><span class="chip upd">Updated</span></span>
+          </button>
+          <button class="icon-btn appr" type="button" aria-label="Approve TrialBar.tsx" title="Approve (A)">[[i:check]]</button>
+        </li>
+        <li class="tile ft-ts" data-path="src/config.ts">
+          <button class="tile-main" type="button" aria-label="src/config.ts" title="src/config.ts">
+            <span class="tp"><span class="pth mono">src/</span><span class="fn mono">config.ts</span></span>
+            <span class="trow"><span class="stt s-m"><i></i>Modified</span><span class="dl mono"><span class="a">+7</span><span class="r">−0</span></span><span class="sq" aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i></span></span>
+            <span class="tx"><span class="seen">Viewed</span><span class="chip upd">Updated</span></span>
+          </button>
+          <button class="icon-btn appr" type="button" aria-label="Approve config.ts" title="Approve (A)">[[i:check]]</button>
+        </li>
+        <li class="tile ft-ts" data-path="src/legacy/OldBanner.ts">
+          <button class="tile-main" type="button" aria-label="src/legacy/OldBanner.ts" title="src/legacy/OldBanner.ts">
+            <span class="tp"><span class="pth mono">src/legacy/</span><span class="fn mono">OldBanner.ts</span></span>
+            <span class="trow"><span class="stt s-d"><i></i>Deleted</span><span class="dl mono"><span class="a">+0</span><span class="r">−4</span></span><span class="sq" aria-hidden="true"><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i></span></span>
+            <span class="tx"><span class="seen dim">Unreviewed</span></span>
+          </button>
+          <button class="icon-btn appr" type="button" aria-label="Approve OldBanner.ts" title="Approve (A)">[[i:check]]</button>
+        </li>
+        <li class="tile ft-ts" data-path="test/trial-bar.test.ts">
+          <button class="tile-main" type="button" aria-label="test/trial-bar.test.ts" title="test/trial-bar.test.ts">
+            <span class="tp"><span class="pth mono">test/</span><span class="fn mono">trial-bar.test.ts</span></span>
+            <span class="trow"><span class="stt s-a"><i></i>Added</span><span class="dl mono"><span class="a">+12</span><span class="r">−0</span></span><span class="sq" aria-hidden="true"><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i><i class="g"></i></span></span>
+            <span class="tx"><span class="seen dim">Unreviewed</span></span>
+          </button>
+          <button class="icon-btn appr" type="button" aria-label="Approve trial-bar.test.ts" title="Approve (A)">[[i:check]]</button>
+        </li>
+        </ul>
+      </div>
+    </main>
+  </div>

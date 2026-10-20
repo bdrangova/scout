@@ -24,6 +24,11 @@ export function badRequest(message: string): HttpError {
   return new HttpError(400, message)
 }
 
+/** The request conflicts with what the store holds; `reason` is a machine-readable code. */
+export function conflict(message: string, reason: string): HttpError {
+  return new HttpError(409, message, reason)
+}
+
 /** A file in the store exists but does not match its schema. */
 export function invalidStoreFile(message: string): HttpError {
   return new HttpError(422, message)

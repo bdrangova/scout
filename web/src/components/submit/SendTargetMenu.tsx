@@ -1,8 +1,8 @@
-import { Menu } from '@base-ui/react/menu'
-import { Check, ChevronDown } from 'lucide-react'
+import { Menu as MenuPrimitive } from '@base-ui/react/menu'
+import { CheckIcon, ChevronDownIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SEND_TARGET_LABELS, type SendTarget } from '@/lib/runs'
-import { cn } from '@/lib/utils'
+import { Menu, MenuContent, MenuLabel, MenuTrigger } from '@/components/ui/menu'
+import { SEND_TARGET_HINTS, SEND_TARGET_LABELS, type SendTarget } from '@/lib/runs'
 
 export interface SendTargetMenuProps {
   value: SendTarget
@@ -12,41 +12,49 @@ export interface SendTargetMenuProps {
   disabled?: boolean
 }
 
+const TARGETS = Object.keys(SEND_TARGET_LABELS) as SendTarget[]
+
 /** The caret half of the Submit split button: picks the session the feedback is sent to. */
 export function SendTargetMenu({ value, onChange, canContinue, disabled = false }: SendTargetMenuProps) {
   return (
-    <Menu.Root>
-      <Menu.Trigger
+    <Menu>
+      <MenuTrigger
         disabled={disabled}
-        render={<Button size="icon" aria-label="Send options" className="rounded-l-none border-l border-l-primary-foreground/30" />}
+        render={
+          <Button
+            variant="primary"
+            size="icon"
+            aria-label="Send options"
+            title="Send options"
+            className="rounded-l-none border-l-fine border-l-fill-line"
+          />
+        }
       >
-        <ChevronDown />
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner side="top" align="end" sideOffset={6} className="isolate z-50">
-          <Menu.Popup className="min-w-44 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md outline-none">
-            <Menu.RadioGroup value={value} onValueChange={(next: SendTarget) => onChange(next)}>
-              {(Object.keys(SEND_TARGET_LABELS) as SendTarget[]).map((target) => (
-                <Menu.RadioItem
-                  key={target}
-                  value={target}
-                  closeOnClick
-                  disabled={target === 'current' && !canContinue}
-                  className={cn(
-                    'flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-[13px] outline-none select-none',
-                    'data-highlighted:bg-muted data-disabled:opacity-50',
-                  )}
-                >
-                  <Menu.RadioItemIndicator keepMounted className="flex size-3.5 items-center justify-center">
-                    {value === target && <Check className="size-3.5" />}
-                  </Menu.RadioItemIndicator>
-                  {SEND_TARGET_LABELS[target]}
-                </Menu.RadioItem>
-              ))}
-            </Menu.RadioGroup>
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
+        <ChevronDownIcon />
+      </MenuTrigger>
+      <MenuContent side="top" align="end" className="min-w-72">
+        <MenuPrimitive.RadioGroup value={value} onValueChange={(next: SendTarget) => onChange(next)}>
+          <MenuLabel>Submit to</MenuLabel>
+          {TARGETS.map((target) => (
+            <MenuPrimitive.RadioItem
+              key={target}
+              value={target}
+              closeOnClick
+              disabled={target === 'current' && !canContinue}
+              data-slot="menu-radio-item"
+              className="relative flex min-h-8 cursor-default items-start gap-2 py-1.5 rounded-md px-2 font-semibold outline-none select-none data-highlighted:bg-hover data-disabled:pointer-events-none data-disabled:opacity-50"
+            >
+              <MenuPrimitive.RadioItemIndicator keepMounted className="inline-flex size-4 shrink-0 items-center justify-center" aria-hidden>
+                {value === target && <CheckIcon className="size-3.5 stroke-[3]" />}
+              </MenuPrimitive.RadioItemIndicator>
+              <span className="flex flex-col">
+                <span>{SEND_TARGET_LABELS[target]}</span>
+                <span className="text-xs font-medium text-ink-muted">{SEND_TARGET_HINTS[target]}</span>
+              </span>
+            </MenuPrimitive.RadioItem>
+          ))}
+        </MenuPrimitive.RadioGroup>
+      </MenuContent>
+    </Menu>
   )
 }

@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { z } from 'zod'
-import { AgentRunSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@review-dash/shared'
-import type { AgentRun, Resolutions, Review } from '@review-dash/shared'
+import { AgentRunSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@review-dash/shared'
+import type { AgentRun, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@review-dash/shared'
 import { errorMessage, formatZodError, invalidStoreFile } from '../errors.ts'
 import { isMissing, readTextIfExists, writeFileAtomic } from './fs.ts'
 
@@ -54,6 +54,32 @@ export async function readResolutions(sessionDir: string, sessionId: string): Pr
   return resolutions
 }
 
+/** `review/pr-comments.json` (written by `ai-review pr-sync`), validated; `null` when the session was never synced. */
+export async function readPrComments(sessionDir: string, sessionId: string): Promise<PrComments | null> {
+  const value = await readValidated(path.join(sessionDir, ...PR_COMMENTS_FILE.split('/')), PR_COMMENTS_FILE, PrCommentsSchema)
+  if (value !== null && value.sessionId !== sessionId) throw invalidStoreFile(`${PR_COMMENTS_FILE} belongs to session ${value.sessionId}, not ${sessionId}`)
+  return value
+}
+
+/** `review/pr-resolutions.json` (written by `ai-review pr-resolve`), validated; `null` when absent. */
+export async function readPrResolutions(sessionDir: string, sessionId: string): Promise<PrResolutions | null> {
+  const value = await readValidated(path.join(sessionDir, ...PR_RESOLUTIONS_FILE.split('/')), PR_RESOLUTIONS_FILE, PrResolutionsSchema)
+  if (value !== null && value.sessionId !== sessionId) throw invalidStoreFile(`${PR_RESOLUTIONS_FILE} belongs to session ${value.sessionId}, not ${sessionId}`)
+  return value
+}
+
+/** `review/pr-replies.json` (the user's drafts, written here and by `ai-review pr-reply`), validated; `null` when absent. */
+export async function readPrReplies(sessionDir: string, sessionId: string): Promise<PrReplies | null> {
+  const value = await readValidated(path.join(sessionDir, ...PR_REPLIES_FILE.split('/')), PR_REPLIES_FILE, PrRepliesSchema)
+  if (value !== null && value.sessionId !== sessionId) throw invalidStoreFile(`${PR_REPLIES_FILE} belongs to session ${value.sessionId}, not ${sessionId}`)
+  return value
+}
+
+/** Atomic write of `review/pr-replies.json`. Not registered as an own write: the watcher reports it as `pr-comments.updated`. */
+export async function writePrReplies(sessionDir: string, replies: PrReplies): Promise<void> {
+  await writeFileAtomic(path.join(sessionDir, ...PR_REPLIES_FILE.split('/')), `${JSON.stringify(replies, null, 2)}\n`)
+}
+
 /**
  * Every `review/runs/*.json` that validates as an `AgentRun`, oldest first. Files that do not
  * parse (for example one being written right now) are skipped.
@@ -83,6 +109,11 @@ export async function listRuns(sessionDir: string): Promise<AgentRun[]> {
 /** The id of the run that is `queued` or `running`, if any. */
 export function activeRunId(runs: readonly AgentRun[]): string | null {
   return runs.find((run) => run.status === 'queued' || run.status === 'running')?.id ?? null
+}
+
+/** Status of the newest run (run files sort by their time-stamped id), if any. */
+export function latestRunStatus(runs: readonly AgentRun[]): AgentRun['status'] | null {
+  return runs[runs.length - 1]?.status ?? null
 }
 
 export const SENT_DIR = path.join('review', 'sent')

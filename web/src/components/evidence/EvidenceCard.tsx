@@ -1,8 +1,10 @@
 import type { CommentTarget, EvidenceItem } from '@review-dash/shared'
-import { ExternalLink } from 'lucide-react'
+import { Bot, ExternalLink, Film, Image } from 'lucide-react'
 import { useMemo, useReducer, useRef, useState } from 'react'
+import { IconLink } from '@/components/common/IconLink'
+import { KindTag } from '@/components/common/KindTag'
 import { Markdown } from '@/components/common/Markdown'
-import { Badge } from '@/components/ui/badge'
+import { Panel } from '@/components/ui/panel'
 import { evidenceUrl, splitPath } from '@/lib/paths'
 import { useReview } from '@/state/review-context'
 import { EvidenceComments } from './EvidenceComments'
@@ -18,7 +20,7 @@ export interface EvidenceCardProps {
   commentFocusToken?: number
 }
 
-/** Caption, viewer and the agent's description on the left; the comments column on the right. */
+/** Caption, viewer and the agent's description on the left; the comments column on the right (below, under 900px). */
 export function EvidenceCard({ item, sessionId, active, commentFocusToken = 0 }: EvidenceCardProps) {
   const { commentsFor } = useReview()
   const target = useMemo<CommentTarget>(() => ({ kind: 'evidence', ref: item.path }), [item.path])
@@ -49,27 +51,18 @@ export function EvidenceCard({ item, sessionId, active, commentFocusToken = 0 }:
   }
 
   return (
-    <article
-      aria-label={item.caption}
-      className="grid grid-cols-1 gap-5 rounded-xl border bg-card p-5 shadow-sm min-[1100px]:grid-cols-[minmax(0,1fr)_340px]"
-    >
-      <section className="flex min-w-0 flex-col gap-3">
-        <header className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">{item.type === 'image' ? 'Image' : 'Video'}</Badge>
-          <span className="font-mono text-[13px]" title={item.path}>
+    <Panel role="article" aria-label={item.caption} className="grid h-full grid-cols-1 min-[900px]:grid-cols-[minmax(0,1fr)_320px] min-[900px]:grid-rows-[minmax(0,1fr)]">
+      <section className="flex min-h-0 min-w-0 flex-col gap-3 p-4">
+        <div className="flex flex-none flex-wrap items-center gap-x-2.5 gap-y-1">
+          <KindTag icon={item.type === 'image' ? Image : Film} label={item.type === 'image' ? 'Image' : 'Video'} />
+          <span className="max-w-full truncate font-mono text-[13px] font-bold" title={item.path}>
             {name}
           </span>
-          <h3 className="text-[13px] text-muted-foreground">{item.caption}</h3>
-          <a
-            href={src}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            Open original
-            <ExternalLink className="size-3" />
-          </a>
-        </header>
+          <h3 className="m-0 min-w-0 truncate text-[13.5px] font-medium text-ink-muted" title={item.caption}>{item.caption}</h3>
+          <IconLink showLabel href={src} label="Open original" className="ml-auto">
+            <ExternalLink aria-hidden />
+          </IconLink>
+        </div>
         {item.type === 'image' ? (
           <ImageViewer src={src} alt={item.caption} />
         ) : (
@@ -87,18 +80,16 @@ export function EvidenceCard({ item, sessionId, active, commentFocusToken = 0 }:
           />
         )}
         {item.description && (
-          <div className="flex gap-2.5 rounded-lg bg-muted/40 px-3 py-2">
-            <span className="mt-0.5 shrink-0 rounded-full bg-info/10 px-1.5 py-px text-[10px] font-semibold text-info">
-              Agent
-            </span>
-            <Markdown source={item.description} className="text-[13px]" />
+          <div className="flex max-h-24 flex-none items-start gap-2.5 overflow-y-auto rounded-lg border-fine border-line bg-paper-2 px-3 py-2">
+            <KindTag icon={Bot} label="Agent" tone="info" className="mt-px" />
+            <Markdown source={item.description} className="min-w-0 text-[13.5px] font-medium" />
           </div>
         )}
       </section>
-      <aside className="flex min-w-0 flex-col gap-3 border-t pt-4 min-[1100px]:border-t-0 min-[1100px]:border-l min-[1100px]:pt-0 min-[1100px]:pl-5">
-        <h3 className="text-sm font-semibold">
+      <aside className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto border-t-fine border-line bg-paper-2 p-4 min-[900px]:border-t-0 min-[900px]:border-l-fine">
+        <h3 className="m-0 text-[15px] font-bold">
           Comments
-          {comments.length > 0 && <span className="ml-1.5 font-normal text-muted-foreground tabular-nums">{comments.length}</span>}
+          {comments.length > 0 && <span className="ml-1.5 font-medium text-ink-muted tabular-nums">{comments.length}</span>}
         </h3>
         <EvidenceComments
           target={target}
@@ -111,6 +102,6 @@ export function EvidenceCard({ item, sessionId, active, commentFocusToken = 0 }:
           activeCommentId={activeCommentId}
         />
       </aside>
-    </article>
+    </Panel>
   )
 }

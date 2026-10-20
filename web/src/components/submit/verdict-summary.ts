@@ -1,4 +1,4 @@
-import { effectiveVerdict, type Comment, type Review, type Verdict, type WorkingTree } from '@review-dash/shared'
+import { effectiveVerdict, type Comment, type Decision, type Review, type Verdict, type WorkingTree } from '@review-dash/shared'
 
 export interface VerdictSummary {
   approved: number
@@ -43,4 +43,15 @@ export type FileChip = Exclude<Verdict, 'none'> | 'commented'
 export function fileChip(verdict: Verdict, comments: readonly Comment[]): FileChip | null {
   if (verdict !== 'none') return verdict
   return comments.length > 0 ? 'commented' : null
+}
+
+/**
+ * The decision the verdicts point to: any rejected file → request changes, every file approved →
+ * approve, otherwise none (the reviewer picks).
+ */
+export function suggestDecision(summary: VerdictSummary): Decision {
+  if (summary.rejected > 0) return 'request-changes'
+  const total = summary.approved + summary.rejected + summary.commented + summary.notReviewed
+  if (total > 0 && summary.approved === total) return 'approve'
+  return 'undecided'
 }

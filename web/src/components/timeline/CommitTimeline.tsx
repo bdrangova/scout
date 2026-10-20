@@ -1,13 +1,12 @@
 import { UNCOMMITTED_SCOPE, type ChangeStats, type CommitList, type Remote, type Scope } from '@review-dash/shared'
 import { Layers } from 'lucide-react'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { formatFileCount, formatStats } from '@/lib/format'
 import { timelineItems, type TimelineItem } from '@/lib/scope'
 import { cn } from '@/lib/utils'
 import { CommitNode, Dot, NodeShell, Ring, type LineStyle } from './CommitNode'
-import { RemoteSummary } from './RemoteSummary'
 
 /** What the selected scope's own tree load looks like, for the strip's busy and error states. */
 export interface ScopeLoadState {
@@ -30,8 +29,6 @@ export interface CommitTimelineProps {
   scopeLoad?: ScopeLoadState
   /** Leave the merge commits out of the strip (the selected one stays). */
   hideMerges?: boolean
-  /** Rendered at the left end of the row (the files sidebar toggle). */
-  leading?: ReactNode
 }
 
 const NO_REMOTE: Remote = { ref: null, ahead: 0, behind: 0 }
@@ -43,11 +40,12 @@ function lineInto(item: TimelineItem | undefined): LineStyle | null {
 }
 
 /**
- * The commits since the base as a git-graph strip above the cards: the "Full diff" node first, one
- * node per commit (oldest left, newest right) and the uncommitted changes at the end, with the
- * remote's ahead/behind at the right. Selecting a node narrows the page to that scope (`?commit=`).
+ * The commits since the base as a git-graph strip above the cards, flush on the page background (no band): the "Full diff" node first, one
+ * node per commit (oldest left, newest right) and the uncommitted changes at the end. Each commit
+ * carries its pushed state; the line is dashed where the remote does not have it yet. Selecting a
+ * node narrows the page to that scope (`?commit=`).
  */
-export function CommitTimeline({ list, loading, error, totals, selected, onSelect, scopeLoad, hideMerges = false, leading }: CommitTimelineProps) {
+export function CommitTimeline({ list, loading, error, totals, selected, onSelect, scopeLoad, hideMerges = false }: CommitTimelineProps) {
   const stripRef = useRef<HTMLUListElement>(null)
   const items = timelineItems(list, { hideMerges, selected })
   const itemCount = items.length
@@ -65,12 +63,15 @@ export function CommitTimeline({ list, loading, error, totals, selected, onSelec
 
   return (
     <TooltipProvider delay={150}>
-      <section aria-label="Commits" className="flex shrink-0 items-center gap-2 border-b bg-card py-2 pr-3 pl-2">
-        {leading}
+      <section
+        aria-label="Commits"
+        data-compact={itemCount <= 2 || undefined}
+        className="group/tl flex shrink-0 items-start py-1 pr-5 pl-3.5"
+      >
         <ul
           ref={stripRef}
           aria-busy={busy || undefined}
-          className="relative flex min-w-0 flex-1 items-stretch overflow-x-auto overflow-y-hidden px-2 pt-1 pb-2 [mask-image:linear-gradient(to_right,transparent,black_10px,black_calc(100%-10px),transparent)] [scrollbar-width:thin]"
+          className="relative flex min-w-0 flex-1 items-stretch overflow-x-auto overflow-y-hidden px-2 pt-1.5 pb-1.5 [mask-image:linear-gradient(to_right,transparent,black_10px,black_calc(100%-10px),transparent)] [scrollbar-width:thin]"
           data-testid="commit-strip"
         >
           {items.map((item, index) => {
@@ -101,11 +102,11 @@ export function CommitTimeline({ list, loading, error, totals, selected, onSelec
                   data-scope={UNCOMMITTED_SCOPE}
                   onSelect={() => onSelect(UNCOMMITTED_SCOPE)}
                   node={<Dot selected={active} dashed />}
-                  primary={<span className={cn(active && 'font-semibold')}>Uncommitted</span>}
+                  primary={<span className={cn(active && 'font-bold')}>Uncommitted</span>}
                   secondary={formatFileCount(item.stats.files)}
                   tooltip={
                     <>
-                      <span className="font-medium">Uncommitted changes</span>
+                      <span className="font-bold">Uncommitted changes</span>
                       <span className="opacity-80 tabular-nums">
                         {formatFileCount(item.stats.files)} {formatStats(item.stats.additions, item.stats.deletions)}
                       </span>
@@ -128,14 +129,14 @@ export function CommitTimeline({ list, loading, error, totals, selected, onSelec
                 onSelect={() => onSelect(null)}
                 node={
                   <Ring selected={active}>
-                    <Layers className="size-3" />
+                    <Layers />
                   </Ring>
                 }
-                primary={<span className={cn(active && 'font-semibold')}>Full diff</span>}
+                primary={<span className={cn(active && 'font-bold')}>Full diff</span>}
                 secondary={stats}
                 tooltip={
                   <>
-                    <span className="font-medium">Full diff</span>
+                    <span className="font-bold">Full diff</span>
                     <span className="opacity-80 tabular-nums">{stats}</span>
                     <span className="opacity-80">The working tree against the base</span>
                   </>
@@ -144,20 +145,19 @@ export function CommitTimeline({ list, loading, error, totals, selected, onSelec
             )
           })}
           {error && (
-            <li role="status" className="flex h-5 items-center self-start text-xs text-muted-foreground">
+            <li role="status" className="flex h-[22px] items-center self-start text-xs font-semibold text-ink-muted">
               Couldn't load the commits: {error.message}
             </li>
           )}
         </ul>
         {scopeLoad?.error && (
-          <span role="status" className="flex shrink-0 items-center gap-1 text-xs text-reject">
+          <span role="status" className="flex shrink-0 items-center gap-1 self-center text-xs font-semibold text-red">
             <span title={scopeLoad.error.message}>Couldn't load this scope</span>
-            <Button variant="ghost" size="xs" onClick={scopeLoad.reload}>
+            <Button variant="ghost" size="sm" onClick={scopeLoad.reload}>
               Retry
             </Button>
           </span>
         )}
-        {list && <RemoteSummary remote={list.remote} />}
       </section>
     </TooltipProvider>
   )

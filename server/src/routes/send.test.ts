@@ -122,7 +122,7 @@ describe('POST /api/sessions/:id/review/send', () => {
     expect(after.review.updatedAt >= sent.sentAt).toBe(true)
 
     const summary = (await request(app).get('/api/sessions')).body.find((s: { id: string }) => s.id === FIXTURE_SESSION_ID)
-    expect(summary).toMatchObject({ status: 'sent', openComments: 3 })
+    expect(summary).toMatchObject({ status: 'sent', openComments: 3, lastSend: { at: sent.sentAt, decision: 'request-changes' } })
   })
 
   it('starts a run when dispatching with the fake adapter, reports pending while one is active, then shows the session as updated', async () => {

@@ -1,4 +1,5 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Eyebrow } from '@/components/common/Eyebrow'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
 import { HOTKEY_GROUPS } from '@/lib/keyboard'
 
@@ -7,36 +8,39 @@ interface ShortcutHelpProps {
   onOpenChange: (open: boolean) => void
 }
 
-/** Every hotkey, grouped; opened by `?` and by the header's help link. */
+/** Every hotkey, grouped under eyebrow headings as key caps; opened by `?` and by the status bar's keyboard button. */
 export function ShortcutHelp({ open, onOpenChange }: ShortcutHelpProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
-          <DialogDescription>Off while you type, except ⌘ Enter.</DialogDescription>
+          <DialogDescription>
+            Off while you type, except <Kbd>⌘</Kbd> <Kbd>Enter</Kbd>.
+          </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
+        <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
           {HOTKEY_GROUPS.map((group) => (
-            <section key={group.title} aria-label={group.title} className="flex flex-col gap-1.5">
-              <h3 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{group.title}</h3>
-              <dl className="grid grid-cols-[minmax(5rem,auto)_1fr] items-center gap-x-4 gap-y-2 text-sm">
+            <section key={group.title} aria-label={group.title} className="flex flex-col gap-2">
+              <Eyebrow as="h3">{group.title}</Eyebrow>
+              <dl className="m-0 grid grid-cols-[minmax(4.5rem,auto)_1fr] items-center gap-x-3 gap-y-2 text-[13px]">
                 {group.entries.map((entry) => (
                   <div key={entry.description} className="contents">
-                    <dt>
+                    <dt className="m-0">
                       <KbdGroup>
                         {entry.keys.map((key) => (
                           <Kbd key={key}>{key}</Kbd>
                         ))}
                       </KbdGroup>
                     </dt>
-                    <dd className="text-muted-foreground">{entry.description}</dd>
+                    <dd className="m-0 font-medium text-ink-muted">{entry.description}</dd>
                   </div>
                 ))}
               </dl>
             </section>
           ))}
         </div>
+        <DialogFooter showCloseButton />
       </DialogContent>
     </Dialog>
   )

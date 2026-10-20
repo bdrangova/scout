@@ -9,43 +9,34 @@ interface VerdictOverlayProps {
   pendingReject: boolean
 }
 
-/** Green / red / grey tint over the whole card plus a corner badge; never captures pointer events. */
+interface Stamp {
+  tint: string
+  label: string
+  className: string
+}
+
+const STAMPS = {
+  pending: { tint: 'bg-err-bg/50', label: 'Rejecting · add a comment', className: 'bg-red-solid text-on-red' },
+  approved: { tint: 'bg-ok-bg/40', label: 'Approved', className: 'bg-green text-paper' },
+  rejected: { tint: 'bg-err-bg/40', label: 'Rejected', className: 'bg-red-solid text-on-red' },
+  commented: { tint: 'bg-hover', label: 'Commented', className: 'bg-ink text-paper' },
+} satisfies Record<string, Stamp>
+
+/** A tinted wash over the whole card plus a rubber stamp in the corner; never captures pointer events. */
 export function VerdictOverlay({ verdict, commented, pendingReject }: VerdictOverlayProps) {
-  let tint: string | null = null
-  let badge: string | null = null
-  let badgeClass = ''
-  if (pendingReject) {
-    tint = 'bg-reject/15'
-    badge = 'Rejecting · add a comment'
-    badgeClass = 'bg-reject text-white'
-  } else if (verdict === 'approved') {
-    tint = 'bg-approve/10'
-    badge = 'Approved'
-    badgeClass = 'bg-approve text-white'
-  } else if (verdict === 'rejected') {
-    tint = 'bg-reject/10'
-    badge = 'Rejected'
-    badgeClass = 'bg-reject text-white'
-  } else if (commented) {
-    tint = 'bg-muted-foreground/10'
-    badge = 'Commented'
-    badgeClass = 'bg-muted-foreground text-background'
-  }
-  if (tint === null) return null
+  const kind = pendingReject ? 'pending' : verdict === 'none' ? (commented ? 'commented' : null) : verdict
+  if (kind === null) return null
+  const stamp = STAMPS[kind]
 
   return (
-    <div
-      className={cn('pointer-events-none absolute inset-0 z-10 transition-colors', tint)}
-      data-verdict-overlay={pendingReject ? 'pending' : verdict === 'none' ? 'commented' : verdict}
-      aria-hidden
-    >
+    <div className={cn('pointer-events-none absolute inset-0 z-10 transition-colors', stamp.tint)} data-verdict-overlay={kind} aria-hidden>
       <span
         className={cn(
-          'absolute top-16 right-5 rounded-full px-3 py-1 text-xs font-semibold shadow-[0_6px_18px_rgba(27,26,23,0.18)]',
-          badgeClass,
+          'absolute top-[76px] right-5 -rotate-6 rounded-md border-fine border-fill-line px-3 py-1 text-xs font-bold tracking-wide uppercase shadow-raised',
+          stamp.className,
         )}
       >
-        {badge}
+        {stamp.label}
       </span>
     </div>
   )

@@ -1,12 +1,16 @@
 import type { TreeFile, Verdict } from '@review-dash/shared'
-import { Check, MessageSquare, X } from 'lucide-react'
+import { CheckIcon, XIcon } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'
-import { BINARY_BADGE, fileStatusBadge } from '@/lib/file-status'
+import { StatusDot } from '@/components/ui/status-dot'
+import { fileTypeClass, fileTypeOf } from '@/lib/file-type'
 import { formatAdditions, formatDeletions } from '@/lib/format'
 import { splitPath } from '@/lib/paths'
+import type { PrFileCounts } from '@/lib/pr-threads'
+import { STATUS_TONE } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'
 import { ChangeBar } from './ChangeBar'
+import { FileTileFooter } from './FileTileFooter'
 
 export interface FileTileProps {
   file: TreeFile
@@ -15,20 +19,33 @@ export interface FileTileProps {
   viewed: boolean
   openComments: number
   updated: boolean
+  /** GitHub threads on the file (absent when none). */
+  prComments?: PrFileCounts
   /** False for a scope file with no net change in the full diff: no verdict controls. */
   reviewable?: boolean
   onOpen: () => void
   onApprove: () => void
 }
 
-const CHIP = 'inline-flex shrink-0 items-center rounded-full px-1.5 py-px text-[11px] font-semibold tracking-wide uppercase'
+/**
+ * The verdict is an outlined corner stamp on an otherwise neutral tile: tinting the tile as well put a
+ * green or red wash over the file type's band (JSON is green, YAML orange), three hues deep.
+ */
+const VERDICT_STAMP: Record<Exclude<Verdict, 'none'>, string> = {
+  approved: 'border-ok-bd text-green',
+  rejected: 'border-err-bd text-red',
+}
 
-/** A compact card for the grid: path, status, size of the change and the review state (tinted like the full card's `VerdictOverlay`); no diff. */
-export function FileTile({ file, current, verdict, viewed, openComments, updated, reviewable = true, onOpen, onApprove }: FileTileProps) {
+/**
+ * A compact card for the grid: a band in the file type's colour, the path, the status with its dot,
+ * the size of the change and the review state; no diff. `A` approves a focused tile.
+ */
+export function FileTile({ file, current, verdict, viewed, openComments, updated, prComments, reviewable = true, onOpen, onApprove }: FileTileProps) {
   const { dir, name } = splitPath(file.path)
-  const badge = fileStatusBadge(file)
+  const status = STATUS_TONE.file(file.status)
   const renamedFrom = file.oldPath !== null && file.oldPath !== file.path ? file.oldPath : null
   const title = renamedFrom ? `${file.path}\nrenamed from ${renamedFrom}` : file.path
+  const stamp = verdict === 'none' ? null : VERDICT_STAMP[verdict]
 
   function onKeyDown(event: KeyboardEvent<HTMLLIElement>) {
     if ((event.key === 'a' || event.key === 'A') && reviewable && verdict !== 'approved') {
@@ -44,96 +61,64 @@ export function FileTile({ file, current, verdict, viewed, openComments, updated
       data-current={current || undefined}
       onKeyDown={onKeyDown}
       className={cn(
-        'group relative rounded-xl border border-l-4 bg-card text-card-foreground shadow-[0_4px_14px_rgba(27,26,23,0.05)] transition-shadow',
+        fileTypeClass(fileTypeOf(file.path).id),
+        'group relative rounded-xl border-fine border-line bg-surface text-ink transition-colors hover:bg-paper-2',
+        // Paint containment would clip a ring on the inner button, so the tile itself shows keyboard focus.
         '[contain-intrinsic-size:auto_128px] [content-visibility:auto]',
-        verdict === 'approved' ? 'border-l-approve' : verdict === 'rejected' ? 'border-l-reject' : 'border-l-border',
-        current && 'ring-2 ring-foreground/30',
+        'has-[>button:focus-visible]:outline-[3px] has-[>button:focus-visible]:outline-offset-2 has-[>button:focus-visible]:outline-focus',
+        current && 'border-ink ring-2 ring-ink',
       )}
     >
-      {verdict !== 'none' && (
-        <span
-          aria-hidden
-          data-verdict-overlay={verdict}
-          className={cn(
-            'pointer-events-none absolute inset-0 z-10 rounded-[inherit] transition-colors',
-            verdict === 'approved' ? 'bg-approve/10' : 'bg-reject/10',
-          )}
-        >
-          <span
-            className={cn(
-              'absolute top-2 right-2 inline-flex size-6 items-center justify-center rounded-full text-white shadow-[0_6px_18px_rgba(27,26,23,0.18)]',
-              verdict === 'approved' ? 'bg-approve' : 'bg-reject',
-            )}
-          >
-            {verdict === 'approved' ? <Check className="size-3.5" /> : <X className="size-3.5" />}
+      {/* The file-type band along the top edge. */}
+      <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[7px] rounded-t-[10px] border-b-fine border-fill-line bg-ft" />
+      {stamp && (
+        <span aria-hidden data-verdict-overlay={verdict} className="pointer-events-none absolute top-2.5 right-2 z-10">
+          <span className={cn('inline-flex size-[26px] items-center justify-center rounded-full border-[2px] bg-surface', stamp)}>
+            {verdict === 'approved' ? <CheckIcon className="size-[13px] stroke-[3]" /> : <XIcon className="size-[13px] stroke-[3]" />}
           </span>
         </span>
       )}
       <button
         type="button"
         aria-label={file.path}
+        aria-current={current || undefined}
         title={title}
         onClick={onOpen}
-        className="flex w-full flex-col gap-2 rounded-xl p-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+        className="flex w-full flex-col gap-[9px] rounded-[inherit] px-3.5 pt-5 pb-[13px] text-left focus-visible:outline-none"
       >
-        <span className="flex w-full min-w-0 flex-col font-mono">
+        <span className="flex w-full min-w-0 flex-col gap-0.5 pr-[30px] font-mono">
           {/* `dir="rtl"` keeps the end of a long path visible: the leading folders are what gets cut. */}
-          <span className="truncate pr-7 text-left text-xs text-muted-foreground" dir="rtl">
-            <bdi>{dir || ' '}</bdi>
+          <span className="truncate text-left text-xs leading-4 text-ink-muted" dir="rtl">
+            <bdi>{dir || ' '}</bdi>
           </span>
-          <span className="truncate pr-7 text-sm font-semibold">{name}</span>
+          <span className="truncate text-sm leading-[19px] font-bold">{name}</span>
         </span>
         <span className="flex w-full items-center gap-2 text-xs">
-          <span className={cn(CHIP, badge.className)}>{badge.label}</span>
-          <span className="ml-auto font-semibold text-approve tabular-nums">{formatAdditions(file.additions)}</span>
-          <span className="font-semibold text-reject tabular-nums">{formatDeletions(file.deletions)}</span>
+          <span className="inline-flex items-center gap-1.5 font-semibold">
+            <StatusDot tone={status.tone} label="" className="border-fine border-fill-line" />
+            {status.label}
+          </span>
+          <span className="ml-auto inline-flex gap-[7px] font-mono font-bold tabular-nums">
+            <span className="text-green">{formatAdditions(file.additions)}</span>
+            <span className="text-red">{formatDeletions(file.deletions)}</span>
+          </span>
           <ChangeBar additions={file.additions} deletions={file.deletions} />
         </span>
-        <span className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          {verdict === 'approved' && (
-            <span className="inline-flex items-center gap-1 font-medium text-approve">
-              <Check aria-hidden className="size-3" /> approved
-            </span>
-          )}
-          {verdict === 'rejected' && (
-            <span className="inline-flex items-center gap-1 font-medium text-reject">
-              <X aria-hidden className="size-3" /> rejected
-            </span>
-          )}
-          {!reviewable && <span title="A later change undid this one, so there is nothing to review in the full diff">no net change in the full diff</span>}
-          {reviewable && verdict === 'none' && openComments > 0 && <span>commented</span>}
-          {reviewable && verdict === 'none' && openComments === 0 && viewed && <span>viewed</span>}
-          {reviewable && verdict === 'none' && openComments === 0 && !viewed && <span>unreviewed</span>}
-          {openComments > 0 && (
-            <span className="inline-flex items-center gap-1 tabular-nums" title={`${openComments} open ${openComments === 1 ? 'comment' : 'comments'}`}>
-              <MessageSquare aria-hidden className="size-3" /> {openComments}
-            </span>
-          )}
-          {updated && (
-            <span className={cn(CHIP, 'bg-warn/15 text-warn-foreground')} title="Changed on disk since you reviewed it">
-              updated
-            </span>
-          )}
-          {file.binary && <span className={cn(CHIP, BINARY_BADGE.className)}>{BINARY_BADGE.label}</span>}
-          {file.omitted && <span className={cn(CHIP, 'bg-muted text-muted-foreground')}>omitted</span>}
-          {file.collapsed && !file.omitted && <span className={cn(CHIP, 'bg-muted text-muted-foreground')}>collapsed</span>}
-          {renamedFrom && (
-            <span className={cn(CHIP, 'bg-info/10 text-info')} title={`renamed from ${renamedFrom}`}>
-              renamed
-            </span>
-          )}
-        </span>
+        <FileTileFooter file={file} verdict={verdict} viewed={viewed} openComments={openComments} updated={updated} prComments={prComments} reviewable={reviewable} />
       </button>
       {reviewable && verdict !== 'approved' && (
         <Button
           size="icon-sm"
-          variant="outline"
           aria-label={`Approve ${file.path}`}
           title="Approve (A)"
           onClick={onApprove}
-          className="absolute top-2 right-2 z-20 border-approve/50 bg-card text-approve opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-approve/10 hover:text-approve focus-visible:opacity-100"
+          className={cn(
+            'absolute top-2.5 right-2 z-20 size-[26px] rounded-full border-ok-bd/60 bg-surface text-green shadow-none',
+            'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-mint hover:text-hdr-ink focus-visible:opacity-100',
+            '[&_svg:not([class*="size-"])]:size-[13px] [&_svg]:stroke-[3]',
+          )}
         >
-          <Check aria-hidden />
+          <CheckIcon aria-hidden />
         </Button>
       )}
     </li>

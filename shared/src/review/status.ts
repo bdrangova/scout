@@ -1,3 +1,4 @@
+import type { AgentRunStatus } from '../schemas/agent.ts'
 import type { Resolution, Resolutions } from '../schemas/resolutions.ts'
 import type { Comment, FileReview, Review, Verdict } from '../schemas/review.ts'
 import type { TreeFile, WorkingTree } from '../schemas/tree.ts'
@@ -10,8 +11,10 @@ export type CommentWithStatus = Comment & { status: CommentStatus; resolution: R
 export const SESSION_STATUSES = [
   'unreviewed',
   'in-progress',
+  'ready',
   'sent',
   'agent-working',
+  'run-failed',
   'updated',
   'approved',
 ] as const
@@ -102,9 +105,11 @@ export function allFilesApproved(review: Review, tree: WorkingTree): boolean {
  * (see `effectiveVerdict`), consistently with `progress`.
  *
  * - agent-working: a run is active
+ * - run-failed: the latest run failed (a retry or a newer run replaces it)
  * - updated: a judged file changed on disk since its verdict (sent or not), or the agent wrote resolutions after the send
  * - approved: the last send approved and every file's effective verdict is approved
  * - sent: sent, nothing new since
+ * - ready: every file is reviewed (nothing sent yet), so the next step is Submit
  * - in-progress: any effective verdict or any comment
  * - unreviewed: otherwise
  */
@@ -113,9 +118,12 @@ export function sessionStatus(input: {
   tree: WorkingTree
   resolutions: Resolutions | null
   activeRun: boolean
+  /** Status of the newest run, when the caller knows it. */
+  latestRunStatus?: AgentRunStatus | null
 }): SessionStatus {
-  const { review, tree, resolutions, activeRun } = input
+  const { review, tree, resolutions, activeRun, latestRunStatus = null } = input
   if (activeRun) return 'agent-working'
+  if (latestRunStatus === 'failed') return 'run-failed'
   const sent = review?.sent ?? null
   if (review && anyFileUpdated(review, tree)) return 'updated'
   if (review && sent) {
@@ -125,6 +133,8 @@ export function sessionStatus(input: {
   }
   if (review) {
     const hasVerdict = tree.files.some((file) => effectiveVerdict(review.files[file.path], file) !== 'none')
+    const { reviewed, total } = progress(review, tree, resolutions)
+    if (total > 0 && reviewed === total) return 'ready'
     if (hasVerdict || review.comments.length > 0) return 'in-progress'
   }
   return 'unreviewed'

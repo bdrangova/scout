@@ -20,6 +20,7 @@ export const MCP_ADD_ARGS = ['mcp', 'add', '--scope', 'user', 'playwright', '--'
 const TEMPLATE_FILES = [
   { from: 'skills/publish-review/SKILL.md', to: '.claude/skills/publish-review/SKILL.md', mode: 0o644 },
   { from: 'skills/apply-review/SKILL.md', to: '.claude/skills/apply-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/address-pr-comments/SKILL.md', to: '.claude/skills/address-pr-comments/SKILL.md', mode: 0o644 },
   { from: `hooks/${PENDING_HOOK}`, to: `.claude/hooks/${PENDING_HOOK}`, mode: 0o755 },
 ] as const
 
@@ -260,7 +261,7 @@ interface InstallFlags {
 export function registerInstall(program: Command): void {
   program
     .command('install')
-    .description('Install the publish-review and apply-review skills, the pending-feedback hook, settings and launcher for a repository')
+    .description('Install the publish-review, apply-review and address-pr-comments skills, the pending-feedback hook, settings and launcher for a repository')
     .requiredOption('--repo <path>', 'path inside the repository')
     .option('--mirror', 'run .claude/hooks/sync_claude_folders.sh afterwards when present')
     .option('--shared', 'write .claude/settings.json instead of .claude/settings.local.json')

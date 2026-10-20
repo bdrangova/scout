@@ -1,4 +1,5 @@
 import type { CommentTarget } from '@review-dash/shared'
+import { draftKey } from '@/lib/comment-drafts'
 import { useReview } from '@/state/review-context'
 import { CommentBox } from './CommentBox'
 import { CommentList } from './CommentList'
@@ -13,7 +14,8 @@ export interface TargetCommentsProps {
 
 /** The comment list plus the box for one extras or spec item; reads and dispatches through `useReview()`. */
 export function TargetComments({ target, label, className }: TargetCommentsProps) {
-  const { dispatch, commentsFor } = useReview()
+  const { dispatch, commentsFor, draftFor, setDraft } = useReview()
+  const key = draftKey(target)
   const comments = commentsFor(target)
   return (
     <footer className={className}>
@@ -28,6 +30,8 @@ export function TargetComments({ target, label, className }: TargetCommentsProps
         label={label}
         pendingReject={false}
         collapsible
+        draft={draftFor(key)}
+        onDraftChange={(text) => setDraft(key, text)}
         onSubmit={(text) => dispatch({ type: 'ADD_COMMENT', target, body: text })}
         onCancelReject={() => {}}
       />

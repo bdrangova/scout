@@ -1,38 +1,34 @@
-import { EmptySection } from '@/components/common/EmptySection'
+import { FileText, Files } from 'lucide-react'
+import { EmptyState } from '@/components/common/EmptyState'
+import { IconCount } from '@/components/common/IconCount'
+import { PageHeader } from '@/components/common/PageHeader'
 import { SpecPanel } from '@/components/spec/SpecPanel'
-import { pluralize } from '@/lib/format'
-import { splitPath } from '@/lib/paths'
+import { SpecRailSection } from '@/components/spec/SpecRailSection'
 import { useSessionContext } from '@/lib/session-context'
-import { useReview } from '@/state/review-context'
-
-const KIND_LABEL = { jira: 'Jira ticket', markdown: 'markdown', artifact: 'exported artifact' } as const
+import { pluralize } from '@/lib/format'
 
 /** The files of the session's `spec/` folder, as the server derived them (index.json titles, types by filename). */
 export function SpecPage() {
   const { sessionId, detail } = useSessionContext()
-  const { comments } = useReview()
   const spec = detail.spec
 
-  if (spec.length === 0) {
-    return (
-      <EmptySection>
-        No spec: nothing in the session's <code className="font-mono">spec/</code> folder.
-      </EmptySection>
-    )
-  }
-
-  const open = comments.filter((comment) => comment.target.kind === 'spec' && comment.status === 'open').length
-  const summary = [...spec.map((item) => (item.type === 'markdown' ? splitPath(item.path).name : KIND_LABEL[item.type])), open > 0 ? pluralize(open, 'open comment') : null]
-    .filter(Boolean)
-    .join(' · ')
-
   return (
-    <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 px-6 py-5">
-      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="text-lg font-semibold">Spec</h2>
-        <span className="text-[13px] text-muted-foreground">{summary}</span>
-      </header>
-      <SpecPanel spec={spec} sessionId={sessionId} />
+    <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-5 px-6 py-6">
+      <PageHeader title="Spec" summary={spec.length > 0 ? <IconCount showLabel icon={Files} count={spec.length} label={pluralize(spec.length, 'source')} /> : null} />
+      {spec.length > 0 && <SpecRailSection spec={spec} sessionId={sessionId} />}
+      {spec.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No spec"
+          description={
+            <>
+              Nothing in the session's <code className="font-mono">spec/</code> folder. A Jira ticket, a plan or an exported artifact would show here.
+            </>
+          }
+        />
+      ) : (
+        <SpecPanel spec={spec} sessionId={sessionId} />
+      )}
     </main>
   )
 }

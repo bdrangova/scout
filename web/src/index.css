@@ -1,7 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/geist-mono";
 
 /* streamdown ships Tailwind classes in its bundles; scan them so they get generated. */
 @source "../../node_modules/streamdown/dist/*.js";
@@ -10,22 +11,188 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ===== "fine border retro" tokens (design/retro/base-core.css) =====
+   Light values live on :root, dark ones on `.dark` (set on <html> by ThemeProvider).
+   The shadcn names (background, card, border, ...) are aliases of the design tokens so
+   existing shadcn-style classes keep working; new code should prefer the design names. */
+:root {
+    --paper: #FBF6E9;
+    --paper-2: #F1E9DB;
+    --surface: #F7F1E6;
+    --sunken: #EBE2D2;
+    --ink: #2B2A33;
+    --ink-muted: #5E5A58;
+    --line: rgba(43, 42, 51, .34);
+    --fill-line: rgba(43, 42, 51, .36);
+    --sh: rgba(43, 42, 51, .2);
+    --hover: rgba(43, 42, 51, .08);
+    --hdr-bg: #F6B21E;
+    --hdr-ink: #2B2A33;
+    --hdr-chip: #F7F1E6;
+    --hdr-h: 68px;
+    --yellow: #F6B21E;
+    --on-yellow: #2B2A33;
+    --blue: #A9B7E0;
+    --on-blue: #2B2A33;
+    --pink: #F58FAB;
+    --cyan: #2FB8B0;
+    --red: #B8341F;
+    --red-solid: #CF3F2B;
+    --coral: #EE5A45;
+    --on-red: #FFFFFF;
+    --green: #2A7A58;
+    --mint: #BFE3B4;
+    --ch-bg: #2FB8B0;
+    --ch-ink: #2B2A33;
+    --warn-bg: #FCEBC3; --warn-bd: #9A6A00; --warn-ic: #F6B21E;
+    --info-bg: #E2E8F8; --info-bd: #4B63B0; --info-ic: #A9B7E0;
+    --ok-bg: #DCEFD9; --ok-bd: #2A7A58; --ok-ic: #8CD3A0;
+    --err-bg: #FBDDD6; --err-bd: #B8341F; --err-ic: #EE5A45;
+    --focus: #2F5DA8;
+    --diff-add: #DCEBD6; --diff-add-gutter: #BBD9B3;
+    --diff-del: #FBDDD6; --diff-del-gutter: #F2BDB2;
+    --code-bg: #F7F1E6;
+    --tk-k: #A63A6E; --tk-s: #276B44; --tk-f: #2F5DA8; --tk-t: #1E7070; --tk-n: #9A4513; --tk-p: #645F5A; --tk-i: #2B2A33;
+    --peek-a: #F58FAB; --peek-b: #A9B7E0;
+    --st-a: #2A7A58; --st-m: #D9930D; --st-r: #4B63B0; --st-d: #B8341F;
+    /* Session states (STATUS_TONE.session): text, border and icon colour, each >= 4.5:1 on paper. Tints are derived. */
+    --st-awaiting: #5A6676; --st-progress: #0A6E8A; --st-ready: #1F6B47; --st-changes: #6D34B8;
+    --st-working: #3150BE; --st-updated: #8F6200; --st-approved: #1F6B47; --st-failed: #B8341F;
+    --ft-ts: #7C9BE8; --ft-js: #F4D35E; --ft-react: #4FC3D9; --ft-yaml: #F29B5B; --ft-json: #8ACB8F; --ft-css: #EE8FB6; --ft-other: #D9CDB5;
+
+    /* verdict / status accents, derived from the design */
+    --approve: var(--green);
+    --reject: var(--red);
+    --info: var(--st-r);
+    --warn: var(--st-m);
+    --warn-foreground: var(--warn-bd);
+
+    /* shadcn aliases */
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--surface);
+    --card-foreground: var(--ink);
+    --popover: var(--surface);
+    --popover-foreground: var(--ink);
+    --primary: var(--yellow);
+    --primary-foreground: var(--on-yellow);
+    --secondary: var(--paper-2);
+    --secondary-foreground: var(--ink);
+    --muted: var(--sunken);
+    --muted-foreground: var(--ink-muted);
+    --accent: var(--ink);
+    --accent-foreground: var(--paper);
+    --destructive: var(--red);
+    --border: var(--line);
+    --input: var(--line);
+    --ring: var(--focus);
+    --radius: 12px;
+}
+
+.dark {
+    --paper: #23212B;
+    --paper-2: #2A2833;
+    --surface: #2E2B38;
+    --sunken: #1D1B24;
+    --ink: #F3ECDD;
+    --ink-muted: #B3ADC0;
+    --line: rgba(176, 168, 214, .58); /* >= 3:1 against paper (UX review U6) */
+    --fill-line: rgba(35, 33, 43, .42);
+    --sh: rgba(0, 0, 0, .38);
+    --hover: rgba(243, 236, 221, .08);
+    --hdr-bg: #8DA5E8;
+    --hdr-ink: #23212B;
+    --hdr-chip: #F3ECDD;
+    --yellow: #86A3EC;
+    --on-yellow: #23212B;
+    --blue: #CBD5F3;
+    --on-blue: #23212B;
+    --pink: #F2A0B8;
+    --cyan: #4DBDB6;
+    --red: #F58B79;
+    --red-solid: #F07A67;
+    --coral: #F07A67;
+    --on-red: #23212B;
+    --green: #8CD3A0;
+    --mint: #8CD3A0;
+    --ch-bg: #4DBDB6;
+    --ch-ink: #23212B;
+    --warn-bg: rgba(134, 163, 236, .16); --warn-bd: #86A3EC; --warn-ic: #86A3EC;
+    --info-bg: rgba(169, 183, 224, .15); --info-bd: #A9B7E0; --info-ic: #A9B7E0;
+    --ok-bg: rgba(140, 211, 160, .15); --ok-bd: #8CD3A0; --ok-ic: #8CD3A0;
+    --err-bg: rgba(240, 122, 103, .15); --err-bd: #F07A67; --err-ic: #F07A67;
+    --focus: #A9B7E0;
+    --diff-add: rgba(140, 211, 160, .12); --diff-add-gutter: rgba(140, 211, 160, .26);
+    --diff-del: rgba(240, 122, 103, .12); --diff-del-gutter: rgba(240, 122, 103, .26);
+    --code-bg: #26242F;
+    --tk-k: #F2A0C4; --tk-s: #9ADFAE; --tk-f: #9DB6F2; --tk-t: #6FD2CC; --tk-n: #F2B27A; --tk-p: #A39DB5; --tk-i: #F3ECDD;
+    --peek-a: #F2A0B8; --peek-b: #A9B7E0;
+    --st-a: #8CD3A0; --st-m: #E8A27C; --st-r: #9DB6F2; --st-d: #F58B79;
+    --st-awaiting: #A9B3C4; --st-progress: #5CC8E0; --st-ready: #8CD3A0; --st-changes: #BE9EF2;
+    --st-working: #93ABF6; --st-updated: #F0B84A; --st-approved: #8CD3A0; --st-failed: #F58B79;
+    --ft-ts: #8FA9F0; --ft-js: #E8C95A; --ft-react: #5CCBD6; --ft-yaml: #F2A06A; --ft-json: #8FD39A; --ft-css: #F2A0C4; --ft-other: #B9B2C6;
+    --warn-foreground: var(--st-m);
+}
+
+/* Tailwind utilities for the tokens: bg-paper, text-ink, border-line, shadow-raised, bg-ft, ... */
 @theme inline {
+    --font-sans: 'Space Grotesk Variable', 'Space Grotesk', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
+    --font-mono: 'Geist Mono Variable', 'Geist Mono', 'JetBrains Mono', 'SF Mono', Monaco, 'Courier New', monospace;
+
+    --color-paper: var(--paper);
+    --color-paper-2: var(--paper-2);
+    --color-surface: var(--surface);
+    --color-sunken: var(--sunken);
+    --color-ink: var(--ink);
+    --color-ink-muted: var(--ink-muted);
+    --color-line: var(--line);
+    --color-fill-line: var(--fill-line);
+    --color-hover: var(--hover);
+    --color-hdr: var(--hdr-bg);
+    --color-hdr-ink: var(--hdr-ink);
+    --color-hdr-chip: var(--hdr-chip);
+    --color-yellow: var(--yellow);
+    --color-on-yellow: var(--on-yellow);
+    --color-blue: var(--blue);
+    --color-on-blue: var(--on-blue);
+    --color-pink: var(--pink);
+    --color-cyan: var(--cyan);
+    --color-red: var(--red);
+    --color-red-solid: var(--red-solid);
+    --color-coral: var(--coral);
+    --color-on-red: var(--on-red);
+    --color-green: var(--green);
+    --color-mint: var(--mint);
+    --color-ch: var(--ch-bg);
+    --color-ch-ink: var(--ch-ink);
+    --color-warn-bg: var(--warn-bg); --color-warn-bd: var(--warn-bd); --color-warn-ic: var(--warn-ic);
+    --color-info-bg: var(--info-bg); --color-info-bd: var(--info-bd); --color-info-ic: var(--info-ic);
+    --color-ok-bg: var(--ok-bg); --color-ok-bd: var(--ok-bd); --color-ok-ic: var(--ok-ic);
+    --color-err-bg: var(--err-bg); --color-err-bd: var(--err-bd); --color-err-ic: var(--err-ic);
+    --color-focus: var(--focus);
+    --color-diff-add: var(--diff-add); --color-diff-add-gutter: var(--diff-add-gutter);
+    --color-diff-del: var(--diff-del); --color-diff-del-gutter: var(--diff-del-gutter);
+    --color-code: var(--code-bg);
+    --color-peek-a: var(--peek-a); --color-peek-b: var(--peek-b);
+    --color-st-a: var(--st-a); --color-st-m: var(--st-m); --color-st-r: var(--st-r); --color-st-d: var(--st-d);
+    --color-st-awaiting: var(--st-awaiting); --color-st-awaiting-bg: color-mix(in srgb, var(--st-awaiting) 13%, var(--paper));
+    --color-st-progress: var(--st-progress); --color-st-progress-bg: color-mix(in srgb, var(--st-progress) 13%, var(--paper));
+    --color-st-ready: var(--st-ready); --color-st-ready-bg: color-mix(in srgb, var(--st-ready) 13%, var(--paper));
+    --color-st-changes: var(--st-changes); --color-st-changes-bg: color-mix(in srgb, var(--st-changes) 13%, var(--paper));
+    --color-st-working: var(--st-working); --color-st-working-bg: color-mix(in srgb, var(--st-working) 13%, var(--paper));
+    --color-st-updated: var(--st-updated); --color-st-updated-bg: color-mix(in srgb, var(--st-updated) 13%, var(--paper));
+    --color-st-approved: var(--st-approved); --color-st-approved-bg: color-mix(in srgb, var(--st-approved) 13%, var(--paper));
+    --color-st-failed: var(--st-failed); --color-st-failed-bg: color-mix(in srgb, var(--st-failed) 13%, var(--paper));
+    /* `--ft` is set by the `.ft-*` classes (see lib/file-type.ts); bg-ft / text-ft / border-ft pick it up. */
+    --color-ft: var(--ft, var(--ch-bg));
+
+    --color-approve: var(--approve);
+    --color-reject: var(--reject);
+    --color-info: var(--info);
+    --color-warn: var(--warn);
+    --color-warn-foreground: var(--warn-foreground);
+
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -44,109 +211,239 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
-    --color-approve: var(--approve);
-    --color-reject: var(--reject);
-    --color-info: var(--info);
-    --color-warn: var(--warn);
-    --color-warn-foreground: var(--warn-foreground);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* Fine radii: tag 6, chip/kbd 8, seg 10, button 12, panel/card 14, peek 18. */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
+    --radius-2xl: 14px;
+    --radius-3xl: 18px;
+    --radius-4xl: 24px;
+
+    /* Hard offset shadows: raised controls 2px, panels 4px, the review card 6px. */
+    --shadow-kbd: 1px 1px 0 var(--sh);
+    --shadow-icon: 1.5px 1.5px 0 var(--sh);
+    --shadow-raised: 2px 2px 0 var(--sh);
+    --shadow-panel: 4px 4px 0 var(--sh);
+    --shadow-card: 6px 6px 0 var(--sh);
+
+    --spacing-hdr: var(--hdr-h);
 }
 
-:root {
-    /* Warm neutral page background (the mock's #f4f2ec); cards stay white. */
-    --background: #f4f2ec;
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-    /* Verdict and status accents from the mock. */
-    --approve: #1e7a4a;
-    --reject: #b3342b;
-    --info: #1f5f8b;
-    --warn: #c98a00;
-    --warn-foreground: #8a5a00;
+/* 1.5px soft borders are the whole look; `border-fine` is the width, colour comes from `border-line`. */
+@utility border-fine {
+    border-width: 1.5px;
+}
+@utility border-t-fine {
+    border-top-width: 1.5px;
+}
+@utility border-b-fine {
+    border-bottom-width: 1.5px;
+}
+@utility border-l-fine {
+    border-left-width: 1.5px;
+}
+@utility border-r-fine {
+    border-right-width: 1.5px;
 }
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-    --approve: #4fb97e;
-    --reject: #e0665c;
-    --info: #6aa8d6;
-    --warn: #e0a83a;
-    --warn-foreground: #f1c46b;
+/* The hover lift / press of raised controls. */
+@utility press {
+    transition: transform .08s, box-shadow .08s, background-color .12s, color .12s;
+    &:hover {
+        transform: translate(-.5px, -.5px);
+    }
+    &:active {
+        transform: translate(2px, 2px);
+        box-shadow: 0 0 0 var(--sh);
+    }
 }
+
+/* Syntax token colours for the diff renderer (`.tk-k` keyword, `.tk-s` string, ...). */
+@utility tk-k { color: var(--tk-k); }
+@utility tk-s { color: var(--tk-s); }
+@utility tk-f { color: var(--tk-f); }
+@utility tk-t { color: var(--tk-t); }
+@utility tk-n { color: var(--tk-n); }
+@utility tk-p { color: var(--tk-p); }
+@utility tk-i { color: var(--tk-i); }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    /* File-type accents: `.ft-ts` etc. set `--ft`, which bg-ft / text-ft / border-ft read. */
+    .ft-ts { --ft: var(--ft-ts); }
+    .ft-js { --ft: var(--ft-js); }
+    .ft-react { --ft: var(--ft-react); }
+    .ft-yaml { --ft: var(--ft-yaml); }
+    .ft-json { --ft: var(--ft-json); }
+    .ft-css { --ft: var(--ft-css); }
+    .ft-other { --ft: var(--ft-other); }
+
+    * {
+        border-color: var(--line);
     }
-  body {
-    @apply bg-background text-foreground;
+    html {
+        @apply font-sans;
+        color-scheme: light;
+        -webkit-font-smoothing: antialiased;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line) transparent;
     }
-  html {
-    @apply font-sans;
+    html.dark {
+        color-scheme: dark;
+    }
+    body {
+        @apply bg-paper text-ink;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+    button {
+        font: inherit;
+        color: inherit;
+    }
+    :focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 2px;
+    }
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: var(--line);
+        border-radius: 999px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
     }
 }
+
+
+/* The section tabs as one contiguous chevron strip (SectionTabs). Each tab is a line-coloured arrow (`.step-tab`)
+   with the same arrow inset by the border width on top (`.step-tab-in`). Neighbours overlap by exactly the point
+   depth, so a tab's point sits inside the next tab's notch; the next tab's line layer is then the single shared
+   divider (the previous inner fill runs right up to the shared edge). The group (the nav) carries the one outer
+   shadow. Outer corners and the last tip are chamfered for soft edges; internal joins stay crisp.
+   Geometry is in constant px: --k = --pt / (--h / 2) is the edge slope, --d the horizontal width of a --b border
+   measured across the slanted edge. Change them together. */
+.step-tab {
+    --pt: 12px;
+    --h: 34px;
+    --b: 1.5px;
+    --k: .706;
+    --d: 1.84px;
+    --bk: calc(var(--b) * var(--k));
+    position: relative;
+    display: flex;
+    height: var(--h);
+    margin-left: calc(var(--pt) * -1);
+    background: var(--line);
+    clip-path: var(--outer);
+    outline: none;
+    transition: filter .1s;
+    --outer: polygon(
+        0 0, calc(100% - var(--pt)) 0, 100% 50%, calc(100% - var(--pt)) 100%, 0 100%, var(--pt) 50%
+    );
+    --inner: polygon(
+        calc(var(--bk) + var(--d)) 0, calc(100% - var(--pt) + var(--bk)) 0, 100% 50%,
+        calc(100% - var(--pt) + var(--bk)) 100%, calc(var(--bk) + var(--d)) 100%, calc(var(--pt) + var(--d)) 50%
+    );
+}
+.step-tab:hover {
+    filter: brightness(1.05);
+}
+.step-tab-in {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    margin: var(--b) 0;
+    padding: 0 14px 0 calc(var(--pt) + 10px);
+    clip-path: var(--inner);
+}
+.step-tab-c {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 3px;
+}
+/* The ring lives on the content (the arrow's clip-path would cut an outline on the link itself). */
+.step-tab:focus-visible .step-tab-c {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+}
+.step-tab:first-child {
+    margin-left: 0;
+    /* 10px outer / 8.5px inner quarter-circle corners, matching the Button radius */
+    --outer: polygon(
+        10px 0, calc(100% - var(--pt)) 0, 100% 50%, calc(100% - var(--pt)) 100%, 10px 100%,
+        6.17px calc(100% - .76px), 2.93px calc(100% - 2.93px), .76px calc(100% - 6.17px), 0 calc(100% - 10px),
+        0 10px, .76px 6.17px, 2.93px 2.93px, 6.17px .76px
+    );
+    --inner: polygon(
+        10px 0, calc(100% - var(--pt) + var(--bk)) 0, 100% 50%, calc(100% - var(--pt) + var(--bk)) 100%, 10px 100%,
+        6.73px calc(100% - .65px), 3.99px calc(100% - 2.49px), 2.15px calc(100% - 5.24px), 1.5px calc(100% - 8.5px),
+        1.5px 8.5px, 2.15px 5.24px, 3.99px 2.49px, 6.73px .65px
+    );
+}
+.step-tab:first-child .step-tab-in {
+    padding-left: 13px;
+}
+/* Phone width: tighter steps so the icon-only bar fits beside the toggle and the menu. */
+@media (max-width: 520px) {
+    .step-tab-in { padding: 0 8px 0 calc(var(--pt) + 4px); }
+    .step-tab:first-child .step-tab-in { padding-left: 9px; }
+}
+.step-tab:last-child {
+    --outer: polygon(
+        0 0, calc(100% - var(--pt) - 1.5px) 0, calc(100% - var(--pt) + 1.4px) 2px,
+        calc(100% - 3.26px) calc(50% - 4.6px), calc(100% - 2.17px) calc(50% - 2.4px), calc(100% - 1.8px) 50%,
+        calc(100% - 2.17px) calc(50% + 2.4px), calc(100% - 3.26px) calc(50% + 4.6px),
+        calc(100% - var(--pt) + 1.4px) calc(100% - 2px), calc(100% - var(--pt) - 1.5px) 100%,
+        0 100%, var(--pt) 50%
+    );
+    --inner: polygon(
+        calc(var(--bk) + var(--d)) 0, calc(100% - var(--pt) + var(--bk) - var(--d) - 1.5px) 0,
+        calc(100% - var(--pt) + var(--bk) - var(--d) + 1.4px) 2px,
+        calc(100% - 4.48px) calc(50% - 3.73px), calc(100% - 3.6px) calc(50% - 1.95px), calc(100% - 3.3px) 50%,
+        calc(100% - 3.6px) calc(50% + 1.95px), calc(100% - 4.48px) calc(50% + 3.73px),
+        calc(100% - var(--pt) + var(--bk) - var(--d) + 1.4px) calc(100% - 2px),
+        calc(100% - var(--pt) + var(--bk) - var(--d) - 1.5px) 100%,
+        calc(var(--bk) + var(--d)) 100%, calc(var(--pt) + var(--d)) 50%
+    );
+}
+
+/* U16: no hover lift / press / slide for people who asked for less motion (also covers third-party transitions). */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .press:hover, .press:active {
+        transform: none;
+    }
+}
+
+/* U7: the skip link is visually hidden until it takes focus. */
+@utility skip-link {
+    position: absolute;
+    left: 12px;
+    top: -64px;
+    z-index: 60;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--ink);
+    padding: 8px 14px;
+    font-weight: 700;
+    box-shadow: var(--shadow-raised);
+    &:focus {
+        top: 8px;
+    }
+}
+
+/* The sticky session shell is the 52px bar alone (SessionBar never wraps); the rail and the Files column offset by --shell-h. */
+:root { --header-control-h: 34px; --header-control-r: 10px; }
+:root { --shell-h: 52px; }
+/* Focusing <main> (skip link) must not scroll its top under the sticky bar. */
+main { scroll-margin-top: var(--shell-h); }

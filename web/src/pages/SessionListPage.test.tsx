@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ArchivedListState, SessionListState } from '@/lib/hooks'
 import { SESSION_ID, sessionListFixture } from '@/test/fixtures'
 import { MockEventSource, stubEventSource } from '@/test/mock-event-source'
+import { ThemeProvider } from '@/theme'
 import { SessionListPage } from './SessionListPage'
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), info: vi.fn(), success: vi.fn(), warning: vi.fn() } }))
@@ -34,14 +35,23 @@ const archivedFixture: ArchivedSession[] = [
   },
 ]
 
+function renderAt(initialEntries = ['/']) {
+  return render(
+    <ThemeProvider>
+      <MemoryRouter initialEntries={initialEntries}>
+        <Routes>
+          <Route path="/" element={<SessionListPage />} />
+          <Route path="/s/:id" element={<p>Session route</p>} />
+        </Routes>
+      </MemoryRouter>
+    </ThemeProvider>,
+  )
+}
+
 function renderPage(state: Partial<SessionListState>, archived: Partial<ArchivedListState> = {}) {
   listState.current = { sessions: null, loading: false, error: null, reload: () => {}, ...state }
   listState.archived = { archived: [], loading: false, error: null, reload: () => {}, ...archived }
-  return render(
-    <MemoryRouter>
-      <SessionListPage />
-    </MemoryRouter>,
-  )
+  return renderAt()
 }
 
 function json(status: number, body: unknown): Response {
@@ -74,32 +84,44 @@ describe('SessionListPage', () => {
     expect(reloadArchived).toHaveBeenCalledOnce()
   })
 
-  it('renders the heading, the rows and their status pills', () => {
+  it('renders the banner, the heading, the rows and their status notices', () => {
     renderPage({ sessions: sessionListFixture })
+    expect(screen.getByRole('banner')).toHaveTextContent('Review Dash')
+    expect(within(screen.getByRole('banner')).getByRole('group', { name: 'Colour theme' })).toBeInTheDocument()
+    // No rail on the list: the bar is the wordmark, Shortcuts and the theme.
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('banner')).getByRole('button', { name: 'Keyboard shortcuts' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Review sessions')
 
     const first = screen.getByRole('link', { name: 'Trial countdown bar' })
-    expect(first).toHaveAttribute('data-href', `/s/${SESSION_ID}/files`)
+    expect(first).toHaveAttribute('data-href', `/s/${SESSION_ID}`)
+    expect(within(first).getByRole('status', { name: 'Awaiting review' })).toHaveAttribute('data-status', 'unreviewed')
     expect(within(first).getByText('Awaiting review')).toBeInTheDocument()
     expect(within(first).getByText('+272')).toBeInTheDocument()
     expect(within(first).getByText('−51')).toBeInTheDocument()
-    expect(within(first).getByText('· 8 files')).toBeInTheDocument()
+    expect(within(first).getByLabelText('8 files')).toHaveTextContent('8')
+    expect(within(first).getByRole('progressbar', { name: 'Reviewed 0 of 8' })).toBeInTheDocument()
+    expect(within(first).getByText('0/8')).toBeInTheDocument()
     expect(within(first).getByText('qbdvision ·')).toBeInTheDocument()
     expect(within(first).getByTitle('Base branch')).toHaveTextContent('origin/main')
     expect(within(first).getByTitle('bojana-QI-15472-trial-bar')).toBeInTheDocument()
-    expect(within(first).getByRole('link', { name: 'QI-15472' })).toHaveAttribute(
-      'href',
-      'https://example.atlassian.net/browse/QI-15472',
-    )
+    expect(within(first).getByRole('link', { name: 'QI-15472' })).toHaveAttribute('href', 'https://example.atlassian.net/browse/QI-15472')
+    expect(within(first).getByRole('button', { name: 'Archive Trial countdown bar' })).toHaveAttribute('title', 'Archive session')
 
-    expect(screen.getByText('Updated · 2 open comments')).toBeInTheDocument()
-    expect(screen.getByText('In progress · 2 of 4')).toBeInTheDocument()
-    expect(screen.getByText('Sent · Claude Code working')).toBeInTheDocument()
-    expect(screen.getByText('Approved')).toBeInTheDocument()
+    const updated = screen.getByRole('status', { name: 'Updated since sent · 2 open comments' })
+    expect(updated).toHaveAttribute('data-status', 'updated')
+    expect(updated).toHaveTextContent('2')
+    expect(screen.getByRole('status', { name: 'In progress · 2 of 4' })).toBeInTheDocument()
+    const working = screen.getByRole('status', { name: 'Changes sent · Request changes' })
+    expect(working).toHaveAttribute('data-status', 'sent')
+    expect(working.parentElement?.querySelector('[data-run="working"]')).toHaveAccessibleName('Agent working')
+    expect(screen.getByRole('status', { name: 'Agent working' }).querySelector('[data-slot="status-dot"]')).not.toBeNull()
+    expect(screen.getByRole('status', { name: 'Approved' })).toHaveAttribute('data-status', 'approved')
 
     const broken = screen.getByRole('listitem', { name: /Broken session/ })
     expect(broken).toHaveTextContent('20260920-0800-broken-manifest-0000')
     expect(broken).toHaveTextContent('repository not found')
+    expect(broken).toHaveTextContent('Broken')
   })
 
   it('orders the rows by last activity, newest first, with broken sessions last', () => {
@@ -116,23 +138,35 @@ describe('SessionListPage', () => {
     ])
   })
 
-  it('shows filter counts and filters the rows', async () => {
+  it('shows icon filter pills with counts and filters the rows', async () => {
     renderPage({ sessions: sessionListFixture })
     const user = userEvent.setup()
-    expect(screen.getByRole('button', { name: 'All · 6' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Awaiting review · 1' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'In progress · 1' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sent · 1' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Updated · 1' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Approved · 1' })).toBeInTheDocument()
+    const group = screen.getByRole('group', { name: 'Filter by status' })
+    const all = within(group).getByRole('button', { name: 'All · 6' })
+    expect(all).toHaveAttribute('aria-pressed', 'true')
+    expect(all).toHaveAttribute('title', 'All')
+    expect(within(group).getByRole('button', { name: 'Awaiting review · 1' })).toBeInTheDocument()
+    expect(within(group).getByRole('button', { name: 'In progress · 1' })).toBeInTheDocument()
+    expect(within(group).getByRole('button', { name: 'Changes sent · 1' })).toBeInTheDocument()
+    expect(within(group).getByRole('button', { name: 'Ready to submit · 0' })).toBeInTheDocument()
+    expect(within(group).getByRole('button', { name: 'Updated since sent · 1' })).toBeInTheDocument()
+    expect(within(group).getByRole('button', { name: 'Approved · 1' })).toBeInTheDocument()
     // Archived is its own control, outside the status chip group.
-    const archived = screen.getByRole('button', { name: 'Archived · 0' })
-    expect(archived).toBeInTheDocument()
-    expect(within(screen.getByRole('group', { name: 'Filter by status' })).queryByRole('button', { name: /Archived/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Archived · 0' })).toHaveAttribute('aria-pressed', 'false')
+    expect(within(group).queryByRole('button', { name: /Archived/ })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Approved · 1' }))
+    await user.click(within(group).getByRole('button', { name: 'Approved · 1' }))
     expect(screen.getAllByRole('listitem')).toHaveLength(1)
     expect(screen.getByRole('link', { name: 'Storybook stories for Badge' })).toBeInTheDocument()
+  })
+
+  it('tells when no live row matches the filter', async () => {
+    const first = sessionListFixture[0]
+    if (!first || !('tickets' in first)) throw new Error('fixture')
+    renderPage({ sessions: [first] })
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Approved · 0' }))
+    expect(screen.getByText('No sessions match this filter.')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Trial countdown bar' })).not.toBeInTheDocument()
   })
 
   it('keeps many tickets on one scrollable line beside the title', () => {
@@ -145,35 +179,30 @@ describe('SessionListPage', () => {
     const strip = chips[0]?.parentElement
     expect(strip).toHaveClass('overflow-x-auto', 'min-w-0')
     for (const chip of chips) expect(chip.parentElement).toBe(strip)
+    expect(within(row).getByTitle('Trial countdown bar')).toHaveClass('truncate')
   })
 
   it('flags a row whose repository moved to another branch than the session was published on', () => {
     const first = sessionListFixture[0]
     if (!first || !('tickets' in first)) throw new Error('fixture')
     renderPage({ sessions: [{ ...first, repo: { ...first.repo, branch: 'other-branch' } }] })
-    expect(screen.getByRole('status')).toHaveTextContent('Branch changed')
+    const flag = screen.getByRole('status', { name: /Branch changed/ })
+    expect(flag).toHaveAttribute('data-tone', 'warn')
+    expect(flag).toHaveAttribute('title', expect.stringContaining('now on other-branch'))
   })
 
   it('navigates to the session on click and Enter, but not from the ticket link', async () => {
-    listState.current = { sessions: sessionListFixture, loading: false, error: null, reload: () => {} }
-    render(
-      <MemoryRouter>
-        <Routes>
-          <Route path="/" element={<SessionListPage />} />
-          <Route path="/s/:id/files" element={<p>Files route</p>} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderPage({ sessions: sessionListFixture })
     const user = userEvent.setup()
     const row = screen.getByRole('link', { name: 'Trial countdown bar' })
     // The ticket chip is a real <a> inside a non-anchor row (anchors cannot nest).
     expect(row.tagName).not.toBe('A')
     await user.click(within(row).getByRole('link', { name: 'QI-15472' }))
-    expect(screen.queryByText('Files route')).not.toBeInTheDocument()
+    expect(screen.queryByText('Session route')).not.toBeInTheDocument()
 
     row.focus()
     await user.keyboard('{Enter}')
-    expect(await screen.findByText('Files route')).toBeInTheDocument()
+    expect(await screen.findByText('Session route')).toBeInTheDocument()
   })
 
   it('archives a row from its hover action without opening the session, then hides it and reloads both lists', async () => {
@@ -181,22 +210,13 @@ describe('SessionListPage', () => {
     vi.stubGlobal('fetch', fetchMock)
     const reload = vi.fn()
     const reloadArchived = vi.fn()
-    listState.current = { sessions: sessionListFixture, loading: false, error: null, reload }
-    listState.archived = { archived: [], loading: false, error: null, reload: reloadArchived }
-    render(
-      <MemoryRouter>
-        <Routes>
-          <Route path="/" element={<SessionListPage />} />
-          <Route path="/s/:id/files" element={<p>Files route</p>} />
-        </Routes>
-      </MemoryRouter>,
-    )
+    renderPage({ sessions: sessionListFixture, reload }, { reload: reloadArchived })
     const user = userEvent.setup()
     const row = screen.getByRole('link', { name: 'Trial countdown bar' })
     await user.click(within(row).getByRole('button', { name: 'Archive Trial countdown bar' }))
     expect(fetchMock).toHaveBeenCalledWith(`/api/sessions/${SESSION_ID}/archive`, expect.objectContaining({ method: 'POST' }))
     await waitFor(() => expect(screen.queryByRole('link', { name: 'Trial countdown bar' })).not.toBeInTheDocument())
-    expect(screen.queryByText('Files route')).not.toBeInTheDocument()
+    expect(screen.queryByText('Session route')).not.toBeInTheDocument()
     expect(reload).toHaveBeenCalledOnce()
     expect(reloadArchived).toHaveBeenCalledOnce()
     expect(screen.getByRole('button', { name: 'All · 5' })).toBeInTheDocument()
@@ -219,6 +239,7 @@ describe('SessionListPage', () => {
     renderPage({ sessions: sessionListFixture, reload }, { archived: archivedFixture, reload: reloadArchived })
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: 'Archived · 1' }))
+    expect(screen.getByRole('button', { name: 'Archived · 1' })).toHaveAttribute('aria-pressed', 'true')
 
     const row = screen.getByRole('listitem', { name: 'Archived session Old trial bar spike' })
     expect(row).not.toHaveAttribute('role', 'link')
@@ -243,6 +264,20 @@ describe('SessionListPage', () => {
     expect(screen.getByText('No archived sessions.')).toBeInTheDocument()
     expect(reload).toHaveBeenCalledOnce()
     expect(reloadArchived).toHaveBeenCalledOnce()
+
+    // The toggle flips back to the live list.
+    await user.click(screen.getByRole('button', { name: 'Archived · 0' }))
+    expect(screen.getByRole('link', { name: 'Trial countdown bar' })).toBeInTheDocument()
+  })
+
+  it('shows the archived fetch error with a retry', async () => {
+    const reloadArchived = vi.fn()
+    renderPage({ sessions: sessionListFixture }, { error: new Error('disk gone'), reload: reloadArchived })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Archived · 0' }))
+    expect(screen.getByRole('alert')).toHaveTextContent("Couldn't load the archived sessions: disk gone")
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(reloadArchived).toHaveBeenCalledOnce()
   })
 
   describe('permanent delete', () => {
@@ -263,6 +298,7 @@ describe('SessionListPage', () => {
       expect(within(dialog).getByText('Delete this session permanently?')).toBeInTheDocument()
       expect(dialog).toHaveTextContent('Old trial bar spike')
       expect(dialog).toHaveTextContent('Removes its review state, comments and run logs from disk; the repository is not touched. This cannot be undone.')
+      expect(dialog).toHaveAttribute('data-slot', 'dialog-content')
       const cancel = within(dialog).getByRole('button', { name: 'Cancel' })
       await waitFor(() => expect(cancel).toHaveFocus())
       await user.click(cancel)
@@ -304,17 +340,20 @@ describe('SessionListPage', () => {
     })
   })
 
-  it('shows the empty state, the loading state and the error state', () => {
+  it('shows the empty state, the loading state and the error state with a retry', async () => {
     const { unmount } = renderPage({ sessions: [] })
-    expect(screen.getByText('No review sessions yet')).toBeInTheDocument()
+    expect(screen.getByText('No sessions yet')).toBeInTheDocument()
+    expect(screen.getByText('ai-review init --repo <path>')).toBeInTheDocument()
     unmount()
 
     const loading = renderPage({ loading: true })
-    expect(screen.getByText('Loading sessions…')).toBeInTheDocument()
+    expect(screen.getByText('Loading sessions…')).toHaveAttribute('aria-busy', 'true')
     loading.unmount()
 
-    renderPage({ error: new Error('connection refused') })
-    expect(screen.getByText(/connection refused/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    const reload = vi.fn()
+    renderPage({ error: new Error('connection refused'), reload })
+    expect(screen.getByRole('alert')).toHaveTextContent("Couldn't load the sessions: connection refused")
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Retry' }))
+    expect(reload).toHaveBeenCalledOnce()
   })
 })

@@ -18,6 +18,8 @@ spec/                         jira.md, plan.md, design.html …; optional spec/i
 pr-description.md             optional, session root
 review/review.json            dashboard-owned live review state
 review/resolutions.json       agent-owned (written by `ai-review resolve`)
+review/pr-comments.json       written by `ai-review pr-sync` / `pr-link` only: the session's PR + its GitHub comments
+review/pr-resolutions.json    agent-owned (written by `ai-review pr-resolve`)
 review/sent/<stem>.json       immutable snapshot of each Submit; <stem> = sentAt with ':' → '-'
 review/sent/<stem>.md         the rendered feedback the agent reads
 review/sent/<stem>.patch      the full working-tree diff at send time
@@ -38,7 +40,7 @@ DEFAULT_SERVER_PORT = 4545; DEFAULT_WEB_PORT = 4546
 SESSION_ID_RE, RUN_ID_RE, COMMENT_ID_RE, FINGERPRINT_RE (/^[0-9a-f]{16}$/)
 COLLAPSE_CHANGED_LINES = 1500; COLLAPSE_MAX_BYTES = 512 KiB; OMIT_MAX_BYTES = 5 MiB
 COLLAPSE_GLOBS = ['**/package-lock.json','**/yarn.lock','**/pnpm-lock.yaml','**/*.snap','**/*.min.*','**/dist/**']
-SECTIONS = ['files','evidence','spec','extras','submit'] as const
+SECTIONS = ['spec','extras','evidence','files','submit'] as const
 SESSIONS_DIR = 'sessions'; ARCHIVE_DIR = 'archive'; ARCHIVED_FILE = 'archived.json'
 SESSION_EVIDENCE_DIR = 'evidence'; SESSION_EXTRAS_DIR = 'extras'; SESSION_SPEC_DIR = 'spec'
 SESSION_PR_DESCRIPTION_FILE = 'pr-description.md'; ARTIFACT_INDEX_FILE = 'index.json'
@@ -140,6 +142,31 @@ Resolution = { status: 'resolved'|'open', note, at, files: string[] }
 Resolutions = { schemaVersion: 2, sessionId, updatedAt, comments: Record<c<n>, Resolution> }
 ```
 
+## schemas/pr-comments.ts: GitHub PR comments (external, read-only for the dashboard)
+
+```ts
+PrIdentity = { repo: 'owner/name', number, url, title, state: 'open'|'closed'|'merged', draft, baseRef, headRef, headSha /* '' until synced */ }
+PrComment = { id /* rc<n> line | rv<n> review summary | ic<n> conversation; n = GitHub database id */, githubId, nodeId|null, url /* permalink */,
+  prNumber, kind: 'line'|'review-summary'|'general', author: { login, isBot, kind: 'human'|'bot'|'copilot' }, body /* markdown */,
+  authorAssociation?: string|null /* GitHub author_association */, reviewState: 'approved'|'changes-requested'|'commented'|'dismissed'|null, path|null, line|null /* current, null if outdated or file-level */,
+  startLine|null, side: 'old'|'new'|null, originalLine|null, commitSha|null, diffHunk|null, outdated, resolvedOnGitHub,
+  threadId|null /* root id */, inReplyTo|null, createdAt, updatedAt, removedAt|null /* gone from GitHub at the last sync */ }
+PrComments    = { schemaVersion: 2, sessionId, fetchedAt, pr: PrIdentity, trustedAuthors?: string[] /* config allowlist at sync */, comments: PrComment[] }          // review/pr-comments.json
+PrResolution  = { status: 'addressed'|'declined', note, commitSha|null, files, at, sentAt|null /* review.sent.at when recorded */ }
+PrResolutions = { schemaVersion: 2, sessionId, updatedAt, comments: Record<PrCommentId, PrResolution>, trust?: { authors: string[], comments: (PrCommentId | { id, bodyHash, updatedAt })[] } /* user grants */ }   // review/pr-resolutions.json
+PrSummary     = { number, url, title, state: 'open'|'draft'|'merged'|'closed', baseRef, headRef, updatedAt } // SessionSummary.pr / SessionDetail.pr
+PrCommentCounts = { prNumber, fetchedAt, total, open, addressed, declined, outdated, addressedInLastSend, declinedInLastSend } // roots only
+PrCommentView = PrComment & { status: 'open'|'addressed'|'declined'|'outdated', trusted: boolean, resolution, closedBy: 'github-outdated'|'github-resolved'|'removed'|null,
+  isReply, inLastSend, anchor: LineAnchor|null }
+PrCommentsResponse = { pr|null, fetchedAt|null, lastSendAt|null, comments: PrCommentView[], resolutions|null, counts|null }
+```
+
+**Untrusted text.** Comment bodies are third-party input and a prompt-injection vector. `isTrustedPrComment(comment, prTrustFor(prComments, resolutions))` (`review/pr-trust.ts`): trusted = `author_association` OWNER/MEMBER/COLLABORATOR, Copilot (exactly the bot logins in `COPILOT_BOT_LOGINS` with type Bot, case-sensitive, never a substring; a person named `Copilot` or a lookalike bot is not trusted), a login in `trustedPrCommentAuthors` of `~/.ai-review/config.json` (copied into `pr-comments.json` at sync; exact case-insensitive equality), or a comment/author the user trusted with `ai-review pr-trust` (terminal only, stored in `pr-resolutions.json` `trust`). A comment grant is pinned to `hashPrBody(body)` (the full sha256; a short 16-hex pin from an earlier version lapses at the next sync and must be re-confirmed) and lapses when the body is edited: `pr-sync` drops it and reports `trustLapsed` (ids; also printed and in `--json`); a legacy bare-id grant counts until the next sync pins it to the body stored before that sync. An author grant is standing: that person's edits and new comments stay trusted. `PrCommentView.trusted` carries it. Untrusted comments are stored and shown in the dashboard but left out of the sent markdown, the hook counts, `ai-review pr-comments` and every dispatch; the feedback says how many were left out. Trusted bodies are still wrapped in `<untrusted-github-comment id=… author=…>` blocks (markers inside a body are neutralised) under one instruction that they are data, never to be obeyed.
+
+Why a sibling `pr-resolutions.json` and not an `external` target in `resolutions.json`: the id space differs (GitHub ids, not `c<n>`), `pr-sync` rewrites `pr-comments.json` wholesale while resolutions must survive it, the status words differ (addressed/declined, with a commit), and `sessionStatus` (`resolutions.updatedAt > sent.at` → updated) and the Submit counts must not move because of external comments. One PR per session for now: `pr` is the current PR and every comment carries `prNumber`; `prs: PrIdentity[]` can replace `pr` later (field names match `PullRequest` in docs/pr-link-options.md).
+
+Pure helpers (`review/pr-comments.ts`, browser-safe): `prCommentStatus(comment, resolution)` (resolution wins; else outdated / resolved on GitHub / removed → `outdated`; else `open`), `isAddressedInLastSend(resolution, lastSendAt)` (`sentAt` equals `review.sent.at`; a resolution without `sentAt` counts when `at >= lastSendAt`), `prCommentAnchor(comment)` (a `LineAnchor` for a current line comment, else null), `derivePrComments(prComments, resolutions, lastSendAt)` (views in display order, replies after their root sharing its status), `prCommentCounts`, `buildPrCommentsResponse`, `prSummary`. `renderPrCommentsMarkdown` renders the open ones; `renderSentMarkdown(sent, { …, prComments: { sessionId, pr, views } })` appends it as `## GitHub PR comments` before `## Required response`. External comments are never part of `Review.comments`, the sent snapshot's counts or Submit's open comments.
+
 ## Derived (review/status.ts)
 
 ```ts
@@ -180,14 +207,15 @@ The server writes the `.json`, the `.md` (`renderSentMarkdown(sent, { title, das
 ```ts
 Health = { ok: true, home, adapter, claudeBin }
 SessionSummary = { id, title, repo: { path, branch, baseRef }, tickets, status, progress: { reviewed, total }, openComments,
-  stats: { files, additions, deletions }, updatedAt, activeRunId: string|null }
+  stats: { files, additions, deletions }, updatedAt, activeRunId: string|null,
+  pr?: PrSummary|null, prComments?: PrCommentCounts|null /* optional: from review/pr-comments.json */ }
 SessionListItem = SessionSummary | { id, error }
 ArchivedMarker = { archivedAt }                                  // archive/<id>/archived.json
 ArchivedSession = { id, title, tickets, repo: { path, branch, baseRef: string|null }, createdAt, updatedAt, archivedAt }  // baseRef from the archived manifest
-SessionDetail = { manifest, tree: WorkingTree, evidence: EvidenceItem[], extras: ExtraItem[], spec: SpecItem[], prDescription: string|null, status, progress, activeRunId }
+SessionDetail = { manifest, tree: WorkingTree, evidence: EvidenceItem[], extras: ExtraItem[], spec: SpecItem[], prDescription: string|null, status, progress, activeRunId, pr?: PrSummary|null, prComments?: PrCommentCounts|null }
 ReviewResponse, PutReviewRequest/Response/Conflict, SendRequest = { decision, dispatch }, SendResponse = { sent, run, pending }, StartRunRequest — as before
 StoreEvent =
-  | { type: 'session.added'|'session.updated'|'session.removed'|'review.updated'|'resolutions.updated', sessionId }
+  | { type: 'session.added'|'session.updated'|'session.removed'|'review.updated'|'resolutions.updated'|'pr-comments.updated', sessionId }
   | { type: 'run.updated', sessionId, runId }
   | { type: 'tree.updated', sessionId, fingerprint /* WorkingTree.fingerprint */, durationMs }
 FileContentsSide = 'before'|'after'
@@ -218,6 +246,7 @@ GET  /sessions/:id/scopes/:scope/files/*path/contents?side=before|after   before
 GET  /sessions/:id/evidence/*path                 only paths listed by deriveEvidence; sendFile with root + Range (206)
 GET  /sessions/:id/extras/*path                   only paths listed by deriveExtras; correct Content-Type
 GET  /sessions/:id/spec/*path                     only paths listed by deriveSpec; correct Content-Type
+GET  /sessions/:id/pr-comments                    PrCommentsResponse (empty when never synced; 404 unknown session; 422 invalid file)
 GET  /sessions/:id/review                         ReviewResponse (empty review in memory when missing)
 PUT  /sessions/:id/review                         PutReviewRequest → { updatedAt } | 409 { error, current }
 POST /sessions/:id/review/send                    SendRequest → SendResponse; writes sent/<stem>.json|.md|.patch

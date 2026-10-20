@@ -1,7 +1,10 @@
 import type { SessionDetail } from '@review-dash/shared'
+import { ArrowLeftIcon, FileTextIcon, ImageIcon, PackageIcon, SendIcon, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Notice } from '@/components/ui/notice'
+import { Panel, PanelBody, PanelHeader, PanelTitle } from '@/components/ui/panel'
 
 export interface ReviewCompleteProps {
   sessionId: string
@@ -13,43 +16,54 @@ export interface ReviewCompleteProps {
   children: ReactNode
 }
 
+const SECTIONS: readonly { to: 'evidence' | 'spec' | 'extras'; label: string; icon: LucideIcon }[] = [
+  { to: 'evidence', label: 'Evidence', icon: ImageIcon },
+  { to: 'spec', label: 'Spec', icon: FileTextIcon },
+  { to: 'extras', label: 'Extras', icon: PackageIcon },
+]
+
 /**
  * The end of the review: the view stays on screen but blurred and out of reach (inert, hidden
  * from assistive tech), under a centered panel that leads to the other sections, Submit first.
  */
 export function ReviewComplete({ sessionId, detail, onBack, children }: ReviewCompleteProps) {
   const base = `/s/${encodeURIComponent(sessionId)}`
-  const sections = [
-    { to: 'evidence', label: 'Evidence', count: detail.evidence.length },
-    { to: 'spec', label: 'Spec', count: detail.spec.length },
-    { to: 'extras', label: 'Extras', count: detail.extras.length },
-  ].filter((section) => section.count > 0)
+  const sections = SECTIONS.map((section) => ({ ...section, count: detail[section.to].length })).filter((section) => section.count > 0)
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden" data-review-complete>
-      <div inert aria-hidden className="pointer-events-none flex min-h-0 flex-1 flex-col opacity-80 blur-xl saturate-50 select-none">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-paper" data-review-complete>
+      <div inert aria-hidden className="pointer-events-none flex min-h-0 flex-1 scale-[1.02] flex-col blur-[7px] select-none">
         {children}
       </div>
+      <div aria-hidden className="absolute inset-0 bg-sunken/55" />
       <section aria-labelledby="review-complete-title" className="absolute inset-0 flex items-center justify-center p-6">
-        <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-2xl border bg-card px-8 py-7 shadow-[0_12px_40px_rgba(27,26,23,0.12)]">
-          <h2 id="review-complete-title" className="text-lg font-semibold">
-            Review complete
-          </h2>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {sections.map((section) => (
-              <Link key={section.to} to={`${base}/${section.to}`} className={buttonVariants({ variant: 'outline' })}>
-                {section.label}
-                <span className="text-xs opacity-70 tabular-nums">{section.count}</span>
+        <Panel className="w-full max-w-[460px]">
+          <PanelHeader className="min-h-[52px] justify-center">
+            <PanelTitle id="review-complete-title" className="text-lg">
+              Review complete
+            </PanelTitle>
+          </PanelHeader>
+          <PanelBody className="flex flex-col items-center gap-5 px-7 pt-[26px] pb-[22px]">
+            <Notice tone="ok" data-status="ready">
+              Ready to submit
+            </Notice>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              {sections.map(({ to, label, icon: Icon, count }) => (
+                <Link key={to} to={`${base}/${to}`} aria-label={`${label} ${count}`} title={label} className={buttonVariants({ variant: 'default' })}>
+                  <Icon aria-hidden />
+                  <span className="text-xs font-semibold text-ink-muted tabular-nums">{count}</span>
+                </Link>
+              ))}
+              <Link to={`${base}/submit`} className={buttonVariants({ variant: 'primary' })}>
+                <SendIcon aria-hidden />
+                Submit
               </Link>
-            ))}
-            <Link to={`${base}/submit`} className={buttonVariants()}>
-              Submit
-            </Link>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onBack} className="-mb-2 text-muted-foreground">
-            Back to files
-          </Button>
-        </div>
+            </div>
+            <Button variant="ghost" size="icon-sm" aria-label="Back to files" title="Back to files" onClick={onBack} className="text-ink-muted shadow-none hover:text-ink">
+              <ArrowLeftIcon aria-hidden />
+            </Button>
+          </PanelBody>
+        </Panel>
       </section>
     </div>
   )

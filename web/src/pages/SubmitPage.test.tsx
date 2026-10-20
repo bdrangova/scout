@@ -1,5 +1,6 @@
 import type { AgentRun, SendResponse, SessionDetail } from '@review-dash/shared'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { StrictMode } from 'react'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -123,16 +124,17 @@ const withComment = () =>
     reviewFixture({
       comments: [commentFixture('c1', { kind: 'file', ref: FILE }, 'Day count is off by one.')],
       nextCommentId: 2,
+      overall: { ...reviewFixture().overall, decision: 'request-changes' },
     }),
   )
 
 async function submitButton() {
-  return screen.findByRole('button', { name: /Submit & send to (current|new) session/ })
+  return screen.findByRole('button', { name: /Submit to (current|new) session/ })
 }
 
 async function pickTarget(name: string) {
   fireEvent.click(await screen.findByRole('button', { name: 'Send options' }))
-  fireEvent.click(await screen.findByRole('menuitemradio', { name }))
+  fireEvent.click(await screen.findByRole('menuitemradio', { name: new RegExp(`^${name}`) }))
 }
 
 async function confirmSend() {
@@ -152,11 +154,12 @@ describe('SubmitPage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('disables Submit while there is nothing to send and enables it after a decision', async () => {
+  it('disables Submit until a decision exists, then summarises what it will send', async () => {
     const api = renderSubmit()
     expect(await submitButton()).toBeDisabled()
     // The footer says why the button is off, and stays quiet about an idle agent or the autosave.
-    expect(screen.getByText('Pick a decision or leave a comment first')).toBeInTheDocument()
+    expect(screen.getByText('Pick a decision first')).toBeInTheDocument()
+    expect(screen.queryByTestId('send-summary')).not.toBeInTheDocument()
     expect(screen.queryByText(/Claude Code is/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Draft saved/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Reviewed/)).not.toBeInTheDocument()
@@ -166,8 +169,72 @@ describe('SubmitPage', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Request changes/ }))
     expect(screen.getByRole('radio', { name: /Request changes/ })).toHaveAttribute('aria-checked', 'true')
     expect(await submitButton()).toBeEnabled()
-    expect(screen.queryByText('Pick a decision or leave a comment first')).not.toBeInTheDocument()
+    expect(screen.queryByText('Pick a decision first')).not.toBeInTheDocument()
+    expect(screen.getByTestId('send-summary')).toHaveTextContent(`Send no comments + Request changes to the current session · ${sessionDetailFixture.tree.files.length} files not reviewed`)
+    // Clicking the chosen decision again keeps it (radio semantics), so Submit stays on.
+    fireEvent.click(screen.getByRole('radio', { name: /Request changes/ }))
+    expect(screen.getByRole('radio', { name: /Request changes/ })).toHaveAttribute('aria-checked', 'true')
     await waitFor(() => expect(api.puts.at(-1)?.review.overall.decision).toBe('request-changes'))
+  })
+
+  it('pre-selects Request changes when a file is rejected and Approve when every file is approved', async () => {
+    const files = sessionDetailFixture.tree.files
+    const verdict = (verdictOf: (index: number) => 'approved' | 'rejected') =>
+      Object.fromEntries(files.map((file, index) => [file.path, { verdict: verdictOf(index), fingerprint: file.fingerprint, viewed: true }]))
+    renderSubmit(reviewResponseFixture(reviewFixture({ files: verdict((index) => (index === 0 ? 'rejected' : 'approved')) })))
+    expect(await screen.findByRole('radio', { name: /Request changes/ })).toHaveAttribute('aria-checked', 'true')
+    cleanup()
+    renderSubmit(reviewResponseFixture(reviewFixture({ files: verdict(() => 'approved') })))
+    expect(await screen.findByRole('radio', { name: /^Approve/ })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('send-summary')).toHaveTextContent('Send no comments + Approve to the current session')
+    expect(screen.getByTestId('send-summary')).not.toHaveTextContent('not reviewed')
+  })
+
+  it('saves the overall feedback typed a moment ago before it sends, so the send includes it', async () => {
+    const savedAtSend: string[][] = []
+    let api: ReturnType<typeof renderSubmit> | null = null
+    api = renderSubmit(withComment(), {
+      send: () => {
+        savedAtSend.push((api?.puts.at(-1)?.review.comments ?? []).map((comment) => comment.body))
+        return json(200, sendResponse())
+      },
+    })
+    const user = userEvent.setup()
+    await user.type(await screen.findByRole('textbox', { name: 'Overall feedback' }), 'Ship it after the rename.')
+    // Clicking Submit blurs the field (committing the comment) and sends in the same breath.
+    await user.click(await submitButton())
+
+    await waitFor(() => expect(savedAtSend).toHaveLength(1))
+    expect(savedAtSend[0]).toContain('Ship it after the rename.')
+  })
+
+  it('does not send when the save before it hits a conflict, and says so', async () => {
+    const api = renderSubmit(withComment())
+    const user = userEvent.setup()
+    await user.type(await screen.findByRole('textbox', { name: 'Overall feedback' }), 'Late thought.')
+    api.queuePut({ ok: false, kind: 'conflict', current: reviewFixture({ nextCommentId: 5 }) })
+    await user.click(await submitButton())
+
+    expect(await screen.findByText(/nothing was sent/)).toBeInTheDocument()
+    expect(sentBody(api.posts)).toBeUndefined()
+  })
+
+  it('describes the send targets in the menu', async () => {
+    renderSubmit(withComment())
+    fireEvent.click(await screen.findByRole('button', { name: 'Send options' }))
+    const current = await screen.findByRole('menuitemradio', { name: /Current session/ })
+    expect(current).toHaveTextContent('Continue the Claude Code session that wrote this')
+    expect(screen.getByRole('menuitemradio', { name: /New session/ })).toHaveTextContent('Open a fresh Claude Desktop session')
+  })
+
+  it('shows a failed latest run at the top with its error and retries by sending again', async () => {
+    const failed = run({ status: 'failed', endedAt: '2026-09-26T18:10:30.000Z', error: 'claude exited with code 1\nstack line' })
+    const api = renderSubmit(withComment(), { runs: [failed], send: () => json(200, sendResponse({ run: run({ id: 'run-20260926182000-ab13', startedAt: '2026-09-26T18:20:00.000Z' }) })) })
+    const notice = await screen.findByRole('region', { name: 'Run failed' })
+    expect(within(notice).getByText('claude exited with code 1')).toBeInTheDocument()
+    expect(within(notice).queryByText('stack line')).not.toBeInTheDocument()
+    fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }))
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes', dispatch: false }))
   })
 
   it('creates the overall comment from the textarea', async () => {
@@ -176,7 +243,7 @@ describe('SubmitPage', () => {
     fireEvent.change(box, { target: { value: 'Matches the plan.' } })
     fireEvent.blur(box)
     await waitFor(() => expect(api.puts.at(-1)?.review.comments[0]).toMatchObject({ target: { kind: 'overall' }, body: 'Matches the plan.' }))
-    expect(await screen.findByText('1 open')).toBeInTheDocument()
+    expect(await screen.findByLabelText('1 open')).toBeInTheDocument()
   })
 
   it('sends at once (no confirmation) with dispatch for a CLI session, then streams the run and cancels it', async () => {
@@ -250,7 +317,7 @@ describe('SubmitPage', () => {
     vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
     const api = renderSubmit(withComment(), { send: () => json(200, sendResponse()) })
     await confirmSend()
-    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: false }))
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes', dispatch: false }))
     const panel = await screen.findByLabelText('Feedback pending')
     expect(within(panel).getByText(/Send any message in your open Claude Code session/)).toBeInTheDocument()
     expect(within(panel).queryByRole('link')).not.toBeInTheDocument()
@@ -263,7 +330,7 @@ describe('SubmitPage', () => {
     const api = renderSubmit(withComment(), { send: () => json(200, sendResponse()) })
     await pickTarget('New session')
     await confirmSend()
-    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: false }))
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes', dispatch: false }))
     const href = `claude://code/new?q=${encodeURIComponent(`/apply-review ${SESSION_ID}`)}&folder=${encodeURIComponent(sessionDetailFixture.manifest.repo.path)}`
     const panel = await screen.findByLabelText('Feedback pending')
     expect(within(panel).getByRole('link', { name: 'Open in Claude Desktop' })).toHaveAttribute('href', href)
@@ -276,7 +343,7 @@ describe('SubmitPage', () => {
     const api = renderSubmit(withComment(), { detail: cliDetail, send: () => json(200, sendResponse()) })
     await pickTarget('New session')
     await confirmSend()
-    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: false }))
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes', dispatch: false }))
     expect(within(await screen.findByLabelText('Feedback pending')).getByRole('link', { name: 'Open in Claude Desktop' })).toBeInTheDocument()
     expect(assign).not.toHaveBeenCalled()
   })
@@ -288,10 +355,10 @@ describe('SubmitPage', () => {
     }
     const api = renderSubmit(withComment(), { detail, send: () => json(200, sendResponse()) })
     fireEvent.click(await screen.findByRole('button', { name: 'Send options' }))
-    expect(await screen.findByRole('menuitemradio', { name: 'Current session' })).toHaveAttribute('aria-disabled', 'true')
+    expect(await screen.findByRole('menuitemradio', { name: /^Current session/ })).toHaveAttribute('aria-disabled', 'true')
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
     await confirmSend()
-    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: false }))
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes', dispatch: false }))
     expect(within(await screen.findByLabelText('Feedback pending')).getByRole('link', { name: 'Open in Claude Desktop' })).toBeInTheDocument()
   })
 
@@ -302,7 +369,7 @@ describe('SubmitPage', () => {
     }
     const api = renderSubmit(withComment(), { detail, send: () => json(200, sendResponse({ run: run() })) })
     await confirmSend()
-    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'undecided', dispatch: true }))
+    await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes', dispatch: true }))
   })
 
   it('restores the pending panel in new mode from the URL', async () => {

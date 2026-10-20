@@ -3,6 +3,7 @@ import type { Comment, CommentTargetKind } from '../schemas/review.ts'
 import type { SentSnapshot } from '../schemas/sent.ts'
 import { formatLineAnchor } from './line-anchor.ts'
 import { anchorExcerpt, filePatchFor, parsePatchLines, type PatchLine } from './patch-lines.ts'
+import { renderPrCommentsMarkdown, renderPrRepliesMarkdown, type PrCommentsMarkdownInput } from './pr-comments-markdown.ts'
 
 const REQUIRED_RESPONSE =
   'Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. ' +
@@ -20,6 +21,8 @@ export interface SentMarkdownContext {
   spec?: readonly SpecItem[]
   /** The full diff at send time (the `.patch` next to the snapshot): line comments quote the lines around their anchor from it. */
   patch?: string
+  /** The synced GitHub PR comments; the open ones get their own section (never counted as the reviewer's comments). */
+  prComments?: PrCommentsMarkdownInput
 }
 
 function decisionLabel(decision: SentSnapshot['decision']): string {
@@ -153,6 +156,11 @@ export function renderSentMarkdown(sent: SentSnapshot, ctx: SentMarkdownContext)
   if (spec !== null) sections.push(spec)
   const extras = artifactSection('## Extras', sent.comments, 'extra', (ctx.extras ?? []).map((item) => ({ path: item.path, label: item.title })))
   if (extras !== null) sections.push(extras)
+
+  const prSection = ctx.prComments === undefined ? null : renderPrCommentsMarkdown(ctx.prComments)
+  if (prSection !== null) sections.push(prSection)
+  const prReplies = renderPrRepliesMarkdown(sent.sessionId, sent.prReplies)
+  if (prReplies !== null) sections.push(prReplies)
 
   sections.push(
     ['## Required response', REQUIRED_RESPONSE.replaceAll('<id>', sent.sessionId).replaceAll('<patch>', sent.patchPath)].join('\n'),

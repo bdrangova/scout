@@ -1,0 +1,46 @@
+/* Submit */
+.stack{display:flex;flex-direction:column;gap:18px;min-width:0}
+.fb{display:flex;flex-direction:column;gap:8px}
+.fb .textarea{min-height:92px}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.opts .opt{text-align:left;align-items:flex-start;color:var(--text);font:inherit}
+.opts .opt .ot{display:flex;flex-direction:column;gap:3px;min-width:0}
+.opts .opt.ok .t{color:var(--green)}
+.opts .opt.err .t{color:var(--red)}
+.opt.ok{--n-bg:var(--ok-bg);--n-bd:var(--ok-bd)}
+.opt.warn{--n-bg:var(--warn-bg);--n-bd:var(--warn-bd)}
+.opt.err{--n-bg:var(--err-bg);--n-bd:var(--err-bd)}
+.opt.sel .d{color:var(--text)}
+.oc{display:flex;flex-direction:column;gap:12px}
+.oc .grp{display:flex;flex-direction:column;gap:8px}
+.oc .grp h3{margin:0}
+.oc .item{display:flex;flex-direction:column;gap:8px}
+.oc .item>.link{font-size:13px;align-self:flex-start}
+.cmtl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.cmt .av{width:26px;height:26px;font-size:9px}
+.cmt p{margin:0}
+.cmt .meta2 .acts{gap:2px;margin-right:-6px}
+.cmt .meta2 .btn.sq.sm{width:28px;height:28px;border-radius:8px;color:var(--text)}
+.cmt .meta2 .btn.sq.sm svg{width:14px;height:14px}
+.cmt .meta2 .when{display:inline-flex;align-items:center;gap:4px}
+.cmt .meta2 .when svg{width:12px;height:12px}
+.hintline{display:flex;align-items:center;gap:6px}
+.hintline svg{width:14px;height:14px;color:var(--green)}
+.eyebrow{display:flex;align-items:center;gap:6px}
+.eyebrow svg{width:13px;height:13px}
+.panel-h .tag svg{width:12px;height:12px}
+.panel>.resolved{gap:4px}
+.opt .t{display:flex;align-items:center;gap:6px}
+.opt .t svg{width:15px;height:15px;stroke-width:2.75}
+.oc+.resolved{width:100%}
+.panel>.resolved{border-bottom:0}
+
+/* action bar: pinned to the bottom of the artboard by margin-top:auto (static, so full-page captures place it correctly) */
+.sendbar{margin-top:auto;display:flex;justify-content:flex-end;padding:12px 24px;background:var(--paper-2);border-top:1.5px solid var(--line)}
+.sendbar .btn.split{cursor:pointer}
+.sendbar .btn.split>span{cursor:pointer}
+.sendbar .btn.split>span:hover{background:var(--pink);color:var(--hdr-ink)}
+.sendbar .btn.split:hover{background:var(--yellow)}
+/* NB: the shared .cols.side collides with the sidebar's .side class, so Submit uses its own two-column grid */
+.cols.sub{grid-template-columns:minmax(0,1fr) 400px}
+@media (max-width:900px){.cols.sub{grid-template-columns:minmax(0,1fr)}}

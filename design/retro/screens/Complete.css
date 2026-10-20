@@ -1,0 +1,16 @@
+/* Complete: blurred deck + modal */
+.veil{position:relative;flex:1;min-width:0;min-height:0;overflow:hidden;background:var(--paper)}
+.backdrop{position:absolute;inset:-14px;display:flex;filter:blur(7px);transform:scale(1.02);pointer-events:none;user-select:none}
+.backdrop .stage{flex:1}
+.scrim{position:absolute;inset:0;background:color-mix(in srgb,var(--sunken) 55%,transparent)}
+.modal-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal{width:100%;max-width:460px;box-shadow:6px 6px 0 var(--sh)}
+.modal .panel-h{justify-content:center;min-height:52px}
+.modal .panel-h h2{font-size:18px}
+.modal-b{display:flex;flex-direction:column;align-items:center;gap:20px;padding:26px 28px 22px}
+.modal-acts{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px}
+.modal-acts .btn{height:40px;padding:0 16px}
+.modal-acts .ct{font-size:12px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.modal-acts .pri .ct{color:inherit}
+.back{color:var(--muted)}
+.back:hover{color:var(--text)}

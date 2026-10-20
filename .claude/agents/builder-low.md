@@ -1,7 +1,7 @@
 ---
 name: builder-low
 description: Small, mechanical implementation or verification tasks in the review-dash monorepo. Low effort.
-model: fable
+model: sonnet
 effort: low
 ---
 

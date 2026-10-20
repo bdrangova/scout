@@ -1,7 +1,7 @@
 ---
 name: builder
 description: Implements a well-specified chunk of the review-dash monorepo (shared, server, web, cli). Medium effort.
-model: fable
+model: sonnet
 effort: medium
 ---
 

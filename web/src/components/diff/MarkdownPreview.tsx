@@ -3,7 +3,7 @@ import { TriangleAlert } from 'lucide-react'
 import { Markdown } from '@/components/common/Markdown'
 import { Button } from '@/components/ui/button'
 import { useFileContents } from '@/lib/hooks'
-import { Notice } from './LargeFileGate'
+import { BodyNotice } from './LargeFileGate'
 
 interface MarkdownPreviewProps {
   file: TreeFile
@@ -21,11 +21,11 @@ export function MarkdownPreview({ file, sessionId, scope = null }: MarkdownPrevi
   const { content, loading, error, reload } = useFileContents(sessionId, file.path, side, { fingerprint: file.fingerprint, scope })
 
   return (
-    <div className="flex flex-col">
-      <p className="border-b bg-muted/30 px-6 py-1.5 text-xs text-muted-foreground">
+    <div className="flex flex-col bg-surface">
+      <p className="border-b-fine border-line bg-paper-2 px-5 py-1.5 text-xs font-semibold text-ink-muted">
         {side === 'before' ? 'Rendered before side (deleted)' : 'Rendered after side'}
         {' · '}
-        <span className="font-mono">{file.path}</span>
+        <span className="font-mono font-medium">{file.path}</span>
       </p>
       <PreviewBody content={content} loading={loading} error={error} reload={reload} />
     </div>
@@ -42,28 +42,29 @@ interface PreviewBodyProps {
 function PreviewBody({ content, loading, error, reload }: PreviewBodyProps) {
   if (error) {
     return (
-      <Notice
-        icon={<TriangleAlert className="size-5" aria-hidden />}
+      <BodyNotice
+        tone="err"
+        icon={TriangleAlert}
         title="Couldn't load this preview"
         action={
-          <Button variant="outline" size="sm" onClick={reload}>
+          <Button size="sm" onClick={reload}>
             Retry
           </Button>
         }
       >
         {error.message}
-      </Notice>
+      </BodyNotice>
     )
   }
   if (loading || content === null) {
     return (
-      <p className="px-6 py-8 text-sm text-muted-foreground" aria-busy="true">
+      <p className="px-6 py-8 text-sm text-ink-muted" aria-busy="true">
         Loading preview…
       </p>
     )
   }
   if (content.trim() === '') {
-    return <Notice title="This file is empty." />
+    return <BodyNotice title="This file is empty." />
   }
   return <Markdown source={content} className="px-6 py-5" />
 }

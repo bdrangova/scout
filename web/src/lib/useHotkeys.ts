@@ -9,6 +9,7 @@ export type Hotkey =
   | 'approve'
   | 'reject'
   | 'comment'
+  | 'undo'
   | 'submitComment'
   | 'cancel'
   | 'toggleMode'
@@ -24,18 +25,25 @@ export type Hotkey =
 
 export type HotkeyHandlers = Partial<Record<Hotkey, () => void>>
 
-type KeyLike = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 'target' | 'defaultPrevented'>
+type KeyLike = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 'target' | 'defaultPrevented'> & {
+  shiftKey?: boolean
+  /** `event.composedPath`: lets a field inside a shadow root count as the typing target. */
+  composedPath?: () => EventTarget[]
+}
 
 /**
  * The hotkey a key press maps to, or null. Ignored while typing in inputs, textareas and
- * contenteditable elements, except ⌘/Ctrl+Enter.
+ * contenteditable elements (also inside shadow roots), except ⌘/Ctrl+Enter. ⌘/Ctrl+Z is the undo
+ * shortcut and, like the single keys, leaves a text field's own undo alone.
  */
 export function hotkeyFor(event: KeyLike): Hotkey | null {
   if (event.defaultPrevented) return null
   const command = event.metaKey || event.ctrlKey
   if (command && event.key === 'Enter') return 'submitComment'
+  const typing = isTypingTarget(event.target, event.composedPath?.())
+  if (command && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'z') return typing ? null : 'undo'
   if (command || event.altKey) return null
-  if (isTypingTarget(event.target)) return null
+  if (typing) return null
   switch (event.key) {
     case 'ArrowLeft':
       return 'prev'
@@ -56,6 +64,9 @@ export function hotkeyFor(event: KeyLike): Hotkey | null {
     case 'c':
     case 'C':
       return 'comment'
+    case 'z':
+    case 'Z':
+      return 'undo'
     case 'Escape':
       return 'cancel'
     case 's':

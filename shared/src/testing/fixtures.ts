@@ -1,5 +1,6 @@
 import type { EvidenceItem, ExtraItem, SpecItem } from '../schemas/artifacts.ts'
 import type { Manifest } from '../schemas/manifest.ts'
+import type { PrComment, PrComments, PrIdentity, PrResolution } from '../schemas/pr-comments.ts'
 import type { Resolution, Resolutions } from '../schemas/resolutions.ts'
 import type { Comment, Review } from '../schemas/review.ts'
 import { emptyReview } from '../schemas/review.ts'
@@ -151,4 +152,59 @@ export function makeResolution(overrides: Partial<Resolution> = {}): Resolution 
 
 export function makeResolutions(comments: Record<string, Resolution>, updatedAt: string = T1): Resolutions {
   return { schemaVersion: SCHEMA_VERSION, sessionId: SESSION_ID, updatedAt, comments }
+}
+
+export function makePrIdentity(overrides: Partial<PrIdentity> = {}): PrIdentity {
+  return {
+    repo: 'acme/app',
+    number: 482,
+    url: 'https://github.com/acme/app/pull/482',
+    title: 'Add trial bar',
+    state: 'open',
+    draft: false,
+    baseRef: 'main',
+    headRef: 'feature/trial-bar',
+    headSha: HEAD_SHA,
+    ...overrides,
+  }
+}
+
+/** A root line comment on `src/a.tsx:12` (right side) by a human; override `id`/`githubId` together. */
+export function makePrComment(overrides: Partial<PrComment> = {}): PrComment {
+  const githubId = overrides.githubId ?? 1001
+  return {
+    id: `rc${githubId}`,
+    githubId,
+    nodeId: null,
+    url: `https://github.com/acme/app/pull/482#discussion_r${githubId}`,
+    prNumber: 482,
+    kind: 'line',
+    author: { login: 'maya', isBot: false, kind: 'human' },
+    authorAssociation: 'MEMBER',
+    body: 'nit: rename this.',
+    reviewState: null,
+    path: 'src/a.tsx',
+    line: 12,
+    startLine: null,
+    side: 'new',
+    originalLine: 12,
+    commitSha: HEAD_SHA,
+    diffHunk: null,
+    outdated: false,
+    resolvedOnGitHub: false,
+    threadId: `rc${githubId}`,
+    inReplyTo: null,
+    createdAt: T1,
+    updatedAt: T1,
+    removedAt: null,
+    ...overrides,
+  }
+}
+
+export function makePrComments(comments: PrComment[] = [makePrComment()], overrides: Partial<PrComments> = {}): PrComments {
+  return { schemaVersion: SCHEMA_VERSION, sessionId: SESSION_ID, fetchedAt: T2, pr: makePrIdentity(), comments, ...overrides }
+}
+
+export function makePrResolution(overrides: Partial<PrResolution> = {}): PrResolution {
+  return { status: 'addressed', note: 'Renamed in src/a.tsx:12.', commitSha: null, files: ['src/a.tsx'], at: T3, sentAt: null, ...overrides }
 }

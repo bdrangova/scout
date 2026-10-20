@@ -1,0 +1,100 @@
+  [[HEADER:spec]]
+  [[BAR:slim]]
+  <main class="page">
+    <div class="content" style="--cw:1350px">
+      <header class="page-h">
+        <h1>Spec</h1>
+        <span class="lede src-list" aria-label="Jira ticket · plan.md · exported artifact"><span class="kicon" title="Jira ticket">[[i:clipboard-list]]</span><span class="kicon" title="plan.md">[[i:file-text]]<span class="mono">plan.md</span></span><span class="kicon" title="Exported artifact">[[i:package]]</span></span>
+      </header>
+      <div class="cols two">
+
+        <article class="panel" aria-label="Jira spec">
+          <header class="panel-h">
+            <button class="icon-btn tog" type="button" aria-expanded="true" aria-controls="spec-jira" aria-label="Collapse QI-15472: Trial bar">[[i:chevron-down]]</button>
+            <span class="tag ico" title="Jira ticket" aria-label="Jira ticket">[[i:clipboard-list]]</span>
+            <h2><span class="mono key">QI-15472</span> Trial bar</h2>
+            <a class="btn sq sm push" href="#" target="_blank" rel="noreferrer noopener" title="Open in Jira" aria-label="Open in Jira">[[i:external-link]]</a>
+          </header>
+          <div id="spec-jira" class="panel-b">
+            <div class="prose">
+              <h1>QI-15472: Trial bar</h1>
+              <ul>
+                <li><strong>Status:</strong> In Review</li>
+                <li><strong>Assignee:</strong> Alex Rivera</li>
+                <li><strong>Type:</strong> Story</li>
+                <li><strong>Priority:</strong> Medium</li>
+                <li><strong>Link:</strong> <a href="#" target="_blank" rel="noopener noreferrer">https://example.atlassian.net/browse/QI-15472</a></li>
+              </ul>
+              <h2>Description</h2>
+              <p>Users on a free trial have no visible reminder of how many days are left, so many are surprised when the workspace becomes read-only. Add a persistent trial bar above the application header that shows the remaining days, turns amber when the trial is about to expire, and links straight to the upgrade flow. The bar must not appear for paid plans and must be dismissible for the rest of the browser session.</p>
+              <h2>Acceptance criteria</h2>
+              <ol>
+                <li>On the free plan a trial bar shows "Your trial ends in N days" (or "today" when N = 0) above the header.</li>
+                <li>The bar turns amber when 3 or fewer days remain and stays neutral otherwise.</li>
+                <li>Clicking "Upgrade" opens the upgrade flow; the chosen plan is confirmed without a full page reload.</li>
+                <li>The bar is hidden for paid plans and stays dismissed for the rest of the session after the user closes it.</li>
+              </ol>
+            </div>
+          </div>
+          <footer class="panel-f">
+            <button class="compose" type="button" aria-label="Comment on QI-15472: Trial bar">[[i:message-square]]<span class="ph">Leave a comment…</span><kbd>C</kbd></button>
+          </footer>
+        </article>
+
+        <div class="stack">
+          <article class="panel" aria-label="Markdown spec">
+            <header class="panel-h">
+              <button class="icon-btn tog" type="button" aria-expanded="true" aria-controls="spec-plan" aria-label="Collapse Implementation plan">[[i:chevron-down]]</button>
+              <span class="tag ico" title="Markdown" aria-label="Markdown">[[i:file-text]]</span>
+              <h2><span class="mono">plan.md</span></h2>
+              <span class="sub">Implementation plan</span>
+              <span class="push hdr-r">
+                <span class="tag ico pill" title="Local file: /Users/alex/.claude/plans/trial-bar.md" aria-label="Local file">[[i:hard-drive]]</span>
+                <button class="btn sq sm" type="button" title="Copy path" aria-label="Copy path">[[i:copy]]</button>
+              </span>
+            </header>
+            <div id="spec-plan" class="panel-b">
+              <div class="prose">
+                <h1>Implementation plan: trial bar (QI-15472)</h1>
+                <h2>Approach</h2>
+                <p>Render the trial bar from <code>app.ts</code> next to the existing notice component instead of adding a new layout layer. The trial state comes from the <code>/me</code> response, so no new endpoint is needed; the warning threshold and the upgrade URL live in <code>config.ts</code> so support can tune them.</p>
+                <h2>Steps</h2>
+                <ol>
+                  <li>Add <code>trial</code> (days left, plan) to the app state and read it during bootstrap.</li>
+                  <li>Create <code>components/TrialBar.tsx</code> with the neutral and amber variants, plus <code>styles/trial-bar.css</code>.</li>
+                  <li>Rename <code>Banner</code> to <code>Notice</code>: the old name clashes with the marketing banner and the trial bar.</li>
+                  <li>Remove <code>legacy/OldBanner.ts</code>; it has had no callers since the navigation rewrite.</li>
+                  <li>Wire the upgrade button to the billing flow and confirm the chosen plan inline.</li>
+                  <li>Cover the day formatting and the amber threshold with unit tests.</li>
+                </ol>
+                <h2>Out of scope</h2>
+                <ul>
+                  <li>Server-side trial extension.</li>
+                  <li>Emails about the trial ending.</li>
+                </ul>
+              </div>
+            </div>
+            <footer class="panel-f">
+              <button class="compose" type="button" aria-label="Comment on Implementation plan">[[i:message-square]]<span class="ph">Leave a comment…</span><kbd>C</kbd></button>
+            </footer>
+          </article>
+
+          <article class="panel" aria-label="Artifact spec">
+            <header class="panel-h">
+              <button class="icon-btn tog" type="button" aria-expanded="true" aria-controls="spec-art" aria-label="Collapse Trial bar design">[[i:chevron-down]]</button>
+              <span class="tag ico" title="Artifact" aria-label="Artifact">[[i:package]]</span>
+              <h2>Trial bar design</h2>
+              <a class="btn sq sm push" href="#" target="_blank" rel="noreferrer noopener" title="Open on claude.ai" aria-label="Open on claude.ai">[[i:external-link]]</a>
+            </header>
+            <div id="spec-art" class="panel-b open-row">
+              <button class="btn sq sm" type="button" title="Open in new tab" aria-label="Open in new tab">[[i:external-link]]</button>
+            </div>
+            <footer class="panel-f">
+              <button class="compose" type="button" aria-label="Comment on Trial bar design">[[i:message-square]]<span class="ph">Leave a comment…</span><kbd>C</kbd></button>
+            </footer>
+          </article>
+        </div>
+
+      </div>
+    </div>
+  </main>

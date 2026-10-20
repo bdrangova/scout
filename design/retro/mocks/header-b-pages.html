@@ -1,0 +1,1198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Header B on every page</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* ===== tokens: copied from web/src/index.css (:root = light, .dark = dark) ===== */
+.th-light {
+  --paper: #FDF3EC; --paper-2: #F1E9DB; --surface: #F7F1E6; --sunken: #EBE2D2;
+  --ink: #2B2A33; --ink-muted: #5E5A58;
+  --line: rgba(43, 42, 51, .34); --fill-line: rgba(43, 42, 51, .36); --sh: rgba(43, 42, 51, .2); --hover: rgba(43, 42, 51, .08);
+  --hdr-bg: #F6B21E; --hdr-ink: #2B2A33; --hdr-chip: #F7F1E6;
+  --yellow: #F6B21E; --on-yellow: #2B2A33; --blue: #A9B7E0; --on-blue: #2B2A33; --pink: #F58FAB; --cyan: #2FB8B0;
+  --red: #B8341F; --red-solid: #CF3F2B; --coral: #EE5A45; --on-red: #FFFFFF; --green: #2A7A58; --mint: #BFE3B4;
+  --warn-bg: #FCEBC3; --warn-bd: #9A6A00; --warn-ic: #F6B21E;
+  --info-bg: #E2E8F8; --info-bd: #4B63B0; --info-ic: #A9B7E0;
+  --ok-bg: #DCEFD9; --ok-bd: #2A7A58; --ok-ic: #8CD3A0;
+  --err-bg: #FBDDD6; --err-bd: #B8341F; --err-ic: #EE5A45;
+  --focus: #2F5DA8;
+  --diff-add: #DCEBD6; --diff-add-gutter: #BBD9B3; --diff-del: #FBDDD6; --code-bg: #F7F1E6;
+  --tk-k: #A63A6E; --tk-s: #276B44; --tk-f: #2F5DA8; --tk-t: #1E7070; --tk-n: #9A4513; --tk-p: #645F5A; --tk-i: #2B2A33;
+  --st-a: #2A7A58; --st-m: #D9930D; --st-r: #4B63B0; --st-d: #B8341F;
+  --ft-ts: #7C9BE8; --ft-js: #F4D35E; --ft-react: #4FC3D9; --ft-yaml: #F29B5B; --ft-json: #8ACB8F; --ft-css: #EE8FB6; --ft-other: #D9CDB5;
+  --scrim: rgba(43, 42, 51, .34);
+}
+.th-dark {
+  --paper: #23212B; --paper-2: #2A2833; --surface: #2E2B38; --sunken: #1D1B24;
+  --ink: #F3ECDD; --ink-muted: #B3ADC0;
+  --line: rgba(176, 168, 214, .58); --fill-line: rgba(35, 33, 43, .42); --sh: rgba(0, 0, 0, .38); --hover: rgba(243, 236, 221, .08);
+  --hdr-bg: #8DA5E8; --hdr-ink: #23212B; --hdr-chip: #F3ECDD;
+  --yellow: #86A3EC; --on-yellow: #23212B; --blue: #CBD5F3; --on-blue: #23212B; --pink: #F2A0B8; --cyan: #4DBDB6;
+  --red: #F58B79; --red-solid: #F07A67; --coral: #F07A67; --on-red: #23212B; --green: #8CD3A0; --mint: #8CD3A0;
+  --warn-bg: rgba(134, 163, 236, .16); --warn-bd: #86A3EC; --warn-ic: #86A3EC;
+  --info-bg: rgba(169, 183, 224, .15); --info-bd: #A9B7E0; --info-ic: #A9B7E0;
+  --ok-bg: rgba(140, 211, 160, .15); --ok-bd: #8CD3A0; --ok-ic: #8CD3A0;
+  --err-bg: rgba(240, 122, 103, .15); --err-bd: #F07A67; --err-ic: #F07A67;
+  --focus: #A9B7E0;
+  --diff-add: rgba(140, 211, 160, .12); --diff-add-gutter: rgba(140, 211, 160, .26); --diff-del: rgba(240, 122, 103, .12); --code-bg: #26242F;
+  --tk-k: #F2A0C4; --tk-s: #9ADFAE; --tk-f: #9DB6F2; --tk-t: #6FD2CC; --tk-n: #F2B27A; --tk-p: #A39DB5; --tk-i: #F3ECDD;
+  --st-a: #8CD3A0; --st-m: #E8A27C; --st-r: #9DB6F2; --st-d: #F58B79;
+  --ft-ts: #8FA9F0; --ft-js: #E8C95A; --ft-react: #5CCBD6; --ft-yaml: #F2A06A; --ft-json: #8FD39A; --ft-css: #F2A0C4; --ft-other: #B9B2C6;
+  --scrim: rgba(0, 0, 0, .5);
+}
+
+/* ===== frame (a themed screen) ===== */
+.fr { --header-control-h: 34px; width: 1440px; height: 900px; position: relative; overflow: hidden; display: flex; flex-direction: column;
+  background: var(--paper); color: var(--ink); font: 14px/1.4 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.fr.f800 { width: 800px; }
+.fr *, .fr *::before, .fr *::after { box-sizing: border-box; border-color: var(--line); }
+.fr .ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+.fr .mono, .fr .mono * { font-family: 'Geist Mono', ui-monospace, Menlo, monospace; }
+.fr .sp { flex: 1; min-width: 0; }
+.fr .mut { color: var(--ink-muted); }
+.fr .trunc { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr .dim { color: var(--ink-muted); }
+.fr strong, .fr b { font-weight: 700; }
+
+/* header band */
+.hdr { display: flex; align-items: center; gap: 12px; padding: 0 20px; background: var(--hdr-bg); color: var(--hdr-ink); border-bottom: 1.5px solid var(--line);
+  --line: color-mix(in srgb, var(--hdr-ink) 34%, transparent); --sh: color-mix(in srgb, var(--hdr-ink) 20%, transparent); flex: none; position: relative; z-index: 5; }
+.hdr.top { align-items: flex-start; }
+.hb { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: none; height: 34px; min-width: 34px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--hdr-chip); color: var(--hdr-ink);
+  box-shadow: 1.5px 1.5px 0 var(--sh); font-weight: 700; font-size: 13px; white-space: nowrap; }
+.hb.lab { padding: 0 12px; }
+.tk { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 34px; padding: 0 11px; border: 1.5px solid var(--fill-line); border-radius: 10px; background: var(--blue); color: var(--on-blue);
+  font: 700 13px 'Geist Mono', monospace; box-shadow: 1.5px 1.5px 0 var(--sh); letter-spacing: .01em; }
+.tk .ic { width: 13px; height: 13px; stroke-width: 2.5; }
+.tk.sm { height: 28px; padding: 0 9px; font-size: 12px; border-radius: 9px; }
+.tk.more { background: var(--hdr-chip); color: var(--hdr-ink); padding: 0 8px; border-color: var(--line); }
+.tks { display: flex; gap: 8px; min-width: 0; flex: none; }
+.tks.tkpeek { max-width: 190px; overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 78%, transparent); mask-image: linear-gradient(to right, #000 78%, transparent); }
+.ttl { font-weight: 700; font-size: 17px; line-height: 22px; letter-spacing: -.005em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.idc { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 280px; padding-top: 0; }
+.idl { display: flex; align-items: center; gap: 6px; font: 500 12px/18px 'Geist Mono', monospace; min-width: 0; }
+.rp { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex: none; }
+.tag { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--paper-2); color: var(--ink);
+  font-size: 11.5px; font-weight: 700; white-space: nowrap; min-width: 0; }
+.tag .ic { width: 12px; height: 12px; stroke-width: 2.5; }
+.tag.mono { font-family: 'Geist Mono', monospace; font-weight: 500; letter-spacing: .02em; }
+.tag.sm { height: 20px; padding: 0 7px; font-size: 11px; }
+.tag.mint { background: var(--mint); color: var(--hdr-ink); border-color: var(--fill-line); }
+.tag.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 50%, transparent); }
+.tag.info { background: var(--info-bg); border-color: color-mix(in srgb, var(--info-bd) 50%, transparent); }
+.tag.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 50%, transparent); }
+.tag.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-bd) 50%, transparent); }
+.arr { color: var(--ink-muted); }
+.hdr .arr { color: color-mix(in srgb, var(--hdr-ink) 70%, transparent); width: 12px; height: 12px; }
+.sep { width: 1.5px; height: 24px; background: var(--line); border-radius: 2px; flex: none; }
+
+/* arrow tabs: verbatim from index.css (.step-tab) */
+.tabs { display: flex; align-items: stretch; flex: none; filter: drop-shadow(2px 2px 0 var(--sh)); }
+.step-tab { --pt: 12px; --h: 34px; --b: 1.5px; --k: .706; --d: 1.84px; --bk: calc(var(--b) * var(--k));
+  position: relative; display: flex; height: var(--h); margin-left: calc(var(--pt) * -1); background: var(--line); clip-path: var(--outer); font-size: 13px; font-weight: 700; white-space: nowrap; color: var(--ink);
+  --outer: polygon(0 0, calc(100% - var(--pt)) 0, 100% 50%, calc(100% - var(--pt)) 100%, 0 100%, var(--pt) 50%);
+  --inner: polygon(calc(var(--bk) + var(--d)) 0, calc(100% - var(--pt) + var(--bk)) 0, 100% 50%, calc(100% - var(--pt) + var(--bk)) 100%, calc(var(--bk) + var(--d)) 100%, calc(var(--pt) + var(--d)) 50%); }
+.step-tab-in { display: flex; align-items: center; flex: 1; margin: var(--b) 0; padding: 0 14px 0 calc(var(--pt) + 10px); clip-path: var(--inner); background: var(--surface); }
+.step-tab-c { display: flex; align-items: center; gap: 6px; }
+.step-tab .ic { width: 15px; height: 15px; }
+.step-tab .tc { font-style: normal; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.step-tab.on { color: var(--hdr-bg); }
+.step-tab.on .step-tab-in { background: var(--hdr-ink); }
+.step-tab.on .tc { color: inherit; opacity: .8; }
+.step-tab.ready .step-tab-in { background: var(--green); }
+.step-tab.ready { color: var(--paper); }
+.step-tab:first-child { margin-left: 0;
+  --outer: polygon(10px 0, calc(100% - var(--pt)) 0, 100% 50%, calc(100% - var(--pt)) 100%, 10px 100%, 6.17px calc(100% - .76px), 2.93px calc(100% - 2.93px), .76px calc(100% - 6.17px), 0 calc(100% - 10px), 0 10px, .76px 6.17px, 2.93px 2.93px, 6.17px .76px);
+  --inner: polygon(10px 0, calc(100% - var(--pt) + var(--bk)) 0, 100% 50%, calc(100% - var(--pt) + var(--bk)) 100%, 10px 100%, 6.73px calc(100% - .65px), 3.99px calc(100% - 2.49px), 2.15px calc(100% - 5.24px), 1.5px calc(100% - 8.5px), 1.5px 8.5px, 2.15px 5.24px, 3.99px 2.49px, 6.73px .65px); }
+.step-tab:first-child .step-tab-in { padding-left: 13px; }
+.step-tab:last-child {
+  --outer: polygon(0 0, calc(100% - var(--pt) - 1.5px) 0, calc(100% - var(--pt) + 1.4px) 2px, calc(100% - 3.26px) calc(50% - 4.6px), calc(100% - 2.17px) calc(50% - 2.4px), calc(100% - 1.8px) 50%, calc(100% - 2.17px) calc(50% + 2.4px), calc(100% - 3.26px) calc(50% + 4.6px), calc(100% - var(--pt) + 1.4px) calc(100% - 2px), calc(100% - var(--pt) - 1.5px) 100%, 0 100%, var(--pt) 50%);
+  --inner: polygon(calc(var(--bk) + var(--d)) 0, calc(100% - var(--pt) + var(--bk) - var(--d) - 1.5px) 0, calc(100% - var(--pt) + var(--bk) - var(--d) + 1.4px) 2px, calc(100% - 4.48px) calc(50% - 3.73px), calc(100% - 3.6px) calc(50% - 1.95px), calc(100% - 3.3px) 50%, calc(100% - 3.6px) calc(50% + 1.95px), calc(100% - 4.48px) calc(50% + 3.73px), calc(100% - var(--pt) + var(--bk) - var(--d) + 1.4px) calc(100% - 2px), calc(100% - var(--pt) + var(--bk) - var(--d) - 1.5px) 100%, calc(var(--bk) + var(--d)) 100%, calc(var(--pt) + var(--d)) 50%); }
+.tabs.icons .step-tab:not(.on) .tl { display: none; }
+.tabs.icons .step-tab:not(.on) .step-tab-in { padding-right: 12px; }
+
+/* theme toggle */
+.theme { display: inline-flex; gap: 2px; padding: 2px; flex: none; border: 1.5px solid var(--line); border-radius: 10px; background: var(--hdr-chip); box-shadow: 1.5px 1.5px 0 var(--sh); height: 34px; }
+.theme i { display: grid; place-items: center; width: 28px; border-radius: 7px; color: var(--hdr-ink); font-style: normal; }
+.theme i.on { background: var(--hdr-ink); color: var(--hdr-chip); }
+
+/* buttons / seg / notice / progress / badge */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: none; height: 32px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink);
+  font-weight: 700; font-size: 13px; white-space: nowrap; box-shadow: 2px 2px 0 var(--sh); }
+.btn.sq { width: 32px; padding: 0; }
+.btn.lg { height: 40px; border-radius: 12px; padding: 0 18px; font-size: 14px; }
+.btn.pri { background: var(--yellow); color: var(--on-yellow); border-color: var(--fill-line); }
+.btn.dis { opacity: .5; box-shadow: 2px 2px 0 var(--sh); }
+.btn.rej { color: var(--red); }
+.btn.ghost { border-color: transparent; background: transparent; box-shadow: none; }
+.btn.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 60%, transparent); }
+.seg { color: var(--ink); display: inline-flex; gap: 2px; flex: none; padding: 2px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); }
+.seg > b { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 6px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.seg > b .ic { width: 15px; height: 15px; }
+.seg > b.on { background: var(--ink); color: var(--paper); }
+.seg > b em { font-style: normal; font-weight: 600; font-variant-numeric: tabular-nums; opacity: .75; }
+.seg.scope > b.mono, .seg.scope > b .mono { font-family: 'Geist Mono', monospace; font-weight: 600; font-size: 12px; }
+.sdot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-muted); flex: none; }
+.sdot.un { background: transparent; border: 1.5px dashed var(--ink-muted); }
+.seg > b.on .sdot { background: var(--paper); border-color: var(--paper); }
+.seg > b.on .sdot.un { background: transparent; }
+.nt { display: inline-flex; align-items: center; gap: 8px; flex: none; min-height: 30px; padding: 3px 12px 3px 4px; border: 1px solid; border-radius: 8px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.nt i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--n); color: var(--hdr-ink); flex: none; }
+.nt i .ic { width: 12px; height: 12px; stroke-width: 3; }
+.nt.flat { background: var(--paper-2); border-color: var(--line); --n: var(--sunken); }
+.nt.flat i { color: var(--ink); }
+.nt.info { background: var(--info-bg); border-color: color-mix(in srgb, var(--info-bd) 50%, transparent); --n: var(--info-ic); }
+.nt.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok-bd) 50%, transparent); --n: var(--ok-ic); }
+.nt.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 50%, transparent); --n: var(--warn-ic); }
+.nt.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err-bd) 50%, transparent); --n: var(--err-ic); }
+.nt.sm { min-height: 26px; font-size: 12px; padding-right: 10px; }
+.nt.sm i { width: 18px; height: 18px; } .nt.sm i .ic { width: 10px; height: 10px; }
+.prog { position: relative; display: block; flex: none; width: 110px; height: 14px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); overflow: hidden; }
+.prog > i { display: block; height: 100%; background: var(--ink); }
+.vbar { display: flex; flex: none; height: 14px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); overflow: hidden; }
+.vbar > i { display: block; height: 100%; }
+.vbar > i + i { border-left: 1.5px solid var(--paper-2); }
+.vbar .a { background: var(--green); } .vbar .r { background: var(--red-solid); } .vbar .c { background: var(--st-m); }
+.bd { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 7px; border-radius: 999px; background: var(--pink); color: var(--hdr-ink); border: 1.5px solid var(--fill-line); font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bd.ink { background: var(--ink); color: var(--paper); border-color: transparent; }
+.stat { font: 700 13px 'Geist Mono', monospace; display: inline-flex; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.stat .a { color: var(--green); } .stat .d { color: var(--red); }
+.nm { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: var(--ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nm strong { color: var(--ink); }
+.vc { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vc .ic { width: 14px; height: 14px; stroke-width: 3; }
+.vc.a { color: var(--green); } .vc.r { color: var(--red); } .vc.c { color: var(--st-m); } .vc.n { color: var(--ink-muted); }
+.kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--paper); font: 600 11px 'Space Grotesk', sans-serif; box-shadow: 1px 1px 0 var(--sh); color: var(--ink); }
+.eb { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-muted); }
+
+/* status bar / today */
+.status { display: flex; align-items: center; gap: 16px; height: 54px; padding: 0 20px; background: var(--paper); border-bottom: 1.5px solid var(--line); font-size: 13px; flex: none; }
+.body { flex: 1; min-height: 0; display: flex; position: relative; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.strip { height: 79px; flex: none; display: flex; align-items: flex-start; padding: 7px 20px 0 22px; background: var(--paper-2); border-bottom: 1.5px solid var(--line); overflow: hidden; }
+.tn { position: relative; display: flex; flex-direction: column; align-items: center; width: 118px; flex: none; }
+.tn .nd { position: relative; z-index: 1; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--paper-2); }
+.tn .nd.ring { background: var(--ink); color: var(--paper); border: 1.5px solid var(--ink); box-shadow: 0 0 0 2px var(--paper-2), 0 0 0 3.5px var(--ink); }
+.tn .nd.ring .ic { width: 12px; height: 12px; }
+.tn .nd.dot::after { content: ''; width: 13px; height: 13px; border-radius: 50%; background: var(--ink-muted); border: 1.5px solid var(--ink-muted); }
+.tn .nd.dot.un::after { background: var(--paper-2); border: 1.5px dashed var(--ink-muted); }
+.tn::before { content: ''; position: absolute; top: 11px; left: -59px; width: 118px; border-top: 1.5px solid var(--line); }
+.tn.un::before { border-top-style: dashed; }
+.tn:first-child::before { display: none; }
+.tn .p { margin-top: 5px; font: 600 11.5px/14px 'Geist Mono', monospace; }
+.tn .s { font-size: 10.5px; line-height: 14px; color: var(--ink-muted); white-space: nowrap; }
+.tn.on .p { font-weight: 700; }
+
+/* sidebar */
+.side { flex: none; width: 272px; display: flex; flex-direction: column; min-height: 0; background: var(--paper-2); border-right: 1.5px solid var(--line); padding: 14px 10px 6px; overflow: hidden; }
+.side .sh { display: flex; align-items: center; gap: 8px; padding: 0 8px 10px; }
+.side .sh strong { font-size: 15px; }
+.ghost { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-style: normal; color: var(--ink); }
+.ghost .ic { width: 14px; height: 14px; }
+.filter { display: flex; align-items: center; gap: 8px; height: 36px; flex: none; margin: 0 0 10px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink-muted); font-size: 13.5px; }
+.scopebtn { display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; flex: none; margin: 0 0 10px; padding: 0 10px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 2px 2px 0 var(--sh); font-size: 13px; font-weight: 700; }
+.scopebtn .m { color: var(--ink-muted); font-weight: 600; font-size: 12px; white-space: nowrap; }
+.scopebtn .eb { font-size: 10px; letter-spacing: .08em; }
+.tree { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 0; }
+.tr { display: flex; align-items: center; gap: 7px; height: 32px; flex: none; padding: 0 8px; border: 1.5px solid transparent; border-radius: 9px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.tr .ic { width: 15px; height: 15px; color: var(--ink-muted); stroke-width: 2.25; }
+.tr.fo { font-weight: 700; }
+.tr .chev { width: 13px; height: 13px; }
+.tr .nmx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tr .cnt { font-size: 11.5px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.tr.file .nmx { font: 500 12.5px 'Geist Mono', monospace; }
+.tr.del .nmx { text-decoration: line-through; color: var(--ink-muted); }
+.tr.cur { background: var(--yellow); color: var(--on-yellow); border-color: var(--line); font-weight: 700; }
+.tr.cur .ic, .tr.cur .cnt { color: var(--on-yellow); }
+.ftd { width: 10px; height: 10px; border-radius: 50%; background: var(--ft); border: 1.5px solid var(--fill-line); flex: none; margin: 0 1px; }
+.tr.cur .ftd { box-shadow: 0 0 0 1.5px var(--on-yellow); }
+.tr .okc { color: var(--green); width: 14px; height: 14px; stroke-width: 3; }
+.tr .rjc { color: var(--red); width: 14px; height: 14px; stroke-width: 3; }
+.tr .cm { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; font-weight: 700; }
+.tr .cm .ic { width: 12px; height: 12px; color: inherit; }
+.ft-ts { --ft: var(--ft-ts); } .ft-js { --ft: var(--ft-js); } .ft-react { --ft: var(--ft-react); } .ft-yaml { --ft: var(--ft-yaml); } .ft-json { --ft: var(--ft-json); } .ft-css { --ft: var(--ft-css); } .ft-other { --ft: var(--ft-other); }
+
+/* deck */
+.main { flex: 1; min-height: 0; min-width: 0; position: relative; padding: 45px 0 var(--mb, 50px); display: flex; justify-content: center; }
+.deckw { position: relative; width: 980px; max-width: calc(100% - 188px); height: 100%; }
+.f800 .deckw { max-width: calc(100% - 188px); }
+.peek { position: absolute; height: 40px; border: 1.5px solid var(--line); border-radius: 14px 14px 0 0; }
+.peek.p1 { top: -13px; left: 16px; right: 16px; background: var(--ft-json); }
+.peek.p2 { top: -26px; left: 32px; right: 32px; background: var(--ft-other); }
+.card { position: relative; height: 100%; display: flex; flex-direction: column; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 6px 6px 0 var(--sh); overflow: hidden; }
+.chd { display: flex; align-items: flex-start; gap: 12px; flex: none; padding: 12px 16px; background: var(--ft); color: var(--hdr-ink); border-bottom: 1.5px solid var(--fill-line); }
+.chd .dir { font: 400 12px/16px 'Geist Mono', monospace; opacity: .9; }
+.chd .fn { font: 700 16px/22px 'Geist Mono', monospace; }
+.chd .tag { border-color: var(--fill-line); }
+.chd .seg { background: var(--surface); color: var(--ink); }
+.chd .pos { font-weight: 700; font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.code { flex: 1; min-height: 0; overflow: hidden; background: var(--code-bg); font: 13px/21px 'Geist Mono', monospace; padding-top: 0; }
+.ln { display: flex; height: 21px; white-space: pre; background: var(--diff-add); }
+.ln .g { flex: none; width: 36px; text-align: right; padding-right: 10px; color: var(--ink-muted); background: var(--diff-add-gutter); border-left: 3px solid var(--green); }
+.ln .t { padding-left: 14px; }
+.ln .t i { font-style: normal; }
+.ln .k { color: var(--tk-k); } .ln .s { color: var(--tk-s); } .ln .f { color: var(--tk-f); } .ln .ty { color: var(--tk-t); } .ln .n { color: var(--tk-n); } .ln .p { color: var(--tk-p); }
+.cmt { flex: none; margin: 0 16px; height: 42px; border: 1.5px dashed var(--line); border-radius: 12px; display: flex; align-items: center; gap: 10px; padding: 0 14px; color: var(--ink-muted); font-size: 14px; }
+.cmt .kbd { margin-left: auto; }
+.acts { flex: none; display: flex; justify-content: flex-end; gap: 10px; padding: 12px 16px 16px; border-top: 0; }
+.cmt + .acts { padding-top: 14px; }
+.arrow { position: absolute; top: 50%; width: 46px; height: 46px; margin-top: -23px; border: 1.5px solid var(--line); border-radius: 50%; background: var(--surface); box-shadow: 2px 2px 0 var(--sh); display: grid; place-items: center; color: var(--ink-muted); }
+.arrow.l { left: -66px; } .arrow.r { right: -66px; }
+.pgr { position: absolute; left: 0; right: 0; bottom: 16px; text-align: center; font-weight: 600; font-size: 13px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+.pop { position: absolute; z-index: 20; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); border-radius: 14px; box-shadow: 4px 4px 0 var(--sh); padding: 14px 16px; }
+.pop .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pop h4 { margin: 10px 0 8px; font-size: 16px; line-height: 21px; }
+.pop .kv { display: grid; grid-template-columns: 76px 1fr; gap: 7px 10px; align-items: center; font-size: 12.5px; margin-top: 12px; padding-top: 12px; border-top: 1.5px solid var(--line); }
+.pop .kv > span:nth-child(odd) { color: var(--ink-muted); font-weight: 600; }
+.menu { position: absolute; z-index: 20; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); border-radius: 14px; box-shadow: 4px 4px 0 var(--sh); padding: 8px; }
+.menu .lab { padding: 4px 8px 6px; }
+.mi { position: relative; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 9px; border: 1.5px solid transparent; font-size: 13px; }
+.mi.on { background: var(--yellow); color: var(--on-yellow); border-color: var(--line); }
+.mi .nd { position: relative; z-index: 1; width: 18px; display: grid; place-items: center; flex: none; align-self: stretch; }
+.mi .nd::after { content: ''; width: 11px; height: 11px; border-radius: 50%; background: var(--ink-muted); border: 1.5px solid var(--ink-muted); }
+.mi.un .nd::after { background: var(--surface); border: 1.5px dashed var(--ink-muted); }
+.mi.on .nd::after { background: var(--on-yellow); border-color: var(--on-yellow); }
+.mi.full .nd::after { display: none; }
+.mi .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mi .l1 { display: flex; gap: 8px; align-items: baseline; font-weight: 600; min-width: 0; }
+.mi .l1 .sha { font: 700 12px 'Geist Mono', monospace; flex: none; }
+.mi .l2 { font-size: 11.5px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.mi.on .l2 { color: inherit; opacity: .8; }
+.mi.sepl { border-top: 1.5px solid var(--line); border-radius: 0; margin-top: 4px; padding-top: 8px; }
+.mi:not(.first):not(.full):not(.sepl)::before { content: ''; position: absolute; left: 16px; top: -9px; height: 14px; border-left: 1.5px solid var(--line); }
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 15; }
+.drawer { position: absolute; left: 0; top: 0; bottom: 0; z-index: 16; display: flex; box-shadow: 4px 0 0 var(--sh); }
+.tbadge { position: absolute; right: -7px; top: -9px; z-index: 2; display: inline-grid; place-items: center; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--ink); color: var(--paper); border: 1.5px solid var(--hdr-bg); font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ===================== header B on every page: new styles ===================== */
+
+/* ---- document (not themed) ---- */
+:root { --pg: #D6D2CA; --pg-ink: #23212B; --pg-mut: #5d5a63; --pg-line: rgba(35,33,43,.25); --pg-card: #ECE8E0; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--pg); color: var(--pg-ink); font: 14px/1.5 'Space Grotesk', system-ui, sans-serif; }
+.doc { max-width: 2100px; margin: 0 auto; padding: 28px 32px 110px; }
+.doc h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -.01em; }
+.doc h2 { font-size: 21px; margin: 0; }
+.doc .lede { color: var(--pg-mut); max-width: 100ch; margin: 0 0 14px; }
+.doc code { font: 500 12.5px 'Geist Mono', monospace; background: rgba(35,33,43,.08); padding: 1px 5px; border-radius: 4px; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 14px 0 6px; position: sticky; top: 0; z-index: 50; padding: 8px 0; background: var(--pg); }
+.toc a { font: 600 12px 'Geist Mono', monospace; padding: 3px 10px; border-radius: 999px; background: var(--pg-card); border: 1.5px solid var(--pg-line); color: var(--pg-ink); text-decoration: none; }
+.toc a:hover { background: #fff; }
+.sect { margin-top: 56px; scroll-margin-top: 54px; }
+.sect-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.sect-h .n { display: inline-grid; place-items: center; min-width: 34px; height: 34px; padding: 0 8px; border-radius: 10px; background: var(--pg-ink); color: #fff; font-weight: 700; font-size: 16px; }
+.sect-h .tag2 { font: 600 12px 'Geist Mono', monospace; padding: 3px 9px; border-radius: 999px; background: var(--pg-card); border: 1.5px solid var(--pg-line); }
+.sect-idea { max-width: 112ch; margin: 2px 0 14px; color: #34323a; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 880px), 1fr)); gap: 18px; align-items: start; }
+.trip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr)); gap: 18px; align-items: start; }
+.cell { min-width: 0; }
+.cap { font: 600 11px 'Geist Mono', monospace; color: var(--pg-mut); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 5px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.cap a { color: var(--pg-ink); text-transform: none; letter-spacing: 0; font-weight: 500; }
+.cap .meas { text-transform: none; letter-spacing: 0; font-weight: 600; color: #1c6b3f; }
+.fw { position: relative; overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1.5px rgba(35,33,43,.35), 0 14px 26px -16px rgba(0,0,0,.5); background: #000; }
+.fw > .fr { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.sub { font-size: 15px; font-weight: 700; margin: 26px 0 8px; }
+.note { font-size: 12.5px; color: var(--pg-mut); max-width: 112ch; margin: 8px 0 0; }
+.dec { margin: 14px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 8px 26px; font-size: 13px; }
+.dec li { display: flex; gap: 9px; align-items: flex-start; }
+.dec li > b:first-child { flex: none; min-width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: var(--pg-ink); color: #fff; font: 700 11.5px 'Geist Mono', monospace; }
+.rtab { border-collapse: collapse; width: 100%; max-width: 1500px; background: var(--pg-card); border-radius: 10px; overflow: hidden; font-size: 13px; margin-top: 14px; }
+.rtab th, .rtab td { text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--pg-line); vertical-align: top; }
+.rtab th { background: #e0dbd1; font-weight: 700; }
+.rtab td:first-child { font-weight: 700; white-space: nowrap; }
+.solo-body { margin: 0; background: #000; }
+
+/* ---- frame additions ---- */
+.fr.f800 { width: 800px; }
+.fr .ic.s { width: 13px; height: 13px; }
+.fr .gap { flex: none; }
+.fr kbd { font: inherit; }
+.hdr.bar { height: 52px; align-items: center; padding: 0 20px; gap: 12px; }
+.hdr.bar .hb { height: 34px; }
+.hb.rel { position: relative; overflow: visible; }
+.hb .kb { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border: 1.5px solid var(--line); border-radius: 5px; font: 700 11px 'Space Grotesk', sans-serif; background: var(--hdr-bg); }
+.wordmark { font-weight: 700; font-size: 20px; letter-spacing: -.01em; }
+.tabs { margin-left: 4px; }
+.step-tab.err .step-tab-in { background: var(--red-solid); }
+.step-tab.err { color: var(--on-red); }
+.step-tab.err .tc { color: inherit; }
+.step-tab.ready .tc { color: inherit; opacity: .85; }
+.step-tab .pip { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); border: 1.5px solid var(--surface); margin-left: -2px; }
+.tabs.icons .step-tab:not(.on) .tl { display: none; }
+.tabs.icons .step-tab:not(.on) .step-tab-in { padding-right: 12px; }
+.tbadge { position: absolute; right: -9px; top: -7px; z-index: 2; display: inline-grid; place-items: center; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--ink); color: var(--paper); border: 1.5px solid var(--hdr-bg); font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.body { flex: 1; min-height: 0; display: flex; position: relative; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+
+/* ---- the rail ---- */
+.rail { flex: none; width: 296px; display: flex; flex-direction: column; min-height: 0; background: var(--paper-2); border-right: 1.5px solid var(--line); overflow: hidden; position: relative; }
+.rid { flex: none; padding: 12px 14px; border-bottom: 1.5px solid var(--line); }
+.rid-top { display: flex; align-items: center; gap: 8px; }
+.rid .tks { flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.rid-t { font-weight: 700; font-size: 15px; line-height: 20px; margin: 9px 0 7px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rid-m { display: flex; align-items: center; gap: 8px; font: 500 12px/18px 'Geist Mono', monospace; margin-bottom: 7px; }
+.rid-b { display: flex; flex-direction: column; gap: 5px; font-size: 12px; }
+.rid-b .brl { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rid-b .brl .lbl { width: 38px; flex: none; font-size: 10.5px; }
+.rid.c { padding: 0; }
+.rid-1 { display: flex; align-items: center; gap: 4px; height: 40px; padding: 0 8px 0 8px; font-weight: 700; font-size: 13.5px; min-width: 0; }
+.rid-1 .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ghost.bx { border: 1.5px solid transparent; }
+.ghost.bx:hover, .ghost.hv { background: var(--hover); border-color: var(--line); }
+.rrev { flex: none; padding: 12px 14px; border-bottom: 1.5px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.rr1 { display: flex; align-items: center; gap: 10px; }
+.rr1 strong { font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rr1 .vbar { flex: 1; min-width: 0; }
+.rr2 { display: flex; gap: 11px; align-items: center; flex-wrap: wrap; }
+.rr4 { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
+.rsec { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 10px 0; position: relative; }
+.rh { display: flex; align-items: center; gap: 8px; padding: 0 6px 9px; flex: none; }
+.rh strong { font-size: 15px; }
+.rh .ghost { width: 28px; height: 28px; }
+.vbar.empty > i:last-child { background: transparent; }
+.ri { position: relative; display: flex; align-items: center; gap: 9px; min-height: 40px; padding: 5px 8px; border: 1.5px solid transparent; border-radius: 10px; font-size: 13px; font-weight: 600; flex: none; min-width: 0; }
+.ri .box { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; border: 1.5px solid var(--line); background: var(--paper); }
+.ri .box .ic { width: 14px; height: 14px; }
+.ri .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ri .l1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 17px; }
+.ri .l1.two { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ri .l2 { font-size: 11.5px; font-weight: 500; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ri .l2.m { font-family: 'Geist Mono', monospace; font-size: 11px; }
+.ri .cnt { font-size: 11.5px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ri .cm { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.ri .cm .ic { width: 12px; height: 12px; }
+.ri.cur { background: var(--yellow); color: var(--on-yellow); border-color: var(--line); }
+.ri.cur .l2, .ri.cur .cnt { color: var(--on-yellow); opacity: .8; }
+.ri.cur .box { background: var(--on-yellow); color: var(--yellow); border-color: var(--on-yellow); }
+.ri.cur .cm { color: var(--on-yellow); }
+.ri.h { min-height: 28px; padding-left: 43px; font-size: 12.5px; font-weight: 500; color: var(--ink-muted); }
+.ri.h::before { content: ''; position: absolute; left: 20px; top: -6px; bottom: 50%; width: 12px; border-left: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line); border-bottom-left-radius: 7px; }
+.ri.h.on { color: var(--ink); font-weight: 700; }
+.ri.un .box { border-style: dashed; }
+.thumb { flex: none; width: 56px; height: 40px; border: 1.5px solid var(--line); border-radius: 7px; overflow: hidden; background: #fff; position: relative; }
+.thumb i { position: absolute; left: 0; right: 0; top: 0; height: 8px; background: #E2E8F8; }
+.thumb b { position: absolute; left: 5px; top: 13px; width: 20px; height: 3px; background: #c9ccd6; border-radius: 2px; box-shadow: 0 6px 0 #c9ccd6, 0 12px 0 #d8dae2; }
+.thumb u { position: absolute; left: 30px; top: 14px; right: 5px; bottom: 5px; background: #f1f2f6; border-radius: 3px; }
+.thumb.dark { background: #1d2540; } .thumb.dark i { background: #3a4a86; } .thumb.dark u { background: #2b3562; }
+.thumb.vid { background: #23212B; display: grid; place-items: center; color: #F3ECDD; }
+.thumb.vid .ic { width: 16px; height: 16px; fill: currentColor; }
+.thumb.wide { width: 56px; } .thumb.tall b { left: 12px; }
+.ri.ev { min-height: 52px; }
+.ri .n { flex: none; width: 16px; font-size: 11px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; text-align: right; }
+.rsum { display: grid; grid-template-columns: 1fr auto; gap: 7px 10px; padding: 2px 8px 10px; font-size: 12.5px; }
+.rsum span:nth-child(odd) { color: var(--ink-muted); font-weight: 600; }
+.rsum span:nth-child(even) { font-weight: 700; font-variant-numeric: tabular-nums; }
+.rdiv { height: 0; border-top: 1.5px solid var(--line); margin: 6px 6px 8px; flex: none; }
+.runrow { display: flex; align-items: center; gap: 9px; min-height: 40px; padding: 5px 8px; border-radius: 10px; font-size: 12.5px; flex: none; }
+.runrow .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.runrow .l1 { font-weight: 700; } .runrow .l2 { color: var(--ink-muted); font-size: 11.5px; }
+.sdot2 { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--st-a); }
+.sdot2.err { background: var(--st-d); } .sdot2.info { background: var(--st-r); }
+.tree { position: relative; }
+.tree::after { content: ''; position: absolute; right: 1px; top: 4px; width: 5px; height: 58%; border-radius: 9px; background: var(--line); opacity: .8; }
+.tr .vm { display: inline-flex; align-items: center; gap: 4px; }
+.tr .del-mark { color: var(--ink-muted); }
+.filter b { font-weight: 500; }
+.filter .k { margin-left: auto; }
+
+/* ---- the commit timeline: today's CommitTimeline/CommitNode, flush on the page background (no band) ---- */
+.cxl { flex: none; height: 79px; padding: 8px 20px 0 14px; display: flex; align-items: flex-start; overflow: hidden; }
+.cx-ul { display: flex; align-items: stretch; flex: none; padding: 0 8px; }
+.cx { position: relative; flex: none; width: 120px; display: flex; flex-direction: column; align-items: center; }
+.cx-seg { position: absolute; top: 11px; border-top: 1.5px solid var(--line); }
+.cx-seg.l { left: 0; right: 50%; } .cx-seg.r { left: 50%; right: 0; }
+.cx-seg.d { border-top-style: dashed; border-top-color: var(--st-m); }
+.cx-b { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; min-height: 32px; padding-bottom: 4px; border-radius: 6px; color: var(--ink); }
+.cx-n { display: flex; align-items: center; height: 22px; }
+.cx-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); }
+.cx-dot.un { border-style: dashed; border-color: var(--ink-muted); }
+.cx-ring { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-muted); }
+.cx-ring svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.cx-ring.mg { border-color: var(--fill-line); background: var(--pink); color: var(--hdr-ink); }
+.cx.on .cx-dot, .cx.on .cx-ring { border-color: var(--ink); background: var(--ink); color: var(--paper); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--line); }
+.cx-p { display: flex; align-items: center; gap: 4px; max-width: 100%; font: 400 11.5px/1 'Geist Mono', ui-monospace, Menlo, monospace; }
+.cx.on .cx-p > span { font-weight: 700; }
+.cx-ic { width: 13px; height: 13px; flex: none; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke: currentColor; stroke-width: 2; }
+.cx-ic.ok { color: var(--green); stroke-width: 2.75; } .cx-ic.up { color: var(--st-m); }
+.cx-s { max-width: 100%; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; line-height: 1.1; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+/* ---- deck deltas ---- */
+.main { padding: 40px 0 var(--mb, 46px); }
+.deckw { width: 980px; max-width: calc(100% - 190px); }
+.f800 .main { padding-top: 36px; }
+.f800 .deckw { max-width: calc(100% - 120px); width: 100%; }
+.f800 .arrow { width: 40px; height: 40px; margin-top: -20px; }
+.f800 .arrow.l { left: -50px; } .f800 .arrow.r { right: -50px; }
+.f800 .acts .btn.lg .lbl { display: none; }
+.f800 .acts .btn.lg.pri .lbl { display: inline; }
+
+/* ---- generic page pieces ---- */
+.page { flex: 1; min-height: 0; overflow: hidden; padding: 24px 28px 0; display: flex; flex-direction: column; gap: 16px; position: relative; }
+.f800 .page { padding: 18px 16px 0; }
+.phead { display: flex; align-items: center; gap: 12px; flex: none; flex-wrap: wrap; }
+.phead h1 { margin: 0; font-size: 27px; line-height: 32px; letter-spacing: -.01em; }
+.phead .meta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-muted); }
+.panel { border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 4px 4px 0 var(--sh); display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.panel.card6 { box-shadow: 6px 6px 0 var(--sh); }
+.ph { display: flex; align-items: center; gap: 10px; min-height: 48px; flex: none; padding: 0 14px 0 16px; background: var(--paper-2); border-bottom: 1.5px solid var(--line); font-weight: 700; font-size: 15px; }
+.pb { padding: 16px; min-width: 0; }
+.pf { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1.5px solid var(--line); background: var(--paper-2); }
+.ibox { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--paper); box-shadow: 1px 1px 0 var(--sh); }
+.ibox .ic { width: 15px; height: 15px; }
+.md { font-size: 14px; line-height: 23px; }
+.md h1 { font-size: 21px; line-height: 27px; margin: 0 0 10px; }
+.md h2 { font-size: 16.5px; margin: 16px 0 6px; }
+.md p { margin: 0 0 8px; }
+.md ul, .md ol { margin: 0 0 8px; padding-left: 22px; }
+.md li { margin: 4px 0; }
+.md code { font: 500 12.5px 'Geist Mono', monospace; background: var(--paper-2); border: 1.5px solid var(--line); border-radius: 6px; padding: 0 5px; }
+.md a { color: var(--st-r); text-decoration: underline; }
+.cbox { flex: none; margin: 0 16px 14px; height: 42px; border: 1.5px dashed var(--line); border-radius: 12px; display: flex; align-items: center; gap: 10px; padding: 0 14px; color: var(--ink-muted); font-size: 14px; background: transparent; }
+.cbox .kbd { margin-left: auto; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; min-height: 0; flex: 1; }
+.mer { border: 1.5px solid var(--line); border-radius: 12px; background: var(--code-bg); overflow: hidden; margin: 10px 0 12px; position: relative; }
+.mer .mh { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px 0 14px; background: var(--paper-2); border-bottom: 1.5px solid var(--line); font: 500 12px 'Geist Mono', monospace; color: var(--ink-muted); }
+.mer .mh .btn.sq { width: 28px; height: 26px; border-radius: 8px; box-shadow: 1.5px 1.5px 0 var(--sh); }
+.mer svg.dg { display: block; width: 100%; height: auto; }
+.mer .zoom { position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); }
+.dg rect.nb { fill: var(--info-bg); stroke: var(--info-bd); stroke-width: 1.2; }
+.dg text { fill: var(--ink); font: 500 11px 'Geist Mono', monospace; text-anchor: middle; }
+.dg path.ed { stroke: var(--ink-muted); fill: none; stroke-width: 1.3; }
+.dg .lbl { fill: var(--ink-muted); font-size: 10px; }
+.shot { background: #fff; color: #1b1d2a; font: 12px/1.3 system-ui, sans-serif; width: 100%; height: 100%; }
+.shot .tb { background: #E4ECFB; padding: 9px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.shot .tb i { margin-left: auto; font-style: normal; background: #1F4FB2; color: #fff; padding: 4px 11px; border-radius: 4px; font-weight: 700; }
+.shot .ah { display: flex; padding: 14px 16px; border-bottom: 1px solid #e6e8ef; font-size: 14px; }
+.shot .ah span { margin-left: auto; font-size: 12px; }
+.shot .ab { display: flex; height: 100%; background: #f4f5f9; }
+.shot .an { width: 150px; padding: 14px 12px; background: #fff; border-right: 1px solid #e6e8ef; display: flex; flex-direction: column; gap: 9px; font-size: 12.5px; }
+.shot .am { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.shot .am div { background: #fff; border: 1px solid #e6e8ef; border-radius: 6px; padding: 10px 12px; font-size: 12.5px; line-height: 1.35; }
+.tile { position: relative; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; min-width: 0; }
+.tile::before { content: ''; display: block; height: 8px; background: var(--ft); border-bottom: 1.5px solid var(--fill-line); }
+.tile .tb2 { padding: 8px 13px 10px; display: flex; flex-direction: column; gap: 4px; }
+.tile .td { font: 400 12px/16px 'Geist Mono', monospace; color: var(--ink-muted); height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .tn2 { font: 700 14.5px/19px 'Geist Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .ts { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; }
+.tile .ts .stt { display: inline-flex; align-items: center; gap: 6px; }
+.tile .ts .sd { width: 9px; height: 9px; border-radius: 50%; }
+.tile .ts .pm { font: 700 12px 'Geist Mono', monospace; margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tile .ts .pm .a { color: var(--green); } .tile .ts .pm .d { color: var(--red); }
+.cbars { display: inline-flex; gap: 2px; }
+.cbars i { width: 9px; height: 9px; border-radius: 2px; background: var(--sunken); }
+.cbars i.a { background: var(--green); } .cbars i.d { background: var(--red-solid); }
+.tile .tv { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-muted); font-weight: 600; min-height: 22px; }
+.tile .tv .ic { width: 14px; height: 14px; stroke-width: 3; }
+.tile .tv.a { color: var(--green); } .tile .tv.r { color: var(--red); } .tile .tv.c { color: var(--ink); }
+.tile .tv .tag { margin-left: auto; }
+.tile.cur { outline: 3px solid var(--ink); outline-offset: -1.5px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.menu .mck { display: flex; align-items: center; gap: 12px; padding: 7px 10px; border-radius: 9px; font-size: 13.5px; font-weight: 600; }
+.menu .mck .bx { width: 16px; height: 16px; border: 1.5px solid var(--line); border-radius: 5px; background: var(--paper); flex: none; }
+.menu .mck .bx.on { background: var(--ink); border-color: var(--ink); }
+.menu .mck .sw { width: 13px; height: 13px; border-radius: 50%; background: var(--ft); border: 1.5px solid var(--fill-line); flex: none; }
+.menu .mck .ex { margin-left: auto; font: 500 11.5px 'Geist Mono', monospace; color: var(--ink-muted); }
+.menu .mck .ct { width: 22px; text-align: right; color: var(--ink-muted); font-variant-numeric: tabular-nums; font-weight: 600; }
+.menu .clr { border-top: 1.5px solid var(--line); margin: 6px -8px -8px; padding: 10px 18px; color: var(--ink-muted); font-weight: 600; font-size: 13px; background: var(--paper-2); border-radius: 0 0 12px 12px; }
+.sendbar { flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 16px; height: 64px; padding: 0 24px; background: var(--paper-2); border-top: 1.5px solid var(--line); font-size: 13px; font-weight: 600; }
+.split { display: inline-flex; }
+.split .btn { border-radius: 12px 0 0 12px; height: 40px; padding: 0 18px; font-size: 14px; }
+.split .btn + .btn { border-radius: 0 12px 12px 0; padding: 0 11px; border-left-width: 0; margin-left: -1.5px; box-shadow: 2px 2px 0 var(--sh); }
+.radio { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px; flex: 1; min-width: 0; }
+.radio .rb { width: 18px; height: 18px; border: 1.5px solid var(--line); border-radius: 50%; flex: none; margin-top: 1px; background: var(--paper); }
+.radio.on { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn-bd) 60%, transparent); }
+.radio.on .rb { border: 5px solid var(--ink); }
+.radio .rt { font-weight: 700; display: flex; gap: 6px; align-items: center; }
+.radio .rd { font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; font-weight: 500; }
+.ta { border: 1.5px solid var(--line); border-radius: 12px; background: var(--paper); padding: 11px 13px; min-height: 76px; font-size: 14px; line-height: 21px; }
+.cmtc { border: 1.5px solid var(--line); border-radius: 12px; background: var(--paper); padding: 11px 13px 8px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 19px; }
+.cmtc .av { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font: 700 9px 'Space Grotesk', sans-serif; }
+.cmtc .ft { display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--ink-muted); }
+.cmtc .ft b { margin-left: auto; font-weight: 700; color: var(--ink); } .cmtc .ft b + b { margin-left: 0; }
+.fh { display: flex; align-items: center; gap: 8px; margin: 12px 0 8px; font: 700 13.5px 'Geist Mono', monospace; }
+.dlg { position: absolute; left: 50%; top: 50%; width: 460px; transform: translate(-50%, -52%); z-index: 20; }
+.blur { filter: blur(7px); transform: scale(1.02); pointer-events: none; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.veil { position: absolute; inset: 0; background: color-mix(in srgb, var(--sunken) 55%, transparent); z-index: 10; }
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 15; }
+.drawer { position: absolute; left: 0; top: 0; bottom: 0; z-index: 16; display: flex; box-shadow: 4px 0 0 var(--sh); }
+.drawer .rail { height: 100%; }
+.errwrap { flex: 1; display: grid; place-items: start center; padding-top: 96px; }
+.errwrap .panel { width: 512px; }
+.cell .stk { display: flex; flex-direction: column; gap: 12px; }
+.rolist { display: flex; flex-direction: column; flex: none; }
+.lrow { display: grid; grid-template-columns: minmax(0, 1fr) 190px 170px 230px 90px 24px; gap: 14px; align-items: center; padding: 14px 18px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 4px 4px 0 var(--sh); min-height: 92px; }
+.lrow .who { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.lrow .who .t1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lrow .who .t1 .ttl { font-size: 16.5px; }
+.lhead { display: grid; grid-template-columns: minmax(0, 1fr) 190px 170px 230px 90px 24px; gap: 14px; padding: 0 18px; font-size: 12px; font-weight: 700; color: var(--ink-muted); }
+.lhead span { display: inline-flex; align-items: center; gap: 6px; }
+.pillf { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border: 1.5px solid var(--line); border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; background: transparent; }
+.pillf.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pillf em { font-style: normal; opacity: .75; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pillf .ic { width: 15px; height: 15px; }
+.f800 .tiles { grid-template-columns: repeat(2, 1fr); }
+.badge-sm { display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 6px; border-radius: 999px; background: var(--pink); color: var(--hdr-ink); border: 1.5px solid var(--fill-line); font-size: 11px; font-weight: 700; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--st-r); flex: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-r) 25%, transparent); }
+.ann-tag { position: absolute; z-index: 40; font: 700 11px 'Geist Mono', monospace; background: #D12F1F; color: #fff; padding: 2px 7px; border-radius: 6px; pointer-events: none; box-shadow: 0 0 0 2px #fff; }
+.no-ann .ann-tag { display: none; }
+.ctl { display: flex; gap: 18px; align-items: center; margin: 8px 0 0; font-size: 13px; }
+.ctl label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.pcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.frow { display: flex; align-items: center; gap: 12px; }
+
+.btn.gh { border-color: transparent; background: transparent; box-shadow: none; }
+
+.rrev.compact { gap: 8px; padding: 10px 14px 12px; }
+.rrev.compact .rr1 { gap: 8px; }
+.rrev.compact .rr1 .vbar { min-width: 60px; }
+.rid-top .tks { flex-wrap: nowrap; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="defs"></defs></svg>
+<div class="doc" id="app"></div>
+<script>
+const ICONS = {
+  'chev-u': '<path d="m18 15-6-6-6 6"/>', 'chev-l': '<path d="m15 18-6-6 6-6"/>', 'chev-r': '<path d="m9 18 6-6-6-6"/>', 'chev-d': '<path d="m6 9 6 6 6-6"/>', 'chev-ud': '<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>',
+  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/>',
+  box: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  img: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  files: '<path d="M15 2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V6z"/><path d="M15 2v4h4M4 7v13a2 2 0 0 0 2 2h9"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>', 'check2': '<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  archive: '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-2.93 1.41-1.41m11.32-11.32 1.41-1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  monitor: '<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  kbd: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/>',
+  layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  branch: '<path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>',
+  folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  folderopen: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+  'arr-l': '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>', 'arr-r': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  msg: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>', panelx: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>', panelo: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  lchecks: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8M13 12h8M13 18h8"/>',
+  help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>',
+  ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+  plus: '<path d="M5 12h14M12 5v14"/>',
+  swipe: '<path d="M2 3v18"/><rect width="12" height="18" x="6" y="3" rx="2"/><path d="M22 3v18"/>',
+  grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  rows: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18"/>', cols: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>', bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>',
+  cdash: '<circle cx="12" cy="12" r="9" stroke-dasharray="3.6 3"/>', lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+};
+
+Object.assign(ICONS, {
+  filter: '<path d="M22 3H2l8 9.46V19l4 2v-8.54z"/>',
+  play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+  film: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18M3 7.5h4M3 12h18M3 16.5h4M17 3v18M17 7.5h4M17 16.5h4"/>',
+  folderx: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="m9.5 10.5 5 5M14.5 10.5l-5 5"/>',
+  restore: '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h2"/><path d="M20 8v11a2 2 0 0 1-2 2h-2"/><path d="m9 15 3-3 3 3"/><path d="M12 12v9"/>',
+  ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  max: '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
+  minus: '<path d="M5 12h14"/>',
+  clip: '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  list: '<path d="M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  dl: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+  history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  zin: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/>',
+  trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  mdi: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  hash: '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+});
+document.getElementById('defs').innerHTML = Object.entries(ICONS).map(([k, v]) => `<symbol id="i-${k}" viewBox="0 0 24 24">${v}</symbol>`).join('');
+const ic = (n, c = '') => `<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+
+/* =================== content model: real fixture sessions =================== */
+const COMMITS = [ // illustrative: the fixtures have no commits (as in header-options.html)
+  { sha: 'a3f9c21', subject: 'Add comment model and migration', pushed: true },
+  { sha: '7be04d8', subject: 'Wire up the comments list endpoint', pushed: false },
+  { sha: 'c91e5a0', subject: 'Render comments under each post', pushed: false },
+  { sha: '4d02be7', subject: "Merge branch 'master' into feature", pushed: false, merge: true },
+];
+const VAR = { tickets: ['VAR-201', 'VAR-188'], title: 'VAR-201: Comments on posts', repo: 'variety-app', base: 'origin/master', head: 'feature/comments-on-posts',
+  add: '+2,216', del: '−30', files: 26, rev: { total: 26, approved: 7, rejected: 1, commented: 1 }, tabs: { Spec: 4, Extras: 5, Evidence: 7, Files: 26 }, open: 2,
+  commits: COMMITS, unc: 3, pos: '13 / 26' };
+const ALLV = { tickets: ['QI-15472'], title: 'QI-15472: Trial bar', repo: 'trial-app-all-verdicts', base: 'origin/master', head: 'feature/trial-bar',
+  add: '+2,154', del: '−2,010', files: 12, rev: { total: 12, approved: 7, rejected: 2, commented: 3 }, tabs: { Spec: 3, Extras: 2, Evidence: 2, Files: 12 }, open: 10, commits: [], unc: 12, pos: '12 / 12' };
+const FAIL = { ...ALLV, repo: 'trial-app-runs', rev: { total: 12, approved: 1, rejected: 1, commented: 0 }, open: 2 };
+const LONG = { ...ALLV, tickets: ['QI-15472', 'QI-15488', 'PLATFORM-22017', 'DES-77', 'SEC-1040', 'OPS-311'],
+  title: 'QI-15472: Trial bar with amber warning variant, session-scoped dismissal, direct upgrade path and plan badges for free-plan workspaces (second attempt, rebased)',
+  repo: 'trial-app-long', head: 'feature/QI-15472-trial-bar-with-amber-warning-variant-session-scoped-dismissal-and-a-direct-upgrade-path', rev: { total: 12, approved: 3, rejected: 1, commented: 0 } };
+const reviewed = (m) => m.rev.approved + m.rev.rejected + m.rev.commented;
+
+/* =================== small components =================== */
+const chip = (k, ext = true, sm = false) => `<span class="tk ${sm ? 'sm' : ''}">${k}${ext ? ic('ext') : ''}</span>`;
+const tickets = (m, max = 2, sm = true) => (m.tickets.length > max ? (max = 1) : 0, `<span class="tks">${m.tickets.slice(0, max).map((k) => chip(k, true, sm)).join('')}${m.tickets.length > max ? `<span class="tk more ${sm ? 'sm' : ''}" title="${m.tickets.slice(max).join(', ')}">+${m.tickets.length - max}</span>` : ''}</span>`);
+const branchTag = (name, cls = '') => {
+  const i = name.indexOf('/');
+  const pre = i === -1 ? '' : `<span class="dim">${name.slice(0, i + 1)}</span>`;
+  return `<span class="tag mono ${cls}" style="${cls.includes('shrink') ? 'flex:0 1 auto' : 'flex:none'}">${ic('branch')}<span class="trunc">${pre}${i === -1 ? name : name.slice(i + 1)}</span></span>`;
+};
+const tabsNav = (m, o = {}) => {
+  const items = [['Spec', 'doc'], ['Extras', 'box'], ['Evidence', 'img'], ['Files', 'files'], ['Submit', 'send']];
+  return `<nav class="tabs ${o.icons ? 'icons' : ''}" aria-label="Sections">${items.map(([n, i]) => {
+    const c = n === 'Submit' ? (m.open || null) : m.tabs[n];
+    const on = o.page === n.toLowerCase();
+    const ready = n === 'Submit' && o.ready && !on;
+    const err = n === 'Submit' && o.err && !on;
+    return `<a class="step-tab ${on ? 'on' : ''} ${ready ? 'ready' : ''} ${err ? 'err' : ''}"><span class="step-tab-in"><span class="step-tab-c">${ic(ready ? 'check' : err ? 'alert' : i)}<span class="tl">${n}</span>${c != null ? `<i class="tc">${c}</i>` : ''}</span></span></a>`;
+  }).join('')}</nav>`;
+};
+const themeToggle = () => `<span class="theme" title="Theme: system"><i>${ic('sun')}</i><i>${ic('moon')}</i><i class="on">${ic('monitor')}</i></span>`;
+const themeBtn = () => `<span class="hb" title="Theme: system">${ic('monitor')}</span>`;
+const modeSeg = (grid = false, icons = false) => `<span class="seg"><b class="${grid ? '' : 'on'}">${ic('swipe')}${icons ? '' : 'Swipe'}</b><b class="${grid ? 'on' : ''}">${ic('grid')}${icons ? '' : 'Grid'}</b></span>`;
+const notice = (tone, icon, text, sm = false) => `<span class="nt ${tone} ${sm ? 'sm' : ''}"><i>${ic(icon)}</i>${text}</span>`;
+const stats = (m) => `<span class="stat"><span class="a">${m.add}</span><span class="d">${m.del}</span></span>`;
+const vbar = (m, w) => {
+  const r = m.rev, left = r.total - reviewed(m);
+  return `<span class="vbar" ${w ? `style="width:${w}px"` : ''} role="img" aria-label="${r.approved} approved, ${r.rejected} rejected, ${r.commented} commented, ${left} not reviewed">` +
+    `<i class="a" style="flex:${r.approved}"></i><i class="r" style="flex:${r.rejected}"></i><i class="c" style="flex:${r.commented}"></i><i style="flex:${left}"></i></span>`;
+};
+const decTag = (t) => t === 'Approve' ? `<span class="tag ok sm" style="height:22px">${ic('check')}Approve</span>` : `<span class="tag err sm" style="height:22px">${ic('x')}Request changes</span>`;
+const kbdc = (k) => `<span class="kbd">${k}</span>`;
+const btn = (label, o = {}) => `<span class="btn ${o.cls || ''}">${o.icon ? ic(o.icon) : ''}${label ? `<span class="lbl">${label}</span>` : ''}${o.kbd ? kbdc(o.kbd) : ''}</span>`;
+
+/* =================== the thin top bar =================== */
+function topBar(m, o = {}) {
+  const w = o.w || 1440;
+  if (o.kind === 'list') {
+    return `<header class="hdr bar" data-chrome><span class="wordmark">Review Dash</span><span class="sp"></span>
+      <span class="hb lab" title="Keyboard shortcuts (?)">${ic('kbd')}<span class="hl">Shortcuts</span><span class="kb">?</span></span>${themeToggle()}</header>`;
+  }
+  if (o.kind === 'error') {
+    return `<header class="hdr bar" data-chrome><span class="hb lab">${ic('chev-l')}Sessions</span><span class="mono" style="font-size:12px;opacity:.85;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.id}</span><span class="sp"></span>${themeToggle()}</header>`;
+  }
+  const t = { page: o.page, ready: o.ready, err: o.err };
+  // The sidebar toggle: always the leftmost control. >=1024px it collapses/expands the rail; below it opens the drawer.
+  const railOpen = w <= 800 ? !!o.drawer : !o.collapsed;
+  const sbt = `<span class="hb rel sbt" role="button" aria-label="${railOpen ? 'Hide sidebar' : 'Show sidebar'}" aria-pressed="${railOpen}" title="${railOpen ? 'Hide sidebar' : 'Show sidebar'} (B)" style="${w <= 800 && railOpen ? 'background:var(--hdr-ink);color:var(--hdr-chip)' : ''}">${ic(railOpen ? 'panelx' : 'panelo')}${railOpen ? '' : `<span class="tbadge">${reviewed(m)}/${m.rev.total}</span>`}</span>`;
+  if (w <= 800) {
+    return `<header class="hdr bar" data-chrome style="gap:10px;padding:0 14px">
+      ${sbt}
+      <span class="hb" title="Sessions">${ic('chev-l')}</span>
+      ${tabsNav(m, { ...t, icons: true })}<span class="sp"></span>${o.page === 'files' ? modeSeg(o.grid, true) : ''}<span class="hb" title="More: shortcuts, theme, archive">${ic('more')}</span></header>`;
+  }
+  return `<header class="hdr bar" data-chrome>
+    ${sbt}<span class="hb lab" title="Sessions">${ic('chev-l')}Sessions</span>${tabsNav(m, t)}<span class="sp"></span>
+    ${o.page === 'files' ? modeSeg(o.grid) : ''}
+    <span class="hb lab" title="Keyboard shortcuts (?)">${ic('kbd')}<span class="hl">Shortcuts</span><span class="kb">?</span></span>${themeToggle()}
+    <span class="hb ${o.menu ? 'hov' : ''}" title="More" style="${o.menu ? 'background:var(--hdr-ink);color:var(--hdr-chip)' : ''}">${ic('more')}</span></header>`;
+}
+
+/* =================== files tree data =================== */
+// [depth, kind, name, ftype, flags, count]   flags: a r cN cur del ren
+const T_VAR = [
+  [0, 'fo', '.github/workflows', '', '', '1/1'], [1, 'f', 'ci.yml', 'yaml', 'a'],
+  [0, 'fo', 'assets', '', '', '1/1'], [1, 'f', 'logo.png', 'other', 'a'],
+  [0, 'fo', 'config', '', '', '2/2'], [1, 'f', 'cache.yaml', 'yaml', 'a'], [1, 'f', 'features.json', 'json', 'a'],
+  [0, 'fo', 'docs', '', '', '0/1'], [1, 'f', 'comments.md', 'other', ''],
+  [0, 'fo', 'scripts', '', '', '0/2'], [1, 'f', 'build.js', 'js', ''], [1, 'f', 'lint-staged.js', 'js', ''],
+  [0, 'fo', 'src', '', '', '2/14'],
+  [1, 'fo', 'api', '', '', '1/2'], [2, 'f', 'comments.ts', 'ts', 'cur'], [2, 'f', 'users.ts', 'ts', 'r'],
+  [1, 'fo', 'components', '', '', '1/4'], [2, 'f', 'Avatar.tsx', 'react', ''], [2, 'f', 'CommentList.tsx', 'react', 'c1'], [2, 'f', 'Legacy.tsx', 'react', 'del'], [2, 'f', 'UserCard.tsx', 'react', ''],
+  [1, 'fo', 'data', '', '', '0/1'], [2, 'f', 'countries.ts', 'ts', ''],
+  [1, 'fo', 'legacy', '', '', '0/2'], [2, 'f', 'Toolbar.legacy.jsx', 'react', ''], [2, 'f', 'widget.jsx', 'react', ''],
+  [1, 'fo', 'styles', '', '', '0/3'], [2, 'f', 'base.css', 'css', ''], [2, 'f', 'comments.css', 'css', ''], [2, 'f', 'old.css', 'css', 'del'],
+  [1, 'fo', 'utils', '', '', '0/1'], [2, 'f', 'time.ts', 'ts', ''],
+  [1, 'f', 'index.ts', 'ts', ''],
+  [0, 'f', '.prettierrc.json', 'json', 'a'], [0, 'f', 'CONTRIBUTING.md', 'other', 'a del'], [0, 'f', 'README.md', 'other', 'a'], [0, 'f', 'package-lock.json', 'json', ''], [0, 'f', 'package.json', 'json', ''],
+];
+const T_ALLV = [
+  [0, 'fo', 'src', '', '', '9/9'],
+  [1, 'fo', 'assets', '', '', '1/1'], [2, 'f', 'trial-bar.png', 'other', 'a'],
+  [1, 'fo', 'components', '', '', '3/3'], [2, 'f', 'Header.tsx', 'react', 'a'], [2, 'f', 'Notice.tsx', 'react', 'a'], [2, 'f', 'TrialBar.tsx', 'react', 'c2 r'],
+  [1, 'fo', 'legacy', '', '', '1/1'], [2, 'f', 'OldBanner.ts', 'ts', 'c1 del'],
+  [1, 'fo', 'styles', '', '', '1/1'], [2, 'f', 'trial-bar.css', 'css', 'c1'],
+  [1, 'f', 'app.ts', 'ts', 'a'], [1, 'f', 'big.generated.ts', 'ts', 'a'], [1, 'f', 'config.ts', 'ts', 'c2 r'],
+  [0, 'fo', 'test', '', '', '1/1'], [1, 'f', 'trial-bar.test.ts', 'ts', 'c1'],
+  [0, 'f', 'package-lock.json', 'json', 'a'], [0, 'f', 'README.md', 'other', 'a cur'],
+];
+const treeRow = ([d, kind, name, ft, st, cnt]) => {
+  const pad = 8 + d * 18;
+  if (kind === 'fo') return `<div class="tr fo" style="padding-left:${pad}px">${ic('chev-d', 'chev')}${ic('folderopen')}<span class="nmx">${name}</span><span class="cnt">${cnt}</span></div>`;
+  const f = st.split(' ');
+  const cur = f.includes('cur'), del = f.includes('del');
+  const cm = f.find((x) => /^c\d/.test(x));
+  const marks = (cm ? `<span class="cm">${ic('msg')}${cm.slice(1)}</span>` : '') + (f.includes('a') ? ic('check', 'okc') : f.includes('r') ? ic('x', 'rjc') : '');
+  return `<div class="tr file ft-${ft} ${cur ? 'cur' : ''} ${del ? 'del' : ''}" style="padding-left:${pad}px"><span class="ftd"></span><span class="nmx">${name}</span>${marks}</div>`;
+};
+const treeHTML = (rows) => `<div class="tree" role="tree" data-tree>${rows.map(treeRow).join('')}</div>`;
+const filterBox = (txt = 'Filter files…') => `<div class="filter" style="margin:0 2px 10px">${ic('search')}<span>${txt}</span></div>`;
+
+/* =================== the rail =================== */
+const identityExpanded = (m) => `<div class="rid" data-rid="x">
+  <div class="rid-top">${tickets(m, 2)}<span class="ghost bx hv" title="Collapse identity (remembered)">${ic('chev-u')}</span></div>
+  <div class="rid-t" title="${m.title}">${m.title}</div>
+  <div class="rid-m"><span class="rp" style="min-width:0;flex:0 1 auto">${ic('folder')}<span class="trunc">${m.repo}</span></span><span class="sp"></span><span style="flex:none">${stats(m)}</span></div>
+  <div class="rid-b"><div class="brl"><span class="eb lbl">into</span>${branchTag(m.base)}</div><div class="brl"><span class="eb lbl">from</span>${branchTag(m.head, 'shrink')}</div></div></div>`;
+const identityCollapsed = (m) => `<div class="rid c" data-rid="c"><div class="rid-1" title="${m.title}"><span class="ghost bx">${ic('chev-r')}</span><span class="t">${m.title}</span></div></div>`;
+
+function reviewBlock(m, st, compact = false) {
+  const r = m.rev, rv = reviewed(m), left = r.total - rv;
+  const sug = r.rejected + r.commented > 0 ? 'Request changes' : r.approved > 0 ? 'Approve' : null;
+  let nt, sg = '';
+  if (st === 'ready') nt = notice('ok', 'check', 'Ready to submit', true);
+  else if (st === 'failed') nt = notice('err', 'alert', `Run failed <span style="font-weight:500">· ${m.open} open comments</span>`, true);
+  else if (st === 'working') nt = notice('info', 'bot', 'Claude Code is working…', true) + '<span class="pulse" title="Live"></span>';
+  else if (rv === 0) nt = notice('info', 'clock', 'Awaiting review', true);
+  else nt = notice('flat', 'lchecks', 'In progress', true);
+  if (st === 'working') sg = '';
+  else if (sug) sg = `<div class="rr4"><span>${st === 'ready' ? 'Decision' : 'Suggested decision'}</span>${decTag(sug)}</div>`;
+  else sg = `<div class="rr4"><span>Suggested decision</span><span style="font-weight:500">after your first verdict</span></div>`;
+  if (compact) {
+    const sgc = st === 'working' ? '' : sug ? decTag(sug) : '';
+    return `<div class="rrev compact" data-rrev="${st}">
+    <div class="rr1"><strong>${rv}/${r.total}</strong>${vbar(m)}<span class="vc a">${ic('check')}${r.approved}</span><span class="vc r">${ic('x')}${r.rejected}</span><span class="vc c">${ic('msg')}${r.commented}</span></div>
+    <div class="rr3" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${nt}${sgc}</div></div>`;
+  }
+  return `<div class="rrev" data-rrev="${st}">
+    <div class="rr1"><strong>${rv}/${r.total}</strong>${vbar(m)}</div>
+    <div class="rr2"><span class="vc a">${ic('check')}${r.approved}</span><span class="vc r">${ic('x')}${r.rejected}</span><span class="vc c">${ic('msg')}${r.commented}</span><span class="vc n">${left} not reviewed</span></div>
+    <div class="rr3" style="display:flex;gap:8px;align-items:center">${nt}</div>${sg}</div>`;
+}
+
+const railHead = (title, count, right = '') => `<div class="rh"><strong>${title}</strong>${count != null ? `<span class="bd">${count}</span>` : ''}<span class="sp"></span>${right}</div>`;
+
+// ---- section-specific blocks ----
+const secFiles = (rows, o = {}) => `<div class="rsec" style="padding-bottom:0">${railHead('Files', o.count, `<span class="ghost bx" title="Collapse all folders">${ic('chev-ud')}</span>`)}${filterBox(o.filter)}${treeHTML(rows)}</div>`;
+
+const secSpec = () => `<div class="rsec">${railHead('Spec', 4, `<span class="eb">sources</span>`)}
+  <div class="ri cur"><span class="box">${ic('ticket')}</span><span class="tx"><span class="l1">VAR-201: Comments on posts</span><span class="l2">Jira ticket</span></span></div>
+  <div class="ri h">Description</div><div class="ri h">Acceptance criteria</div>
+  <div class="ri"><span class="box">${ic('doc')}</span><span class="tx"><span class="l1">Implementation plan</span><span class="l2 m">plan.md</span></span><span class="cm">${ic('msg')}1</span></div>
+  <div class="ri h on">Approach</div><div class="ri h">Steps</div>
+  <div class="ri"><span class="box">${ic('globe')}</span><span class="tx"><span class="l1">Comments design</span><span class="l2">Exported artifact · HTML</span></span></div>
+  <div class="ri un" title="In the spec folder but not in index.json"><span class="box">${ic('doc')}</span><span class="tx"><span class="l1">Rollout notes</span><span class="l2 m">rollout.md · not indexed</span></span></div></div>`;
+
+const secExtras = () => `<div class="rsec">${railHead('Extras', 5)}
+  <div class="ri cur"><span class="box">${ic('doc')}</span><span class="tx"><span class="l1 two">Architecture (markdown with a mermaid block)</span><span class="l2 m">architecture.md</span></span></div>
+  <div class="ri"><span class="box">${ic('globe')}</span><span class="tx"><span class="l1">Test report (HTML)</span><span class="l2 m">report.html</span></span></div>
+  <div class="ri"><span class="box">${ic('branch')}</span><span class="tx"><span class="l1">Add-comment sequence (.mmd)</span><span class="l2 m">sequence.mmd</span></span></div>
+  <div class="ri"><span class="box">${ic('branch')}</span><span class="tx"><span class="l1">Comment loading states</span><span class="l2 m">state.mermaid</span></span></div>
+  <div class="ri un"><span class="box">${ic('doc')}</span><span class="tx"><span class="l1">Review notes from the agent</span><span class="l2 m">notes.md · not indexed</span></span></div></div>`;
+
+const EV = [
+  ['feed-neutral.png', 'Feed with the trial bar, neutral variant', '', 'cur'],
+  ['feed-warning.png', 'Amber variant at two days left', '', ''],
+  ['plan-picker.png', 'Plan picker open over the dashboard after clicking Upgrade…', 'dark', ''],
+  ['plan-confirmed.png', 'Pro selected: inline confirmation, trial bar hidden', 'dark', '1'],
+  ['mobile/warning-390.png', 'Narrow viewport (390px): the bar wraps under the text', 'tall', ''],
+  ['upgrade-flow.webm', 'Recording of the whole upgrade flow · 0:03', 'vid', ''],
+  ['unindexed-overflow-check.png', 'not indexed', '', 'un'],
+];
+const secEvidence = () => `<div class="rsec">${railHead('Evidence', 7, `<span class="eb">6 images · 1 video</span>`)}
+  ${EV.map(([f, cap, k, x], i) => `<div class="ri ev ${x === 'cur' ? 'cur' : ''} ${x === 'un' ? 'un' : ''}"><span class="thumb ${k}">${k === 'vid' ? ic('play') : '<i></i><b></b><u></u>'}</span><span class="tx"><span class="l1" style="font:600 12px 'Geist Mono',monospace">${f.split('/').pop()}</span><span class="l2">${cap}</span></span>${/^\d$/.test(x) ? `<span class="cm">${ic('msg')}${x}</span>` : `<span class="n">${i + 1}</span>`}</div>`).join('')}</div>`;
+
+const COMMENT_FILES = [['TrialBar.tsx', 2, 'r'], ['config.ts', 2, 'r'], ['OldBanner.ts', 1, 'c'], ['trial-bar.css', 1, 'c'], ['trial-bar.test.ts', 1, 'c']];
+const secSubmit = (kind) => {
+  const sum = kind === 'failed'
+    ? [['Files', '1 comment · 1 file'], ['Spec / Evidence', '1'], ['Overall note', 'sent']]
+    : [['Files', '7 comments · 5 files'], ['Lines', '3 of them'], ['Spec', '1'], ['Evidence', '1 · 0:02.5'], ['Overall note', 'draft']];
+  const runs = kind === 'failed'
+    ? `<div class="runrow"><span class="sdot2 err"></span><span class="tx"><span class="l1">Run 2 · failed</span><span class="l2">exit 1 · workspace trust check</span></span><span class="ghost bx hv">${ic('refresh')}</span></div>
+       <div class="runrow"><span class="sdot2"></span><span class="tx"><span class="l1">Run 1 · succeeded</span><span class="l2">resolved 1 comment · 2.4k tokens</span></span></div>`
+    : `<div class="runrow" style="color:var(--ink-muted)"><span class="sdot2" style="background:transparent;border:1.5px dashed var(--ink-muted)"></span><span class="tx"><span class="l1" style="font-weight:600">Nothing sent yet</span><span class="l2">Runs appear here after Submit</span></span></div>`;
+  const files = kind === 'failed' ? [['app.ts', 1, 'r']] : COMMENT_FILES;
+  return `<div class="rsec">${railHead('Will be sent', m_open(kind), '')}
+    <div class="rsum">${sum.map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('')}</div>
+    <div class="rdiv"></div>
+    ${files.map(([f, n, v]) => `<div class="ri" style="min-height:34px"><span class="tx"><span class="l1" style="font:600 12.5px 'Geist Mono',monospace">${f}</span></span><span class="cm">${ic('msg')}${n}</span>${v === 'r' ? `<span class="tag err sm">${ic('x')}</span>` : `<span class="tag sm" style="color:var(--ink)">${ic('msg')}</span>`}</div>`).join('')}
+    <div class="rdiv"></div>${railHead('Runs', null, `<span class="eb">history</span>`)}${runs}</div>`;
+};
+const m_open = (kind) => kind === 'failed' ? 2 : 10;
+
+function rail(m, o) {
+  const id = o.idc ? identityCollapsed(m) : identityExpanded(m);
+  const sec = { files: () => secFiles(o.tree, { count: m.files, filter: o.filter }), spec: secSpec, extras: secExtras, evidence: secEvidence, submit: () => secSubmit(o.sub) }[o.page]();
+  return `<aside class="rail" aria-label="Session panel" data-rail>${id}${reviewBlock(m, o.rv || 'progress', !!o.idc)}${sec}</aside>`;
+}
+
+/* =================== the commit timeline (mirrors CommitTimeline.tsx / CommitNode.tsx / commit-format.ts) =================== */
+const TK_ICONS = {
+  layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  merge: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>',
+  ok: '<path d="m17 15-5.5 5.5L9 18"/><path d="M5.516 16.07A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 3.501 7.327"/>',
+  up: '<path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/>',
+};
+const tkSvg = (n, cls = '') => `<svg viewBox="0 0 24 24" aria-hidden="true" ${cls ? `class="${cls}"` : ''}>${TK_ICONS[n]}</svg>`;
+const truncSubject = (t, max = 24) => (t.length <= max ? t : t.slice(0, max - 1).trimEnd() + '…');
+const strip = (m, w = 1440) => {
+  // items: full, commits oldest to newest, uncommitted. The segment into a node is solid only for a pushed commit.
+  const items = [{ k: 'full' }, ...m.commits.map((c) => ({ k: 'commit', c })), { k: 'unc' }];
+  const into = (it) => (!it || it.k === 'full' ? null : it.k === 'commit' && it.c.pushed ? 's' : 'd');
+  const seg = (side, st) => (st ? `<span class="cx-seg ${side} ${st === 'd' ? 'd' : ''}"></span>` : '');
+  const html = items.map((it, i) => {
+    const segs = seg('l', into(it)) + seg('r', into(items[i + 1]));
+    let node, p, s, title, on = '';
+    if (it.k === 'full') {
+      on = 'on'; title = `Full diff: ${m.files} files ${m.add} ${m.del}`;
+      node = `<span class="cx-ring">${tkSvg('layers')}</span>`; p = '<span>Full diff</span>'; s = `${m.files} files ${m.add} ${m.del}`;
+    } else if (it.k === 'unc') {
+      title = `Uncommitted changes: ${m.unc} files`;
+      node = '<span class="cx-dot un"></span>'; p = '<span>Uncommitted</span>'; s = `${m.unc} files`;
+    } else {
+      const c = it.c; title = `${c.merge ? 'Merge commit' : 'Commit'} ${c.sha}: ${c.subject}`;
+      node = c.merge ? `<span class="cx-ring mg">${tkSvg('merge')}</span>` : '<span class="cx-dot"></span>';
+      p = `<span>${c.sha}</span>${tkSvg(c.pushed ? 'ok' : 'up', 'cx-ic ' + (c.pushed ? 'ok' : 'up'))}`; s = truncSubject(c.subject);
+    }
+    return `<div class="cx ${on}">${segs}<div class="cx-b" title="${title}"><span class="cx-n">${node}</span><span class="cx-p">${p}</span><span class="cx-s">${s}</span></div></div>`;
+  });
+  return `<section class="cxl" aria-label="Commits" data-chrome-col data-strip><div class="cx-ul">${html.join('')}</div></section>`;
+};
+
+/* =================== deck / grid content =================== */
+const CODE = [
+  "import { db } from '../db'", "import { HttpError } from '../errors'", "import type { Comment, NewComment } from '../types'", '',
+  'const MAX_BODY = 4000', '',
+  'export async function listComments(postId: string): Promise<Comment[]> {', '  return db.comment.findMany({', '    where: { postId, deletedAt: null },',
+  "    orderBy: { createdAt: 'asc' },", '    include: { author: { select: { id: true, name: true, avatarUrl: true } } },', '  })', '}', '',
+  'export async function addComment(input: NewComment): Promise<Comment> {', '  const body = input.body.trim()',
+  "  if (body.length === 0) throw new HttpError(422, 'Write something first')", "  if (body.length > MAX_BODY) throw new HttpError(422, 'Comment is too long')",
+  '  return db.comment.create({ data: { ...input, body } })', '}', '',
+  'export async function deleteComment(id: string, userId: string): Promise<void> {', '  const found = await db.comment.findUnique({ where: { id } })',
+  "  if (!found || found.authorId !== userId) throw new HttpError(404, 'No such comment')", '  await db.comment.update({ where: { id }, data: { deletedAt: new Date() } })', '}', '',
+  'export async function countComments(postId: string): Promise<number> {', '  return db.comment.count({ where: { postId, deletedAt: null } })', '}',
+];
+const hl = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/('[^']*')|\b(import|export|from|async|function|const|return|if|throw|await|new|type)\b|\b([A-Z][A-Za-z]*)\b|\b([a-z][A-Za-z]*)(?=\()|\b(\d+)\b/g,
+  (x, str, kw, ty, fn, num) => str ? `<i class="s">${str}</i>` : kw ? `<i class="k">${kw}</i>` : ty ? `<i class="ty">${ty}</i>` : fn ? `<i class="f">${fn}</i>` : `<i class="n">${num}</i>`);
+const codeLines = () => CODE.map((l, i) => `<div class="ln"><span class="g">${i + 1}</span><span class="t">${hl(l) || ' '}</span></div>`).join('');
+function deck(m, o = {}) {
+  const nar = o.narrow;
+  return `<div class="main" style="${o.mb != null ? `--mb:${o.mb}px` : ''}"><div class="deckw" ${o.wide ? 'style="width:1180px"' : ''}>
+  <div class="peek p2"></div><div class="peek p1"></div>
+  <div class="card ft-ts" data-card>
+    <div class="chd"><div style="min-width:0;flex:1;display:flex;flex-direction:column;gap:3px"><span class="dir trunc">src/api/</span><span style="display:flex;gap:8px;align-items:center"><span class="fn">comments.ts</span><span class="tag mint">${ic('plus')}${nar ? '' : 'Added'}</span></span></div>
+      <span class="stat" style="margin-top:2px;color:var(--hdr-ink)">+23 −0</span><span class="pos" style="margin-top:3px;display:inline-flex;gap:5px;align-items:center">${ic('files')} ${m.pos}</span>
+      <span class="seg"><b class="on">${ic('rows')}${nar ? '' : 'Unified'}</b><b>${ic('cols')}${nar ? '' : 'Split'}</b></span></div>
+    <div class="code">${codeLines()}</div>
+    <div class="cmt">${ic('msg')}Leave a comment…<span class="kbd">C</span></div>
+    <div class="acts"><span class="btn lg rej">${ic('x')}<span class="lbl">Reject</span>${nar ? '' : kbdc('X')}</span><span class="btn lg">${ic('msg')}<span class="lbl">Comment</span>${nar ? '' : kbdc('C')}</span><span class="btn lg pri">${ic('check')}<span class="lbl">Approve</span>${nar ? '' : kbdc('A')}</span></div>
+  </div>
+  <span class="arrow l">${ic('chev-l')}</span><span class="arrow r">${ic('chev-r')}</span>
+</div><div class="pgr">${m.pos}</div></div>`;
+}
+
+const FILES = [ // path, type, status, +, −, verdict, tag
+  ['.github/workflows/ci.yml', 'yaml', 'M', 2, 0, 'a'], ['.prettierrc.json', 'json', 'A', 5, 0, 'a'], ['CONTRIBUTING.md', 'other', 'D', 0, 5, 'a'], ['README.md', 'other', 'M', 4, 0, 'a'],
+  ['assets/logo.png', 'other', 'M', 0, 0, 'a', 'Binary'], ['config/cache.yaml', 'yaml', 'A', 6, 0, 'a'], ['config/features.json', 'json', 'M', 3, 2, 'a'], ['docs/comments.md', 'other', 'A', 12, 0, ''],
+  ['package-lock.json', 'json', 'M', 6, 0, '', 'Collapsed'], ['package.json', 'json', 'M', 2, 1, ''], ['scripts/build.js', 'js', 'M', 3, 2, ''], ['scripts/lint-staged.js', 'js', 'A', 6, 0, ''],
+  ['src/api/comments.ts', 'ts', 'A', 23, 0, '', '', 'cur'], ['src/api/users.ts', 'ts', 'M', 2, 0, 'r'], ['src/components/Avatar.tsx', 'react', 'M', 3, 0, ''], ['src/components/CommentList.tsx', 'react', 'A', 18, 0, 'c'],
+  ['src/components/Legacy.tsx', 'react', 'D', 0, 14, ''], ['src/components/UserCard.tsx', 'react', 'M', 4, 1, ''], ['src/data/countries.ts', 'ts', 'A', 2109, 0, '', 'Large'], ['src/index.ts', 'ts', 'M', 3, 1, ''],
+  ['src/legacy/Toolbar.legacy.jsx', 'react', 'R', 1, 0, ''], ['src/legacy/widget.jsx', 'react', 'M', 2, 2, ''], ['src/styles/base.css', 'css', 'M', 1, 0, ''], ['src/styles/comments.css', 'css', 'A', 3, 0, ''],
+  ['src/styles/old.css', 'css', 'D', 0, 2, ''], ['src/utils/time.ts', 'ts', 'R', 4, 0, ''],
+];
+const STAT = { M: ['Modified', 'var(--st-m)'], A: ['Added', 'var(--st-a)'], D: ['Deleted', 'var(--st-d)'], R: ['Renamed', 'var(--st-r)'] };
+const cbars = (a, d) => { const t = a + d; if (!t) return `<span class="cbars"><i></i><i></i><i></i><i></i><i></i></span>`; const ga = Math.max(a ? 1 : 0, Math.round(5 * a / t)), gd = 5 - ga; return `<span class="cbars">${'<i class="a"></i>'.repeat(ga)}${'<i class="d"></i>'.repeat(gd)}</span>`; };
+const tile = ([p, ft, s, a, d, v, tag, cur]) => {
+  const i = p.lastIndexOf('/'), dir = i < 0 ? '' : p.slice(0, i + 1), nm = p.slice(i + 1);
+  const vv = v === 'a' ? `<span class="tv a">${ic('check')}Approved</span>` : v === 'r' ? `<span class="tv r">${ic('x')}Rejected</span>` : v === 'c' ? `<span class="tv c">${ic('msg')}Commented · 1</span>` : `<span class="tv">Unreviewed${tag ? `<span class="tag sm">${tag}</span>` : ''}</span>`;
+  return `<div class="tile ft-${ft} ${cur ? 'cur' : ''}"><div class="tb2"><span class="td">${dir}</span><span class="tn2">${nm}</span><span class="ts"><span class="stt"><span class="sd" style="background:${STAT[s][1]}"></span>${STAT[s][0]}</span><span class="pm"><span class="a">+${a.toLocaleString('en-US')}</span> <span class="d">−${d}</span></span>${cbars(a, d)}</span>${vv}</div></div>`;
+};
+const gridFilter = () => `<div class="frow" style="flex:none"><span class="seg"><b class="on">All <em>26</em></b><b>Unreviewed <em>16</em></b><b>Commented <em>1</em></b><b>Approved <em>7</em></b><b>Rejected <em>1</em></b></span><span class="sp"></span>
+  <span class="btn" style="height:34px">${ic('filter')}File types${ic('chev-d')}</span></div>`;
+const typesMenu = (style) => `<div class="menu" style="${style}"><div class="lab eb" style="padding:4px 10px 8px">File types</div>
+  ${[['ts', 'TypeScript', '.ts', 5], ['js', 'JavaScript', '.js', 2], ['react', 'React', '.tsx .jsx', 6], ['yaml', 'YAML', '.yml .yaml', 2], ['json', 'JSON', '.json', 4], ['css', 'CSS', '.css', 3], ['other', 'Everything else', '.md .png', 4]].map(([t, n, e, c], i) => `<div class="mck ft-${t}"><span class="bx ${false ? 'on' : ''}">${false ? `<svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px;color:var(--paper);stroke-width:3.5;display:block;margin:0.5px"><use href="#i-check"/></svg>` : ''}</span><span class="sw"></span>${n}<span class="ex">${e}</span><span class="ct">${c}</span></div>`).join('')}
+  <div class="clr">Clear</div></div>`;
+
+/* =================== spec / extras / evidence main content =================== */
+const dgSvg = (kind) => kind === 'seq'
+  ? `<svg class="dg" viewBox="0 0 520 190"><g><rect class="nb" x="26" y="10" width="110" height="30"/><text x="81" y="29">UserCard.tsx</text><rect class="nb" x="205" y="10" width="110" height="30"/><text x="260" y="29">comments.ts</text><rect class="nb" x="372" y="10" width="130" height="30"/><text x="437" y="29">/api/…/comments</text></g>
+     <g stroke="var(--ink-muted)" stroke-dasharray="2 3"><path d="M81 40V180M260 40V180M437 40V180"/></g>
+     <path class="ed" d="M81 70H258"/><text class="lbl" x="170" y="64">listComments(postId)</text><path class="ed" d="M260 98H435"/><text class="lbl" x="348" y="92">GET</text><path class="ed" stroke-dasharray="4 3" d="M435 126H262"/><text class="lbl" x="348" y="120">Comment[]</text><path class="ed" stroke-dasharray="4 3" d="M258 154H83"/><text class="lbl" x="170" y="148">Comment[]</text></svg>`
+  : `<svg class="dg" viewBox="0 0 640 250"><g><rect class="nb" x="28" y="104" width="86" height="34"/><text x="71" y="125">index.ts</text><rect class="nb" x="200" y="18" width="110" height="34"/><text x="255" y="39">api/users.ts</text><rect class="nb" x="200" y="68" width="110" height="34"/><text x="255" y="89">api/posts.ts</text><rect class="nb" x="200" y="148" width="116" height="34"/><text x="258" y="169">UserCard.tsx</text><rect class="nb" x="200" y="204" width="130" height="34"/><text x="265" y="225">api/comments.ts</text><rect class="nb" x="400" y="120" width="96" height="34"/><text x="448" y="141">Avatar.tsx</text><rect class="nb" x="400" y="170" width="124" height="34"/><text x="462" y="191">CommentList.tsx</text><rect class="nb" x="560" y="170" width="70" height="34"/><text x="595" y="191">time.ts</text></g>
+     <path class="ed" d="M114 112C160 70 170 40 200 36M114 118C150 100 170 90 200 86M114 130C150 150 170 160 200 165M114 136C150 190 160 215 200 221M316 165C350 160 370 140 400 137M316 168C350 180 370 186 400 187M524 187H560"/></svg>`;
+
+const specPage = () => `<main class="page" data-main>
+  <div class="phead"><h1>Spec</h1><span class="meta">${ic('files', 's')} 4 sources · read-only</span></div>
+  <div class="two">
+    <div class="panel" style="height:100%">
+      <div class="ph"><span class="ibox">${ic('ticket')}</span><span style="min-width:0"><span class="mono" style="color:var(--st-r)">VAR-201</span> Comments on posts</span><span class="sp"></span><span class="btn" style="height:30px">${ic('ext')}Open in Jira</span></div>
+      <div class="pb md" style="overflow:hidden;flex:1"><h1>VAR-201: Comments on posts</h1>
+        <ul><li><b>Status:</b> In Review</li><li><b>Assignee:</b> Sam Okafor</li><li><b>Type:</b> Story</li><li><b>Priority:</b> High</li><li><b>Link:</b> <a>https://example.atlassian.net/browse/VAR-201</a></li></ul>
+        <h2>Description</h2><p>Readers cannot respond to posts. Add comments under each post, loaded lazily per post and cached for a minute, with relative timestamps (“3 min ago”). Avatars should load lazily now that a feed can hold hundreds of them, and the user record gains a country so the dial code can be shown later.</p>
+        <h2>Acceptance criteria</h2><ol><li>Comments render under their post, oldest first, with a relative timestamp.</li><li>Adding a comment posts to <code>/api/posts/:id/comments</code> and appends it without a reload.</li><li>The legacy table view and its stylesheet are gone.</li><li>CI lints staged files on pull requests.</li></ol></div>
+      <div style="padding-top:14px;flex:none"><div class="cbox">${ic('msg')}Leave a comment…${kbdc('C')}</div></div></div>
+    <div class="panel" style="height:100%">
+      <div class="ph"><span class="ibox">${ic('doc')}</span><span class="mono">plan.md</span><span class="mut" style="font-weight:500;font-size:13px">Implementation plan</span><span class="sp"></span><span class="btn sq" style="height:30px;width:30px">${ic('copy')}</span></div>
+      <div class="pb md" style="overflow:hidden;flex:1"><h1>Implementation plan: comments (VAR-201)</h1><h2>Approach</h2>
+        <p>Fetch comments per post after the feed loads so the first paint is not blocked. The cache TTL lives in <code>config/cache.yaml</code>; the feature is behind <code>features.comments</code>.</p>
+        <div class="mer"><div class="mh">mermaid<span class="sp"></span><span class="btn sq">${ic('dl')}</span><span class="btn sq">${ic('copy')}</span><span class="btn sq">${ic('max')}</span></div>${dgSvg('seq')}</div>
+        <h2>Steps</h2><ol><li><code>src/api/comments.ts</code>: list and add.</li><li><code>CommentList.tsx</code> and <code>comments.css</code>.</li></ol></div></div>
+  </div></main>`;
+
+const extrasPage = () => `<main class="page" data-main style="align-items:center">
+  <div style="width:100%;max-width:960px;display:flex;flex-direction:column;gap:16px;min-height:0;flex:1">
+  <div class="phead"><h1>Extras</h1><span class="meta">${ic('files', 's')} 5 items</span></div>
+  <div class="panel" style="flex:1">
+    <div class="ph"><span class="ibox">${ic('doc')}</span>Architecture (markdown with a mermaid block)<span class="sp"></span><span class="mono mut" style="font-size:12px;font-weight:500">architecture.md</span></div>
+    <div class="pb md" style="flex:1;overflow:hidden"><h1>Comments architecture</h1>
+      <div class="mer" style="margin-top:6px"><div class="mh">mermaid<span class="sp"></span><span class="btn sq">${ic('dl')}</span><span class="btn sq">${ic('copy')}</span><span class="btn sq">${ic('max')}</span></div><div style="max-width:700px;margin:0 auto">${dgSvg('arch')}</div><div class="zoom"><span class="btn sq" style="width:30px;height:30px">${ic('zin')}</span><span class="btn sq" style="width:30px;height:30px">${ic('minus')}</span><span class="btn sq" style="width:30px;height:30px">${ic('refresh')}</span></div></div>
+    </div></div></div></main>`;
+
+const evidencePage = () => `<main class="page" data-main style="padding-bottom:26px">
+  <div class="phead"><h1>Evidence</h1><span class="meta">${ic('img', 's')} 6 screenshots</span><span class="meta">${ic('film', 's')} 1 recording</span><span class="sp"></span>
+    <span class="meta" style="color:var(--ink)"><b>1 / 7</b></span><span class="btn sq" style="height:28px;width:28px;border-radius:50%">${ic('arr-l')}</span><span class="btn sq" style="height:28px;width:28px;border-radius:50%">${ic('arr-r')}</span><span class="meta">Previous / next</span><span class="meta">${kbdc('C')} Comment</span></div>
+  <div class="panel card6" style="flex:1;min-height:0">
+    <div style="display:flex;flex:1;min-height:0">
+      <div style="flex:1;min-width:0;padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px"><span class="ibox">${ic('img')}</span><span class="mono" style="font-weight:700">feed-neutral.png</span><span class="mut">Feed with the trial bar, neutral variant</span><span class="sp"></span><span class="btn" style="height:32px">${ic('ext')}Open original</span></div>
+        <div style="flex:1;min-height:0;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;position:relative;background:repeating-conic-gradient(#e3e3e3 0 25%,#f6f6f6 0 50%) 0 0/20px 20px">
+          <div style="position:absolute;left:0;right:0;top:56px;bottom:0"><div class="shot"><div class="tb">Your trial ends in <b>7 days</b>. Keep your workspace by upgrading.<i>Upgrade</i></div><div class="ah"><b>Acme Console</b><span>Alex Rivera · free</span></div><div class="ab"><div class="an"><span>Dashboard</span><span>Workspaces</span><span>Settings</span></div><div class="am"><div><b>Workspaces</b><br>3 active · 12 members</div><div><b>Recent activity</b><br>Import finished · 2 minutes ago</div></div></div></div></div>
+          <span class="seg" style="position:absolute;right:12px;top:10px;padding:3px;gap:6px;align-items:center"><b style="font-weight:600;color:var(--ink-muted)">77%</b><b class="btn sq" style="height:26px;width:26px;padding:0">${ic('minus')}</b><b class="btn sq" style="height:26px;width:26px;padding:0">${ic('plus')}</b><b class="btn sq" style="height:26px;width:26px;padding:0">${ic('max')}</b></span></div>
+        <div style="flex:none;display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--paper-2)"><span class="ibox" style="width:26px;height:26px">${ic('bot')}</span>Baseline before any interaction.</div></div>
+      <aside style="width:300px;flex:none;border-left:1.5px solid var(--line);background:var(--paper-2);padding:16px;display:flex;flex-direction:column;gap:12px"><strong style="font-size:15px">Comments</strong><div class="cbox" style="margin:0">${ic('msg')}Leave a comment…${kbdc('C')}</div></aside></div></div></main>`;
+
+/* =================== submit =================== */
+const OPEN = [
+  ['TrialBar.tsx', 'err', 'Changes requested', [['The warning copy and the neutral copy differ only in the second sentence; pull the sentence out of the template literal so translators see one string per variant.', 'c1', ''], ['Prefer a &lt;section aria-label="Trial"&gt; here: role="status" on a container with a link and a button reads oddly.', 'c2', 'lines 17–19']]],
+  ['config.ts', 'err', 'Changes requested', [['warnAtDays and upgradeUrl should come from the server settings endpoint, not be baked into the bundle.', 'c3', '']]],
+  ['OldBanner.ts', '', 'Commented', [['Nothing imports this any more: good riddance.', 'c5', '']]],
+];
+const cmtCard = (txt, id, lines, sent) => `<div class="cmtc"><div style="display:flex;gap:10px"><span class="av">You</span><span>${txt}</span></div><div class="ft"><span>${id}</span>${lines ? `<span class="mono" style="color:var(--st-r)">${lines}</span>` : ''}<span>2 weeks ago</span>${sent ? `<span class="tag info sm">Sent</span>` : ''}<span style="flex:1"></span><b style="font-weight:600;color:var(--ink-muted)">Edit</b><b style="font-weight:600;color:var(--ink-muted)">${sent ? '' : 'Delete'}</b><b>Mark resolved</b></div></div>`;
+const openPanel = (kind, narrow) => `<div class="panel" style="${narrow ? '' : 'flex:1;min-width:0'}"><div class="ph">Open comments<span class="badge-sm" style="background:var(--warn-bg);color:var(--ink);border-color:color-mix(in srgb,var(--warn-bd) 50%,transparent);display:inline-flex;gap:4px;align-items:center;padding:0 8px;height:22px">${ic('msg', 's')}${m_open(kind)}</span></div>
+  <div class="pb" style="padding-top:12px"><div class="eb" style="display:flex;gap:6px;align-items:center">${ic('files', 's')}Files</div><div style="font-size:12.5px;color:var(--ink-muted);margin:6px 0 2px;font-weight:500">${kind === 'failed' ? '1 approved · 1 rejected · 0 commented · 10 not reviewed' : '7 approved · 2 rejected · 3 commented · 0 not reviewed'}</div>
+  ${(kind === 'failed' ? [['app.ts', 'err', 'Changes requested', [['dismissTrialBar re-renders the whole root; only the bar needs to go away.', 'c1', '', true]]]] : OPEN).map(([f, tone, lab, cs]) => `<div class="fh">${f}<span class="tag ${tone} sm">${tone === 'err' ? ic('x') : ic('msg')}${lab}</span></div><div style="display:flex;flex-direction:column;gap:10px">${cs.map(([t, id, ln, sent]) => cmtCard(t, id, ln, sent)).join('')}</div>`).join('')}</div></div>`;
+const composePanels = (kind) => `<div class="panel"><div class="ph">Overall feedback</div><div class="pb"><div class="ta">${kind === 'failed' ? 'Please also run the full test suite before resolving.' : 'Solid change. Two blockers in TrialBar.tsx and config.ts, the rest are suggestions. Draft, not sent yet.'}</div>${kind === 'failed' ? `<div style="margin-top:8px;font-size:12.5px;color:var(--ink-muted);display:flex;gap:6px;align-items:center">${ic('check', 's')}Sent · still open, edits go with the next send</div>` : ''}</div></div>
+  <div class="panel"><div class="ph">Decision</div><div class="pb" style="display:flex;gap:12px"><div class="radio"><span class="rb"></span><div><div class="rt" style="color:var(--green)">${ic('check')}Approve</div><div class="rd">Ready for a PR to be opened.</div></div></div><div class="radio on"><span class="rb"></span><div><div class="rt">${ic('msg')}Request changes</div><div class="rd">Claude Code applies the open comments.</div></div></div><div class="radio"><span class="rb"></span><div><div class="rt" style="color:var(--red)">${ic('x')}Reject</div><div class="rd">Stop here; the approach needs rethinking.</div></div></div></div></div>
+  <div class="panel"><div class="ph">PR description<span class="sp"></span><span class="tag mono">${ic('doc')}pr-description.md</span></div><div class="pb md"><h1 style="font-size:19px">QI-15472: Trial bar</h1><p>Adds a persistent trial bar above the header for free-plan users, with an amber variant when three or fewer days remain and a direct path into the upgrade flow.</p><h2>Changes</h2><ul><li><code>TrialBar.tsx</code> + <code>trial-bar.css</code>: the bar, its neutral/amber variants and the dismiss control.</li></ul></div></div>`;
+const failNotice = `<div style="display:flex;flex-direction:column;gap:10px;flex:none"><div class="nt err" style="white-space:normal;max-width:100%;align-self:flex-start;padding:5px 14px 5px 5px"><i>${ic('alert')}</i><span><b>The last Claude Code run failed.</b> claude exited with code 1: Error: Session claude-session-f41d could not be resumed (workspace trust check failed)</span></div>
+  <div style="display:flex;gap:10px">${btn('Retry', { cls: 'pri', icon: 'refresh' })}${btn('View run')}</div></div>`;
+const sendBar = (kind, narrow) => `<footer class="sendbar" data-sendbar style="${narrow ? 'padding:0 14px;gap:10px' : ''}">${narrow ? `<span style="color:var(--ink);margin-right:auto;font-size:12.5px">${kind === 'failed' ? '2 comments · Request changes' : '10 comments · Request changes'}</span>` : `<span style="color:var(--ink)">${kind === 'failed' ? 'Send 2 comments + Request changes to the current session · 10 files not reviewed' : 'Send 10 comments + Request changes to the current session'}</span>`}
+  <span class="split"><span class="btn pri" style="${narrow ? 'padding:0 14px' : ''}">${ic('send')}Submit to current session</span><span class="btn pri">${ic('chev-d')}</span></span></footer>`;
+function submitPage(kind, w = 1440) {
+  const narrow = w <= 800;
+  return `<main class="page" data-main style="${narrow ? 'overflow:hidden' : ''}"><div class="phead"><h1>Submit</h1></div>${kind === 'failed' ? failNotice : ''}
+    ${narrow ? `<div style="display:flex;flex-direction:column;gap:14px;min-height:0">${openPanel(kind, true)}${composePanels(kind).split('<div class="panel">').slice(1, 2).map((x) => '<div class="panel">' + x).join('')}</div>`
+      : `<div style="display:flex;gap:22px;align-items:flex-start;min-height:0;flex:1"><div class="pcol" style="flex:1.1;min-width:0">${composePanels(kind)}</div>${openPanel(kind)}</div>`}</main>${sendBar(kind, narrow)}`;
+}
+
+/* =================== list + errors =================== */
+const listRows = [
+  [['QI-15472'], 'QI-15472: Trial bar', 'trial-app-all-verdicts', 'feature/trial-bar', '+2,154', '−2,010', 12, 12, 12, 'ok', 'check', 'Ready to submit'],
+  [['VAR-201', 'VAR-188'], 'VAR-201: Comments on posts', 'variety-app', 'feature/comments-on-posts', '+2,216', '−30', 26, 9, 26, 'flat', 'lchecks', 'In progress'],
+  [['QI-15472', 'QI-15488', '+4'], 'QI-15472: Trial bar with amber warning variant, session-scoped dismissal…', 'trial-app-long', 'feature/QI-15472-trial-bar-wi…', '+2,154', '−2,010', 12, 4, 12, 'flat', 'lchecks', 'In progress'],
+  [['QI-15472'], 'QI-15472: Trial bar', 'trial-app-runs', 'feature/trial-bar', '+2,154', '−2,010', 12, 2, 12, 'err', 'alert', 'Run failed'],
+  [['QI-15472'], 'QI-15472: Trial bar', 'trial-app-runs', 'feature/trial-bar', '+2,154', '−2,010', 12, 2, 12, 'info', 'bot', 'Claude Code working…'],
+  [['QI-15472'], 'QI-15472: Trial bar (started on the v1 branch)', 'trial-app', 'feature/trial-bar', '+2,154', '−2,010', 12, 0, 12, 'info', 'clock', 'Awaiting review', true],
+  [['OPS-7'], 'OPS-7: Rotate the signing key (nothing changed yet)', 'clean-app', 'feature/rotate-signing-key', '+0', '−0', 0, 0, 0, 'info', 'clock', 'Nothing to review'],
+];
+const listRow = ([tk, title, repo, head, a, d, files, rv, tot, tone, icn, st, chg]) => `<div class="lrow"><div class="who"><div class="t1">${tk.map((k) => k[0] === '+' ? `<span class="tk more sm">${k}</span>` : chip(k, true, true)).join('')}<span class="ttl trunc" style="font-size:16px;font-weight:700">${title}</span></div>
+  <div class="idl"><span class="rp">${ic('folder')}${repo} ·</span>${branchTag('origin/master')}${ic('arr-l', 'arr')}${branchTag(head, 'shrink')}</div>${chg ? `<div><span class="tag warn sm">${ic('alert')}Branch changed <span style="font-weight:500">· now on feature/trial-bar-v2</span></span></div>` : ''}</div>
+  <span class="stat"><span class="a">${a}</span><span class="d">${d}</span><span class="nm" style="margin-left:6px">${ic('files')}${files}</span></span>
+  <span class="nm">${ic('check2')}<strong>${rv}/${tot}</strong><span class="prog" style="width:70px"><i style="width:${tot ? rv / tot * 100 : 0}%;${rv === tot && tot ? 'background:var(--green)' : ''}"></i></span></span>
+  <span>${notice(tone, icn, st, true)}</span><span class="mut" style="font-size:13px">just now</span>${ic('chev-r', 'mut')}</div>`;
+const listPage = () => `<main class="page" data-main style="padding:26px 52px 0;gap:14px">
+  <div class="phead" style="gap:14px"><h1 style="font-size:28px">Review sessions</h1>
+    <span class="pillf on">${ic('list')}All <em>11</em></span><span class="pillf">${ic('clock')}Awaiting review <em>6</em></span><span class="pillf">${ic('cdash')}In progress <em>2</em></span><span class="pillf">${ic('send')}Sent <em>2</em></span><span class="pillf">${ic('refresh')}Updated since sent <em>1</em></span><span class="pillf">${ic('check2')}Approved <em>0</em></span>
+    <span class="sp"></span><span class="pillf" style="border-color:transparent">${ic('archive')}Archived <em>1</em></span></div>
+  <div class="lhead"><span>${ic('layers', 's')}Session</span><span>${ic('plus', 's')}Changes</span><span>${ic('check2', 's')}Reviewed</span><span>${ic('cdash', 's')}Status</span><span>${ic('clock', 's')}Updated</span><span></span></div>
+  <div style="display:flex;flex-direction:column;gap:14px">${listRows.map(listRow).join('')}</div></main>`;
+
+const errorPanel = (kind) => {
+  const arch = kind === 'archived';
+  return `<div class="errwrap"><div class="panel"><div class="ph" style="min-height:48px">${ic('folderx')}<span style="font-size:15px">${arch ? 'This session is archived' : 'Repository missing'}</span></div>
+  <div class="pb" style="display:flex;flex-direction:column;gap:12px"><span class="mono mut" style="font-size:12px">${arch ? '20260920-0800-qi-15301-workspace-export-a7c1' : '20261001-0900-var-201-comments-on-posts-a1b2'}</span>
+  ${arch ? `<p style="margin:0;font-size:13px;font-weight:500;color:var(--ink-muted)">Archived sessions are not reviewable. Unarchive it to open the review again.</p>`
+    : `<div class="nt err" style="white-space:normal;align-self:stretch;padding:5px 12px 5px 5px"><i>${ic('alert')}</i><span style="overflow-wrap:anywhere">/Users/sam/Projects/variety-app is gone or is no longer a git checkout.</span></div>`}</div>
+  <div class="pf" style="justify-content:flex-end"><span class="btn gh">${ic('arr-l')}Back to sessions</span>${arch ? btn('Unarchive', { cls: 'pri', icon: 'restore' }) : btn('Retry', { cls: 'pri', icon: 'refresh' })}</div></div></div>`;
+};
+
+/* =================== review complete =================== */
+const completeDlg = () => `<div class="veil"></div><section class="panel card6 dlg" aria-label="Review complete"><div class="ph" style="justify-content:center;min-height:52px;font-size:18px">Review complete</div>
+  <div class="pb" style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:26px 28px 22px">${notice('ok', 'check', 'Ready to submit')}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><span class="btn" title="Evidence">${ic('img')}<span style="color:var(--ink-muted);font-weight:600;font-size:12px">2</span></span><span class="btn" title="Spec">${ic('doc')}<span style="color:var(--ink-muted);font-weight:600;font-size:12px">3</span></span><span class="btn" title="Extras">${ic('box')}<span style="color:var(--ink-muted);font-weight:600;font-size:12px">2</span></span><span class="btn pri">${ic('send')}Submit</span></div>
+  <span class="ghost bx" style="color:var(--ink-muted)" title="Back to files">${ic('arr-l')}</span></div></section>`;
+
+/* =================== page builders (one per screen) =================== */
+const idcFiles = true;   // Files: identity collapsed by default (remembered separately from the other pages)
+const P = {
+  list: (m, w) => `${topBar(m, { kind: 'list' })}<div class="body"><div class="col">${listPage()}</div></div>`,
+  spec: (m, w, o = {}) => `${topBar(m, { page: 'spec' })}<div class="body">${rail(m, { page: 'spec', idc: o.idc })}<div class="col">${specPage()}</div></div>`,
+  extras: (m, w, o = {}) => `${topBar(m, { page: 'extras' })}<div class="body">${rail(m, { page: 'extras', idc: o.idc })}<div class="col">${extrasPage()}</div></div>`,
+  evidence: (m, w, o = {}) => `${topBar(m, { page: 'evidence' })}<div class="body">${rail(m, { page: 'evidence', idc: o.idc })}<div class="col">${evidencePage()}</div></div>`,
+  deck: (m, w, o = {}) => `${topBar(m, { page: 'files', w })}<div class="body">${rail(m, { page: 'files', tree: T_VAR, idc: o.idc ?? idcFiles })}<div class="col">${strip(m, w)}${deck(m, { narrow: false })}</div></div>`,
+  grid: (m, w, o = {}) => `${topBar(m, { page: 'files', grid: true })}<div class="body">${rail(m, { page: 'files', tree: T_VAR, idc: idcFiles })}<div class="col">${strip(m, w)}<div class="page" style="padding:16px 24px 0;gap:14px">${gridFilter()}<div class="tiles">${FILES.slice(0, 24).map(tile).join('')}</div></div></div>${typesMenu('right:24px;top:138px;width:330px')}</div>`,
+  complete: (m0, w, m = ALLV) => `${topBar(m, { page: 'files', ready: true })}<div class="body">${rail(m, { page: 'files', tree: T_ALLV, idc: idcFiles, rv: 'ready' })}<div class="col"><div class="blur">${strip(m, w)}${deck(m, {})}</div>${completeDlg()}</div></div>`,
+  submit: (m0, w, m = ALLV) => `${topBar(m, { page: 'submit' })}<div class="body">${rail(m, { page: 'submit', sub: 'ok', rv: 'ready' })}<div class="col">${submitPage('ok')}</div></div>`,
+  submitFail: (m0, w, m = FAIL) => `${topBar(m, { page: 'submit', err: true })}<div class="body">${rail(m, { page: 'submit', sub: 'failed', rv: 'failed' })}<div class="col">${submitPage('failed')}</div></div>`,
+  archived: () => `${topBar(VAR, { kind: 'error', id: '20260920-0800-qi-15301-workspace-export-a7c1' })}<div class="body"><div class="col">${errorPanel('archived')}</div></div>`,
+  missing: () => `${topBar(VAR, { kind: 'error', id: '20261001-0900-var-201-comments-on-posts-a1b2' })}<div class="body"><div class="col">${errorPanel('missing')}</div></div>`,
+};
+
+/* =================== 800px frames =================== */
+const drawerRail = (m, tree, o = {}) => `<div class="scrim"></div><div class="drawer">${rail(m, { page: 'files', tree, idc: true, ...o })}</div>`;
+P.deckc = (m, w) => `${topBar(m, { page: 'files', w, collapsed: true })}<div class="body"><div class="col">${strip(m, w)}${deck(m, { narrow: false, wide: true })}</div></div>`;
+P.deck800 = (m, w, o = {}) => `${topBar(m, { page: 'files', w: 800, drawer: o.open })}<div class="body"><div class="col">${strip(m, 800)}${deck(m, { narrow: true })}</div>${o.open ? drawerRail(m, T_VAR) : ''}</div>`;
+P.submit800 = (m, w, o = {}) => `${topBar(m, { page: 'submit', w: 800, drawer: o.open })}<div class="body"><div class="col">${submitPage('ok', 800)}</div>${o.open ? `<div class="scrim"></div><div class="drawer">${rail(m, { page: 'submit', sub: 'ok', rv: 'ready' })}</div>` : ''}</div>`;
+
+/* rail-only crops (states) */
+const railTop = (m, st, idc) => `<aside class="rail" style="width:296px;border-right:0;height:100%" data-rail>${idc ? identityCollapsed(m) : identityExpanded(m)}${reviewBlock(m, st)}${reviewBlock(m, st, true)}</aside>`;
+const VAR0 = { ...VAR, rev: { total: 26, approved: 0, rejected: 0, commented: 0 } };
+const FAILW = { ...FAIL, rev: { total: 12, approved: 9, rejected: 2, commented: 1 } };
+
+/* overflow-menu crop */
+P.menu = (m) => `${topBar(m, { page: 'files', menu: true })}<div style="position:absolute;inset:52px 0 0 0;background:var(--paper)"></div>
+  <div class="menu" style="right:20px;top:58px;width:310px"><div class="mi first">${ic('archive')}<span class="tx"><span class="l1">Archive session</span><span class="l2">Moves it out of the list. A toast offers Undo.</span></span></div></div>`;
+P.menu800 = (m) => `${topBar(m, { page: 'files', w: 800 })}<div style="position:absolute;inset:52px 0 0 0;background:var(--paper)"></div>
+  <div class="menu" style="right:14px;top:58px;width:290px"><div class="mi first">${ic('kbd')}<span class="tx"><span class="l1">Keyboard shortcuts</span></span><span class="kbd">?</span></div>
+  <div class="mi first"><span class="theme" style="box-shadow:none;height:30px;margin-left:-2px"><i>${ic('sun')}</i><i>${ic('moon')}</i><i class="on">${ic('monitor')}</i></span><span class="tx"><span class="l1">Theme</span></span></div>
+  <div class="mi sepl" style="margin-top:4px">${ic('archive')}<span class="tx"><span class="l1">Archive session</span><span class="l2">A toast offers Undo.</span></span></div></div>`;
+P.tabs = (m, w, st) => `<div style="position:relative;height:100%">${topBar(m, { page: 'files', ready: st === 'ready', err: st === 'err' })}</div>`;
+
+/* =================== document =================== */
+const tabStates = () => `<div class="sub">The Submit tab in the bar, seen from any other page: open comments only, ready to submit (green, check), last run failed (red, alert)</div><div class="pair">${['light', 'dark'].map((th) => `<div class="cell stk">${[['', 'open comments only'], ['ready', 'ready to submit'], ['err', 'last run failed']].map(([st, l]) => slot('tabs-' + (st || 'normal'), l, th, 1440, 52, (m, w) => P.tabs(VAR, w, st))).join('')}</div>`).join('')}</div>`;
+
+const frames = [];
+function slot(id, label, th, w, h, build, o = {}) {
+  const key = `${id}-${th}-${w}${o.suffix ? '-' + o.suffix : ''}`;
+  frames.push({ id: key, th, w, h, build, ...o });
+  const NAMES = { list: 'Sessions list', spec: 'Spec', extras: 'Extras', evidence: 'Evidence', deck: 'Files · deck', deckc: 'Files · rail collapsed', grid: 'Files · grid', complete: 'Review complete', submit: 'Submit', submitfail: 'Submit · failed run', archived: 'Session archived', missing: 'Repository missing', long: 'Files · long-title stress', deck800: 'Files · deck', submit800: 'Submit', menu: 'Overflow menu', menu800: 'Overflow menu', 'tabs-normal': 'Bar', 'tabs-ready': 'Bar', 'tabs-err': 'Bar' };
+  const nm = NAMES[id] ? NAMES[id] + ' · ' : '';
+  return `<div class="cell"><div class="cap">${nm}${label} · ${w}x${h} <a href="#solo=${key}" target="_blank">100%</a><span class="meas" data-meas="${key}"></span></div><div class="fw" data-frame="${key}"></div></div>`;
+}
+const pairOf = (id, build, o = {}) => `<div class="pair">${slot(id, o.l || 'light', 'light', o.w || 1440, o.h || 900, build, o)}${slot(id, o.d || 'dark', 'dark', o.w || 1440, o.h || 900, build, o)}</div>`;
+const sect = (id, n, title, idea, body, tag = '') => `<section class="sect" id="${id}"><div class="sect-h"><span class="n">${n}</span><h2>${title}</h2>${tag ? `<span class="tag2">${tag}</span>` : ''}</div><p class="sect-idea">${idea}</p>${body}</section>`;
+
+function buildPage() {
+  const L = (id, w, h, build, o) => slot(id, (o && o.l) || 'light', 'light', w, h, build, o);
+  const D = (id, w, h, build, o) => slot(id, 'dark', 'dark', w, h, build, o);
+  const sections = [
+    sect('list', 1, 'Sessions list', 'No session, so no rail and no section tabs. The bar keeps its 52px height and yellow band so nothing jumps when you open a session: the wordmark stands where Sessions and the tabs will be, Shortcuts and the theme toggle stay where they are. The page header and filter pills are unchanged; the list becomes a bit denser because the bar is 16px shorter than today\'s 68px.', pairOf('list', P.list), 'bar: wordmark · shortcuts · theme'),
+    sect('spec', 2, 'Spec', 'The rail\'s section block is the table of contents of the spec: one row per source (Jira ticket, plan, exported artifact, unindexed file) with its headings nested underneath and a comment count. The row in view is yellow. The page header drops its own chips row (the rail does that job). Identity is expanded here: the rail has room.', pairOf('spec', P.spec), 'rail: identity · review · sources'),
+    sect('extras', 3, 'Extras', 'A plain list of extras, titles first (two lines), file name in mono underneath, "not indexed" dashed like the unindexed Spec entry. Rows are what the cards on the page are, in order; clicking one scrolls to it.', pairOf('extras', P.extras), 'rail: identity · review · extras list'),
+    sect('evidence', 4, 'Evidence', 'The thumbnail strip leaves the page and becomes the rail list, so the viewer fits the viewport (UX review U10): the bottom of the page is now the bottom of the panel. Each row has a real thumbnail, the file name, a one-line caption and its number; a comment count replaces the number when there is one.', pairOf('evidence', P.evidence), 'rail: identity · review · thumbnails'),
+    sect('deck', 5, 'Files: deck', 'The commit timeline is exactly today\'s component (CommitTimeline / CommitNode: the stack-icon Full diff node, circle commits with pushed and not-pushed cloud icons, the pink merge ring, the dashed Uncommitted circle, dashed amber connectors where the remote does not have the commit), but it no longer sits in a banded bar: it is drawn straight on the page background above the cards, 79px tall, aligned with the card column. Chrome above the card: 52px bar + 79px timeline = <b>131px</b> (today 205px). The rail carries the tree; identity is collapsed to one line here by default, so the tree keeps 636px.', pairOf('deck', P.deck, { ann: true }) + `<div class="sub">Rail collapsed with the bar toggle (B): the content column takes the full width and the cards widen from 980px to 1180px. The toggle then shows "Show sidebar" and wears the review progress as a badge.</div><div class="pair">${L('deckc', 1440, 900, (m, w) => P.deckc(m, w), { ann: true, l: 'rail collapsed' })}</div>`, 'bar 52 · timeline 79 · card from y≈131'),
+    sect('grid', 6, 'Files: grid', 'Same timeline and rail. The filter row (status tabs with counts, File types dropdown) is the page\'s own toolbar; the dropdown is shown open. The rail tree stays beside the grid, as today.', pairOf('grid', P.grid, { ann: true }), 'strip + filter row + tiles'),
+    sect('complete', 7, 'Files: Review complete', 'The modal sits over the content column only; the rail stays live and not blurred, so the review state it shows ("12/12", "Ready to submit", suggested decision) is the same fact the modal states. The Submit tab turns green with a check. Session: all-verdicts.', pairOf('complete', P.complete), 'rail not blurred · Submit tab green'),
+    sect('submit', 8, 'Submit', 'Compose (overall feedback, decision, PR description) on the left, Open comments on the right, send bar pinned at the bottom of the content column. The rail\'s block is "what will be sent": counts by kind, the files that carry comments, and the run history (none yet here). The decision is pre-selected from the verdicts and the send bar says what it will send.', pairOf('submit', P.submit), 'rail: identity · review · will be sent · runs'),
+    sect('submitfail', 9, 'Submit: failed run', 'Same page, failure variant (session failed-run). The error Notice and Retry are the first thing on the page; the rail says "Run failed" in the review block and lists the two runs with the failed one first (retry from there too). The Submit tab in the bar gets a red mark on every other page (see section 12).', pairOf('submitfail', P.submitFail), 'rail: Run failed · runs list'),
+    sect('errors', 10, 'Empty and error states', 'When the session cannot load there is no detail, so there is nothing to put in a rail or tabs. The bar degrades to Back to sessions + the session id + theme. The panels are today\'s (archived with Unarchive; repository missing with the server\'s message and Retry).',
+      `<div class="sub">Session archived</div>${pairOf('archived', P.archived)}<div class="sub">Repository missing</div>${pairOf('missing', P.missing)}`, 'bar: back · id · theme'),
+    sect('tree', 11, 'The tree viewport: how the rail collapses', 'At 1440x900 the rail is 848px tall. Roomy rail: identity (tickets, title, repo, both branches) 164px + review block 136px + tree header and filter 82px leave about 457px for the tree. Compact rail: identity is one line (40px) and the review block drops to bar + counts + notice + decision (82px), which leaves about 636px. One chevron on the identity row switches between them and the choice is remembered. Files defaults to compact (the tree needs the height); the other pages default to roomy (nothing competes for it). Numbers are measured from the rendered frames.',
+      `<div class="pair">${L('deck', 1440, 900, (m, w) => P.deck(m, w, { idc: false }), { suffix: 'exp', ann: true, l: 'roomy rail' })}${L('deck', 1440, 900, (m, w) => P.deck(m, w, { idc: true }), { suffix: 'col', ann: true, l: 'compact rail (default on Files)' })}</div>
+       <div class="sub">Stress test: six tickets, 150-character title, 100-character branch (roomy rail: tickets collapse to the first + N, title to two lines, branch to an ellipsis; the tree still gets about 437px, and the compact rail is one click away)</div>
+       <div class="pair">${L('long', 1440, 900, (m, w) => `${topBar(LONG, { page: 'files' })}<div class="body">${rail(LONG, { page: 'files', tree: T_ALLV, idc: false })}<div class="col">${strip(LONG, w)}${deck(LONG, {})}</div></div>`, { ann: true })}${D('long', 1440, 900, (m, w) => `${topBar(LONG, { page: 'files' })}<div class="body">${rail(LONG, { page: 'files', tree: T_ALLV, idc: false })}<div class="col">${strip(LONG, w)}${deck(LONG, {})}</div></div>`, { ann: true })}</div>`, 'roomy 457px · compact 636px'),
+    sect('states', 12, 'Review block in each state', 'One block, five states; tone and icon always carry the meaning (never colour alone). Suggested decision follows U1: any rejected or commented file suggests Request changes; nothing is suggested before the first verdict; the final choice is made on Submit.',
+      ['light', 'dark'].map((th) => `<div class="sub">${th}</div><div style="display:flex;flex-wrap:wrap;gap:16px">${[
+        ['awaiting review', VAR0, 'progress', true], ['in progress', VAR, 'progress', true], ['ready to submit', ALLV, 'ready', true], ['run failed', FAIL, 'failed', true], ['agent working', FAILW, 'working', true],
+      ].map(([lab, mm, st, idc]) => `<div style="width:296px">${slot('state-' + lab.replace(/\W+/g, '-'), lab, th, 296, 296, (x, w) => railTop(mm, st, true), {})}</div>`).join('')}</div>`).join('') + tabStates(), 'rail top, 296px · each state shown roomy then compact') ,
+    sect('r800', 13, 'Narrow screens (below 1024px): the rail is a drawer', 'The rail becomes a left drawer opened by the same sidebar button that collapses the rail at wider widths (leftmost in the bar, "Show sidebar (B)"). Whenever the rail is closed the button carries the review progress as a badge ("9/26"), so the one thing you glance at is still visible. Inactive tabs drop to icons + counts, view toggle to icons, theme and shortcuts move into the overflow menu. The timeline is the same component (it scrolls sideways when it does not fit). Submit puts Open comments first.',
+      `<div class="sub">Files deck</div><div class="trip">${L('deck800', 800, 900, (m, w) => P.deck800(m, w, {}))}${L('deck800', 800, 900, (m, w) => P.deck800(m, w, { open: true }), { suffix: 'open', l: 'drawer open' })}${D('deck800', 800, 900, (m, w) => P.deck800(m, w, {}))}</div>
+       <div class="sub">Submit</div><div class="trip">${slot('submit800', 'light', 'light', 800, 900, (m, w) => P.submit800(ALLV, w, {}))}${slot('submit800', 'drawer open', 'light', 800, 900, (m, w) => P.submit800(ALLV, w, { open: true }), { suffix: 'open' })}${slot('submit800', 'dark', 'dark', 800, 900, (m, w) => P.submit800(ALLV, w, {}))}</div>`, 'bar 52 · timeline 79'),
+    sect('menu', 14, 'Overflow menu', 'Archive moves out of the bar into the overflow menu (UX review U12): one fewer click target next to the theme toggle, and a toast with Undo after it. Shortcuts and the theme toggle join it at narrow widths.',
+      `<div class="pair">${L('menu', 1440, 190, P.menu)}${D('menu', 1440, 190, P.menu)}</div><div class="sub">Below 1024px the bar has no room for Shortcuts and the theme toggle, so the menu carries them</div><div class="pair">${L('menu800', 800, 250, P.menu800)}${D('menu800', 800, 250, P.menu800)}</div>`, ''),
+  ].join('');
+
+  document.getElementById('app').innerHTML = `
+    <h1>Header option B on every page</h1>
+    <p class="lede">The thin top bar (52px) plus a persistent session rail (296px), drawn on every screen of review-dash with real tokens, arrow tabs, raised buttons, notices and tags. Content comes from the fixtures: <b>rich-spec / types-variety</b> (VAR-201, variety-app, 26 files, 9 reviewed), <b>all-verdicts</b> and <b>failed-run</b> (QI-15472, trial-app), <b>long-title</b>. The four commits (one merge) in the VAR-201 timeline are invented (the fixtures have none), as in the earlier mocks. Static mocks: nothing is clickable. Frames are 1440x900 unless noted; use <i>100%</i> for an unscaled view.</p>
+    <ul class="dec">
+      <li><b>1</b><span><b>Bar:</b> sidebar toggle (always, leftmost), back, arrow tabs with counts, view toggle (Files), shortcuts, theme, overflow. No identity, no status.</span></li>
+      <li><b>2</b><span><b>Rail, top:</b> identity (collapsible to one line, remembered separately for Files and the other pages).</span></li>
+      <li><b>3</b><span><b>Rail, middle:</b> review state (verdict-split bar, counts, status notice, suggested decision). Never collapses.</span></li>
+      <li><b>4</b><span><b>Rail, bottom:</b> a block that changes by page: tree, sources, extras, thumbnails, will-be-sent and runs.</span></li>
+      <li><b>5</b><span><b>Commit timeline:</b> exactly today's component, flush on the page background above the cards (no band), 79px tall. The rail has no git graph.</span></li>
+      <li><b>6</b><span><b>Sidebar toggle:</b> collapses the rail at 1024px and up (cards go wider), opens it as a drawer below; always in the bar, remembered, wears the progress badge whenever the rail is closed.</span></li>
+    </ul>
+    <div class="ctl"><label><input type="checkbox" id="annToggle" checked> Show measurement tags</label></div>
+    <nav class="toc">${[['list', '1 list'], ['spec', '2 spec'], ['extras', '3 extras'], ['evidence', '4 evidence'], ['deck', '5 deck'], ['grid', '6 grid'], ['complete', '7 complete'], ['submit', '8 submit'], ['submitfail', '9 failed run'], ['errors', '10 errors'], ['tree', '11 tree'], ['states', '12 states'], ['r800', '13 narrow'], ['menu', '14 menu']].map(([i, t]) => `<a href="#${i}">${t}</a>`).join('')}</nav>
+    <table class="rtab"><thead><tr><th>Page</th><th>Rail: identity</th><th>Rail: review state</th><th>Rail: section block</th><th>Bar</th></tr></thead><tbody>
+      <tr><td>Sessions list</td><td colspan="3">no rail</td><td>wordmark · Shortcuts · theme</td></tr>
+      <tr><td>Spec</td><td rowspan="5">expanded (default) or one line; Files defaults to one line</td><td rowspan="5">same on all five pages</td><td>sources + their headings, comment counts</td><td rowspan="5">Sidebar toggle · Sessions · tabs · (Swipe/Grid on Files) · Shortcuts · theme · ⋯</td></tr>
+      <tr><td>Extras</td><td>list of extras</td></tr><tr><td>Evidence</td><td>thumbnails, caption, number or comment count</td></tr>
+      <tr><td>Files</td><td>file tree with filter, collapse all</td></tr><tr><td>Submit</td><td>counts by kind, files with comments, run history</td></tr></tbody></table>
+    ${sections}`;
+}
+
+/* =================== render, measure, annotate =================== */
+function renderFrame(f) {
+  const el = document.createElement('div');
+  el.className = `fr th-${f.th} f${f.w}`;
+  el.style.width = f.w + 'px'; el.style.height = f.h + 'px';
+  el.dataset.id = f.id;
+  el.innerHTML = f.build(VAR, f.w);
+  return el;
+}
+function measure(el, f) {
+  const er = el.getBoundingClientRect(), sc = er.width / el.offsetWidth || 1;
+  const tree = el.querySelector('[data-tree]');
+  const card = el.querySelector('[data-card]');
+  const st = el.querySelector('[data-strip]');
+  const out = {};
+  if (el.querySelector('.blur')) return out;
+  if (st) out.chrome = Math.round((st.getBoundingClientRect().bottom - er.top) / sc);
+  if (tree) out.tree = Math.round(tree.getBoundingClientRect().height / sc);
+  if (card) { out.card = Math.round((card.getBoundingClientRect().top - er.top) / sc); out.cardH = Math.round(card.getBoundingClientRect().height / sc); }
+  return out;
+}
+function annotate(el, f, ms) {
+  const er = el.getBoundingClientRect(), sc = er.width / el.offsetWidth || 1;
+  const add = (txt, x, y) => { const s = document.createElement('span'); s.className = 'ann-tag'; s.textContent = txt; s.style.left = x + 'px'; s.style.top = y + 'px'; el.appendChild(s); };
+  const tree = el.querySelector('[data-tree]');
+  if (tree && ms.tree) { const r = tree.getBoundingClientRect(); add(`tree viewport ${ms.tree}px`, 24, (r.bottom - er.top) / sc - 34); }
+  const card = el.querySelector('[data-card]');
+}
+function layout() {
+  document.querySelectorAll('.fw').forEach((fw) => {
+    const f = frames.find((x) => x.id === fw.dataset.frame);
+    const cell = fw.closest('.cell');
+    const s = Math.min(1, cell.clientWidth / f.w);
+    fw.firstElementChild.style.transform = `scale(${s})`;
+    fw.style.width = f.w * s + 'px'; fw.style.height = f.h * s + 'px';
+  });
+}
+function init() {
+  const solo = (location.hash.match(/solo=([\w.-]+)/) || [])[1];
+  buildPage();
+  if (solo) {
+    document.body.className = 'solo-body';
+    const f = frames.find((x) => x.id === solo);
+    const app = document.getElementById('app');
+    app.style.cssText = 'padding:0;max-width:none;margin:0';
+    app.innerHTML = '<div id="soloFw" style="position:relative"></div>';
+    const fr = renderFrame(f);
+    const fw = document.getElementById('soloFw'); fw.style.cssText = `width:${f.w}px;height:${f.h}px;overflow:hidden;position:relative`;
+    fw.appendChild(fr);
+    if (f.ann) annotate(fr, f, measure(fr, f));
+    window.__ready = true;
+    return;
+  }
+  document.querySelectorAll('.fw').forEach((fw) => {
+    const f = frames.find((x) => x.id === fw.dataset.frame);
+    const fr = renderFrame(f);
+    fw.appendChild(fr);
+  });
+  layout();
+  document.querySelectorAll('.fw').forEach((fw) => {
+    const f = frames.find((x) => x.id === fw.dataset.frame);
+    const fr = fw.firstElementChild;
+    fr.style.transform = 'none';
+    const ms = measure(fr, f);
+    const t = document.querySelector(`[data-meas="${f.id}"]`);
+    if (t && (ms.tree || ms.chrome)) t.textContent = ' ' + [ms.chrome ? `chrome ${ms.chrome}px` : '', ms.cardH ? `card ${ms.cardH}px` : '', ms.tree ? `tree ${ms.tree}px` : ''].filter(Boolean).join(' · ');
+    if (f.ann) annotate(fr, f, ms);
+  });
+  layout();
+  document.getElementById('annToggle').addEventListener('change', (e) => document.body.classList.toggle('no-ann', !e.target.checked));
+  window.addEventListener('resize', layout);
+  new ResizeObserver(layout).observe(document.querySelector('.doc'));
+  window.__ready = true;
+}
+document.fonts.ready.then(() => requestAnimationFrame(init));
+</script>
+</body>
+</html>

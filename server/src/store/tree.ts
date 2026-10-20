@@ -57,6 +57,8 @@ interface Entry {
   inflight: Promise<SessionTree> | null
   abort: AbortController | null
   timer: NodeJS.Timeout | null
+  /** An invalidation arrived that no finished compute has covered yet: `value` is known to be stale. */
+  dirty: boolean
 }
 
 function toHttpError(err: unknown): HttpError {
@@ -84,7 +86,8 @@ function commitsOfTreeOnly({ tree }: WorkingTreeResult): CommitList {
  * promise. The repo watcher calls `invalidate`, which recomputes in the background after a 300 ms
  * debounce (aborting an older compute still in flight), logs the timing and emits `tree.updated`
  * only when the tree fingerprint or the commit list fingerprint changed (a push or fetch moves the
- * remote ref, which changes the latter). Failures (missing repo, git errors) are never cached.
+ * remote ref, which changes the latter). A read between an invalidation and the finished recompute never gets
+ * the old tree: it starts the pending recompute at once (or joins the running one) and waits. Failures (missing repo, git errors) are never cached.
  */
 export class TreeCache {
   private readonly entries = new Map<string, Entry>()
@@ -113,10 +116,16 @@ export class TreeCache {
       entry = undefined
     }
     if (!entry) {
-      entry = { ...source, value: null, inflight: null, abort: null, timer: null }
+      entry = { ...source, value: null, inflight: null, abort: null, timer: null, dirty: false }
       this.entries.set(source.id, entry)
     }
-    if (entry.value) return Promise.resolve(entry.value)
+    if (entry.value && !entry.dirty) return Promise.resolve(entry.value)
+    if (entry.timer) {
+      // The repo changed and the debounced recompute has not started: run it now instead of serving the old tree.
+      clearTimeout(entry.timer)
+      entry.timer = null
+      return this.start(entry, 'watch')
+    }
     if (entry.inflight) return entry.inflight
     return this.start(entry, 'request')
   }
@@ -130,6 +139,7 @@ export class TreeCache {
   invalidate(id: string): void {
     const entry = this.entries.get(id)
     if (!entry) return
+    entry.dirty = true
     if (entry.timer) clearTimeout(entry.timer)
     entry.timer = setTimeout(() => {
       entry.timer = null
@@ -169,6 +179,8 @@ export class TreeCache {
       }
       const previous = entry.value
       entry.value = result
+      // An invalidation that came in while this compute ran is still waiting on its timer.
+      entry.dirty = entry.timer !== null
       entry.inflight = null
       entry.abort = null
       this.log(`tree ${entry.id}: ${result.tree.stats.files} files in ${result.tree.durationMs} ms`)

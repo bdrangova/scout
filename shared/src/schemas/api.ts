@@ -1,9 +1,10 @@
 import { z } from 'zod'
 import { FINGERPRINT_RE, RUN_ID_RE, SESSION_ID_RE } from '../constants.ts'
 import { COMMENT_STATUSES, SESSION_STATUSES } from '../review/status.ts'
-import { AgentAdapterNameSchema, AgentRunSchema } from './agent.ts'
+import { AgentAdapterNameSchema, AgentRunSchema, AgentRunStatusSchema } from './agent.ts'
 import { EvidenceItemSchema, ExtraItemSchema, SpecItemSchema } from './artifacts.ts'
 import { ManifestSchema } from './manifest.ts'
+import { PrCommentCountsSchema, PrSummarySchema } from './pr-comments.ts'
 import { ResolutionSchema, ResolutionsSchema } from './resolutions.ts'
 import { CommentSchema, DecisionSchema, ReviewSchema } from './review.ts'
 import { SentSnapshotSchema } from './sent.ts'
@@ -47,6 +48,14 @@ export const SessionSummarySchema = z.object({
   /** The latest of manifest, review, resolutions and tree computation. */
   updatedAt: isoDate,
   activeRunId: z.string().regex(RUN_ID_RE).nullable(),
+  /** Status of the newest run (`failed` makes the session status `run-failed`); absent when there is none. */
+  latestRunStatus: AgentRunStatusSchema.nullable().optional(),
+  /** The last send (when and which decision: approve, request-changes, reject); null before the first send, absent from older servers. */
+  lastSend: z.object({ at: isoDate, decision: DecisionSchema }).nullable().optional(),
+  /** GitHub PR comment counts from `review/pr-comments.json`; null/absent when the session was never synced. */
+  prComments: PrCommentCountsSchema.nullable().optional(),
+  /** The session's current PR (from `review/pr-comments.json`); null/absent when none is known. */
+  pr: PrSummarySchema.nullable().optional(),
 })
 export type SessionSummary = z.infer<typeof SessionSummarySchema>
 
@@ -86,6 +95,12 @@ export const SessionDetailSchema = z.object({
   status: SessionStatusSchema,
   progress: ProgressSchema,
   activeRunId: z.string().regex(RUN_ID_RE).nullable(),
+  /** Status of the newest run (`failed` makes the session status `run-failed`); absent when there is none. */
+  latestRunStatus: AgentRunStatusSchema.nullable().optional(),
+  /** GitHub PR comment counts (see `SessionSummary.prComments`). */
+  prComments: PrCommentCountsSchema.nullable().optional(),
+  /** The session's current PR (from `review/pr-comments.json`); null/absent when none is known. */
+  pr: PrSummarySchema.nullable().optional(),
 })
 export type SessionDetail = z.infer<typeof SessionDetailSchema>
 
@@ -129,7 +144,7 @@ export type StartRunRequest = z.infer<typeof StartRunRequestSchema>
 
 export const StoreEventSchema = z.discriminatedUnion('type', [
   z.object({
-    type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated']),
+    type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated', 'pr-comments.updated']),
     sessionId: z.string(),
   }),
   z.object({ type: z.literal('run.updated'), sessionId: z.string(), runId: z.string() }),

@@ -1,0 +1,129 @@
+<main class="tc">
+  <header class="tp-h">
+    <h1>Review cards by type</h1>
+    <p>The same card, seven accents. Only the header fill changes; code, footer and actions stay identical.</p>
+  </header>
+  <div class="tc-grid">
+    <article class="card mc ft-ts" aria-label="src/utils/format.ts">
+  <div class="card-h">
+    <div class="path">
+      <span class="dir mono">src/utils/</span>
+      <span class="line"><span class="fn mono">format.ts</span></span>
+    </div>
+    <div class="meta"><span class="delta mono"><span class="a">+24</span><span class="r">−6</span></span></div>
+  </div>
+  <div class="code-wrap mono"><div class="ln"><span class="num">1</span><span class="sign">+</span><div class="code"><span class="tk-k">import</span> <span class="tk-p">{</span> <span class="tk-i">pad</span> <span class="tk-p">}</span> <span class="tk-k">from</span> <span class="tk-s">&#x27;./pad&#x27;</span></div></div><div class="ln"><span class="num">2</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">3</span><span class="sign">+</span><div class="code"><span class="tk-k">export</span> <span class="tk-k">type</span> <span class="tk-i">Days</span> <span class="tk-p">=</span> <span class="tk-t">number</span></div></div><div class="ln"><span class="num">4</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">5</span><span class="sign">+</span><div class="code"><span class="tk-k">export</span> <span class="tk-k">function</span> <span class="tk-f">days</span><span class="tk-p">(</span><span class="tk-i">n</span><span class="tk-p">:</span> <span class="tk-t">number</span><span class="tk-p">)</span> <span class="tk-p">{</span></div></div><div class="ln"><span class="num">6</span><span class="sign">+</span><div class="code">  <span class="tk-k">if</span> <span class="tk-p">(</span><span class="tk-i">n</span> <span class="tk-p">&lt;=</span> <span class="tk-n">0</span><span class="tk-p">)</span> <span class="tk-k">return</span> <span class="tk-s">&#x27;today&#x27;</span></div></div><div class="ln"><span class="num">7</span><span class="sign">+</span><div class="code">  <span class="tk-k">return</span> <span class="tk-s">`${n} days`</span></div></div><div class="ln"><span class="num">8</span><span class="sign">+</span><div class="code"><span class="tk-p">}</span></div></div><div class="ln"><span class="num">9</span><span class="sign">+</span><div class="code"> </div></div></div>
+  <div class="card-f">
+    <div class="act">
+      <button class="btn rej sq" type="button" title="Reject" aria-label="Reject">[[i:x]]</button>
+      <button class="btn sq" type="button" title="Comment" aria-label="Comment">[[i:message-square]]</button>
+      <button class="btn pri" type="button" title="Approve" aria-label="Approve">[[i:check]]Approve</button>
+    </div>
+  </div>
+</article><article class="card mc ft-js" aria-label="scripts/release.mjs">
+  <div class="card-h">
+    <div class="path">
+      <span class="dir mono">scripts/</span>
+      <span class="line"><span class="fn mono">release.mjs</span></span>
+    </div>
+    <div class="meta"><span class="delta mono"><span class="a">+18</span><span class="r">−2</span></span></div>
+  </div>
+  <div class="code-wrap mono"><div class="ln"><span class="num">1</span><span class="sign">+</span><div class="code"><span class="tk-k">import</span> <span class="tk-p">{</span> <span class="tk-i">readFile</span> <span class="tk-p">}</span> <span class="tk-k">from</span> <span class="tk-s">&#x27;node:fs&#x27;</span></div></div><div class="ln"><span class="num">2</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">3</span><span class="sign">+</span><div class="code"><span class="tk-k">const</span> <span class="tk-i">version</span> <span class="tk-p">=</span> <span class="tk-i">process</span><span class="tk-p">.</span><span class="tk-i">argv</span><span class="tk-p">[</span><span class="tk-n">2</span><span class="tk-p">]</span></div></div><div class="ln"><span class="num">4</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">5</span><span class="sign">+</span><div class="code"><span class="tk-k">async</span> <span class="tk-k">function</span> <span class="tk-f">release</span><span class="tk-p">(</span><span class="tk-i">tag</span><span class="tk-p">)</span> <span class="tk-p">{</span></div></div><div class="ln"><span class="num">6</span><span class="sign">+</span><div class="code">  <span class="tk-k">const</span> <span class="tk-i">pkg</span> <span class="tk-p">=</span> <span class="tk-k">await</span> <span class="tk-f">readFile</span><span class="tk-p">(</span><span class="tk-i">tag</span><span class="tk-p">)</span></div></div><div class="ln"><span class="num">7</span><span class="sign">+</span><div class="code">  <span class="tk-i">console</span><span class="tk-p">.</span><span class="tk-f">log</span><span class="tk-p">(</span><span class="tk-s">&#x27;release&#x27;</span><span class="tk-p">,</span> <span class="tk-i">tag</span><span class="tk-p">)</span></div></div><div class="ln"><span class="num">8</span><span class="sign">+</span><div class="code"><span class="tk-p">}</span></div></div><div class="ln"><span class="num">9</span><span class="sign">+</span><div class="code"> </div></div></div>
+  <div class="card-f">
+    <div class="act">
+      <button class="btn rej sq" type="button" title="Reject" aria-label="Reject">[[i:x]]</button>
+      <button class="btn sq" type="button" title="Comment" aria-label="Comment">[[i:message-square]]</button>
+      <button class="btn pri" type="button" title="Approve" aria-label="Approve">[[i:check]]Approve</button>
+    </div>
+  </div>
+</article><article class="card mc ft-react" aria-label="src/components/TrialBar.tsx">
+  <div class="card-h">
+    <div class="path">
+      <span class="dir mono">src/components/</span>
+      <span class="line"><span class="fn mono">TrialBar.tsx</span></span>
+    </div>
+    <div class="meta"><span class="delta mono"><span class="a">+39</span><span class="r">−0</span></span></div>
+  </div>
+  <div class="code-wrap mono"><div class="ln"><span class="num">1</span><span class="sign">+</span><div class="code"><span class="tk-k">import</span> <span class="tk-p">{</span> <span class="tk-i">days</span> <span class="tk-p">}</span> <span class="tk-k">from</span> <span class="tk-s">&#x27;../utils&#x27;</span></div></div><div class="ln"><span class="num">2</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">3</span><span class="sign">+</span><div class="code"><span class="tk-k">export</span> <span class="tk-k">function</span> <span class="tk-f">TrialBar</span><span class="tk-p">(</span><span class="tk-i">p</span><span class="tk-p">:</span> <span class="tk-t">Props</span><span class="tk-p">)</span> <span class="tk-p">{</span></div></div><div class="ln"><span class="num">4</span><span class="sign">+</span><div class="code">  <span class="tk-k">const</span> <span class="tk-i">warn</span> <span class="tk-p">=</span> <span class="tk-i">p</span><span class="tk-p">.</span><span class="tk-i">daysLeft</span> <span class="tk-p">&lt;=</span> <span class="tk-n">3</span></div></div><div class="ln"><span class="num">5</span><span class="sign">+</span><div class="code">  <span class="tk-k">return</span> <span class="tk-p">(</span></div></div><div class="ln"><span class="num">6</span><span class="sign">+</span><div class="code">    <span class="tk-p">&lt;</span><span class="tk-i">div</span> <span class="tk-i">className</span><span class="tk-p">={</span><span class="tk-i">warn</span> <span class="tk-p">?</span> <span class="tk-s">&#x27;warn&#x27;</span> <span class="tk-p">:</span> <span class="tk-s">&#x27;&#x27;</span><span class="tk-p">}&gt;</span></div></div><div class="ln"><span class="num">7</span><span class="sign">+</span><div class="code">      <span class="tk-i">Ends</span> <span class="tk-i">in</span> <span class="tk-p">{</span><span class="tk-f">days</span><span class="tk-p">(</span><span class="tk-i">p</span><span class="tk-p">.</span><span class="tk-i">daysLeft</span><span class="tk-p">)}</span></div></div><div class="ln"><span class="num">8</span><span class="sign">+</span><div class="code">    <span class="tk-p">&lt;/</span><span class="tk-i">div</span><span class="tk-p">&gt;</span></div></div><div class="ln"><span class="num">9</span><span class="sign">+</span><div class="code">  <span class="tk-p">)</span></div></div></div>
+  <div class="card-f">
+    <div class="act">
+      <button class="btn rej sq" type="button" title="Reject" aria-label="Reject">[[i:x]]</button>
+      <button class="btn sq" type="button" title="Comment" aria-label="Comment">[[i:message-square]]</button>
+      <button class="btn pri" type="button" title="Approve" aria-label="Approve">[[i:check]]Approve</button>
+    </div>
+  </div>
+</article><article class="card mc ft-yaml" aria-label=".github/workflows/ci.yml">
+  <div class="card-h">
+    <div class="path">
+      <span class="dir mono">.github/workflows/</span>
+      <span class="line"><span class="fn mono">ci.yml</span></span>
+    </div>
+    <div class="meta"><span class="delta mono"><span class="a">+12</span><span class="r">−3</span></span></div>
+  </div>
+  <div class="code-wrap mono"><div class="ln"><span class="num">1</span><span class="sign">+</span><div class="code"><span class="tk-f">name</span><span class="tk-p">:</span> <span class="tk-i">ci</span></div></div><div class="ln"><span class="num">2</span><span class="sign">+</span><div class="code"><span class="tk-f">on</span><span class="tk-p">:</span></div></div><div class="ln"><span class="num">3</span><span class="sign">+</span><div class="code">  <span class="tk-f">pull_request</span><span class="tk-p">:</span></div></div><div class="ln"><span class="num">4</span><span class="sign">+</span><div class="code">    <span class="tk-f">branches</span><span class="tk-p">:</span> <span class="tk-i">master</span></div></div><div class="ln"><span class="num">5</span><span class="sign">+</span><div class="code"><span class="tk-f">jobs</span><span class="tk-p">:</span></div></div><div class="ln"><span class="num">6</span><span class="sign">+</span><div class="code">  <span class="tk-f">test</span><span class="tk-p">:</span></div></div><div class="ln"><span class="num">7</span><span class="sign">+</span><div class="code">    <span class="tk-f">runs-on</span><span class="tk-p">:</span> <span class="tk-i">ubuntu-latest</span></div></div><div class="ln"><span class="num">8</span><span class="sign">+</span><div class="code">    <span class="tk-f">steps</span><span class="tk-p">:</span></div></div><div class="ln"><span class="num">9</span><span class="sign">+</span><div class="code">      <span class="tk-p">-</span> <span class="tk-f">uses</span><span class="tk-p">:</span> <span class="tk-i">actions/checkout@v4</span></div></div></div>
+  <div class="card-f">
+    <div class="act">
+      <button class="btn rej sq" type="button" title="Reject" aria-label="Reject">[[i:x]]</button>
+      <button class="btn sq" type="button" title="Comment" aria-label="Comment">[[i:message-square]]</button>
+      <button class="btn pri" type="button" title="Approve" aria-label="Approve">[[i:check]]Approve</button>
+    </div>
+  </div>
+</article><article class="card mc ft-json" aria-label="package.json">
+  <div class="card-h">
+    <div class="path">
+      <span class="dir mono">&nbsp;</span>
+      <span class="line"><span class="fn mono">package.json</span></span>
+    </div>
+    <div class="meta"><span class="delta mono"><span class="a">+7</span><span class="r">−1</span></span></div>
+  </div>
+  <div class="code-wrap mono"><div class="ln"><span class="num">1</span><span class="sign">+</span><div class="code"><span class="tk-p">{</span></div></div><div class="ln"><span class="num">2</span><span class="sign">+</span><div class="code">  <span class="tk-f">&quot;name&quot;</span><span class="tk-p">:</span> <span class="tk-s">&quot;trial-app-2&quot;</span><span class="tk-p">,</span></div></div><div class="ln"><span class="num">3</span><span class="sign">+</span><div class="code">  <span class="tk-f">&quot;version&quot;</span><span class="tk-p">:</span> <span class="tk-s">&quot;1.4.0&quot;</span><span class="tk-p">,</span></div></div><div class="ln"><span class="num">4</span><span class="sign">+</span><div class="code">  <span class="tk-f">&quot;private&quot;</span><span class="tk-p">:</span> <span class="tk-k">true</span><span class="tk-p">,</span></div></div><div class="ln"><span class="num">5</span><span class="sign">+</span><div class="code">  <span class="tk-f">&quot;scripts&quot;</span><span class="tk-p">:</span> <span class="tk-p">{</span></div></div><div class="ln"><span class="num">6</span><span class="sign">+</span><div class="code">    <span class="tk-f">&quot;test&quot;</span><span class="tk-p">:</span> <span class="tk-s">&quot;vitest run&quot;</span><span class="tk-p">,</span></div></div><div class="ln"><span class="num">7</span><span class="sign">+</span><div class="code">    <span class="tk-f">&quot;build&quot;</span><span class="tk-p">:</span> <span class="tk-s">&quot;vite build&quot;</span></div></div><div class="ln"><span class="num">8</span><span class="sign">+</span><div class="code">  <span class="tk-p">},</span></div></div><div class="ln"><span class="num">9</span><span class="sign">+</span><div class="code">  <span class="tk-f">&quot;trial&quot;</span><span class="tk-p">:</span> <span class="tk-p">{</span> <span class="tk-f">&quot;warnAtDays&quot;</span><span class="tk-p">:</span> <span class="tk-n">3</span> <span class="tk-p">}</span></div></div></div>
+  <div class="card-f">
+    <div class="act">
+      <button class="btn rej sq" type="button" title="Reject" aria-label="Reject">[[i:x]]</button>
+      <button class="btn sq" type="button" title="Comment" aria-label="Comment">[[i:message-square]]</button>
+      <button class="btn pri" type="button" title="Approve" aria-label="Approve">[[i:check]]Approve</button>
+    </div>
+  </div>
+</article><article class="card mc ft-css" aria-label="src/styles/trial-bar.css">
+  <div class="card-h">
+    <div class="path">
+      <span class="dir mono">src/styles/</span>
+      <span class="line"><span class="fn mono">trial-bar.css</span></span>
+    </div>
+    <div class="meta"><span class="delta mono"><span class="a">+43</span><span class="r">−0</span></span></div>
+  </div>
+  <div class="code-wrap mono"><div class="ln"><span class="num">1</span><span class="sign">+</span><div class="code"><span class="tk-k">.trial-bar</span> <span class="tk-p">{</span></div></div><div class="ln"><span class="num">2</span><span class="sign">+</span><div class="code">  <span class="tk-f">display</span><span class="tk-p">:</span> <span class="tk-s">flex</span><span class="tk-p">;</span></div></div><div class="ln"><span class="num">3</span><span class="sign">+</span><div class="code">  <span class="tk-f">gap</span><span class="tk-p">:</span> <span class="tk-n">12px</span><span class="tk-p">;</span></div></div><div class="ln"><span class="num">4</span><span class="sign">+</span><div class="code">  <span class="tk-f">padding</span><span class="tk-p">:</span> <span class="tk-n">8px</span> <span class="tk-n">16px</span><span class="tk-p">;</span></div></div><div class="ln"><span class="num">5</span><span class="sign">+</span><div class="code">  <span class="tk-f">background</span><span class="tk-p">:</span> <span class="tk-s">var</span><span class="tk-p">(</span><span class="tk-s">--bar-bg</span><span class="tk-p">);</span></div></div><div class="ln"><span class="num">6</span><span class="sign">+</span><div class="code"><span class="tk-p">}</span></div></div><div class="ln"><span class="num">7</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">8</span><span class="sign">+</span><div class="code"><span class="tk-s">trial-bar</span><span class="tk-k">.warn</span> <span class="tk-p">{</span></div></div><div class="ln"><span class="num">9</span><span class="sign">+</span><div class="code">  <span class="tk-f">background</span><span class="tk-p">:</span> <span class="tk-n">#fcebc3</span><span class="tk-p">;</span></div></div></div>
+  <div class="card-f">
+    <div class="act">
+      <button class="btn rej sq" type="button" title="Reject" aria-label="Reject">[[i:x]]</button>
+      <button class="btn sq" type="button" title="Comment" aria-label="Comment">[[i:message-square]]</button>
+      <button class="btn pri" type="button" title="Approve" aria-label="Approve">[[i:check]]Approve</button>
+    </div>
+  </div>
+</article><article class="card mc ft-other" aria-label="README.md">
+  <div class="card-h">
+    <div class="path">
+      <span class="dir mono">&nbsp;</span>
+      <span class="line"><span class="fn mono">README.md</span></span>
+    </div>
+    <div class="meta"><span class="delta mono"><span class="a">+6</span><span class="r">−0</span></span></div>
+  </div>
+  <div class="code-wrap mono"><div class="ln"><span class="num">1</span><span class="sign">+</span><div class="code"><span class="tk-k"># Trial bar</span></div></div><div class="ln"><span class="num">2</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">3</span><span class="sign">+</span><div class="code"><span class="tk-i">Shows</span> <span class="tk-i">the</span> <span class="tk-i">days</span> <span class="tk-i">left</span> <span class="tk-i">in</span> <span class="tk-i">a</span> <span class="tk-i">free</span> <span class="tk-i">trial</span></div></div><div class="ln"><span class="num">4</span><span class="sign">+</span><div class="code"><span class="tk-i">above</span> <span class="tk-i">the</span> <span class="tk-i">app</span> <span class="tk-i">header.</span></div></div><div class="ln"><span class="num">5</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">6</span><span class="sign">+</span><div class="code"><span class="tk-k">## Config</span></div></div><div class="ln"><span class="num">7</span><span class="sign">+</span><div class="code"> </div></div><div class="ln"><span class="num">8</span><span class="sign">+</span><div class="code"><span class="tk-i">Set</span> <span class="tk-s">`trial.warnAtDays`</span> <span class="tk-i">to</span> <span class="tk-i">change</span></div></div><div class="ln"><span class="num">9</span><span class="sign">+</span><div class="code"><span class="tk-i">when</span> <span class="tk-i">the</span> <span class="tk-i">bar</span> <span class="tk-i">turns</span> <span class="tk-i">amber.</span></div></div></div>
+  <div class="card-f">
+    <div class="act">
+      <button class="btn rej sq" type="button" title="Reject" aria-label="Reject">[[i:x]]</button>
+      <button class="btn sq" type="button" title="Comment" aria-label="Comment">[[i:message-square]]</button>
+      <button class="btn pri" type="button" title="Approve" aria-label="Approve">[[i:check]]Approve</button>
+    </div>
+  </div>
+</article>
+    <div class="sw-note tc-note">
+      <span class="sw-note-h">[[i:file-text]]Reading the header</span>
+      <ul>
+        <li>Accent fill = file type.</li>
+        <li>Green and red counts = lines added and removed.</li>
+        <li>Chips for added / updated sit next to the name as before.</li>
+      </ul>
+    </div>
+  </div>
+</main>

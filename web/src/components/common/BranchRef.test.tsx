@@ -7,7 +7,8 @@ describe('BranchRef', () => {
     render(<BranchRef name="origin/main" />)
     const chip = screen.getByTitle('origin/main')
     expect(chip).toHaveTextContent('origin/main')
-    expect(screen.getByText('origin/')).toHaveClass('text-muted-foreground')
+    expect(screen.getByText('origin/')).toHaveClass('text-ink-muted')
+    expect(chip).toHaveAttribute('data-slot', 'tag')
   })
 
   it('truncates long names while exposing them in full through the title', () => {
@@ -21,7 +22,7 @@ describe('BranchRef', () => {
   it('shows a muted "detached HEAD" for a null branch', () => {
     render(<BranchRef name={null} />)
     const chip = screen.getByText('detached HEAD').closest('span[title]')
-    expect(chip).toHaveClass('text-muted-foreground')
+    expect(chip).toHaveClass('text-ink-muted', 'italic')
   })
 })
 

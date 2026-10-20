@@ -65,32 +65,36 @@ describe('SpecPage', () => {
 
   it('renders the Jira, markdown and artifact cards from the derived spec items via /spec/<path>', async () => {
     const api = renderSpec()
-    expect(await screen.findByText('Jira ticket · plan.md · exported artifact')).toBeInTheDocument()
+    // The page header only counts the sources; the rail lists them.
+    expect(await screen.findByTitle('3 sources')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: /exported artifact/ })).not.toBeInTheDocument()
 
     const jira = screen.getByRole('article', { name: 'Jira spec' })
     expect(within(jira).getByText('QI-15472')).toBeInTheDocument()
-    expect(within(jira).getByRole('link', { name: /Open in Jira/ })).toHaveAttribute('href', 'https://example.atlassian.net/browse/QI-15472')
+    expect(within(jira).getByLabelText('Jira ticket')).toBeInTheDocument()
+    expect(within(jira).getByRole('link', { name: 'Open in Jira' })).toHaveAttribute('href', 'https://example.atlassian.net/browse/QI-15472')
     expect(await within(jira).findByRole('heading', { level: 2, name: 'Acceptance criteria' })).toBeInTheDocument()
 
     const plan = screen.getByRole('article', { name: 'Markdown spec' })
-    expect(within(plan).getByText('plan.md')).toBeInTheDocument()
-    expect(within(plan).getByText('local file')).toHaveAttribute('title', '/Users/alex/.claude/plans/trial-bar.md')
+    expect(within(plan).getByRole('heading', { level: 2, name: 'plan.md' })).toBeInTheDocument()
+    expect(within(plan).getByText('Implementation plan')).toBeInTheDocument()
+    expect(within(plan).getByLabelText('Local file')).toHaveAttribute('title', 'Local file: /Users/alex/.claude/plans/trial-bar.md')
     expect(within(plan).getByRole('button', { name: 'Copy path' })).toBeInTheDocument()
     expect(await within(plan).findByText('Hook first')).toBeInTheDocument()
 
     const artifact = screen.getByRole('article', { name: 'Artifact spec' })
-    expect(within(artifact).getByRole('link', { name: /Open on claude.ai/ })).toHaveAttribute('href', 'https://claude.ai/artifact/example')
+    expect(within(artifact).getByRole('link', { name: 'Open on claude.ai' })).toHaveAttribute('href', 'https://claude.ai/artifact/example')
     const frame = await within(artifact).findByTitle('Trial bar design')
     expect(frame.getAttribute('sandbox')).not.toContain('allow-same-origin')
     expect(frame.getAttribute('srcdoc')).toContain('<h1>Trial bar states</h1>')
+    expect(within(artifact).getByRole('button', { name: 'Open in new tab' })).toBeInTheDocument()
     expect(api.fetchMock.mock.calls.map((call) => String(call[0]))).toContain(`/api/sessions/${SESSION_ID}/spec/design.html`)
   })
 
   it('lists existing spec comments and saves a new one with the spec path as its ref', async () => {
     const api = renderSpec(reviewFixture({ comments: [commentFixture('c1', { kind: 'spec', ref: 'plan.md' }, 'Step 2 is missing.')], nextCommentId: 2 }))
-    expect(await screen.findByText('Jira ticket · plan.md · exported artifact · 1 open comment')).toBeInTheDocument()
-    const plan = screen.getByRole('article', { name: 'Markdown spec' })
-    expect(within(plan).getByText('Step 2 is missing.')).toBeInTheDocument()
+    const plan = await screen.findByRole('article', { name: 'Markdown spec' })
+    expect(await within(plan).findByText('Step 2 is missing.')).toBeInTheDocument()
 
     const jira = screen.getByRole('article', { name: 'Jira spec' })
     const user = userEvent.setup()
@@ -98,6 +102,21 @@ describe('SpecPage', () => {
     await user.type(within(jira).getByRole('textbox', { name: 'Comment on QI-15472: Trial bar' }), 'AC 3 is not covered.')
     await user.click(within(jira).getByRole('button', { name: 'Comment' }))
     await waitFor(() => expect(api.puts.at(-1)?.review.comments.at(-1)?.target).toEqual({ kind: 'spec', ref: 'jira.md' }), { timeout: 1500 })
-    expect(screen.getByText('Jira ticket · plan.md · exported artifact · 2 open comments')).toBeInTheDocument()
+  })
+
+  it('shows the empty state when the spec folder has nothing', async () => {
+    mockReviewApi(reviewResponseFixture(reviewFixture()), { contents: CONTENTS })
+    render(
+      <MemoryRouter>
+        <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: { ...detail, spec: [] }, reload: () => {} }}>
+          <ReviewProvider>
+            <SpecPage />
+          </ReviewProvider>
+        </SessionContext.Provider>
+      </MemoryRouter>,
+    )
+    expect(await screen.findByRole('heading', { level: 1, name: 'Spec' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('No spec')
+    expect(screen.queryByRole('article')).not.toBeInTheDocument()
   })
 })

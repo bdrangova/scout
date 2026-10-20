@@ -100,7 +100,7 @@ export function ScrollList({ files, currentPath, sessionId, onNavigate, commentF
       className="min-h-0 flex-1 overflow-y-auto"
       style={{ overflowAnchor: 'none' }}
     >
-      <div className="relative mx-auto w-full max-w-[1200px] px-4 py-6 md:px-8" style={{ height: virtualizer.getTotalSize() + 48 }}>
+      <div className="relative mx-auto w-full max-w-[1200px] px-4 py-6 md:px-8" style={{ height: virtualizer.getTotalSize() + 56 }}>
         {virtualizer.getVirtualItems().map((item) => {
           const file = files[item.index]
           if (!file) return null

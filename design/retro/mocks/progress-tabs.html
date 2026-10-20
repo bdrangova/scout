@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Progress tabs mock</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+.t{
+  --paper:#FDF3EC; --surface:#F7F1E6; --sunken:#EBE2D2; --ink:#2B2A33; --muted:#5E5A58;
+  --line:rgba(43,42,51,.34); --sh:rgba(43,42,51,.2);
+  --hdr:#F6B21E; --on-hdr:#2B2A33; --chip:#F7F1E6;
+  --done:#BFE3B4; --on-done:#1B4A36; --done-ic:#2A7A58;
+  --warn:#FCEBC3; --amber:#D9930D; --coral:#EE5A45;
+  --cur:#2B2A33; --on-cur:#F6B21E;
+  font-family:'Space Grotesk',system-ui,sans-serif; color:var(--ink); background:var(--paper);
+}
+.t.dark{
+  --paper:#23212B; --surface:#2E2B38; --sunken:#1D1B24; --ink:#F3ECDD; --muted:#B3ADC0;
+  --line:rgba(160,152,196,.45); --sh:rgba(0,0,0,.38);
+  --hdr:#8DA5E8; --on-hdr:#23212B; --chip:#F3ECDD;
+  --done:#2F4A3B; --on-done:#CDEFD6; --done-ic:#8CD3A0;
+  --warn:rgba(134,163,236,.16); --amber:#E8A27C; --coral:#F07A67;
+  --cur:#F3ECDD; --on-cur:#23212B;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#888;font-family:'Space Grotesk',system-ui,sans-serif}
+.page{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.t{padding:28px 32px 40px;min-width:0}
+h1{font-size:15px;margin:0 0 4px;letter-spacing:.02em}
+.sub{font-size:12.5px;color:var(--muted);margin:0 0 18px;max-width:60ch}
+.band{flex-wrap:wrap;background:var(--hdr);color:var(--on-hdr);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:6px;display:flex;align-items:center;gap:16px;justify-content:space-between}
+.band .title{font-weight:700;font-size:17px;white-space:nowrap}
+.lab{font:600 11px 'Geist Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:26px 0 8px}
+svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---- shared: arrow-shaped steps ---- */
+.steps{display:flex;align-items:stretch;filter:drop-shadow(2px 2px 0 var(--sh))}
+.step{--pt:13px;position:relative;display:block;margin-left:calc(var(--pt) * -1 + 3px);padding:0;border:0;background:var(--line);color:inherit;font:inherit;cursor:pointer;
+  clip-path:polygon(0 0,calc(100% - var(--pt)) 0,100% 50%,calc(100% - var(--pt)) 100%,0 100%,var(--pt) 50%)}
+.step:first-child{margin-left:0;clip-path:polygon(0 0,calc(100% - var(--pt)) 0,100% 50%,calc(100% - var(--pt)) 100%,0 100%)}
+.step .in{display:flex;align-items:center;gap:7px;height:100%;padding:9px 14px 9px calc(var(--pt) + 10px);
+  background:var(--surface);color:var(--ink);isolation:isolate;margin:1.5px 0;position:relative;overflow:hidden;font-weight:600;font-size:13px;white-space:nowrap;
+  clip-path:polygon(0 0,calc(100% - var(--pt) - 1px) 0,calc(100% - 1.5px) 50%,calc(100% - var(--pt) - 1px) 100%,0 100%,calc(var(--pt) + 1px) 50%)}
+.step:first-child .in{padding-left:14px;clip-path:polygon(0 0,calc(100% - var(--pt) - 1px) 0,calc(100% - 1.5px) 50%,calc(100% - var(--pt) - 1px) 100%,0 100%)}
+.step .n{font:500 12px 'Geist Mono',monospace;opacity:.75}
+.step .fill{position:absolute;inset:0 auto 0 0;z-index:-1;background:var(--done)}
+.step.done .in{background:var(--done);color:var(--on-done)}
+.step.done svg.ck{color:var(--done-ic)}
+.step.cur .in{background:var(--cur);color:var(--on-cur)}
+.step.cur .n{opacity:.9}
+.step.part .in{background:var(--surface)}
+.step.lock{cursor:not-allowed}
+.step.lock .in{background:var(--sunken);color:var(--muted)}
+.step.ready .in{background:var(--done-ic);color:var(--paper)}
+.step:hover{filter:brightness(1.04)}
+.step:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.step .ck{width:15px;height:15px}
+.note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.45;max-width:64ch}
+
+/* variant B: thin progress rail under each step */
+.b .step .in{padding-bottom:13px}
+.b .step .rail{position:absolute;left:calc(var(--pt) + 8px);right:calc(var(--pt) + 4px);bottom:5px;height:4px;border-radius:3px;background:var(--line);overflow:hidden;z-index:1;opacity:.9}
+.b .step:first-child .rail{left:12px}
+.b .step .rail i{display:block;height:100%;background:var(--done-ic)}
+.b .step.cur .rail{background:rgba(255,255,255,.22)}
+.b .step.cur .rail i{background:var(--on-cur)}
+
+/* variant C: numbered stepper with connectors */
+.c{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+.c .nd{color:var(--ink);display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:1.5px solid var(--line);border-radius:999px;background:var(--surface);font-weight:600;font-size:13.5px;box-shadow:2px 2px 0 var(--sh);cursor:pointer}
+.c .nd .dot{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--sunken);font:600 12px 'Geist Mono',monospace;border:1.5px solid var(--line)}
+.c .nd.done .dot{background:var(--done);color:var(--done-ic)}
+.c .nd.cur{background:var(--cur);color:var(--on-cur)}
+.c .nd.cur .dot{background:var(--on-cur);color:var(--cur)}
+.c .nd.lock{color:var(--muted);background:var(--sunken);box-shadow:none}
+.c .cn{width:22px;height:2px;background:var(--line)}
+.c .cn.on{background:var(--done-ic)}
+.nd .cnt{font:500 12px 'Geist Mono',monospace;opacity:.7}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:14px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line);display:inline-block}
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- LIGHT -->
+  <section class="t light" id="light"></section>
+  <!-- DARK -->
+  <section class="t dark" id="dark"></section>
+</div>
+
+<template id="tpl">
+  <h1>Session progress bar: arrow steps</h1>
+  <p class="sub">Same five sections (Spec, Extras, Evidence, Files, Submit) but each one is an arrow that shows how far you are. Done = green check, current = ink, partly done = filled to its percentage, Submit stays locked until the review is complete.</p>
+
+  <div class="lab">A · Chevron pipeline — status by fill</div>
+  <div class="band"><span class="title">QI-15472: Trial bar</span>
+    <div class="steps" role="tablist" aria-label="Review progress">
+      <button class="step done"><span class="in"><svg><use href="#i-doc"/></svg>Spec <svg class="ck"><use href="#i-check"/></svg></span></button>
+      <button class="step done"><span class="in"><svg><use href="#i-box"/></svg>Extras <svg class="ck"><use href="#i-check"/></svg></span></button>
+      <button class="step part"><span class="in"><span class="fill" style="width:50%"></span><svg><use href="#i-img"/></svg>Evidence <span class="n">1/2</span></span></button>
+      <button class="step cur" aria-current="step"><span class="in"><span class="fill" style="width:58%;background:rgba(246,178,30,.28)"></span><svg><use href="#i-files"/></svg>Files <span class="n">7/12</span></span></button>
+      <button class="step lock" aria-disabled="true"><span class="in"><svg><use href="#i-lock"/></svg>Submit</span></button>
+    </div>
+  </div>
+
+  <div class="lab">B · Chevron + thin progress rail (percent always visible)</div>
+  <div class="band b"><span class="title">QI-15472: Trial bar</span>
+    <div class="steps b">
+      <button class="step done"><span class="in"><svg><use href="#i-doc"/></svg>Spec <span class="n">3</span><svg class="ck"><use href="#i-check"/></svg><span class="rail"><i style="width:100%"></i></span></span></button>
+      <button class="step done"><span class="in"><svg><use href="#i-box"/></svg>Extras <span class="n">2</span><svg class="ck"><use href="#i-check"/></svg><span class="rail"><i style="width:100%"></i></span></span></button>
+      <button class="step"><span class="in"><svg><use href="#i-img"/></svg>Evidence <span class="n">2</span><span class="rail"><i style="width:50%"></i></span></span></button>
+      <button class="step cur"><span class="in"><svg><use href="#i-files"/></svg>Files <span class="n">7/12</span><span class="rail"><i style="width:58%"></i></span></span></button>
+      <button class="step lock"><span class="in"><svg><use href="#i-lock"/></svg>Submit<span class="rail"><i style="width:0"></i></span></span></button>
+    </div>
+  </div>
+
+  <div class="lab">A · when everything is reviewed — Submit lights up</div>
+  <div class="band"><span class="title">QI-15472: Trial bar</span>
+    <div class="steps">
+      <button class="step done"><span class="in"><svg><use href="#i-doc"/></svg>Spec <svg class="ck"><use href="#i-check"/></svg></span></button>
+      <button class="step done"><span class="in"><svg><use href="#i-box"/></svg>Extras <svg class="ck"><use href="#i-check"/></svg></span></button>
+      <button class="step done"><span class="in"><svg><use href="#i-img"/></svg>Evidence <svg class="ck"><use href="#i-check"/></svg></span></button>
+      <button class="step done"><span class="in"><svg><use href="#i-files"/></svg>Files <span class="n">12/12</span><svg class="ck"><use href="#i-check"/></svg></span></button>
+      <button class="step ready"><span class="in"><svg><use href="#i-send"/></svg>Submit <svg><use href="#i-arrow"/></svg></span></button>
+    </div>
+  </div>
+
+  <div class="lab">C · Numbered stepper (alternative, lighter)</div>
+  <div class="band"><span class="title">QI-15472: Trial bar</span>
+    <div class="c" style="row-gap:8px">
+      <span class="nd done"><span class="dot"><svg style="width:13px;height:13px"><use href="#i-check"/></svg></span>Spec <span class="cnt">3</span></span><span class="cn on"></span>
+      <span class="nd done"><span class="dot"><svg style="width:13px;height:13px"><use href="#i-check"/></svg></span>Extras <span class="cnt">2</span></span><span class="cn on"></span>
+      <span class="nd"><span class="dot">3</span>Evidence <span class="cnt">1/2</span></span><span class="cn"></span>
+      <span class="nd cur"><span class="dot">4</span>Files <span class="cnt">7/12</span></span><span class="cn"></span>
+      <span class="nd lock"><span class="dot">5</span>Submit</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw" style="background:var(--done)"></i>done</span>
+    <span><i class="sw" style="background:var(--cur)"></i>current</span>
+    <span><i class="sw" style="background:var(--surface)"></i>not finished (fill = progress)</span>
+    <span><i class="sw" style="background:var(--sunken)"></i>locked until review complete</span>
+    <span><i class="sw" style="background:var(--hdr)"></i>ready to submit</span>
+  </div>
+  <p class="note">Open questions: (1) what counts as "done" for Spec / Extras / Evidence: all comments resolved, or simply visited? (2) should Submit be clickable (with a warning) before the review is complete, or truly locked? (3) tab order stays Spec → Extras → Evidence → Files → Submit, but you can click any arrow in any order.</p>
+</template>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></symbol>
+  <symbol id="i-img" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+  <symbol id="i-files" viewBox="0 0 24 24"><path d="M15 2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V6z"/><path d="M15 2v4h4M4 7v13a2 2 0 0 0 2 2h9"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</defs></svg>
+<script>
+const tpl = document.getElementById('tpl').innerHTML
+document.getElementById('light').innerHTML = tpl
+document.getElementById('dark').innerHTML = tpl
+</script>
+</body>
+</html>

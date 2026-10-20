@@ -1,4 +1,5 @@
 import type { CommentWithStatus } from '@review-dash/shared'
+import { CheckCheckIcon } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -57,9 +58,14 @@ export function OverallComment({ comment, onAdd, onEdit, onDelete }: OverallComm
         onKeyDown={onKeyDown}
         placeholder="What should Claude Code know about the change as a whole?"
         rows={3}
-        className="min-h-20 bg-background text-[13px] leading-relaxed md:text-[13px]"
+        className="min-h-[92px]"
       />
-      {comment?.sentAt && <span className="text-xs text-muted-foreground">Sent · still open, edits go with the next send</span>}
+      {comment?.sentAt && (
+        <span className="flex items-center gap-1.5 text-xs font-medium text-ink-muted">
+          <CheckCheckIcon className="size-3.5 text-green" aria-hidden />
+          Sent · still open, edits go with the next send
+        </span>
+      )}
     </div>
   )
 }

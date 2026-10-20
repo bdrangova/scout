@@ -149,6 +149,7 @@ export const sessionListFixture: SessionListItem[] = [
     status: 'agent-working',
     progress: { reviewed: 41, total: 41 },
     activeRunId: 'run-20260926180000-ab12',
+    lastSend: { at: '2026-09-19T15:00:00.000Z', decision: 'request-changes' },
     updatedAt: '2026-09-19T16:00:00.000Z',
   }),
   sessionSummary({

@@ -3,10 +3,21 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import {
   ManifestSchema,
+  PR_COMMENTS_FILE,
+  PR_REPLIES_FILE,
+  PR_RESOLUTIONS_FILE,
+  PrCommentsSchema,
+  PrRepliesSchema,
+  PrResolutionsSchema,
+  SentSnapshotSchema,
   ResolutionsSchema,
   ReviewSchema,
   mergeComments,
   type Manifest,
+  type PrComments,
+  type PrReplies,
+  type PrResolutions,
+  type SentSnapshot,
   type Resolutions,
   type Review,
 } from '@review-dash/shared'
@@ -72,6 +83,58 @@ export async function readResolutions(dir: string): Promise<Resolutions | null> 
   if (raw === undefined) return null
   const parsed = ResolutionsSchema.safeParse(raw)
   return parsed.success ? parsed.data : null
+}
+
+const prFile = (dir: string, posix: string): string => path.join(dir, ...posix.split('/'))
+
+export const prCommentsPath = (dir: string): string => prFile(dir, PR_COMMENTS_FILE)
+
+/** `review/pr-comments.json`; null when absent or invalid (a sync rewrites it). */
+export async function readPrComments(dir: string): Promise<PrComments | null> {
+  const raw = await readJson(prFile(dir, PR_COMMENTS_FILE))
+  const parsed = PrCommentsSchema.safeParse(raw)
+  return parsed.success ? parsed.data : null
+}
+
+export async function writePrComments(dir: string, value: PrComments): Promise<PrComments> {
+  const valid = PrCommentsSchema.parse(value)
+  await writeJsonAtomic(prFile(dir, PR_COMMENTS_FILE), valid)
+  return valid
+}
+
+export async function readPrResolutions(dir: string): Promise<PrResolutions | null> {
+  const raw = await readJson(prFile(dir, PR_RESOLUTIONS_FILE))
+  const parsed = PrResolutionsSchema.safeParse(raw)
+  return parsed.success ? parsed.data : null
+}
+
+export async function writePrResolutions(dir: string, value: PrResolutions): Promise<PrResolutions> {
+  const valid = PrResolutionsSchema.parse(value)
+  await writeJsonAtomic(prFile(dir, PR_RESOLUTIONS_FILE), valid)
+  return valid
+}
+
+/** `review/pr-replies.json` (the user's drafts); null when absent or invalid. */
+export async function readPrReplies(dir: string): Promise<PrReplies | null> {
+  const raw = await readJson(prFile(dir, PR_REPLIES_FILE))
+  const parsed = PrRepliesSchema.safeParse(raw)
+  return parsed.success ? parsed.data : null
+}
+
+export async function writePrReplies(dir: string, value: PrReplies): Promise<PrReplies> {
+  const valid = PrRepliesSchema.parse(value)
+  await writeJsonAtomic(prFile(dir, PR_REPLIES_FILE), valid)
+  return valid
+}
+
+/** The newest `review/sent/*.json` that validates; null when nothing was sent. */
+export async function readLatestSent(dir: string): Promise<SentSnapshot | null> {
+  const stems = await listSentStems(dir)
+  for (const stem of stems.reverse()) {
+    const parsed = SentSnapshotSchema.safeParse(await readJson(path.join(dir, SENT_DIR, `${stem}.json`)))
+    if (parsed.success) return parsed.data
+  }
+  return null
 }
 
 export async function writeResolutions(dir: string, resolutions: Resolutions): Promise<Resolutions> {

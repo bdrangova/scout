@@ -1,0 +1,46 @@
+/* Sessions list */
+.brand{font-size:24px;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+.sess-h{align-items:center;gap:14px 22px}
+.sess-h .pills{padding-top:2px}
+.arch-toggle{margin-left:auto;border-color:transparent;background:transparent;color:var(--muted)}
+.arch-toggle:hover{background:var(--hover);color:var(--text)}
+.arch-toggle svg{width:14px;height:14px}
+.thead,.srow{display:grid;grid-template-columns:minmax(0,1fr) 190px 140px 120px 96px 70px;column-gap:16px;align-items:center}
+.thead{padding:6px 22px 0;margin-bottom:-6px}
+.slist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.srow{padding:16px 20px;cursor:pointer;overflow:visible;transition:transform .08s,box-shadow .08s,background .12s}
+.srow:hover{background:var(--paper-2)}
+.srow:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--sh)}
+.s-main{display:flex;flex-direction:column;gap:9px;min-width:0}
+.s-title{display:flex;align-items:center;gap:10px;min-width:0}
+.s-title .ticket{flex:none;background:var(--blue);color:var(--on-blue)}
+.s-title .nm{font-size:17px;font-weight:700;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-meta{display:flex;align-items:center;gap:7px;min-width:0;font-size:12px;color:var(--muted)}
+.s-meta .repo{flex:none}
+.s-meta svg{width:12px;height:12px}
+.s-meta .tag{height:22px;color:var(--text);font-size:11.5px}
+.s-meta .tag .m{color:var(--muted)}
+.s-chg{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.s-chg .counts{font-size:13px}
+.s-prog{gap:10px}
+.s-prog .track{width:56px;height:12px}
+.s-upd{font-size:13px;font-weight:500;color:var(--muted)}
+.s-end{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.s-end .go{display:inline-flex;color:var(--muted)}
+.s-end .go svg{width:18px;height:18px}
+.arch{width:30px;height:30px;border-radius:9px;background:var(--surface);color:var(--text);opacity:0;transition:opacity .12s,transform .08s,box-shadow .08s,background .12s}
+.arch svg{width:15px;height:15px}
+.srow:hover .arch,.srow:focus-within .arch{opacity:1}
+.arch:hover{background:var(--yellow);color:var(--on-yellow)}
+@media (max-width:1100px){
+  .thead{display:none}
+  .srow{grid-template-columns:minmax(0,1fr) auto;row-gap:12px}
+  .s-main{grid-column:1/-1}
+  .s-end{grid-column:2;grid-row:1}
+}
+.thead>div{display:flex;align-items:center}
+.thead svg{width:14px;height:14px;stroke-width:2.25}
+.notice.solo{padding-right:4px}
+.s-chg .counts{font-size:13px}
+.s-chg .counts svg{width:14px;height:14px}
+.s-prog svg{width:15px;height:15px}

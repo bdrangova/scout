@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { FINGERPRINT_RE, SCHEMA_VERSION, SESSION_ID_RE } from '../constants.ts'
+import { SentPrReplySchema } from './pr-comments.ts'
 import { CommentSchema, DecisionSchema, VerdictSchema } from './review.ts'
 import { FileStatusSchema } from './tree.ts'
 
@@ -32,6 +33,11 @@ export const SentSnapshotSchema = z.object({
   ),
   /** The open comments at send time. */
   comments: z.array(CommentSchema),
+  /**
+   * The user's unposted PR-comment drafts at send time: `instruction`s for open comments (what Claude should do) and `reply`s the
+   * user approved to post on GitHub (`ai-review pr-reply` posts only these). Absent when there were none.
+   */
+  prReplies: z.array(SentPrReplySchema).optional(),
   counts: z.object({
     files: nonNegativeInt,
     approved: nonNegativeInt,

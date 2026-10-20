@@ -1,17 +1,19 @@
 import type { CommentTarget, SpecItem } from '@review-dash/shared'
-import { ChevronRight } from 'lucide-react'
-import { useId, useMemo, useState, type ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import { useMemo, type ReactNode } from 'react'
+import { ContentCard } from '@/components/common/ContentCard'
 import { TargetComments } from '@/components/common/TargetComments'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import type { ContentState } from '@/lib/useContent'
-import { cn } from '@/lib/utils'
 
 export interface SpecCardShellProps {
-  /** `Jira`, `Markdown`, `Artifact`. */
+  /** `Jira`, `Markdown`, `Artifact`: the article is named `<kind> spec`. */
   kind: string
+  icon: LucideIcon
+  /** The kind tag's name (`Jira ticket`); defaults to `kind`. */
+  kindLabel?: string
   item: SpecItem
   title: ReactNode
+  subtitle?: ReactNode
   /** Chips and links after the title. */
   actions?: ReactNode
   content: ContentState
@@ -20,48 +22,24 @@ export interface SpecCardShellProps {
 }
 
 /**
- * Header row (chevron, chip, title, actions), the loading / error states shared by the spec cards,
- * and the comments on the item (`{ kind: 'spec', ref: item.path }`). The chevron folds the body and
- * the comments away; cards start open and the state lives with the card.
+ * A spec card: the shared `ContentCard` with the fold chevron, plus the comments on the item
+ * (`{ kind: 'spec', ref: item.path }`) in the footer.
  */
-export function SpecCardShell({ kind, item, title, actions, content, children, className }: SpecCardShellProps) {
+export function SpecCardShell({ kind, icon, kindLabel, item, title, subtitle, actions, content, children, className }: SpecCardShellProps) {
   const target = useMemo<CommentTarget>(() => ({ kind: 'spec', ref: item.path }), [item.path])
-  const [expanded, setExpanded] = useState(true)
-  const bodyId = useId()
   return (
-    <article aria-label={`${kind} spec`} className={cn('flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-5 shadow-sm', className)}>
-      <header className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={bodyId}
-          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${item.title}`}
-          onClick={() => setExpanded((value) => !value)}
-          className="-ml-1.5 flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
-        >
-          <ChevronRight aria-hidden className={cn('size-4 transition-transform', expanded && 'rotate-90')} />
-        </button>
-        <Badge variant="secondary">{kind}</Badge>
-        <h3 className="min-w-0 text-[15px] font-semibold">{title}</h3>
-        <span className="ml-auto flex flex-wrap items-center gap-2">{actions}</span>
-      </header>
-      <div id={bodyId} hidden={!expanded} className="flex min-w-0 flex-col gap-3">
-        {content.error ? (
-          <div className="flex flex-col items-start gap-2 text-sm text-reject">
-            <p>Couldn't load this file: {content.error.message}</p>
-            <Button variant="outline" size="xs" onClick={content.reload}>
-              Retry
-            </Button>
-          </div>
-        ) : content.content === null ? (
-          <p className="text-sm text-muted-foreground" aria-busy="true">
-            Loading…
-          </p>
-        ) : (
-          children(content.content)
-        )}
-        <TargetComments target={target} label={`Comment on ${item.title}`} className="flex flex-col gap-3 border-t pt-4" />
-      </div>
-    </article>
+    <ContentCard
+      label={`${kind} spec`}
+      kind={{ icon, label: kindLabel ?? kind }}
+      title={title}
+      subtitle={subtitle}
+      actions={actions}
+      collapseLabel={item.title}
+      content={content}
+      footer={<TargetComments target={target} label={`Comment on ${item.title}`} className="flex flex-col gap-3" />}
+      className={className}
+    >
+      {children}
+    </ContentCard>
   )
 }

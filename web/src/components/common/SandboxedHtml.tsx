@@ -97,8 +97,10 @@ export function SandboxedHtml({ html, title, maxHeight = 1200, className }: Sand
     return () => window.removeEventListener('message', onMessage)
   }, [maxHeight])
 
+  // `bg-paper` shows through a transparent page in the light theme; in the dark theme the colour-scheme
+  // mismatch makes the browser paint the page's own (light) canvas instead, so agent HTML stays readable.
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className={cn('flex flex-col gap-2.5', className)}>
       <iframe
         ref={iframeRef}
         title={title}
@@ -106,12 +108,11 @@ export function SandboxedHtml({ html, title, maxHeight = 1200, className }: Sand
         sandbox={SANDBOX}
         referrerPolicy="no-referrer"
         style={{ height }}
-        className="w-full rounded-md border bg-white"
+        className="w-full rounded-xl border-fine border-line bg-paper"
       />
       <div className="flex justify-end">
-        <Button variant="ghost" size="xs" onClick={() => openInNewTab(html)}>
-          Open in new tab
-          <ExternalLink data-icon="inline-end" />
+        <Button size="icon-sm" aria-label="Open in new tab" title="Open in new tab" onClick={() => openInNewTab(html)}>
+          <ExternalLink aria-hidden />
         </Button>
       </div>
     </div>

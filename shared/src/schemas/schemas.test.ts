@@ -19,6 +19,7 @@ import {
 import { EvidenceIndexSchema, ExtrasIndexSchema, SpecIndexSchema } from './artifacts.ts'
 import { CommitListSchema, ScopeSchema } from './commits.ts'
 import { ManifestSchema } from './manifest.ts'
+import { PutPrReplyRequestSchema } from './pr-comments.ts'
 import { ResolutionsSchema } from './resolutions.ts'
 import { CommentTargetSchema, ModeSchema, ReviewSchema, emptyReview } from './review.ts'
 import type { SentSnapshot } from './sent.ts'
@@ -247,5 +248,13 @@ describe('commits schemas', () => {
 
   it('knows the grid mode', () => {
     expect(ModeSchema.parse('grid')).toBe('grid')
+  })
+})
+
+describe('PutPrReplyRequestSchema', () => {
+  it('takes a body with an optional kind and rejects an unknown kind', () => {
+    expect(PutPrReplyRequestSchema.parse({ body: 'x' })).toEqual({ body: 'x' })
+    expect(PutPrReplyRequestSchema.parse({ body: 'x', kind: 'reply' })).toEqual({ body: 'x', kind: 'reply' })
+    expect(PutPrReplyRequestSchema.safeParse({ body: 'x', kind: 'post' }).success).toBe(false)
   })
 })

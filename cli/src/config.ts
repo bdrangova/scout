@@ -6,7 +6,11 @@ import { DEFAULT_WEB_PORT } from '@review-dash/shared'
 
 export const CONFIG_FILE = 'config.json'
 
-export const ConfigSchema = z.object({ port: z.number().int().min(1).max(65535) })
+export const ConfigSchema = z.object({
+  port: z.number().int().min(1).max(65535),
+  /** GitHub logins whose PR comments are handed to the agent although they are not repo members (copied into pr-comments.json at every sync). */
+  trustedPrCommentAuthors: z.array(z.string()).optional(),
+})
 export type Config = z.infer<typeof ConfigSchema>
 
 export const DEFAULT_CONFIG: Config = { port: DEFAULT_WEB_PORT }

@@ -1,39 +1,56 @@
 import type { SessionSummary } from '@review-dash/shared'
-import { statusPill, type StatusTone } from '@/lib/session-status'
+import { MessageSquareWarning } from 'lucide-react'
+import { Notice } from '@/components/ui/notice'
+import { reviewStatusOf, runChipOf, statusPill, statusWord } from '@/lib/session-status'
+import { RunChip } from './RunChip'
+import { STATUS_TONE } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'
 
-const PILL_CLASS: Record<StatusTone, string> = {
-  info: 'bg-info/10 text-info',
-  neutral: 'bg-muted text-muted-foreground',
-  warn: 'bg-warn/15 text-warn-foreground',
-  approve: 'bg-approve/10 text-approve',
-}
-
-const DOT_CLASS: Record<StatusTone, string> = {
-  info: 'bg-info',
-  neutral: 'bg-muted-foreground/70',
-  warn: 'bg-warn',
-  approve: 'bg-approve',
-}
-
 interface StatusPillProps {
-  summary: Pick<SessionSummary, 'status' | 'progress' | 'openComments'>
+  summary: Pick<SessionSummary, 'status' | 'progress' | 'openComments' | 'lastSend'>
+  /** Show the short status word beside the icon (the sessions list); the full wording stays the accessible name. */
+  showWord?: boolean
   className?: string
 }
 
-export function StatusPill({ summary, className }: StatusPillProps) {
-  const spec = statusPill(summary)
-  return (
-    <span
-      data-status={summary.status}
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
-        PILL_CLASS[spec.tone],
-        className,
-      )}
+/**
+ * The review status as an icon-first notice: the full wording is its accessible name, tooltip and
+ * a visually hidden text; open comments show as a count. A run in flight or failed is its own
+ * chip beside it (`RunChip`), derived from the summary's status.
+ */
+export function StatusPill({ summary, showWord = false, className }: StatusPillProps) {
+  const status = reviewStatusOf(summary)
+  const run = runChipOf(summary.status)
+  const spec = statusPill({ ...summary, status })
+  const { icon: Icon, noticeClass } = STATUS_TONE.session(status)
+  const openComments = status === 'updated' ? summary.openComments : 0
+  const solo = !showWord && openComments === 0
+  const pill = (
+    <Notice
+      icon={<Icon />}
+      aria-label={spec.label}
+      title={spec.label}
+      data-status={status}
+      className={cn('max-w-full gap-1.5', solo ? 'pr-1' : 'pr-2.5', noticeClass, className)}
     >
-      <span className={cn('size-1.75 rounded-full', DOT_CLASS[spec.dotTone ?? spec.tone])} aria-hidden />
-      {spec.label}
+      {showWord ? (
+        <span className="truncate text-[12.5px] font-bold">{statusWord({ ...summary, status })}</span>
+      ) : (
+        <span className="sr-only">{spec.label}</span>
+      )}
+      {openComments > 0 && (
+        <span className="inline-flex items-center gap-1 text-[12.5px] font-bold tabular-nums" aria-hidden>
+          <MessageSquareWarning className="size-[13px] stroke-[2.5]" />
+          {openComments}
+        </span>
+      )}
+    </Notice>
+  )
+  if (!run) return pill
+  return (
+    <span className="inline-flex max-w-full flex-wrap items-center gap-1.5">
+      {pill}
+      <RunChip run={run} showWord={showWord} />
     </span>
   )
 }

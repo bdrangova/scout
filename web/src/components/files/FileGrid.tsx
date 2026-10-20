@@ -1,9 +1,14 @@
-import { effectiveVerdict, fileIsUpdated, type TreeFile, type Verdict } from '@review-dash/shared'
+import { fileIsUpdated, type TreeFile } from '@review-dash/shared'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { indexByPath } from '@/lib/scope'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
+import { usePrComments } from '@/state/pr-comments-context'
 import { useReview } from '@/state/review-context'
 import { FileTile } from './FileTile'
+import { FileTypeFilter } from './FileTypeFilter'
+import { fileTypeOptions, filterByTypes } from './fileTypeOptions'
+import { useFileCategories, type Category } from './useFileCategories'
+import { useFileTypeFilter } from './useFileTypeFilter'
 
 export interface FileGridProps {
   files: readonly TreeFile[]
@@ -18,8 +23,6 @@ export interface FileGridProps {
   onApprove: (file: TreeFile) => void
 }
 
-/** A file with no verdict but an open comment counts as reviewed, so it gets its own bucket. */
-type Category = Verdict | 'commented'
 type GridFilter = 'all' | Category
 
 const FILTERS: readonly { id: GridFilter; label: string }[] = [
@@ -34,34 +37,24 @@ function escapeAttribute(value: string): string {
   return typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(value) : value.replace(/"/g, '\\"')
 }
 
-/** Every file as a compact tile in a responsive grid, with a verdict filter (with counts) above. */
+/**
+ * Every file as a compact tile in a responsive grid. Above it a verdict filter (with counts) and a
+ * file-type multiselect; the verdict counts follow the type selection, which lives in `?types=`.
+ */
 export function FileGrid({ files, reviewFiles = files, currentPath, onOpen, onApprove }: FileGridProps) {
-  const { fileReview, comments } = useReview()
+  const { fileReview } = useReview()
+  const { fileCounts } = usePrComments()
   const [filter, setFilter] = useState<GridFilter>('all')
+  const types = useFileTypeFilter()
   const gridRef = useRef<HTMLUListElement>(null)
-  const reviewByPath = useMemo(() => indexByPath(reviewFiles), [reviewFiles])
+  const { reviewByPath, openCommentsByPath, verdictOf, categoryOf } = useFileCategories(reviewFiles)
 
-  const openCommentsByPath = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const comment of comments) {
-      if (comment.target.kind !== 'file' || comment.status !== 'open' || comment.target.ref === null) continue
-      counts.set(comment.target.ref, (counts.get(comment.target.ref) ?? 0) + 1)
-    }
-    return counts
-  }, [comments])
-
-  // A scope file without a full-diff entry (a later change undid it) has no verdict to show.
-  const verdictOf = (file: TreeFile): Verdict => {
-    const reviewFile = reviewByPath.get(file.path)
-    return reviewFile ? effectiveVerdict(fileReview(file.path), reviewFile) : 'none'
-  }
-  const categories = files.map((file): Category => {
-    const verdict = verdictOf(file)
-    return verdict === 'none' && reviewByPath.has(file.path) && (openCommentsByPath.get(file.path) ?? 0) > 0 ? 'commented' : verdict
-  })
+  const typeOptions = useMemo(() => fileTypeOptions(files), [files])
+  const typed = useMemo(() => filterByTypes(files, types.selected), [files, types.selected])
   const counts: Record<Category, number> = { none: 0, commented: 0, approved: 0, rejected: 0 }
-  for (const category of categories) counts[category] += 1
-  const shown = files.filter((_, index) => filter === 'all' || categories[index] === filter)
+  for (const file of typed) counts[categoryOf(file)] += 1
+  const shown = filter === 'all' ? typed : typed.filter((file) => categoryOf(file) === filter)
+  const filtering = filter !== 'all' || types.selected.length > 0
 
   useEffect(() => {
     gridRef.current
@@ -69,30 +62,40 @@ export function FileGrid({ files, reviewFiles = files, currentPath, onOpen, onAp
       ?.scrollIntoView({ block: 'nearest' })
   }, [currentPath])
 
+  function clearFilters() {
+    setFilter('all')
+    types.clear()
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-5 md:px-6">
-      <div role="group" aria-label="Show files" className="flex w-fit max-w-full overflow-x-auto rounded-lg border bg-card text-[13px]">
-        {FILTERS.map((option) => {
-          const active = option.id === filter
-          const count = option.id === 'all' ? files.length : counts[option.id]
-          return (
-            <button
+      <div className="flex items-start justify-between gap-4">
+        <Segmented aria-label="Show files" className="max-w-full overflow-x-auto">
+          {FILTERS.map((option) => (
+            <SegmentedItem
               key={option.id}
-              type="button"
-              aria-pressed={active}
+              pressed={option.id === filter}
+              count={option.id === 'all' ? typed.length : counts[option.id]}
               onClick={() => setFilter(option.id)}
-              className={cn(
-                'h-8 px-3 font-medium whitespace-nowrap transition outline-none first:rounded-l-lg last:rounded-r-lg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset',
-                active ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
-              )}
+              className="h-7 px-3"
             >
-              {option.label} <span className="tabular-nums opacity-70">{count}</span>
-            </button>
-          )
-        })}
+              {option.label}
+            </SegmentedItem>
+          ))}
+        </Segmented>
+        {typeOptions.length > 0 && (
+          <FileTypeFilter options={typeOptions} selected={types.selected} onToggle={types.toggle} onClear={types.clear} />
+        )}
       </div>
       {shown.length === 0 ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">No {filter === 'none' ? 'unreviewed' : filter} files.</p>
+        <div className="flex flex-col items-center gap-3 py-12 text-center text-sm text-ink-muted">
+          <p>{filtering ? 'No files match these filters.' : 'No files.'}</p>
+          {filtering && (
+            <Button size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
+        </div>
       ) : (
         <ul ref={gridRef} aria-label="All files" className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
           {shown.map((file) => {
@@ -106,6 +109,7 @@ export function FileGrid({ files, reviewFiles = files, currentPath, onOpen, onAp
                 verdict={verdictOf(file)}
                 viewed={review?.viewed ?? false}
                 openComments={openCommentsByPath.get(file.path) ?? 0}
+                prComments={fileCounts.get(file.path)}
                 updated={reviewFile !== undefined && fileIsUpdated(review, reviewFile)}
                 reviewable={reviewFile !== undefined}
                 onOpen={() => onOpen(file.path)}

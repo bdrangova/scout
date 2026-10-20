@@ -5,49 +5,48 @@ import {
   type FileStatus,
   type TreeFile,
 } from '@review-dash/shared'
+import { ArrowRight, Binary, Copy, FileQuestionMark, Minus, Pencil, Plus, RefreshCw, Shuffle, type LucideIcon } from 'lucide-react'
 import { formatBytes, formatNumber } from './format'
 
+/** A header chip: the icon alone below `lg`, the word beside it from `lg` up (the label is always there for screen readers). */
 export interface FileStatusBadgeSpec {
   label: string
-  className: string
+  /** Tooltip; defaults to the label. */
+  title?: string
+  /** Colour of the icon only: the chip itself is neutral so it never blends into the file type's header colour. */
+  iconClass: string
+  icon: LucideIcon
 }
 
+// Chips are neutral surface with ink text; only the icon carries the status hue (added green, deleted red, renamed blue).
 const BADGES: Record<FileStatus, FileStatusBadgeSpec> = {
-  added: { label: 'added', className: 'bg-approve/10 text-approve' },
-  modified: { label: 'modified', className: 'bg-warn/15 text-warn-foreground' },
-  deleted: { label: 'deleted', className: 'bg-reject/10 text-reject' },
-  renamed: { label: 'renamed', className: 'bg-info/10 text-info' },
-  copied: { label: 'copied', className: 'bg-info/10 text-info' },
-  typechange: { label: 'type change', className: 'bg-muted text-muted-foreground' },
+  added: { label: 'added', iconClass: 'text-green', icon: Plus },
+  modified: { label: 'modified', iconClass: 'text-ink', icon: Pencil },
+  deleted: { label: 'deleted', iconClass: 'text-red', icon: Minus },
+  renamed: { label: 'renamed', iconClass: 'text-st-r', icon: ArrowRight },
+  copied: { label: 'copied', iconClass: 'text-st-r', icon: Copy },
+  typechange: { label: 'type change', iconClass: 'text-ink', icon: Shuffle },
 }
 
 export function fileStatusBadge(file: Pick<TreeFile, 'status'>): FileStatusBadgeSpec {
   return BADGES[file.status]
 }
 
-export const BINARY_BADGE: FileStatusBadgeSpec = {
-  label: 'binary',
-  className: 'bg-muted text-muted-foreground',
-}
+export const BINARY_BADGE: FileStatusBadgeSpec = { label: 'binary', iconClass: 'text-ink', icon: Binary }
 
 export const UNTRACKED_BADGE: FileStatusBadgeSpec = {
   label: 'untracked',
-  className: 'bg-info/10 text-info',
+  title: 'Not yet added to git',
+  iconClass: 'text-st-r',
+  icon: FileQuestionMark,
 }
 
-/** Dot colour for file lists (the scroll mode rail in the mock). */
-export function fileStatusDotClass(file: Pick<TreeFile, 'status'>): string {
-  switch (file.status) {
-    case 'added':
-    case 'copied':
-      return 'bg-approve'
-    case 'deleted':
-      return 'bg-reject'
-    case 'renamed':
-      return 'bg-info'
-    default:
-      return 'bg-warn'
-  }
+/** The file changed on disk after it was reviewed: its verdict no longer counts. */
+export const UPDATED_BADGE: FileStatusBadgeSpec = {
+  label: 'updated since sent',
+  title: 'Updated since last review',
+  iconClass: 'text-ink',
+  icon: RefreshCw,
 }
 
 /** The server's `collapseReason` codes (`git/rules.ts decideFile`), in words. */

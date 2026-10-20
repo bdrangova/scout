@@ -28,7 +28,8 @@ export const COLLAPSE_GLOBS: readonly string[] = [
   '**/dist/**',
 ]
 
-export const SECTIONS = ['files', 'evidence', 'spec', 'extras', 'submit'] as const
+/** The session sections in tab order; the single source for the tabs, the `1–5` hotkeys and the shortcut help. */
+export const SECTIONS = ['spec', 'extras', 'evidence', 'files', 'submit'] as const
 
 /** Files the agent writes into the session folder; the server watches them live. */
 /** Session folders live under `<home>/sessions/<id>`; archived ones are moved whole to `<home>/archive/<id>`. */
@@ -42,3 +43,12 @@ export const SESSION_EXTRAS_DIR = 'extras'
 export const SESSION_SPEC_DIR = 'spec'
 export const SESSION_PR_DESCRIPTION_FILE = 'pr-description.md'
 export const ARTIFACT_INDEX_FILE = 'index.json'
+/** GitHub PR comments of a session (posix, relative to the session folder): written by `ai-review pr-sync` / `pr-resolve`. */
+export const PR_COMMENTS_FILE = 'review/pr-comments.json'
+export const PR_RESOLUTIONS_FILE = 'review/pr-resolutions.json'
+/** Dashboard-written drafts: the user's instruction for an open comment, or the reply to post for an answered one. */
+export const PR_REPLIES_FILE = 'review/pr-replies.json'
+/** GitHub's comment body limit is 65536 characters. */
+export const PR_REPLY_MAX_LENGTH = 65_000
+/** `rc<n>` review (line) comment, `ic<n>` issue (conversation) comment, `rv<n>` review summary; n = the GitHub database id. */
+export const PR_COMMENT_ID_RE = /^(?:rc|ic|rv)[1-9]\d*$/

@@ -1,0 +1,95 @@
+  [[HEADER:extras]]
+  [[BAR:slim]]
+  <main class="page">
+    <div class="content" style="--cw:1050px">
+      <header class="page-h">
+        <h1>Extras</h1>
+        <span class="lede"><span class="counts" title="2 items" aria-label="2 items">[[i:files]]2</span></span>
+      </header>
+
+      <article class="panel" aria-label="Architecture">
+        <header class="panel-h">
+          <span class="tag ico" title="Markdown" aria-label="Markdown">[[i:file-text]]</span>
+          <h2>Architecture</h2>
+          <span class="push mono fname" title="architecture.md">architecture.md</span>
+        </header>
+        <div class="panel-b">
+          <div class="prose">
+            <h1>Trial bar architecture</h1>
+            <p>The trial bar is rendered by <code>app.ts</code> from the <code>/me</code> payload; no new endpoint is involved. The amber threshold and the upgrade URL are configuration, not component state.</p>
+
+            <div class="mmd" data-streamdown="mermaid-block">
+              <div class="mmd-h">
+                <span class="tag ico" title="mermaid" aria-label="mermaid">[[i:workflow]]</span>
+                <span class="tools">
+                  <button class="icon-btn" type="button" aria-label="Download diagram" title="Download diagram">[[i:download]]</button>
+                  <button class="icon-btn" type="button" aria-label="Copy Code" title="Copy Code">[[i:copy]]</button>
+                  <button class="icon-btn" type="button" aria-label="View fullscreen" title="View fullscreen">[[i:maximize]]</button>
+                </span>
+              </div>
+              <div class="mmd-c">
+                <div class="zoomer" role="group" aria-label="Diagram zoom">
+                  <button class="icon-btn" type="button" aria-label="Zoom in" title="Zoom in">[[i:zoom-in]]</button>
+                  <button class="icon-btn" type="button" aria-label="Zoom out" title="Zoom out">[[i:zoom-out]]</button>
+                  <button class="icon-btn" type="button" aria-label="Reset zoom and pan" title="Reset zoom and pan">[[i:rotate-ccw]]</button>
+                </div>
+                <svg class="mm" viewBox="0 0 1420 350" role="img" aria-label="Mermaid chart: the /me endpoint passes plan and trialDaysLeft to app.ts state; config.ts warnAtDays and upgradeUrl also feed app.ts state; app.ts state drives Header.tsx, TrialBar.tsx and Notice.tsx (was Banner); TrialBar.tsx links to billing/upgrade on Upgrade click and writes to sessionStorage on dismiss">
+                  <defs>
+                    <marker id="mm-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="head"></path></marker>
+                  </defs>
+                  <g class="edges">
+                    <path d="M216 107 H430 C470 107 460 160 496 160" marker-end="url(#mm-head)"></path>
+                    <path d="M256 252 C400 252 430 178 496 177" marker-end="url(#mm-head)"></path>
+                    <path d="M600 140 C625 60 710 47 836 47" marker-end="url(#mm-head)"></path>
+                    <path d="M700 167 H836" marker-end="url(#mm-head)"></path>
+                    <path d="M600 194 C625 290 710 289 836 289" marker-end="url(#mm-head)"></path>
+                    <path d="M1030 152 C1100 140 1130 107 1203 107" marker-end="url(#mm-head)"></path>
+                    <path d="M1030 182 C1100 195 1130 227 1196 227" marker-end="url(#mm-head)"></path>
+                  </g>
+                  <g class="nodes">
+                    <g class="nd in"><rect x="16" y="80" width="200" height="54" rx="6"></rect><text x="116" y="107">/me endpoint</text></g>
+                    <g class="nd in"><rect x="16" y="200" width="240" height="104" rx="6"></rect><text x="136" y="252"><tspan x="136" dy="-24">config.ts</tspan><tspan x="136" dy="24">warnAtDays,</tspan><tspan x="136" dy="24">upgradeUrl</tspan></text></g>
+                    <g class="nd core"><rect x="500" y="140" width="200" height="54" rx="6"></rect><text x="600" y="167">app.ts state</text></g>
+                    <g class="nd ui"><rect x="840" y="20" width="190" height="54" rx="6"></rect><text x="935" y="47">Header.tsx</text></g>
+                    <g class="nd ui"><rect x="840" y="140" width="190" height="54" rx="6"></rect><text x="935" y="167">TrialBar.tsx</text></g>
+                    <g class="nd ui"><rect x="840" y="250" width="190" height="78" rx="6"></rect><text x="935" y="289"><tspan x="935" dy="-12">Notice.tsx</tspan><tspan x="935" dy="24">(was Banner)</tspan></text></g>
+                    <g class="nd out"><polygon points="1200,134 1380,134 1400,80 1220,80"></polygon><text x="1300" y="107">billing/upgrade</text></g>
+                    <g class="nd out"><rect x="1200" y="200" width="200" height="54" rx="6"></rect><text x="1300" y="227">sessionStorage</text></g>
+                  </g>
+                  <g class="elabels">
+                    <text x="318" y="96">plan, trialDaysLeft</text>
+                    <text x="1078" y="112">Upgrade click</text>
+                    <text x="1096" y="228">dismiss</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+
+            <h2>Notes</h2>
+            <ul>
+              <li><code>TrialBar.tsx</code> owns only presentation; <code>dismissTrialBar()</code> in <code>app.ts</code> persists the dismissal.</li>
+              <li><code>legacy/OldBanner.ts</code> was deleted; its last caller went away with the navigation rewrite.</li>
+              <li><code>big.generated.ts</code> is a regenerated flag registry and should be skimmed, not reviewed line by line.</li>
+            </ul>
+          </div>
+        </div>
+        <footer class="panel-f">
+          <button class="compose" type="button" aria-label="Comment on Architecture">[[i:message-square]]<span class="ph">Leave a comment…</span><kbd>C</kbd></button>
+        </footer>
+      </article>
+
+      <article class="panel" aria-label="Test report">
+        <header class="panel-h">
+          <span class="tag ico" title="HTML" aria-label="HTML">[[i:code]]</span>
+          <h2>Test report</h2>
+          <span class="push mono fname" title="report.html">report.html</span>
+        </header>
+        <div class="panel-b open-row">
+          <button class="btn sq sm" type="button" title="Open in new tab" aria-label="Open in new tab">[[i:external-link]]</button>
+        </div>
+        <footer class="panel-f">
+          <button class="compose" type="button" aria-label="Comment on Test report">[[i:message-square]]<span class="ph">Leave a comment…</span><kbd>C</kbd></button>
+        </footer>
+      </article>
+    </div>
+  </main>

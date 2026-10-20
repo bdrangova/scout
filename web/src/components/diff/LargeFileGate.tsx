@@ -1,11 +1,13 @@
 import type { Scope, TreeFile } from '@review-dash/shared'
-import { Check, FileX, Image as ImageIcon, TriangleAlert } from 'lucide-react'
+import { Check, FileX, Image as ImageIcon, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
+import { Eyebrow } from '@/components/common/Eyebrow'
 import { Button } from '@/components/ui/button'
 import { collapseReason, omitReason } from '@/lib/file-status'
 import { formatAdditions, formatBytes, formatDeletions, formatNumber, pluralize } from '@/lib/format'
 import { useFilePatch } from '@/lib/hooks'
 import { fileContentsUrl, isImagePath } from '@/lib/paths'
+import { cn } from '@/lib/utils'
 import { canExpandContext, fetchFileSides } from './expand-context'
 import { FileDiffView, type DiffStyle } from './FileDiffView'
 
@@ -44,19 +46,19 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
   )
 
   const approve = onApprove && (
-    <Button variant="outline" size="sm" onClick={onApprove}>
-      <Check data-icon="inline-start" aria-hidden />
+    <Button size="sm" onClick={onApprove}>
+      <Check aria-hidden />
       Approve without viewing
     </Button>
   )
 
   if (file.omitted || isOmitted) {
     return (
-      <Notice icon={<FileX className="size-5" aria-hidden />} title="Diff omitted" action={approve}>
+      <BodyNotice tone="err" icon={FileX} title="Diff omitted" action={approve}>
         <Stats file={file} />
         {' · '}
         {omitReason(file)}
-      </Notice>
+      </BodyNotice>
     )
   }
 
@@ -64,12 +66,13 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
 
   if (gated || isLarge) {
     return (
-      <Notice
-        icon={<TriangleAlert className="size-5" aria-hidden />}
+      <BodyNotice
+        tone="warn"
+        icon={TriangleAlert}
         title="Collapsed by default"
         action={
           <>
-            <Button variant="outline" size="sm" onClick={() => setForce(true)}>
+            <Button size="sm" onClick={() => setForce(true)}>
               Show diff anyway
             </Button>
             {approve}
@@ -79,36 +82,37 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
         <Stats file={file} />
         {file.sizeAfter !== null ? ` · ${formatBytes(file.sizeAfter)}` : ''}
         {` · ${collapseReason(file)}; rendering it may be slow.`}
-      </Notice>
+      </BodyNotice>
     )
   }
 
   if (error) {
     return (
-      <Notice
-        icon={<TriangleAlert className="size-5" aria-hidden />}
+      <BodyNotice
+        tone="err"
+        icon={TriangleAlert}
         title="Couldn't load this diff"
         action={
-          <Button variant="outline" size="sm" onClick={reload}>
+          <Button size="sm" onClick={reload}>
             Retry
           </Button>
         }
       >
         {error.message}
-      </Notice>
+      </BodyNotice>
     )
   }
 
   if (loading || patch === null) {
     return (
-      <p className="px-6 py-8 text-sm text-muted-foreground" aria-busy="true">
+      <p className="px-6 py-8 text-sm text-ink-muted" aria-busy="true">
         Loading diff…
       </p>
     )
   }
 
   if (patch.trim() === '') {
-    return <Notice title="No textual changes">The file's contents did not change.</Notice>
+    return <BodyNotice title="No textual changes">The file's contents did not change.</BodyNotice>
   }
 
   return <FileDiffView patch={patch} diffStyle={diffStyle} loadSides={loadSides} />
@@ -118,8 +122,8 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
 function Stats({ file }: { file: TreeFile }) {
   return (
     <>
-      <span className="font-semibold text-approve tabular-nums">{formatAdditions(file.additions)}</span>{' '}
-      <span className="font-semibold text-reject tabular-nums">{formatDeletions(file.deletions)}</span>
+      <span className="font-mono font-bold text-green tabular-nums">{formatAdditions(file.additions)}</span>{' '}
+      <span className="font-mono font-bold text-red tabular-nums">{formatDeletions(file.deletions)}</span>
       {` · ${pluralize(file.additions + file.deletions, 'changed line')}`}
     </>
   )
@@ -135,22 +139,20 @@ function BinaryView({ file, sessionId, scope }: { file: TreeFile; sessionId: str
 
   return (
     <div className="flex flex-col gap-4 px-6 py-6">
-      <Notice icon={<ImageIcon className="size-5" aria-hidden />} title="Binary file" inline>
+      <BodyNotice icon={ImageIcon} title="Binary file" inline>
         {file.sizeAfter !== null ? formatBytes(file.sizeAfter) : 'No text diff'}
         {formatNumber(file.additions + file.deletions) !== '0' && ` · ${pluralize(file.additions + file.deletions, 'changed line')}`}
-      </Notice>
+      </BodyNotice>
       {image && sides.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2">
           {sides.map(({ side }) => (
             <figure key={side} className="flex flex-col gap-2">
-              <figcaption className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                {side}
-              </figcaption>
+              <Eyebrow as="figcaption">{side}</Eyebrow>
               <img
                 // The fingerprint busts the browser cache when the file changes on disk.
                 src={`${fileContentsUrl(sessionId, file.path, side, scope)}&v=${file.fingerprint}`}
                 alt={`${file.path} (${side})`}
-                className="max-h-[60vh] w-auto max-w-full rounded-lg border bg-[repeating-conic-gradient(var(--muted)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] object-contain"
+                className="max-h-[60vh] w-auto max-w-full rounded-lg border-fine border-line bg-[repeating-conic-gradient(var(--sunken)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] object-contain shadow-raised"
               />
             </figure>
           ))}
@@ -160,22 +162,39 @@ function BinaryView({ file, sessionId, scope }: { file: TreeFile; sessionId: str
   )
 }
 
-export interface NoticeProps {
+type BodyNoticeTone = 'info' | 'warn' | 'err'
+
+const TONE_ICON_CLASS: Record<BodyNoticeTone, string> = {
+  info: 'bg-info-ic',
+  warn: 'bg-warn-ic',
+  err: 'bg-err-ic',
+}
+
+export interface BodyNoticeProps {
   title: string
-  icon?: ReactNode
+  tone?: BodyNoticeTone
+  icon?: LucideIcon
   action?: ReactNode
   children?: ReactNode
   inline?: boolean
 }
 
-/** A titled note for the card body: an optional icon, a muted line and action buttons. */
-export function Notice({ title, icon, action, children, inline = false }: NoticeProps) {
+/** A titled note for the card body: a round solid icon, a muted line and raised action buttons. */
+export function BodyNotice({ title, tone = 'info', icon: Icon = Info, action, children, inline = false }: BodyNoticeProps) {
   return (
-    <div className={inline ? 'flex items-start gap-3' : 'flex items-start gap-3 px-6 py-8'}>
-      {icon && <span className="mt-0.5 text-muted-foreground">{icon}</span>}
+    <div className={cn('flex items-start gap-3', !inline && 'px-6 py-8')} data-slot="body-notice" data-tone={tone}>
+      <span
+        aria-hidden
+        className={cn(
+          'inline-flex size-7 shrink-0 items-center justify-center rounded-full border-fine border-fill-line text-hdr-ink shadow-icon [&_svg]:size-3.5 [&_svg]:stroke-[2.75]',
+          TONE_ICON_CLASS[tone],
+        )}
+      >
+        <Icon />
+      </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-sm font-semibold">{title}</p>
-        {children && <p className="text-sm text-muted-foreground">{children}</p>}
+        <p className="text-sm font-bold">{title}</p>
+        {children && <p className="text-sm text-ink-muted">{children}</p>}
         {action && <div className="mt-2 flex flex-wrap gap-2">{action}</div>}
       </div>
     </div>

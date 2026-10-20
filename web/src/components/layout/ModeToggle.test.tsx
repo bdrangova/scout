@@ -16,17 +16,25 @@ function renderToggle(path: string) {
 }
 
 describe('ModeToggle', () => {
-  it('offers Scroll, Swipe and Grid and marks the current mode', () => {
+  it('offers Swipe and Grid and marks the current mode', () => {
     renderToggle(`/s/${SESSION_ID}/files/a.ts?mode=grid`)
     const group = screen.getByRole('group', { name: 'Review mode' })
     const links = group.querySelectorAll('a')
-    // Icon-only: the label is the accessible name, every link carries an icon and no text.
-    expect([...links].map((link) => link.getAttribute('aria-label'))).toEqual(['Scroll', 'Swipe', 'Grid'])
-    expect([...links].every((link) => link.querySelector('svg') !== null && link.textContent === '')).toBe(true)
+    // The label is the accessible name; every link carries an icon and, from `xl`, the word (hidden below).
+    expect([...links].map((link) => link.getAttribute('aria-label'))).toEqual(['Swipe', 'Grid'])
+    expect([...links].every((link) => link.querySelector('svg') !== null && link.textContent === link.getAttribute('aria-label') && link.querySelector('span.hidden.xl\\:inline') !== null)).toBe(true)
     expect(screen.getByRole('link', { name: 'Grid' })).toHaveAttribute('aria-current', 'true')
     expect(screen.getByRole('link', { name: 'Swipe' })).not.toHaveAttribute('aria-current')
     // The current file is kept when switching.
     expect(screen.getByRole('link', { name: 'Swipe' })).toHaveAttribute('href', `/s/${SESSION_ID}/files/a.ts?mode=swipe`)
+  })
+
+  it('hides Scroll but renders without a selection on ?mode=scroll', () => {
+    renderToggle(`/s/${SESSION_ID}/files/a.ts?mode=scroll`)
+    expect(screen.queryByRole('link', { name: 'Scroll' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Swipe' })).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('link', { name: 'Grid' })).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('link', { name: 'Grid' })).toHaveAttribute('href', `/s/${SESSION_ID}/files/a.ts?mode=grid`)
   })
 
   it('points at the files route from another section', () => {

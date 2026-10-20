@@ -45,6 +45,28 @@ describe('hotkeyFor', () => {
     expect(key({ key: 'x', target: editable })).toBeNull()
   })
 
+  it('ignores keys typed inside a shadow root: the window sees the host, the path has the field', () => {
+    const host = document.createElement('div')
+    const shadow = host.attachShadow({ mode: 'open' })
+    const field = document.createElement('textarea')
+    shadow.append(field)
+    // What a window listener gets: `target` retargeted to the host, the field only on the composed path.
+    expect(key({ key: 'h', target: host })).toBe('toggleMerges')
+    expect(key({ key: 'h', target: host, composedPath: () => [field, shadow, host] })).toBeNull()
+    expect(key({ key: 'r', target: host, composedPath: () => [field, shadow, host] })).toBeNull()
+    expect(key({ key: 'Enter', metaKey: true, target: host, composedPath: () => [field, shadow, host] })).toBe('submitComment')
+  })
+
+  it('maps Z and ⌘/Ctrl+Z to undo, except in a field (its own undo) and with Shift (redo)', () => {
+    expect(key({ key: 'z' })).toBe('undo')
+    expect(key({ key: 'Z' })).toBe('undo')
+    expect(key({ key: 'z', metaKey: true })).toBe('undo')
+    expect(key({ key: 'z', ctrlKey: true })).toBe('undo')
+    expect(key({ key: 'z', metaKey: true, shiftKey: true })).toBeNull()
+    expect(key({ key: 'z', ctrlKey: true, target: document.createElement('textarea') })).toBeNull()
+    expect(key({ key: 'z', target: document.createElement('input') })).toBeNull()
+  })
+
   it('skips events something else already handled', () => {
     expect(key({ key: 'a', defaultPrevented: true })).toBeNull()
   })

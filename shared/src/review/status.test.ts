@@ -174,6 +174,24 @@ describe('sessionStatus', () => {
     expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('sent')
   })
 
+  it('ready once every file is reviewed and nothing is sent', () => {
+    const files = Object.fromEntries(tree.files.map((file) => [file.path, { verdict: 'approved' as const, fingerprint: file.fingerprint, viewed: true }]))
+    expect(sessionStatus({ review: makeReview({ files }), tree, resolutions: null, activeRun: false })).toBe('ready')
+    // A comment counts as reviewed too.
+    const partial = Object.fromEntries(tree.files.slice(1).map((file) => [file.path, { verdict: 'rejected' as const, fingerprint: file.fingerprint, viewed: true }]))
+    const commented = makeReview({ files: partial, comments: [makeComment({ target: { kind: 'file', ref: tree.files[0]?.path ?? '' } })] })
+    expect(sessionStatus({ review: commented, tree, resolutions: null, activeRun: false })).toBe('ready')
+    // Sent wins over ready.
+    expect(sessionStatus({ review: makeReview({ files, sent: { at: T1, decision: 'request-changes' } }), tree, resolutions: null, activeRun: false })).toBe('sent')
+  })
+
+  it('run-failed when the latest run failed, unless a run is active', () => {
+    const r = makeReview({ sent: { at: T1, decision: 'request-changes' } })
+    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false, latestRunStatus: 'failed' })).toBe('run-failed')
+    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: true, latestRunStatus: 'failed' })).toBe('agent-working')
+    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false, latestRunStatus: 'succeeded' })).toBe('sent')
+  })
+
   it('updated, not in-progress or unreviewed, when the only verdict went stale before any send', () => {
     const r = makeReview({ files: { 'src/a.tsx': { verdict: 'approved', fingerprint: fp('older'), viewed: true } } })
     expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('updated')

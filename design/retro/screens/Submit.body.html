@@ -1,0 +1,84 @@
+  [[HEADER:submit]]
+  [[BAR:slim]]
+  <main class="page">
+    <div class="content">
+      <header class="page-h"><h1>Submit</h1></header>
+
+      <div class="cols sub">
+        <div class="stack">
+          <section class="panel" aria-label="Overall feedback">
+            <header class="panel-h"><h2>Overall feedback</h2></header>
+            <div class="panel-b fb">
+              <textarea class="textarea" aria-label="Overall feedback" placeholder="What should Claude Code know about the change as a whole?" rows="3">Looks good overall. Please also document the session-storage key in the README and cover the "ends today" wording in a test.</textarea>
+              <span class="hintline">[[i:check-check]]Sent · still open, edits go with the next send</span>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Decision">
+            <header class="panel-h"><h2>Decision</h2></header>
+            <div class="panel-b">
+              <div class="opts" role="radiogroup" aria-label="Decision">
+                <button class="opt ok" type="button" role="radio" aria-checked="false"><span class="rad" aria-hidden="true"></span><span class="ot"><span class="t">[[i:check]]Approve</span><span class="d">Ready for a PR to be opened.</span></span></button>
+                <button class="opt warn sel" type="button" role="radio" aria-checked="true"><span class="rad" aria-hidden="true"></span><span class="ot"><span class="t">[[i:message-square-warning]]Request changes</span><span class="d">Claude Code applies the open comments.</span></span></button>
+                <button class="opt err" type="button" role="radio" aria-checked="false"><span class="rad" aria-hidden="true"></span><span class="ot"><span class="t">[[i:x]]Reject</span><span class="d">Stop here; the approach needs rethinking.</span></span></button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="PR description">
+            <header class="panel-h"><h2>PR description</h2><span class="tag mono push">[[i:file-text]]pr-description.md</span></header>
+            <div class="panel-b">
+              <div class="prose">
+                <h1>QI-15472: Trial bar</h1>
+                <p>Adds a persistent trial bar above the header for free-plan users, with an amber variant when three or fewer days remain and a direct path into the upgrade flow.</p>
+                <h2>Changes</h2>
+                <ul>
+                  <li><code>TrialBar.tsx</code> + <code>trial-bar.css</code>: the bar, its neutral/amber variants and the dismiss control.</li>
+                  <li><code>app.ts</code>: reads the trial state during bootstrap, renders the bar, exposes <code>dismissTrialBar()</code>.</li>
+                  <li><code>config.ts</code>: <code>trial.warnAtDays</code> and <code>trial.upgradeUrl</code>.</li>
+                  <li><code>Banner</code> renamed to <code>Notice</code>; <code>legacy/OldBanner.ts</code> removed (no callers).</li>
+                  <li><code>big.generated.ts</code> regenerated from the flag registry; <code>package-lock.json</code> updated.</li>
+                </ul>
+                <h2>Testing</h2>
+                <ul>
+                  <li>Unit tests for day formatting and the amber threshold.</li>
+                  <li>Manual: screenshot of the bar on the dashboard and a recording of the upgrade flow (see evidence).</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel" aria-label="Open comments">
+          <header class="panel-h"><h2>Open comments</h2><span class="tag amber pill" title="2 open" aria-label="2 open">[[i:message-square]]2</span><span class="tag green pill" title="1 resolved" aria-label="1 resolved">[[i:circle-check]]1</span></header>
+          <div class="panel-b oc">
+            <div class="grp">
+              <h3 class="eyebrow">[[i:image]]Evidence</h3>
+              <div class="item" aria-label="Upgrade flow">
+                <a class="link plain mono" href="#">Upgrade flow</a>
+                <ul class="cmtl" aria-label="Open comments">
+                  <li class="cmt" aria-label="Comment c2">
+                    <span class="av" aria-hidden="true">You</span>
+                    <div class="body">
+                      <p>At this point the plan picker pops in with no backdrop transition; please fade the overlay in like the other modals.</p>
+                      <div class="meta2">
+                        <span class="mono">c2</span><span class="loc mono">at 0:02</span><time class="when" datetime="2026-09-26T13:12:00.000Z">[[i:clock]]2 weeks ago</time><span class="tag blue ico sm" title="Sent 2026-09-26T13:20:00.000Z" aria-label="Sent">[[i:check-check]]</span>
+                        <span class="acts"><button class="btn ghost sm sq" type="button" title="Edit" aria-label="Edit">[[i:pencil]]</button><button class="btn ghost sm sq" type="button" title="Mark resolved" aria-label="Mark resolved">[[i:circle-check]]</button></span>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <button class="resolved" type="button" aria-expanded="false" title="Show 1 resolved" aria-label="Show 1 resolved">[[i:chevron-right]][[i:circle-check]]1</button>
+        </section>
+      </div>
+    </div>
+  </main>
+  <div class="sendbar">
+    <div class="btn split pri" role="group" aria-label="Send">
+      <span role="button" tabindex="0" title="Submit &amp; send to current session" aria-label="Submit &amp; send to current session">[[i:send]]Submit</span>
+      <span role="button" tabindex="0" title="Send options" aria-label="Send options" aria-haspopup="menu" aria-expanded="false">[[i:chevron-down]]</span>
+    </div>
+  </div>

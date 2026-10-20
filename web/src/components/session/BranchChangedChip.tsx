@@ -1,4 +1,5 @@
 import { TriangleAlert } from 'lucide-react'
+import { Tag } from '@/components/ui/tag'
 
 export interface BranchChangedChipProps {
   /** The branch the session was published on. */
@@ -12,21 +13,22 @@ function branchChanged({ sessionBranch, current }: BranchChangedChipProps): bool
   return sessionBranch !== null && current !== null && sessionBranch !== current
 }
 
-/** Amber flag shown where a session's diff follows a checkout that moved to another branch. */
+/** Warning tag shown where a session's diff follows a checkout that moved to another branch. */
 export function BranchChangedChip(props: BranchChangedChipProps) {
   if (!branchChanged(props)) return null
   return (
-    <span
+    <Tag
+      tone="warn"
       role="status"
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-warn/15 px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-warn-foreground"
+      aria-label={`Branch changed · now on ${props.current}`}
+      className="shrink-0"
       title={`The session was created on ${props.sessionBranch}; the repository is now on ${props.current}. The diff follows the checkout.`}
     >
-      <TriangleAlert className="size-3.5" aria-hidden />
+      <TriangleAlert aria-hidden />
       Branch changed
-      <span className="hidden xl:inline">
-        {' · now on '}
-        <span className="font-mono">{props.current}</span>
+      <span className="hidden font-medium xl:inline">
+        · now on <span className="font-mono">{props.current}</span>
       </span>
-    </span>
+    </Tag>
   )
 }

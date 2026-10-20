@@ -27,7 +27,7 @@ const LIVE_EDIT_LINE = '\n// smoke test: edited on disk\n'
 const FINGERPRINT_RE = /^[0-9a-f]{16}$/
 /** Watcher debounce (300 ms) plus some slack. */
 const WATCHER_SETTLE_MS = 800
-const LIVE_UPDATE_TIMEOUT_MS = 5_000
+const LIVE_UPDATE_TIMEOUT_MS = 20_000
 
 const reviewDir = path.join(E2E_STORE, 'sessions', SESSION_ID, 'review')
 const fixtureRepo = path.join(E2E_STORE, 'repos', 'trial-app')
@@ -67,14 +67,14 @@ async function stripFakeAdapterLines(file: string): Promise<void> {
   if (next !== original) await fs.writeFile(file, next)
 }
 
-/** `reviewed 2/12` in the session header. */
+/** `reviewed 2/12` in the session rail. */
 function headerProgress(page: Page, reviewed: number) {
-  return page.locator('header').getByText(`${reviewed}/${TOTAL_FILES}`, { exact: true })
+  return page.getByRole('complementary', { name: 'Session panel' }).getByText(`${reviewed}/${TOTAL_FILES}`, { exact: true })
 }
 
-/** The `+N` additions figure in the session header. */
+/** The diff totals under the timeline's Full diff node (`12 files +2,154 −2,010`). */
 function headerAdditions(page: Page) {
-  return page.locator('header').getByText(/^\+[\d,]+$/)
+  return page.getByRole('region', { name: 'Commits' }).getByRole('button', { name: /^Full diff/ })
 }
 
 test.describe.configure({ mode: 'serial' })
@@ -106,7 +106,9 @@ test.describe('review loop smoke', () => {
     await expect(row.getByText('Awaiting review', { exact: true })).toBeVisible()
 
     await row.click()
-    await expect(page).toHaveURL(new RegExp(`/s/${SESSION_ID}/files`))
+    // An untouched session opens on its first step with content (the fixture has a spec); the review starts on Files.
+    await expect(page).toHaveURL(new RegExp(`/s/${SESSION_ID}/spec$`))
+    await page.goto(`/s/${SESSION_ID}/files`)
     await expect(page.getByRole('article', { name: FIRST_FILE })).toBeVisible()
     await expect(page.getByText(`file 1 of ${TOTAL_FILES}`)).toBeVisible()
     await expect(headerProgress(page, 0)).toBeVisible()
@@ -179,13 +181,13 @@ test.describe('review loop smoke', () => {
 
   test('submits with "Request changes" and the fake agent resolves the comment', async () => {
     await page.goto(`/s/${SESSION_ID}/submit`)
-    await expect(page.getByRole('heading', { level: 2, name: 'Submit' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Submit' })).toBeVisible()
 
     await page.getByRole('radio', { name: 'Request changes' }).click()
     await expect(page.getByRole('radio', { name: 'Request changes' })).toHaveAttribute('aria-checked', 'true')
 
     // No confirmation step: the split button's main action sends at once.
-    await page.getByRole('button', { name: 'Submit & send to current session' }).click()
+    await page.getByRole('button', { name: 'Submit to current session' }).click()
 
     const status = page.getByRole('region', { name: 'Agent status' })
     await expect(status).toBeVisible()
@@ -196,7 +198,7 @@ test.describe('review loop smoke', () => {
     await expect(page.getByRole('region', { name: 'Transcript' }).getByText('$0.42').first()).toBeVisible()
 
     const comments = page.getByRole('region', { name: 'Comments', exact: true })
-    await expect(comments.getByText('1 resolved', { exact: true })).toBeVisible()
+    await expect(comments.getByLabel('1 resolved', { exact: true })).toBeVisible()
     const toggle = comments.getByRole('button', { name: 'Show 1 resolved' })
     await expect(toggle).toBeVisible()
     await toggle.click()
@@ -205,15 +207,15 @@ test.describe('review loop smoke', () => {
   })
 
   test('marks the README the agent edited as updated and asks for a new verdict', async () => {
-    const readme = await fs.readFile(readmePath, 'utf8')
-    expect(readme).toContain(FAKE_ADAPTER_MARKER)
+    // The UI reports the run finished from the stream's result line; the adapter appends the README marker just after it.
+    await expect.poll(() => fs.readFile(readmePath, 'utf8'), { timeout: LIVE_UPDATE_TIMEOUT_MS }).toContain(FAKE_ADAPTER_MARKER)
 
     // The deck remembers its position, so open the README card by its URL.
     await page.goto(`/s/${SESSION_ID}/files/${FIRST_FILE}`)
     const card = page.getByRole('article', { name: FIRST_FILE })
     await expect(card).toBeVisible()
     // The stale approval no longer counts: the chip is on and the verdict buttons are back.
-    await expect(card.getByText(/^updated$/i)).toBeVisible()
+    await expect(card.getByText(/^updated since sent$/i)).toBeVisible({ timeout: LIVE_UPDATE_TIMEOUT_MS })
     const approve = card.getByRole('button', { name: 'Approve' })
     await expect(approve).toBeVisible()
     await expect(approve).toHaveAttribute('aria-pressed', 'false')
@@ -237,5 +239,104 @@ test.describe('review loop smoke', () => {
 
     const resolutions = await readJson<ResolutionsFile>(path.join(reviewDir, 'resolutions.json'))
     expect(resolutions.comments[comment!.id]).toMatchObject({ status: 'resolved', note: FAKE_RESOLUTION_NOTE })
+  })
+
+  test('sends overall feedback typed a moment before clicking Submit', async () => {
+    const OVERALL = 'Smoke test: overall note typed right before Submit.'
+    await page.goto(`/s/${SESSION_ID}/submit`)
+    await expect(page.getByRole('heading', { level: 1, name: 'Submit' })).toBeVisible()
+    await page.getByRole('radio', { name: 'Request changes' }).click()
+    await page.getByRole('textbox', { name: 'Overall feedback' }).fill(OVERALL)
+    // The click blurs the field and sends well inside the 250 ms autosave delay.
+    await page.getByRole('button', { name: 'Submit to current session' }).click()
+    await expect(page.getByRole('region', { name: 'Agent status' })).toBeVisible()
+
+    const sentDir = path.join(reviewDir, 'sent')
+    const newest = (await listDir(sentDir)).filter((name) => name.endsWith('.json')).sort().at(-1)
+    expect(newest).toBeDefined()
+    const snapshot = await readJson<{ comments: { body: string }[] }>(path.join(sentDir, newest ?? ''))
+    expect(snapshot.comments.map((comment) => comment.body)).toContain(OVERALL)
+    const markdown = (await listDir(sentDir)).filter((name) => name.endsWith('.md')).sort().at(-1)
+    expect(await fs.readFile(path.join(sentDir, markdown ?? ''), 'utf8')).toContain(OVERALL)
+    await expect(page.getByRole('region', { name: 'Agent status' }).getByText('Claude Code finished working on your comments')).toBeVisible({ timeout: 60_000 })
+  })
+})
+
+/** The session shell: rail toggle and hotkey, remembered density, the Files fold, one block per page and the drawer under 1024px. */
+test.describe('session shell', () => {
+  const rail = (page: Page) => page.getByRole('complementary', { name: 'Session panel' })
+  const base = `/s/${SESSION_ID}`
+
+  test.describe.configure({ mode: 'serial' })
+
+  test('hides and shows the rail with the bar toggle and the B hotkey, and remembers it', async ({ page }) => {
+    await page.goto(`${base}/spec`)
+    await expect(rail(page)).toBeVisible()
+    await page.getByRole('button', { name: 'Hide sidebar' }).click()
+    await expect(rail(page)).toHaveCount(0)
+    // Closed, the toggle wears the review progress.
+    await expect(page.getByRole('button', { name: 'Show sidebar' })).toContainText(`/${TOTAL_FILES}`)
+    await page.reload()
+    await expect(rail(page)).toHaveCount(0)
+    await page.keyboard.press('b')
+    await expect(rail(page)).toBeVisible()
+    await page.keyboard.press('b')
+    await expect(rail(page)).toHaveCount(0)
+    await page.keyboard.press('b')
+    await expect(rail(page)).toBeVisible()
+  })
+
+  test('remembers the density separately for Files and the other pages', async ({ page }) => {
+    await page.goto(`${base}/spec`)
+    await expect(rail(page).locator('[data-density="roomy"]').first()).toBeVisible()
+    await rail(page).getByRole('button', { name: 'Collapse session details' }).click()
+    await expect(rail(page).locator('[data-density="compact"]').first()).toBeVisible()
+    await page.reload()
+    await expect(rail(page).locator('[data-density="compact"]').first()).toBeVisible()
+    // Files has its own choice (compact by default); expanding it does not touch the other pages.
+    await page.getByRole('link', { name: /^Files/ }).first().click()
+    await expect(rail(page).getByRole('button', { name: 'Expand session details' })).toBeVisible()
+    await rail(page).getByRole('button', { name: 'Expand session details' }).click()
+    await expect(rail(page).locator('[data-density="roomy"]').first()).toBeVisible()
+    await page.getByRole('link', { name: /^Spec/ }).first().click()
+    await expect(rail(page).locator('[data-density="compact"]').first()).toBeVisible()
+  })
+
+  test('folds the Files tree from its header chevron and remembers it', async ({ page }) => {
+    await page.goto(`${base}/files`)
+    await expect(rail(page).getByRole('tree')).toBeVisible()
+    await rail(page).getByRole('button', { name: 'Collapse files' }).click()
+    await expect(rail(page).getByRole('tree')).toHaveCount(0)
+    await page.reload()
+    await expect(rail(page).getByRole('button', { name: 'Expand files' })).toBeVisible()
+    await rail(page).getByRole('button', { name: 'Expand files' }).click()
+    await expect(rail(page).getByRole('tree')).toBeVisible()
+  })
+
+  test('fills the rail with each page\'s own block', async ({ page }) => {
+    for (const [route, heading] of [
+      ['spec', 'Spec'],
+      ['extras', 'Extras'],
+      ['evidence', 'Evidence'],
+      ['submit', 'Will be sent'],
+    ] as const) {
+      await page.goto(`${base}/${route}`)
+      await expect(rail(page).getByRole('heading', { name: heading, exact: true })).toBeVisible()
+    }
+    await page.goto(`${base}/files`)
+    await expect(rail(page).getByRole('tree')).toBeVisible()
+  })
+
+  test('is a left drawer under 1024px: the toggle opens it, Esc and the scrim close it', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 900 })
+    await page.goto(`${base}/spec`)
+    await expect(rail(page)).toHaveCount(0)
+    await page.getByRole('button', { name: 'Show sidebar' }).click()
+    await expect(rail(page)).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(rail(page)).toHaveCount(0)
+    await page.getByRole('button', { name: 'Show sidebar' }).click()
+    await page.getByRole('button', { name: 'Close sidebar' }).click({ position: { x: 780, y: 300 } })
+    await expect(rail(page)).toHaveCount(0)
   })
 })

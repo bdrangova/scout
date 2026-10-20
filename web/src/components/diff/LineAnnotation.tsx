@@ -1,15 +1,17 @@
 import { anchorKey, anchorLabel, type CommentWithStatus } from '@review-dash/shared'
+import { Eyebrow } from '@/components/common/Eyebrow'
 import { CommentBox } from '@/components/common/CommentBox'
 import { CommentList } from '@/components/common/CommentList'
 import type { LineAnnotationContent, LineCommentsValue } from './line-comments'
 
 interface LineAnnotationProps {
-  content: LineAnnotationContent
+  content: Exclude<LineAnnotationContent, { kind: 'pr' }>
   comments: LineCommentsValue
   onCancelDraft: () => void
 }
 
-const PANEL_CLASS = 'my-1 flex flex-col gap-2 rounded-lg border bg-background px-3 py-2 font-sans text-[13px] leading-normal shadow-sm'
+/** A small raised panel under the diff line, back in the UI font. */
+export const PANEL_CLASS = 'my-1.5 ml-3 mr-3 flex flex-col gap-2 rounded-lg border-fine border-line bg-surface px-3 py-2 font-sans text-[13px] leading-normal text-ink'
 
 /** The React content of one annotation slot under a diff line: saved comments, the draft box, or the orphaned comments. */
 export function LineAnnotation({ content, comments, onCancelDraft }: LineAnnotationProps) {
@@ -41,7 +43,7 @@ export function LineAnnotation({ content, comments, onCancelDraft }: LineAnnotat
         <div className={PANEL_CLASS} data-line-comments="changed">
           {groupOrphans(content.comments).map(({ key, label, items }) => (
             <div key={key} className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-semibold text-muted-foreground">{label} (changed)</span>
+              <Eyebrow>{label} (changed)</Eyebrow>
               {list(items)}
             </div>
           ))}
