@@ -36,15 +36,17 @@ last publish touched; this includes the fixes `/apply-review` made. Everything e
 
 ## Steps
 0. **Choices.** Skip this step when the arguments contain `--auto` or `AI_REVIEW_HEADLESS=1` is set; then decide everything yourself as the steps below describe.
-   Otherwise, before running anything else, work out your proposal for each choice. Base: the session's base, or the default base. Ticket: from the arguments, the branch name or the conversation. Mode: refresh when a session for this branch exists, else new. Spec documents: the plan or spec files you worked from. Evidence: the user-visible changes you would capture. Extras: what you would add. Then ask with AskUserQuestion: at most 4 questions per call, so use two calls. The first proposed option of each question is your proposal, marked "(Recommended)". The user can always type their own answer.
+   Otherwise, before running anything else, work out your proposal for each choice. Base: the session's base, or the default base. Ticket: from the arguments, the branch name or the conversation. Mode: refresh when a session for this branch exists, else new. Spec documents: the plan or spec files you worked from. Evidence: the user-visible changes you would capture. Extras: what you would add. Then ask with AskUserQuestion.
+   - **Accept or choose.** Ask one question first: "Use these recommendations?" Its options are "Accept all (Recommended)" and "Let me choose". Give both the same `preview`, listing every proposal on its own line: base, session mode, Jira, spec files, evidence, extras and PR description. On "Accept all", use the proposals and go to step 1. On "Let me choose", ask the questions below.
+   - At most 4 questions fit in one call, so use two calls. In every question the first option is your proposal, marked "(Recommended)", so accepting it takes one pick. The user can always type their own answer under Other.
    - Call 1:
      - **Base branch:** your proposal, plus one likely alternative.
      - **Session:** refresh only what changed, full rewrite (`--full`), or a new session (`--new`). Ask this only when a session exists.
      - **Jira:** fetch a snapshot of <KEY>, link only (`# KEY` and the URL), or no Jira. Name the key in the question so the user can correct it.
-     - **Spec documents:** the files you would copy (named), or none.
+     - **Spec documents** (multiSelect): one option per candidate file, so the user picks which to include. The first option is "Recommended set: <file names> (Recommended)", which takes every recommended file in one pick; the single files follow. Find candidates first: the plan and spec files you worked from in this conversation (including Claude plan files outside the repo), `.md` files under `plans/`, `docs/` or `specs/` that mention the ticket key or the changed areas, and design artifact HTML you used. Label each option with the file name and describe it with its first heading, its path and why you recommend it or not. Order the recommended files first and mark them "(Recommended)". With more than 3 single files, show the 3 best; the user can name others under Other. Picking none means no spec documents.
    - Call 2:
      - **Evidence:** capture or refresh what you proposed (named briefly), screenshots only, or none.
-     - **Extras:** your proposed explainers or diagrams, or none.
+     - **Extras** (multiSelect): one option per explainer or diagram you would add (for example "Component graph (components.mmd)"), plus any existing `.md` or `.html` in the repo or conversation that would help the reviewer, described the same way as the spec candidates, again led by a "Recommended set" option. Picking none means no extras.
      - **PR description:** write or update it, or leave it alone.
    - Leave out a question the arguments already answer (`--base`, `--ticket`, `--full`, `--new`).
    - Follow the answers in every step below. A part the user turned off is skipped without a placeholder and is not listed under "Not captured". Step 7 says what was skipped by choice.

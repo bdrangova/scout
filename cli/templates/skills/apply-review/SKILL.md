@@ -24,7 +24,7 @@ Arguments: $ARGUMENTS
 - `<sessionId>` below means `$0`, the first argument.
 
 ## Steps
-0. **Choices.** Skip this step with `--auto` or `AI_REVIEW_HEADLESS=1`. Otherwise read the feedback first, then ask once with AskUserQuestion. The session already fixes the branch, base and ticket, so never ask about those. Put the recommended option first, marked "(Recommended)":
+0. **Choices.** Skip this step with `--auto` or `AI_REVIEW_HEADLESS=1`. Otherwise read the feedback first, then ask once with AskUserQuestion. The session already fixes the branch, base and ticket, so never ask about those. Start with "Use these recommendations?": options "Accept all (Recommended)" and "Let me choose", both with a `preview` that lists your proposal for each question below on its own line. On "Accept all", use the proposals. On "Let me choose", ask the questions below in one call, each with your proposal first, marked "(Recommended)":
    - **Evidence:** re-capture only the evidence that has comments (recommended), also refresh the evidence your fixes change, or re-capture nothing.
    - **Checks:** run the tests and linters for what you touch (recommended), or skip them.
    - **PR description:** update `pr-description.md` for the fixes, or leave it alone. Recommend updating when the fixes change behaviour the description covers.
