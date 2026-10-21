@@ -1,8 +1,8 @@
 ---
 name: publish-review
 description: Open (or refresh) a review-dash session for the current implementation and fill it with evidence (screenshots, recordings), the Jira snapshot, plan docs, extra artifacts and a PR description so the developer can review the live working tree in the dashboard. Use when the user says "publish for review", "send this to review", runs /publish-review, or when a ticket implementation is complete.
-argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full]"
-allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git merge-base *) Bash(git hash-object *) Bash(cp *) Bash(mkdir *) Bash(ls *) Bash(rm *) Bash(npx playwright *) Read Write Edit Glob mcp__atlassian__getJiraIssue mcp__atlassian__getAccessibleAtlassianResources mcp__atlassian__atlassianUserInfo mcp__playwright__*
+argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full] [--auto]"
+allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git merge-base *) Bash(git hash-object *) Bash(cp *) Bash(mkdir *) Bash(ls *) Bash(rm *) Bash(npx playwright *) Read Write Edit Glob AskUserQuestion mcp__atlassian__getJiraIssue mcp__atlassian__getAccessibleAtlassianResources mcp__atlassian__atlassianUserInfo mcp__playwright__*
 ---
 # Publish the current work for review
 
@@ -22,12 +22,12 @@ soon as they land and updates while you keep working.
 - Never commit, stage, stash or modify repository files in this skill. Write only into the session folder returned by step 1.
 - Use absolute paths for every file you write. Never write into the repo's `.claude/` or `plans/`.
 - If a step's tool is unavailable (no Atlassian connector, no browser tool), skip it and list it under "Not captured" in the PR description.
-- If `AI_REVIEW_HEADLESS=1` is set, never wait for user input.
+- If `AI_REVIEW_HEADLESS=1` is set, never wait for user input: act as if `--auto` were given.
 - `rm` only files inside the session folder, never anything in the repository.
 
 ## Refresh mode
 A first publish writes everything. When step 1 reuses a session (`"reused": true`) that has a
-`<dir>/publish-log.json`, and `--full` is not in the arguments, refresh only what the code changes since the
+`<dir>/publish-log.json`, and neither `--full` nor the step 0 answer asks for a full rewrite, refresh only what the code changes since the
 last publish touched; this includes the fixes `/apply-review` made. Everything else stays as it is.
 - **Changed set.** Read `publish-log.json`. List the session's files now: `git diff --name-only $(git merge-base <baseRef> HEAD)` plus the untracked files from `git status --porcelain`. Hash each one with `git hash-object <path>`. The changed set holds the paths whose hash differs from the log, paths new since the log, and paths the log has that dropped out of the diff.
 - **Already refreshed.** Evidence that `/apply-review` re-captured after an evidence comment is newer than `publishedAt` (`ls -lT <evidence>`). Keep it as it is and update only its caption and description if they no longer match.
@@ -35,6 +35,19 @@ last publish touched; this includes the fixes `/apply-review` made. Everything e
 - Each step below says what it does in refresh mode. Step 8 always rewrites the log.
 
 ## Steps
+0. **Choices.** Skip this step when the arguments contain `--auto` or `AI_REVIEW_HEADLESS=1` is set; then decide everything yourself as the steps below describe.
+   Otherwise, before running anything else, work out your proposal for each choice. Base: the session's base, or the default base. Ticket: from the arguments, the branch name or the conversation. Mode: refresh when a session for this branch exists, else new. Spec documents: the plan or spec files you worked from. Evidence: the user-visible changes you would capture. Extras: what you would add. Then ask with AskUserQuestion: at most 4 questions per call, so use two calls. The first proposed option of each question is your proposal, marked "(Recommended)". The user can always type their own answer.
+   - Call 1:
+     - **Base branch:** your proposal, plus one likely alternative.
+     - **Session:** refresh only what changed, full rewrite (`--full`), or a new session (`--new`). Ask this only when a session exists.
+     - **Jira:** fetch a snapshot of <KEY>, link only (`# KEY` and the URL), or no Jira. Name the key in the question so the user can correct it.
+     - **Spec documents:** the files you would copy (named), or none.
+   - Call 2:
+     - **Evidence:** capture or refresh what you proposed (named briefly), screenshots only, or none.
+     - **Extras:** your proposed explainers or diagrams, or none.
+     - **PR description:** write or update it, or leave it alone.
+   - Leave out a question the arguments already answer (`--base`, `--ticket`, `--full`, `--new`).
+   - Follow the answers in every step below. A part the user turned off is skipped without a placeholder and is not listed under "Not captured". Step 7 says what was skipped by choice.
 1. **Session.** Run
    `ai-review init --repo "$PWD" --title "<KEY>: <short title>" --ticket <KEY>=<ticket url> --agent-session "${CLAUDE_SESSION_ID}" [--base <REF>] [--new]`
    where KEY comes from the arguments, the branch name or the conversation. It reuses the latest session for this branch, even after an approved review, unless `--new` is given: approved files stay approved and only the files changed since come back for review, the overall decision resets, comments and resolutions stay. An archived session is never reused. Pass `--base <REF>` only when the branch is not based on master. Note the printed `id`, `dir` and `url`.
