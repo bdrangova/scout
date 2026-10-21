@@ -1,8 +1,8 @@
 ---
 name: publish-review
 description: Open (or refresh) a review-dash session for the current implementation and fill it with evidence (screenshots, recordings), the Jira snapshot, plan docs, extra artifacts and a PR description so the developer can review the live working tree in the dashboard. Use when the user says "publish for review", "send this to review", runs /publish-review, or when a ticket implementation is complete.
-argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new]"
-allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(cp *) Bash(mkdir *) Bash(ls *) Bash(npx playwright *) Read Write Glob mcp__atlassian__getJiraIssue mcp__atlassian__getAccessibleAtlassianResources mcp__atlassian__atlassianUserInfo mcp__playwright__*
+argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full]"
+allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git merge-base *) Bash(git hash-object *) Bash(cp *) Bash(mkdir *) Bash(ls *) Bash(rm *) Bash(npx playwright *) Read Write Edit Glob mcp__atlassian__getJiraIssue mcp__atlassian__getAccessibleAtlassianResources mcp__atlassian__atlassianUserInfo mcp__playwright__*
 ---
 # Publish the current work for review
 
@@ -23,6 +23,16 @@ soon as they land and updates while you keep working.
 - Use absolute paths for every file you write. Never write into the repo's `.claude/` or `plans/`.
 - If a step's tool is unavailable (no Atlassian connector, no browser tool), skip it and list it under "Not captured" in the PR description.
 - If `AI_REVIEW_HEADLESS=1` is set, never wait for user input.
+- `rm` only files inside the session folder, never anything in the repository.
+
+## Refresh mode
+A first publish writes everything. When step 1 reuses a session (`"reused": true`) that has a
+`<dir>/publish-log.json`, and `--full` is not in the arguments, refresh only what the code changes since the
+last publish touched; this includes the fixes `/apply-review` made. Everything else stays as it is.
+- **Changed set.** Read `publish-log.json`. List the session's files now: `git diff --name-only $(git merge-base <baseRef> HEAD)` plus the untracked files from `git status --porcelain`. Hash each one with `git hash-object <path>`. The changed set holds the paths whose hash differs from the log, paths new since the log, and paths the log has that dropped out of the diff.
+- **Already refreshed.** Evidence that `/apply-review` re-captured after an evidence comment is newer than `publishedAt` (`ls -lT <evidence>`). Keep it as it is and update only its caption and description if they no longer match.
+- If the changed set is empty and nothing in the arguments asks for more, change nothing. Say so in step 7.
+- Each step below says what it does in refresh mode. Step 8 always rewrites the log.
 
 ## Steps
 1. **Session.** Run
@@ -30,6 +40,7 @@ soon as they land and updates while you keep working.
    where KEY comes from the arguments, the branch name or the conversation. It reuses the latest session for this branch, even after an approved review, unless `--new` is given: approved files stay approved and only the files changed since come back for review, the overall decision resets, comments and resolutions stay. An archived session is never reused. Pass `--base <REF>` only when the branch is not based on master. Note the printed `id`, `dir` and `url`.
    Then get the folders: `ai-review path <id> spec`, `ai-review path <id> evidence`, `ai-review path <id> extras`.
 2. **Jira snapshot.** When `mcp__atlassian__getJiraIssue` is available, call `mcp__atlassian__getAccessibleAtlassianResources` first and use the `cloudId` it returns (the site that is accessible to the user is the right one whatever its name; never guess a site from the company or repo name, and never skip the snapshot because the site name looks unfamiliar). Then call `getJiraIssue` for KEY with that `cloudId` and write `<spec>/jira.md`: `# KEY: summary`, a metadata line (type, status, assignee, URL), the description as Markdown, then acceptance criteria and comments when present. Otherwise write only `# KEY` and the ticket URL.
+   Refresh mode: skip this step unless `jira.md` is missing, the ticket key changed, or the arguments ask for a fresh snapshot.
 3. **Spec documents.** Copy the plan/spec Markdown files you worked from (for example under `plans/` or the paths the user gave) into `<spec>/`, keeping the file names. Save any design artifact HTML as `<spec>/design.html`. Then write `<spec>/index.json`:
    ```json
    { "items": [
@@ -37,10 +48,22 @@ soon as they land and updates while you keep working.
      { "file": "plan.md", "type": "markdown", "title": "Implementation plan", "sourcePath": "<absolute original path>" },
      { "file": "design.html", "type": "artifact", "title": "<design title>", "url": "<artifact url>" } ] }
    ```
+   Refresh mode: copy a document again only when its `sourcePath` content differs from the copy, or when it is new. Leave `index.json` alone unless the item list changed.
 4. **Evidence.** For each user-visible change capture evidence into `<evidence>/` using absolute paths: screenshots with `mcp__playwright__browser_take_screenshot` (absolute `filename`), or write and run a Playwright Test spec with `use: { screenshot: 'on', video: 'on' }` and `outputDir: '<evidence>'` (`npx playwright test <spec>`). Name files descriptively (`trial-bar-admin.png`). Write `<evidence>/index.json` with a one-sentence `caption` and a two-to-three-sentence `description` per file (what is shown, which state, what to look at); `order` controls the sequence:
    ```json
    { "items": [ { "file": "trial-bar-admin.png", "caption": "…", "description": "…", "order": 0 } ] }
    ```
-5. **Extras.** Save Markdown explainers (`*.md`), artifact HTML (`*.html`) and Mermaid diagrams (`*.mmd`) that help the reviewer (for example a component or data-flow graph) into `<extras>/`, and write `<extras>/index.json` with a `title` per file: `{ "items": [ { "file": "components.mmd", "title": "Component graph" } ] }`.
+   Note which repository files each capture covers (the components, pages, styles and data behind what it shows) for the log in step 8.
+   Refresh mode: re-capture only the evidence whose covered files are in the changed set, keeping the file name, and skip what is already refreshed. Capture new evidence for user-visible changes no existing file covers. Delete evidence (file and index entry) whose covered files all dropped out of the diff. Leave every other file and index entry untouched.
+5. **Extras.** Save Markdown explainers (`*.md`), artifact HTML (`*.html`) and Mermaid diagrams (`*.mmd`) that help the reviewer (for example a component or data-flow graph) into `<extras>/`, and write `<extras>/index.json` with a `title` per file: `{ "items": [ { "file": "components.mmd", "title": "Component graph" } ] }`. Note the files each extra describes, as for evidence.
+   Refresh mode: regenerate only the extras whose covered files are in the changed set, and add new ones only for areas none of them cover.
 6. **PR description.** Look for the repo's PR template with Glob/Read: `.github/pull_request_template.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `docs/pull_request_template.md`, `pull_request_template.md`, or a `.github/PULL_REQUEST_TEMPLATE/` folder (several templates: pick the default or most general one and say which in step 7). When one exists, write `<dir>/pr-description.md` following it as closely as possible: same headings, order, wording and checkbox style, each section filled from the change; a section you cannot fill keeps the template's own placeholder wording or a short "N/A"; add the review-dash sections the template has no place for (Not captured, test notes) only as extra sections at the end. Without a template write: Summary, What changed (by area), How to test, Risks/follow-ups, Not captured. `/apply-review` opens the PR from this same file.
-7. Report the dashboard URL printed by step 1, the number of evidence files and anything you could not capture. Remind the user that the dashboard updates live as files change; there is nothing to publish.
+   Refresh mode: edit `pr-description.md` in place with Edit and touch only the sections the changed set affects (what changed, how to test, risks, not captured). Keep the other sections word for word, including any edits the user made.
+7. Report the dashboard URL printed by step 1, the number of evidence files and anything you could not capture. In refresh mode, list what you refreshed, added and deleted, and say that the rest was kept. Remind the user that the dashboard updates live as files change; there is nothing to publish.
+8. **Publish log.** Write `<dir>/publish-log.json` with the hashes from this run (in refresh mode, the ones from the changed-set step) and the coverage you noted:
+   ```json
+   { "publishedAt": "<ISO now>", "head": "<git rev-parse HEAD>",
+     "files": { "<repo path>": "<git hash-object>" },
+     "evidence": { "trial-bar-admin.png": ["<repo path>"] },
+     "extras": { "components.mmd": ["<repo path>"] } }
+   ```
