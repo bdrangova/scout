@@ -397,7 +397,7 @@ describe('install', () => {
     expect(publish).toContain('ai-review path')
     expect(publish).not.toContain('ai-review publish')
     const apply = await readFile(path.join(repo, '.claude', 'skills', 'apply-review', 'SKILL.md'), 'utf8')
-    expect(apply).toContain('!`ai-review feedback $ARGUMENTS --format markdown`')
+    expect(apply).toContain('!`ai-review feedback $0 --format markdown`')
     expect(apply).toContain('ai-review resolve <sessionId> --comment c<n> --status resolved')
     expect(apply).not.toMatch(/republish/i)
     expect(apply).toMatch(/Decision: \*\*APPROVE\*\*/)
