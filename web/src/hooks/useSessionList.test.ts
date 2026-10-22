@@ -42,7 +42,7 @@ describe('useSessionList', () => {
     expect(result.current.filter).toBe('archived')
     expect(result.current.visible).toHaveLength(0)
     act(() => result.current.toggleArchived())
-    expect(result.current.filter).toBe('all')
+    expect(result.current.filter).toBe('sent')
   })
 
   it('hides an archived row at once and reloads both lists', async () => {

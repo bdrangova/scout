@@ -22,6 +22,7 @@ describe('ThemeProvider', () => {
     document.documentElement.classList.remove('dark')
   })
   afterEach(() => {
+    document.getElementById('scout-favicon')?.remove()
     vi.unstubAllGlobals()
   })
 
@@ -62,4 +63,22 @@ describe('ThemeProvider', () => {
     )
     expect(document.documentElement).toHaveClass('dark')
   })
+
+  it('keeps the favicon in sync with explicit and system themes', async () => {
+    mockMatchMedia(true)
+    const icon = document.createElement('link')
+    icon.id = 'scout-favicon'
+    icon.rel = 'icon'
+    document.head.appendChild(icon)
+    const user = userEvent.setup()
+    render(<ThemeProvider><ThemeToggle /></ThemeProvider>)
+    expect(icon).toHaveAttribute('href', '/brand/scout-favicon-dark.svg')
+    await user.click(screen.getByRole('button', { name: 'Light' }))
+    expect(icon).toHaveAttribute('href', '/brand/scout-favicon.svg')
+    await user.click(screen.getByRole('button', { name: 'Dark' }))
+    expect(icon).toHaveAttribute('href', '/brand/scout-favicon-dark.svg')
+    await user.click(screen.getByRole('button', { name: 'System' }))
+    expect(icon).toHaveAttribute('href', '/brand/scout-favicon-dark.svg')
+  })
+
 })

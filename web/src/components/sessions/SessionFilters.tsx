@@ -1,58 +1,44 @@
-import { Archive, List } from 'lucide-react'
-import type { CSSProperties } from 'react'
-import { Pill, Segmented, SegmentedItem } from '@/components/ui/segmented'
+import { Archive, ChevronDown, Search } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { STATUS_FILTERS, type StatusFilter } from '@/lib/session-status'
-import { STATUS_TONE } from '@/lib/status-tone'
-
-/** Unpressed chips tint their icon and count with the state colour; a pressed chip is ink-filled like every chooser. */
-const UNPRESSED_ACCENT = '[&:not([aria-pressed=true])_svg]:text-(--chip) [&:not([aria-pressed=true])_[data-slot=segmented-count]]:text-(--chip)'
-
-/** The status chips; Archived is another dimension and gets its own control to the right. */
-const STATUS_CHIPS = STATUS_FILTERS.filter((entry) => entry.id !== 'archived')
 
 interface SessionFiltersProps {
   filter: StatusFilter
   counts: Record<StatusFilter, number>
   onFilter: (filter: StatusFilter) => void
   onToggleArchived: () => void
+  query: string
+  onQuery: (value: string) => void
 }
 
-/** Icon-first status pills (with the word at `lg`+) and counts (`All · 6` is each one's accessible name), plus the flat Archived toggle. */
-export function SessionFilters({ filter, counts, onFilter, onToggleArchived }: SessionFiltersProps) {
+/** Archive is a separate view; lifecycle filtering applies only to current sessions. */
+export function SessionFilters({ filter, counts, onFilter, onToggleArchived, query, onQuery }: SessionFiltersProps) {
+  const archived = filter === 'archived'
   return (
-    <>
-      <Segmented variant="pills" aria-label="Filter by status" className="pt-0.5">
-        {STATUS_CHIPS.map((entry) => {
-          const spec = entry.status ? STATUS_TONE.session(entry.status) : null
-          const Icon = spec?.icon ?? List
-          return (
-            <SegmentedItem
-              key={entry.id}
-              pressed={entry.id === filter}
-              count={counts[entry.id]}
-              onClick={() => onFilter(entry.id)}
-              aria-label={`${entry.label} · ${counts[entry.id]}`}
-              title={entry.label}
-              className={spec ? UNPRESSED_ACCENT : undefined}
-              style={spec ? ({ '--chip': `var(--st-${spec.hue})` } as CSSProperties) : undefined}
-            >
-              <Icon aria-hidden />
-              <span className="hidden lg:inline">{entry.label}</span>
-            </SegmentedItem>
-          )
-        })}
+    <div className="flex flex-wrap items-center gap-3">
+      <Segmented aria-label="Session view">
+        <SegmentedItem pressed={!archived} count={counts.all} aria-label={`Sessions · ${counts.all}`} onClick={() => archived && onToggleArchived()}>Sessions</SegmentedItem>
+        <SegmentedItem pressed={archived} count={counts.archived} aria-label={`Archived · ${counts.archived}`} onClick={() => !archived && onToggleArchived()}>
+          <Archive aria-hidden />Archived
+        </SegmentedItem>
       </Segmented>
-      <Pill
-        pressed={filter === 'archived'}
-        count={counts.archived}
-        onClick={onToggleArchived}
-        aria-label={`Archived · ${counts.archived}`}
-        title="Archived"
-        className="ml-auto border-transparent bg-transparent text-ink-muted hover:text-ink"
-      >
-        <Archive aria-hidden />
-        <span className="hidden lg:inline">Archived</span>
-      </Pill>
-    </>
+      <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 max-sm:ml-0 max-sm:grid max-sm:w-full max-sm:grid-cols-1">
+        <label className="relative min-w-0 max-sm:w-full">
+          <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-muted" />
+          <Input type="search" value={query} onChange={(event) => onQuery(event.target.value)} aria-label="Search sessions" placeholder="Search sessions…" title="Search by title, ticket, repository, or branch" className="h-9 w-64 pl-9 max-sm:w-full" />
+        </label>
+        {!archived && (
+          <div className="relative min-w-0">
+            <select aria-label="Review status" value={filter} onChange={(event) => onFilter(event.target.value as StatusFilter)} className="block h-9 w-full appearance-none rounded-xl border-fine border-line bg-surface pr-10 pl-3 text-xs font-semibold text-ink">
+              {STATUS_FILTERS.filter((entry) => entry.id !== 'archived').map((entry) => (
+                <option key={entry.id} value={entry.id}>{entry.id === 'all' ? 'All statuses' : entry.id === 'sent' ? 'Review sent' : entry.label}{entry.id === 'all' ? '' : ` (${counts[entry.id]})`}</option>
+              ))}
+            </select>
+            <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ink-muted" />
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

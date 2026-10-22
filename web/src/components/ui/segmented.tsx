@@ -43,9 +43,9 @@ interface SegmentedItemProps extends Omit<ComponentProps<'button'>, 'children'> 
 
 const ITEM_CLASS: Record<SegmentedVariant, string> = {
   // The ::after grows the 26px hit area to 32px without changing the look (U16).
-  seg: 'relative h-[26px] rounded-sm after:absolute after:inset-x-0 after:-inset-y-[3px] after:content-[""] border-0 px-[9px] text-[12.5px] [&_svg]:size-[15px] aria-pressed:bg-ink aria-pressed:text-paper',
+  seg: 'relative h-[26px] rounded-sm after:absolute after:inset-x-0 after:-inset-y-[3px] after:content-[""] border-0 px-[9px] text-[12.5px] [&_svg]:size-[15px] aria-pressed:bg-selected aria-pressed:text-on-selected',
   pills:
-    'h-8 rounded-full border-fine border-line px-[13px] text-[13px] [&_svg]:size-3.5 aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-paper',
+    'h-8 rounded-full border-fine border-line px-[13px] text-[13px] [&_svg]:size-3.5 aria-pressed:border-selected-border aria-pressed:bg-selected aria-pressed:text-on-selected',
 }
 
 function SegmentedItem({ className, pressed, count, children, type = 'button', ...props }: SegmentedItemProps) {

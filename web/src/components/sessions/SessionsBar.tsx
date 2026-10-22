@@ -1,3 +1,4 @@
+import { ScoutMark } from '@/components/brand/Scout'
 import { Keyboard } from 'lucide-react'
 import { HEADER_CHIP_CLASS, HEADER_INK_VARS } from '@/components/layout/AppHeader'
 import { Button } from '@/components/ui/button'
@@ -15,7 +16,7 @@ export function SessionsBar({ onHelp }: { onHelp: () => void }) {
       data-slot="session-bar"
       className={cn('flex h-(--shell-h) items-center gap-3 border-b-fine border-line bg-hdr px-5 text-hdr-ink max-lg:px-3.5', HEADER_INK_VARS)}
     >
-      <span className="text-xl font-bold tracking-[-.01em]">Review Dash</span>
+      <span className="flex shrink-0 items-center gap-2.5 text-xl font-bold tracking-[-.01em]"><ScoutMark className="size-9" />Scout</span>
       <div className="ml-auto flex items-center gap-3">
         <Button size="sm" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={onHelp} className={HEADER_CHIP_CLASS}>
           <Keyboard aria-hidden />

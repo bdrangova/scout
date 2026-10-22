@@ -1,3 +1,4 @@
+import { ScoutMascot } from '@/components/brand/Scout'
 import { LoaderCircle, RefreshCw } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ export function ListNote({ children }: { children: ReactNode }) {
 export function EmptyState() {
   return (
     <Panel className="items-center gap-2 border-dashed px-6 py-14 text-center">
+      <ScoutMascot />
       <p className="m-0 text-base font-bold">No sessions yet</p>
       <p className="m-0 text-[13px] text-ink-muted">
         Start one from Claude Code with{' '}
@@ -28,11 +30,11 @@ export function EmptyState() {
   )
 }
 
-export function LoadingState() {
+export function LoadingState({ archived = false }: { archived?: boolean }) {
   return (
     <p className="m-0 flex items-center gap-2 text-[13px] font-medium text-ink-muted" aria-busy="true">
       <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
-      Loading sessions…
+      {archived ? 'Loading archived sessions…' : 'Loading sessions…'}
     </p>
   )
 }

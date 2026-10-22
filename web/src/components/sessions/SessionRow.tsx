@@ -1,17 +1,15 @@
 import type { SessionSummary } from '@review-dash/shared'
-import { Archive, ChevronRight } from 'lucide-react'
+import { Archive } from 'lucide-react'
 import type { KeyboardEvent, MouseEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { BranchChangedChip } from '@/components/session/BranchChangedChip'
-import { DiffStats } from '@/components/session/DiffStats'
-import { StatusPill } from '@/components/session/StatusPill'
 import { Button } from '@/components/ui/button'
 import { Panel } from '@/components/ui/panel'
 import { formatRelativeTime } from '@/lib/format'
 import { sessionIndexRoute } from '@/lib/paths'
 import { cn } from '@/lib/utils'
 import { SESSION_GRID, SESSION_META } from './grid'
-import { ReviewProgress } from './ReviewProgress'
+import { SessionReviewState } from './SessionReviewState'
 import { SessionIdentity } from './SessionIdentity'
 
 interface SessionRowProps {
@@ -19,7 +17,7 @@ interface SessionRowProps {
   onArchive: (session: SessionSummary) => void
 }
 
-/** A live session: the whole panel is a link to its files; Archive appears on hover or focus. */
+/** A live session: the whole panel is a link to its files; Archive remains visible as a quiet, reversible action. */
 export function SessionRow({ session, onArchive }: SessionRowProps) {
   const navigate = useNavigate()
   const href = sessionIndexRoute(session.id)
@@ -58,11 +56,7 @@ export function SessionRow({ session, onArchive }: SessionRowProps) {
           <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />
         </SessionIdentity>
         <div className={SESSION_META}>
-          <DiffStats additions={session.stats.additions} deletions={session.stats.deletions} files={session.stats.files} />
-          <ReviewProgress reviewed={session.progress.reviewed} total={session.progress.total} />
-          <div>
-            <StatusPill summary={session} showWord />
-          </div>
+          <SessionReviewState session={session} />
           <time dateTime={session.updatedAt} title={`Updated ${formatRelativeTime(session.updatedAt)}`} className="text-[13px] font-medium text-ink-muted">
             {formatRelativeTime(session.updatedAt)}
           </time>
@@ -73,11 +67,11 @@ export function SessionRow({ session, onArchive }: SessionRowProps) {
               title="Archive session"
               onClick={onArchiveClick}
               onKeyDown={(event) => event.stopPropagation()}
-              className="size-[30px] rounded-[9px] opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-yellow hover:text-on-yellow focus-visible:opacity-100 [&_svg]:size-[15px]"
+              variant="ghost"
+              className="size-8 text-ink-muted shadow-none hover:text-ink [&_svg]:size-4"
             >
               <Archive />
             </Button>
-            <ChevronRight className="size-[18px] text-ink-muted" aria-hidden />
           </span>
         </div>
       </Panel>

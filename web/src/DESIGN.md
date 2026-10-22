@@ -98,7 +98,7 @@ The last row of a thread root's card (`border-t-fine`, same `Textarea` as the co
 2. Borders are `border-fine border-line`; on a pastel fill use `border-fill-line`. No `ring-1 ring-foreground/10`, no soft blurred shadows.
 3. Icon-only controls need `aria-label` **and** `title`; decorative icons get `aria-hidden`. Icons default to 16px (`size-4`), 2.5 stroke in tags/notices.
 4. One `variant="primary"` button per screen. Destructive = `reject`. Flat toolbar icons = `ghost`.
-5. Selected state = ink fill + paper text (`Segmented`); current row = yellow fill + `text-on-yellow` (never `bg-yellow text-ink`).
+5. Selected state = `bg-selected text-on-selected` (`Segmented`): ink/paper in light, cool blue-white/navy in dark; current row = yellow fill + `text-on-yellow` (never `bg-yellow text-ink`).
 6. Status colour comes from `STATUS_TONE`, file accents from `fileTypeOf`; do not invent per-screen maps.
 7. Mono (`font-mono`) for paths, branches, hashes, counts in code; sans everywhere else, `tabular-nums` for numbers.
 8. Dark mode is automatic through tokens; never write `dark:` overrides for colour, only for things tokens cannot express.
@@ -106,3 +106,13 @@ The last row of a thread root's card (`border-t-fine`, same `Textarea` as the co
 
 ## Unsaved comment drafts on Submit
 Text typed in a composer and not added is not sent. `ReviewProvider` keeps every composer draft in memory by key (`draftKey`: a file's plain path, `spec::`/`extra::`/`evidence::` + item path for the artifact cards; `TargetComments` and `EvidenceComments` use it like the file card does), so it survives moving between pages and `useReview().unsavedDrafts` lists the non-blank ones. Submit shows `UnsavedDraftsNotice` (warn `Notice`, "N comments typed but not added" with a link per file/item, `../files/<path>`) in the send bar and in the rail's Will be sent block. A warning, never a block; nothing is auto-added. Not covered: line comment boxes (they close when the page is left, their text goes with them), the overall feedback box and PR reply boxes (the latter autosave). A reload or a send (which remounts the provider) clears the drafts.
+
+## Scout branding
+The public app name is Scout; the browser title is `scout`. Keep package names, CLI commands, and saved preference keys compatible. `components/brand/Scout.tsx` owns the static mark and mascot: logo in the sessions header, idle animation in the first-session empty state, static mark on review completion, working animation only while an agent run is active. Reduced motion selects the static mark through `<picture>`. Dark mode adapts only Scout artwork with a shared SVG palette filter; the existing indigo UI and blue accents remain unchanged. The favicon is a minimal face-and-goggles SVG, with a variant selected by the resolved app theme. Do not add animation to review cards or a delay to show branding.
+
+## Scout dashboard
+The dashboard uses wide session identity, review state, updated time, and a quiet visible archive action. Ticket references are quiet links; a matching ticket prefix is removed from the displayed title, with the original retained for accessibility. Repository and current branch are secondary plain text. Base refs remain searchable and in the branch tooltip and accessible description. Change totals stay in the file-count tooltip rather than competing with review state.
+
+Sessions and Archived are separate views. Search matches identity fields in both; the single review-status select applies only to Sessions and retains its selection after visiting Archived. Dashboard `sent` reads “Review sent” with the actual decision underneath; an approval submission whose files are not all approved reads “Review sent / Approval submitted,” with precise details in the tooltip. Semantic lifecycle values and colors still come from the existing helpers. Run activity is a separate secondary line. Unavailable sessions have a collapsed diagnostic section, separate from reviewable rows. Archive offers Undo; archived rows show Restore and archived time, with permanent delete behind the existing confirmation.
+
+Dark-mode controls use cool blue-white fills with navy text: header buttons use `--hdr-chip` with `--hdr-chip-ink`; selected choosers and commit nodes use `--selected`, `--on-selected`, and `--selected-border`. Keep light-mode controls tied to the existing ink/paper tokens.

@@ -52,7 +52,7 @@ function MenuCheckboxItem({ className, children, ...props }: MenuPrimitive.Check
     <MenuPrimitive.CheckboxItem data-slot="menu-checkbox-item" className={cn(ITEM_CLASS, className)} {...props}>
       <span
         aria-hidden
-        className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border-fine border-line bg-paper in-data-[checked]:border-ink in-data-[checked]:bg-ink in-data-[checked]:text-paper"
+        className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border-fine border-line bg-paper in-data-[checked]:border-selected-border in-data-[checked]:bg-selected in-data-[checked]:text-on-selected"
       >
         <MenuPrimitive.CheckboxItemIndicator data-slot="menu-checkbox-indicator">
           <CheckIcon className="size-3 stroke-[3]" />

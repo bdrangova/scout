@@ -84,49 +84,35 @@ describe('SessionListPage', () => {
     expect(reloadArchived).toHaveBeenCalledOnce()
   })
 
-  it('renders the banner, the heading, the rows and their status notices', () => {
+  it('keeps session identity prominent, review activity distinct, and unavailable details out of the main list', async () => {
     renderPage({ sessions: sessionListFixture })
-    expect(screen.getByRole('banner')).toHaveTextContent('Review Dash')
-    expect(within(screen.getByRole('banner')).getByRole('group', { name: 'Colour theme' })).toBeInTheDocument()
-    // No rail on the list: the bar is the wordmark, Shortcuts and the theme.
-    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
-    expect(within(screen.getByRole('banner')).getByRole('button', { name: 'Keyboard shortcuts' })).toBeInTheDocument()
+    expect(screen.getByRole('banner')).toHaveTextContent('Scout')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Review sessions')
-
     const first = screen.getByRole('link', { name: 'Trial countdown bar' })
     expect(first).toHaveAttribute('data-href', `/s/${SESSION_ID}`)
     expect(within(first).getByRole('status', { name: 'Awaiting review' })).toHaveAttribute('data-status', 'unreviewed')
-    expect(within(first).getByText('Awaiting review')).toBeInTheDocument()
-    expect(within(first).getByText('+272')).toBeInTheDocument()
-    expect(within(first).getByText('−51')).toBeInTheDocument()
-    expect(within(first).getByLabelText('8 files')).toHaveTextContent('8')
-    expect(within(first).getByRole('progressbar', { name: 'Reviewed 0 of 8' })).toBeInTheDocument()
-    expect(within(first).getByText('0/8')).toBeInTheDocument()
-    expect(within(first).getByText('qbdvision ·')).toBeInTheDocument()
-    expect(within(first).getByTitle('Base branch')).toHaveTextContent('origin/main')
-    expect(within(first).getByTitle('bojana-QI-15472-trial-bar')).toBeInTheDocument()
+    expect(within(first).getByLabelText('8 files')).toHaveTextContent('8 files')
+    expect(within(first).queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(within(first).queryByText('+272')).not.toBeInTheDocument()
+    expect(within(first).getByText('qbdvision')).toBeInTheDocument()
+    expect(within(first).getByTitle('bojana-QI-15472-trial-bar → origin/main')).toBeInTheDocument()
     expect(within(first).getByRole('link', { name: 'QI-15472' })).toHaveAttribute('href', 'https://example.atlassian.net/browse/QI-15472')
     expect(within(first).getByRole('button', { name: 'Archive Trial countdown bar' })).toHaveAttribute('title', 'Archive session')
-
-    const updated = screen.getByRole('status', { name: 'Updated since sent · 2 open comments' })
-    expect(updated).toHaveAttribute('data-status', 'updated')
-    expect(updated).toHaveTextContent('2')
+    expect(screen.getByRole('status', { name: 'Updated since sent · 2 open comments' })).toHaveAttribute('data-status', 'updated')
+    expect(screen.getByText('2 open comments')).toBeInTheDocument()
     expect(screen.getByRole('status', { name: 'In progress · 2 of 4' })).toBeInTheDocument()
-    const working = screen.getByRole('status', { name: 'Changes sent · Request changes' })
+    const working = screen.getByRole('status', { name: 'Review sent · Changes requested' })
     expect(working).toHaveAttribute('data-status', 'sent')
-    expect(working.parentElement?.querySelector('[data-run="working"]')).toHaveAccessibleName('Agent working')
-    expect(screen.getByRole('status', { name: 'Agent working' }).querySelector('[data-slot="status-dot"]')).not.toBeNull()
+    expect(within(working.parentElement!).getByRole('status', { name: 'Agent working' })).toHaveAttribute('data-run', 'working')
     expect(screen.getByRole('status', { name: 'Approved' })).toHaveAttribute('data-status', 'approved')
-
-    const broken = screen.getByRole('listitem', { name: /Broken session/ })
-    expect(broken).toHaveTextContent('20260920-0800-broken-manifest-0000')
-    expect(broken).toHaveTextContent('repository not found')
-    expect(broken).toHaveTextContent('Broken')
+    expect(screen.getByRole('listitem', { name: /Broken session/ }).closest('details')).not.toHaveAttribute('open')
+    await userEvent.setup().click(screen.getByText('1 session unavailable'))
+    expect(screen.getByRole('listitem', { name: /Broken session/ })).toHaveTextContent('repository not found')
   })
 
   it('orders the rows by last activity, newest first, with broken sessions last', () => {
     renderPage({ sessions: [...sessionListFixture].reverse() })
-    const rows = screen.getAllByRole('listitem')
+    const rows = screen.getAllByRole('listitem', { hidden: true })
     const titles = rows.map((row) => row.getAttribute('aria-label') ?? row.querySelector('[role="link"]')?.getAttribute('aria-label'))
     expect(titles).toEqual([
       'Trial countdown bar',
@@ -138,38 +124,32 @@ describe('SessionListPage', () => {
     ])
   })
 
-  it('shows icon filter pills with counts and filters the rows', async () => {
+  it('filters by review status through one select, independently of the archive view', async () => {
     renderPage({ sessions: sessionListFixture })
     const user = userEvent.setup()
-    const group = screen.getByRole('group', { name: 'Filter by status' })
-    const all = within(group).getByRole('button', { name: 'All · 6' })
-    expect(all).toHaveAttribute('aria-pressed', 'true')
-    expect(all).toHaveAttribute('title', 'All')
-    expect(within(group).getByRole('button', { name: 'Awaiting review · 1' })).toBeInTheDocument()
-    expect(within(group).getByRole('button', { name: 'In progress · 1' })).toBeInTheDocument()
-    expect(within(group).getByRole('button', { name: 'Changes sent · 1' })).toBeInTheDocument()
-    expect(within(group).getByRole('button', { name: 'Ready to submit · 0' })).toBeInTheDocument()
-    expect(within(group).getByRole('button', { name: 'Updated since sent · 1' })).toBeInTheDocument()
-    expect(within(group).getByRole('button', { name: 'Approved · 1' })).toBeInTheDocument()
-    // Archived is its own control, outside the status chip group.
-    expect(screen.getByRole('button', { name: 'Archived · 0' })).toHaveAttribute('aria-pressed', 'false')
-    expect(within(group).queryByRole('button', { name: /Archived/ })).not.toBeInTheDocument()
-
-    await user.click(within(group).getByRole('button', { name: 'Approved · 1' }))
+    expect(screen.getByRole('button', { name: 'Sessions · 6' })).toHaveAttribute('aria-pressed', 'true')
+    const filter = screen.getByRole('combobox', { name: 'Review status' })
+    expect(filter).toHaveValue('all')
+    await user.selectOptions(filter, 'approved')
     expect(screen.getAllByRole('listitem')).toHaveLength(1)
     expect(screen.getByRole('link', { name: 'Storybook stories for Badge' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Archived · 0' }))
+    expect(screen.queryByRole('combobox', { name: 'Review status' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Archived sessions')
+    await user.click(screen.getByRole('button', { name: 'Sessions · 6' }))
+    expect(screen.getByRole('combobox', { name: 'Review status' })).toHaveValue('approved')
   })
 
   it('tells when no live row matches the filter', async () => {
     const first = sessionListFixture[0]
     if (!first || !('tickets' in first)) throw new Error('fixture')
     renderPage({ sessions: [first] })
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Approved · 0' }))
-    expect(screen.getByText('No sessions match this filter.')).toBeInTheDocument()
+    await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Review status' }), 'approved')
+    expect(screen.getByText('No sessions match this filter or search.')).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Trial countdown bar' })).not.toBeInTheDocument()
   })
 
-  it('keeps many tickets on one scrollable line beside the title', () => {
+  it('keeps many tickets on one scrollable line below the title', () => {
     const first = sessionListFixture[0]
     if (!first || !('tickets' in first)) throw new Error('fixture')
     const tickets = [15472, 15473, 15480, 15491, 15502, 15510].map((n) => ({ key: `QI-${n}`, url: null }))
@@ -205,7 +185,7 @@ describe('SessionListPage', () => {
     expect(await screen.findByText('Session route')).toBeInTheDocument()
   })
 
-  it('archives a row from its hover action without opening the session, then hides it and reloads both lists', async () => {
+  it('archives a row from its visible archive action without opening the session, then hides it and reloads both lists', async () => {
     const fetchMock = vi.fn().mockResolvedValue(json(200, { id: SESSION_ID }))
     vi.stubGlobal('fetch', fetchMock)
     const reload = vi.fn()
@@ -219,7 +199,7 @@ describe('SessionListPage', () => {
     expect(screen.queryByText('Session route')).not.toBeInTheDocument()
     expect(reload).toHaveBeenCalledOnce()
     expect(reloadArchived).toHaveBeenCalledOnce()
-    expect(screen.getByRole('button', { name: 'All · 5' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sessions · 5' })).toBeInTheDocument()
   })
 
   it('toasts instead of hiding the row when the server answers 409 run-active', async () => {
@@ -244,29 +224,24 @@ describe('SessionListPage', () => {
     const row = screen.getByRole('listitem', { name: 'Archived session Old trial bar spike' })
     expect(row).not.toHaveAttribute('role', 'link')
     expect(within(row).queryByRole('link', { name: 'Old trial bar spike' })).not.toBeInTheDocument()
-    // Archived rows share titles often, so the repo, the branch chip and the created time tell them apart.
-    expect(within(row).getByText('qbdvision ·')).toBeInTheDocument()
-    expect(within(row).getByTitle('bojana-QI-15001-spike')).toBeInTheDocument()
-    // The base branch too, as on live rows (`base ← branch`).
-    expect(within(row).getByTitle('Base branch')).toHaveTextContent('origin/master')
-    expect(within(row).getByLabelText('merges into')).toBeInTheDocument()
-    expect(within(row).getByText(/^· created/)).toBeInTheDocument()
-    expect(within(row).getByText('Last week')).toHaveAttribute('dateTime', archivedFixture[0]?.createdAt)
+    expect(within(row).getByText('qbdvision')).toBeInTheDocument()
+    expect(within(row).getByTitle('bojana-QI-15001-spike → origin/master')).toBeInTheDocument()
+    expect(within(row).queryByText(/created/)).not.toBeInTheDocument()
     expect(within(row).getByText(/^Archived/)).toHaveTextContent('Archived 2 days ago')
     expect(within(row).getByText('2 days ago')).toHaveAttribute('title', archivedFixture[0]?.archivedAt)
     expect(within(row).getByText('2 days ago')).toHaveAttribute('dateTime', archivedFixture[0]?.archivedAt)
     expect(within(row).getByRole('link', { name: 'QI-15001' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Trial countdown bar' })).not.toBeInTheDocument()
 
-    await user.click(within(row).getByRole('button', { name: 'Unarchive Old trial bar spike' }))
+    await user.click(within(row).getByRole('button', { name: 'Restore Old trial bar spike' }))
     expect(fetchMock).toHaveBeenCalledWith(`/api/sessions/${archivedFixture[0]?.id}/unarchive`, expect.objectContaining({ method: 'POST' }))
     await waitFor(() => expect(screen.queryByRole('listitem', { name: 'Archived session Old trial bar spike' })).not.toBeInTheDocument())
     expect(screen.getByText('No archived sessions.')).toBeInTheDocument()
     expect(reload).toHaveBeenCalledOnce()
     expect(reloadArchived).toHaveBeenCalledOnce()
 
-    // The toggle flips back to the live list.
-    await user.click(screen.getByRole('button', { name: 'Archived · 0' }))
+    // The Sessions tab returns to the live list.
+    await user.click(screen.getByRole('button', { name: 'Sessions · 6' }))
     expect(screen.getByRole('link', { name: 'Trial countdown bar' })).toBeInTheDocument()
   })
 
@@ -278,6 +253,51 @@ describe('SessionListPage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent("Couldn't load the archived sessions: disk gone")
     await user.click(screen.getByRole('button', { name: 'Retry' }))
     expect(reloadArchived).toHaveBeenCalledOnce()
+  })
+
+  it('searches across title, ticket, repository, and branch without opening a session', async () => {
+    renderPage({ sessions: sessionListFixture })
+    const user = userEvent.setup()
+    const search = screen.getByRole('searchbox', { name: 'Search sessions' })
+    await user.type(search, 'QI-15472 qbdvision')
+    expect(screen.getByRole('link', { name: 'Trial countdown bar' })).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem')).toHaveLength(1)
+    await user.clear(search)
+    await user.type(search, 'no-matching-repository')
+    expect(screen.getByText('No sessions match this filter or search.')).toBeInTheDocument()
+  })
+
+  it('searches archived sessions and distinguishes an empty search result', async () => {
+    renderPage({ sessions: sessionListFixture }, { archived: archivedFixture })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Archived · 1' }))
+    await user.type(screen.getByRole('searchbox', { name: 'Search sessions' }), 'unknown-ticket')
+    expect(screen.getByText('No archived sessions match your search.')).toBeInTheDocument()
+    expect(screen.queryByText('No sessions yet')).not.toBeInTheDocument()
+  })
+
+  it('uses the archive loading state even when the live list has failed', async () => {
+    renderPage({ sessions: sessionListFixture, error: new Error('live unavailable') }, { loading: true })
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Archived · 0' }))
+    expect(screen.getByText('Loading archived sessions…')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByText('No archived sessions.')).not.toBeInTheDocument()
+  })
+
+  it('offers an undo action that restores the archived session and refreshes both lists', async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => json(200, { id: SESSION_ID }))
+    vi.stubGlobal('fetch', fetchMock)
+    const reload = vi.fn()
+    const reloadArchived = vi.fn()
+    renderPage({ sessions: sessionListFixture, reload }, { reload: reloadArchived })
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Archive Trial countdown bar' }))
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Session archived', expect.objectContaining({ action: expect.objectContaining({ label: 'Undo' }) })))
+    const options = vi.mocked(toast.success).mock.calls.find(([message]) => message === 'Session archived')?.[1]
+    if (!options?.action || typeof options.action !== 'object' || !('onClick' in options.action)) throw new Error('Missing Undo')
+    options.action.onClick({} as React.MouseEvent<HTMLButtonElement>)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(`/api/sessions/${SESSION_ID}/unarchive`, expect.objectContaining({ method: 'POST' })))
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(2))
+    expect(reloadArchived).toHaveBeenCalledTimes(2)
   })
 
   describe('permanent delete', () => {

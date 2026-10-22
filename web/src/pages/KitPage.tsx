@@ -1,3 +1,4 @@
+import { ScoutMark, ScoutMascot } from '@/components/brand/Scout'
 import type { AgentRunStatus, FileStatus, SessionStatus, Verdict } from '@review-dash/shared'
 import {
   ArchiveIcon,
@@ -65,7 +66,7 @@ export function KitPage() {
     <TooltipProvider>
       <div className="min-h-screen">
         <header className="flex min-h-hdr flex-wrap items-center gap-3 border-b-fine border-line bg-hdr px-5 py-2.5 text-hdr-ink">
-          <h1 className="m-0 text-2xl font-bold tracking-[-.01em]">review-dash kit</h1>
+          <h1 className="m-0 text-2xl font-bold tracking-[-.01em]">Scout kit</h1>
           <span className="text-xs font-medium">fine border retro · every primitive, both themes</span>
           <div className="ml-auto">
             <ThemeToggle />
@@ -73,6 +74,28 @@ export function KitPage() {
         </header>
 
         <main className="mx-auto flex max-w-[1130px] flex-col gap-[18px] px-6 pt-7 pb-14">
+          <Section title="Scout branding">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2.5 text-xl font-bold"><ScoutMark />Scout</div>
+              <div className="flex items-end gap-3" aria-label="Favicon at browser sizes">
+                {[16, 24, 32].map((size) => (
+                  <figure key={size} className="m-0 flex flex-col items-center gap-2 text-[11px] text-ink-muted">
+                    <img src="/brand/scout-favicon.svg" alt="" width={size} height={size} className="dark:hidden" />
+                    <img src="/brand/scout-favicon-dark.svg" alt="" width={size} height={size} className="hidden dark:block" />
+                    <figcaption>{size}px</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+            <figure className="m-0 text-center text-xs font-medium text-ink-muted">
+              <ScoutMascot className="w-64" />
+              <figcaption>Idle · first-session empty state</figcaption>
+            </figure>
+            <figure className="m-0 text-center text-xs font-medium text-ink-muted">
+              <ScoutMascot mode="working" className="w-64" />
+              <figcaption>Working · active agent run</figcaption>
+            </figure>
+          </Section>
           <Section title="Tokens">
             {SWATCHES.map((name) => (
               <div key={name} className="flex flex-col items-center gap-1 text-[11px] font-semibold text-ink-muted">

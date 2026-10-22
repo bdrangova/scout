@@ -6,6 +6,7 @@ import { ArchivedRow } from './ArchivedRow'
 import { ErrorState, ListNote } from './SessionListStates'
 
 interface ArchivedListProps {
+  emptyMessage?: string
   items: readonly ArchivedSession[]
   error: Error | null
   onUnarchive: (session: ArchivedSession) => void
@@ -15,7 +16,7 @@ interface ArchivedListProps {
 }
 
 /** The Archived view: unarchive in place, or delete for good behind a confirmation. */
-export function ArchivedList({ items, error, onUnarchive, onDeleted, reload }: ArchivedListProps) {
+export function ArchivedList({ items, error, onUnarchive, onDeleted, reload, emptyMessage }: ArchivedListProps) {
   const [toDelete, setToDelete] = useState<ArchivedSession | null>(null)
   const deletion = useDeleteArchived((id) => {
     onDeleted(id)
@@ -37,7 +38,7 @@ export function ArchivedList({ items, error, onUnarchive, onDeleted, reload }: A
       {items.map((session) => (
         <ArchivedRow key={session.id} session={session} onUnarchive={onUnarchive} onDelete={openDelete} />
       ))}
-      {items.length === 0 && <ListNote>No archived sessions.</ListNote>}
+      {items.length === 0 && <ListNote>{emptyMessage ?? 'No archived sessions.'}</ListNote>}
       <ConfirmDialog
         open={toDelete !== null}
         onOpenChange={(open) => {

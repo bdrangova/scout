@@ -46,7 +46,7 @@ export function ModeToggle() {
                   aria-current={active ? 'true' : undefined}
                   className={cn(
                     'inline-flex h-[26px] items-center justify-center gap-1.5 rounded-sm px-[9px] text-[12.5px] font-bold text-ink xl:px-[11px] transition-colors hover:bg-hover',
-                    'aria-[current=true]:bg-ink aria-[current=true]:text-paper aria-[current=true]:hover:bg-ink',
+                    'aria-[current=true]:bg-selected aria-[current=true]:text-on-selected aria-[current=true]:hover:bg-selected',
                   )}
                 />
               }

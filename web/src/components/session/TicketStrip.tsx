@@ -7,13 +7,14 @@ interface TicketStripProps {
   tickets: readonly Ticket[]
   /** Sizing for the strip in its row (`max-w-*`, `shrink-*`); it is always `min-w-0`. */
   className?: string
+  quiet?: boolean
 }
 
 /**
  * The session's tickets on one line. When they do not fit the strip scrolls sideways (wheel, trackpad, touch, keyboard; no visible scrollbar) and the
  * clipped edge fades out; the neighbouring column is never overlapped. A single ticket is just shown.
  */
-export function TicketStrip({ tickets, className }: TicketStripProps) {
+export function TicketStrip({ tickets, className, quiet = false }: TicketStripProps) {
   const { ref, onScroll, style, scrollable } = useFadeScroll<HTMLDivElement>([tickets])
 
   if (tickets.length === 0) return null
@@ -28,7 +29,7 @@ export function TicketStrip({ tickets, className }: TicketStripProps) {
       style={style}
     >
       {tickets.map((ticket) => (
-        <TicketChip key={ticket.key} ticket={ticket} />
+        <TicketChip key={ticket.key} ticket={ticket} quiet={quiet} />
       ))}
     </div>
   )

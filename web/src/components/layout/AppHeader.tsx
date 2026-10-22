@@ -4,10 +4,10 @@ import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/theme/ThemeToggle'
 
 /** The band's `--header-control-h` square icon control (tickets share it) (`.icon-btn`): chip fill, ink line, hover turns yellow. */
-export const HEADER_ICON_CLASS = 'size-(--header-control-h) rounded-(--header-control-r) bg-hdr-chip text-hdr-ink shadow-icon hover:bg-yellow hover:text-on-yellow'
+export const HEADER_ICON_CLASS = 'size-(--header-control-h) rounded-(--header-control-r) bg-hdr-chip text-hdr-chip-ink shadow-icon hover:bg-yellow hover:text-on-yellow'
 
 /** The same chip with a label beside the icon (Sessions, Shortcuts): use it on a `size="sm"` button, it only sets the height, radius and colours. */
-export const HEADER_CHIP_CLASS = 'h-(--header-control-h) rounded-(--header-control-r) bg-hdr-chip text-hdr-ink shadow-icon hover:bg-yellow hover:text-on-yellow'
+export const HEADER_CHIP_CLASS = 'h-(--header-control-h) rounded-(--header-control-r) bg-hdr-chip text-hdr-chip-ink shadow-icon hover:bg-yellow hover:text-on-yellow'
 
 /** Lines and shadows inside a header are derived from `--hdr-ink`, so chips stay inked on both fills (yellow in light, blue in dark). */
 export const HEADER_INK_VARS = '[--line:color-mix(in_srgb,var(--hdr-ink)_34%,transparent)] [--sh:color-mix(in_srgb,var(--hdr-ink)_20%,transparent)]'

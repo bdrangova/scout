@@ -80,7 +80,7 @@ export function NodeShell({ selected, incoming, outgoing, label, node, primary, 
 }
 
 /** Selected: ink fill, paper glyph, a paper gap then a fine ring (`0 0 0 2px paper-2, 0 0 0 3.5px line`). */
-const SELECTED_NODE = 'border-ink bg-ink text-paper ring-[1.5px] ring-line ring-offset-2 ring-offset-paper-2'
+const SELECTED_NODE = 'border-selected-border bg-selected text-on-selected ring-[1.5px] ring-line ring-offset-2 ring-offset-paper-2'
 
 /** A hollow 14px circle (dashed for the uncommitted changes), filled ink when selected. */
 export function Dot({ selected, dashed = false }: { selected: boolean; dashed?: boolean }) {

@@ -16,6 +16,11 @@
    The shadcn names (background, card, border, ...) are aliases of the design tokens so
    existing shadcn-style classes keep working; new code should prefer the design names. */
 :root {
+    --scout-art-filter: none;
+    --selected: var(--ink);
+    --on-selected: var(--paper);
+    --selected-border: var(--ink);
+    --hdr-chip-ink: var(--hdr-ink);
     --paper: #FBF6E9;
     --paper-2: #F1E9DB;
     --surface: #F7F1E6;
@@ -90,6 +95,11 @@
 }
 
 .dark {
+    --scout-art-filter: url(#scout-dark-palette);
+    --selected: #E8ECF7;
+    --on-selected: #26283C;
+    --selected-border: #CBD3E8;
+    --hdr-chip-ink: #26283C;
     --paper: #23212B;
     --paper-2: #2A2833;
     --surface: #2E2B38;
@@ -102,7 +112,7 @@
     --hover: rgba(243, 236, 221, .08);
     --hdr-bg: #8DA5E8;
     --hdr-ink: #23212B;
-    --hdr-chip: #F3ECDD;
+    --hdr-chip: #E8ECF7;
     --yellow: #86A3EC;
     --on-yellow: #23212B;
     --blue: #CBD5F3;
@@ -140,6 +150,10 @@
     --font-heading: var(--font-sans);
     --font-mono: 'Geist Mono Variable', 'Geist Mono', 'JetBrains Mono', 'SF Mono', Monaco, 'Courier New', monospace;
 
+    --color-selected: var(--selected);
+    --color-on-selected: var(--on-selected);
+    --color-selected-border: var(--selected-border);
+    --color-hdr-chip-ink: var(--hdr-chip-ink);
     --color-paper: var(--paper);
     --color-paper-2: var(--paper-2);
     --color-surface: var(--surface);
@@ -447,3 +461,6 @@
 :root { --shell-h: 52px; }
 /* Focusing <main> (skip link) must not scroll its top under the sticky bar. */
 main { scroll-margin-top: var(--shell-h); }
+
+/* Theme the artwork without changing the app palette or the animation timing. */
+.scout-art { filter: var(--scout-art-filter); }

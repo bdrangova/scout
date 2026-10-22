@@ -1,3 +1,4 @@
+import { ScoutMascot } from '@/components/brand/Scout'
 import type { AgentRunStatus } from '@review-dash/shared'
 import { SquareIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,7 @@ export function RunBanner({ status, active, resolved, total, reconnecting, cance
       aria-live="polite"
       className={cn('flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border-fine px-5 py-3.5 text-ink', TINT_CLASS[spec.tone], className)}
     >
+      {active && <ScoutMascot mode="working" className="w-36 max-sm:w-28" />}
       <StatusDot tone={spec.tone} size="lg" pulse={spec.pulse} label={spec.label} />
       <span className="text-sm font-bold">{BANNER_TEXT[status]}</span>
       <span className="flex items-center gap-2.5 text-[13px]">

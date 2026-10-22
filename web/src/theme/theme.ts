@@ -27,7 +27,8 @@ export function resolveTheme(setting: ThemeSetting): ResolvedTheme {
   return setting === 'system' ? systemTheme() : setting
 }
 
-/** Toggles `.dark` on `<html>`; the tokens in index.css key off that class. */
+/** Sync the UI tokens and the small Scout favicon with the resolved app theme. */
 export function applyTheme(resolved: ResolvedTheme): void {
   document.documentElement.classList.toggle('dark', resolved === 'dark')
+  document.getElementById('scout-favicon')?.setAttribute('href', `/brand/scout-favicon${resolved === 'dark' ? '-dark' : ''}.svg`)
 }

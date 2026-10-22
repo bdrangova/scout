@@ -13,7 +13,7 @@ export const LIST_REFRESH_DEBOUNCE_MS = 300
 export interface SessionListView {
   filter: StatusFilter
   setFilter: (filter: StatusFilter) => void
-  /** Flips the Archived view on and off (back to `all`). */
+  /** Flips the Archived view on and off, preserving the live review filter. */
   toggleArchived: () => void
   /** Every live row (minus the ones archived from here), newest first, broken rows last. */
   items: readonly SessionListItem[]
@@ -39,7 +39,13 @@ export interface SessionListView {
 export function useSessionList(): SessionListView {
   const live = useSessions()
   const archivedList = useArchivedSessions()
-  const [filter, setFilter] = useState<StatusFilter>('all')
+  const [liveFilter, setLiveFilter] = useState<StatusFilter>('all')
+  const [archivedView, setArchivedView] = useState(false)
+  const filter: StatusFilter = archivedView ? 'archived' : liveFilter
+  const setFilter = (next: StatusFilter) => {
+    setArchivedView(next === 'archived')
+    if (next !== 'archived') setLiveFilter(next)
+  }
   const timerRef = useRef<number | null>(null)
   // Rows archived (or unarchived) from here vanish at once; the refetch the move triggers resets both sets.
   const [hiddenLive, hideLive] = useHiddenIds(live.sessions)
@@ -82,6 +88,16 @@ export function useSessionList(): SessionListView {
       await archiveSession(session.id)
       hideLive(session.id)
       reloadBoth()
+      toast.success('Session archived', {
+        description: session.title,
+        duration: 10_000,
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            void unarchiveSession(session.id).then(reloadBoth, (reason: unknown) => toast.error("Couldn't restore the session", { description: archiveErrorMessage(reason) }))
+          },
+        },
+      })
     } catch (err) {
       toast.error(archiveErrorMessage(err))
     }
@@ -92,8 +108,9 @@ export function useSessionList(): SessionListView {
       await unarchiveSession(session.id)
       hideArchived(session.id)
       reloadBoth()
+      toast.success('Session restored', { description: session.title })
     } catch (err) {
-      toast.error("Couldn't unarchive the session", { description: archiveErrorMessage(err) })
+      toast.error("Couldn't restore the session", { description: archiveErrorMessage(err) })
     }
   }
 
@@ -103,13 +120,13 @@ export function useSessionList(): SessionListView {
   return {
     filter,
     setFilter,
-    toggleArchived: () => setFilter(filter === 'archived' ? 'all' : 'archived'),
+    toggleArchived: () => setArchivedView((value) => !value),
     items,
     visible: items.filter((item) => matchesFilter(item, filter)),
     archived,
     counts: countByFilter(items, archived.length),
-    loading: live.loading,
-    error: live.error,
+    loading: archivedView ? archivedList.loading : live.loading,
+    error: archivedView ? null : live.error,
     archivedError: archivedList.error,
     reload,
     reloadArchived,
