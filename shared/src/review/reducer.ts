@@ -1,6 +1,6 @@
-import type { Comment, CommentTarget, Decision, FileReview, Mode, Review, Verdict } from '../schemas/review.ts'
-import type { TreeFile } from '../schemas/tree.ts'
-import { effectiveVerdict } from './status.ts'
+import type { Comment, CommentKind, CommentTarget, Decision, FileReview, Mode, Review, Verdict } from '../schemas/review.ts'
+import { effectiveVerdict, isItemComment } from './status.ts'
+import type { ReviewItem } from './status.ts'
 
 /**
  * In-memory review state for the dashboard. Only `review` is persisted; `pendingReject` (the file
@@ -13,16 +13,18 @@ export type ReviewState = {
   atEnd: boolean
 }
 
-/** What the reducer needs from the live tree: its files, in display order. */
+/** What the reducer needs from the live items (tree files or test scenarios), in display order. */
 export type ReviewContext = {
-  files: readonly TreeFile[]
+  files: readonly ReviewItem[]
+  /** The comment target kind of the items: a verdict's own comment uses it. Default `file`. */
+  itemKind?: 'file' | 'scenario'
 }
 
 export type ReviewAction =
   /** `comment` rides along with the verdict (the draft typed before approving or rejecting): one file comment, and a reject is stored at once instead of waiting for one. */
   | { type: 'SET_VERDICT'; path: string; verdict: Verdict; fingerprint: string | null; comment?: string; now: string }
   /** A `file` target with an `anchor` adds a line comment: stored like a file comment, but it neither resolves a pending reject nor advances. */
-  | { type: 'ADD_COMMENT'; target: CommentTarget; body: string; timestampSec?: number | null; now: string }
+  | { type: 'ADD_COMMENT'; target: CommentTarget; body: string; timestampSec?: number | null; kind?: CommentKind; now: string }
   | { type: 'EDIT_COMMENT'; id: string; body: string; now: string }
   | { type: 'DELETE_COMMENT'; id: string; now: string }
   | { type: 'REOPEN_COMMENT'; id: string; now: string }
@@ -67,11 +69,12 @@ function patchComment(
   return { ...state, review: touch(state.review, now, { comments }) }
 }
 
-function withComment(review: Review, target: CommentTarget, body: string, timestampSec: number | null, now: string): Partial<Review> {
+function withComment(review: Review, target: CommentTarget, body: string, timestampSec: number | null, now: string, kind?: CommentKind): Partial<Review> {
   const comment: Comment = {
     id: `c${review.nextCommentId}`,
     target,
     body,
+    ...(kind !== undefined && { kind }),
     timestampSec,
     createdAt: now,
     updatedAt: null,
@@ -85,7 +88,7 @@ function withComment(review: Review, target: CommentTarget, body: string, timest
 function commentedFiles(review: Review): Set<string> {
   const paths = new Set<string>()
   for (const comment of review.comments) {
-    if (comment.target.kind === 'file' && comment.target.ref !== null) paths.add(comment.target.ref)
+    if (isItemComment(comment.target.kind) && comment.target.ref !== null) paths.add(comment.target.ref)
   }
   return paths
 }
@@ -96,7 +99,7 @@ function commentedFiles(review: Review): Set<string> {
  * effective verdict is `none` (so a file updated since its verdict comes back) and that has no
  * file comment. `null` when every file has been reviewed.
  */
-export function nextUnreviewedFile(review: Review, files: readonly TreeFile[]): string | null {
+export function nextUnreviewedFile(review: Review, files: readonly ReviewItem[]): string | null {
   const count = files.length
   if (count === 0) return null
   const commented = commentedFiles(review)
@@ -135,7 +138,7 @@ export function reviewReducer(state: ReviewState, action: ReviewAction, ctx: Rev
         const fingerprint = action.fingerprint ?? fingerprintOf(ctx, path)
         const stored: FileReview = { verdict, fingerprint, viewed: true }
         const patch: Partial<Review> = withFile(review, path, stored)
-        if (comment !== '') Object.assign(patch, withComment(review, { kind: 'file', ref: path }, comment, null, now))
+        if (comment !== '') Object.assign(patch, withComment(review, { kind: ctx.itemKind ?? 'file', ref: path }, comment, null, now))
         const next: ReviewState = {
           ...state,
           pendingReject: verdict === 'approved' || state.pendingReject === path ? null : state.pendingReject,
@@ -152,10 +155,10 @@ export function reviewReducer(state: ReviewState, action: ReviewAction, ctx: Rev
       const body = action.body.trim()
       if (body === '') return state
       const { target, now } = action
-      const patch = withComment(review, target, body, action.timestampSec ?? null, now)
+      const patch = withComment(review, target, body, action.timestampSec ?? null, now, action.kind)
       // A line comment never stands in for the reject's reason and never moves the deck:
       // the reviewer is still reading the file.
-      if (target.kind !== 'file' || target.ref === null || target.anchor !== undefined) {
+      if (!isItemComment(target.kind) || target.ref === null || target.anchor !== undefined) {
         return { ...state, review: touch(review, now, patch) }
       }
       let pendingReject = state.pendingReject

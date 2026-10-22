@@ -1,28 +1,19 @@
 import type { ReactNode } from 'react'
-import { ChevronRight, ChevronUp, Folder } from 'lucide-react'
+import { Folder } from 'lucide-react'
 import { BranchRef } from '@/components/common/BranchRef'
 import { DiffStats } from '@/components/session/DiffStats'
 import { TicketStrip } from '@/components/session/TicketStrip'
-import { Button } from '@/components/ui/button'
 import { baseTooltip } from '@/lib/branch-tooltip'
 import { repoName } from '@/lib/paths'
+import { isTestRunDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
+import { DensityButton } from './DensityButton'
+import { TestRunIdentity } from './TestRunIdentity'
 import type { RailDensity } from './useRailDensity'
 
 interface RailIdentityProps {
   density: RailDensity
   onToggleDensity: () => void
-}
-
-function DensityButton({ density, onClick }: { density: RailDensity; onClick: () => void }) {
-  const roomy = density === 'roomy'
-  const label = roomy ? 'Collapse session details' : 'Expand session details'
-  const Icon = roomy ? ChevronUp : ChevronRight
-  return (
-    <Button variant="ghost" size="icon-sm" className="size-7 shrink-0 rounded-md" aria-label={label} title={label} aria-expanded={roomy} onClick={onClick}>
-      <Icon aria-hidden className="size-3.5" />
-    </Button>
-  )
 }
 
 function BranchLine({ label, children }: { label: string; children: ReactNode }) {
@@ -40,6 +31,7 @@ function BranchLine({ label, children }: { label: string; children: ReactNode })
  */
 export function RailIdentity({ density, onToggleDensity }: RailIdentityProps) {
   const { detail } = useSessionContext()
+  if (isTestRunDetail(detail)) return <TestRunIdentity detail={detail} density={density} onToggleDensity={onToggleDensity} />
   const { manifest, tree } = detail
   const branch = tree.branch ?? manifest.repo.branch
   const baseRef = tree.baseRef || manifest.repo.baseRef

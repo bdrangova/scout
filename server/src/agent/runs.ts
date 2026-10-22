@@ -1,13 +1,13 @@
 import { randomBytes } from 'node:crypto'
 import { AgentRunEventSchema, mergeComments } from '@review-dash/shared'
-import type { AgentRun, AgentRunEvent, AgentRunStatus, Decision, SessionDetail } from '@review-dash/shared'
+import type { AgentRun, AgentRunEvent, AgentRunStatus, Decision } from '@review-dash/shared'
 import { HttpError, errorMessage } from '../errors.ts'
 import type { StoreEventBus } from '../events.ts'
 import { readTextIfExists } from '../store/fs.ts'
 import type { Store } from '../store/index.ts'
 import { listRuns, readResolutions, readReview, runLogFile } from '../store/review.ts'
 import { adapterEventBody } from './adapter.ts'
-import type { AdapterEvent, AdapterEventBody, AgentAdapter, AgentRunHandle } from './adapter.ts'
+import type { AdapterEvent, AdapterEventBody, AgentAdapter, AgentRunHandle, AgentSession } from './adapter.ts'
 import { parseStreamJsonLine } from './stream-json.ts'
 
 export const IDLE_TIMEOUT_MS = 15 * 60 * 1000
@@ -151,7 +151,7 @@ export class RunManager {
   }
 
   /** Starts the adapter for a session; 409 `HttpError` when a run is already active. */
-  async start(session: SessionDetail, opts: { sentAt: string; decision: Decision; fork: boolean }): Promise<AgentRun> {
+  async start(session: AgentSession, opts: { sentAt: string; decision: Decision; fork: boolean }): Promise<AgentRun> {
     const sessionId = session.manifest.id
     const sessionDir = this.store.paths.sessionDir(sessionId)
     await this.reconcileStale(sessionDir)

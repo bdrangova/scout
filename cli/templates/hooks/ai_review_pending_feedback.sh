@@ -2,12 +2,14 @@
 # UserPromptSubmit hook: surfaces review-dash feedback that is still open for this repository,
 # once per (Claude session, pending set). The pending set is fingerprinted by the CLI, so the
 # reminder returns only when new comments arrive after everything was resolved.
-# Skipped when the prompt already runs /apply-review, /publish-review or /address-pr-comments.
+# Skipped when the prompt already runs /apply-review, /publish-review, /address-pr-comments or one of the test-review skills
+# (/publish-test-plan, /publish-data-setup, /publish-test-run, /apply-test-review).
 
 input="$(cat)"
 prompt="$(printf '%s' "$input" | jq -r '.prompt // empty')"
 case "$prompt" in
   /apply-review*|/publish-review*|/address-pr-comments*) exit 0 ;;
+  /publish-test-plan*|/publish-data-setup*|/publish-test-run*|/apply-test-review*) exit 0 ;;
 esac
 
 session_id="$(printf '%s' "$input" | jq -r '.session_id // empty')"

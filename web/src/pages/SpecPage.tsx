@@ -4,12 +4,14 @@ import { IconCount } from '@/components/common/IconCount'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SpecPanel } from '@/components/spec/SpecPanel'
 import { SpecRailSection } from '@/components/spec/SpecRailSection'
+import { useCodeReviewDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { pluralize } from '@/lib/format'
 
 /** The files of the session's `spec/` folder, as the server derived them (index.json titles, types by filename). */
 export function SpecPage() {
-  const { sessionId, detail } = useSessionContext()
+  const { sessionId } = useSessionContext()
+  const detail = useCodeReviewDetail()
   const spec = detail.spec
 
   return (

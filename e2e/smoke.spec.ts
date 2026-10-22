@@ -98,7 +98,7 @@ test.describe('review loop smoke', () => {
 
   test('opens the session from the list', async () => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { level: 1, name: 'Review sessions' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Development' })).toBeVisible()
 
     // Two fixture sessions share the title; the row's `data-href` carries the session id.
     const row = page.getByRole('link', { name: SESSION_TITLE, exact: true }).and(page.locator(`[data-href*="${SESSION_ID}"]`))

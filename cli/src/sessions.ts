@@ -12,8 +12,12 @@ import {
   SentSnapshotSchema,
   ResolutionsSchema,
   ReviewSchema,
+  isTestRun,
+  isTestRunSent,
   mergeComments,
+  type CodeReviewManifest,
   type Manifest,
+  type TestRunManifest,
   type PrComments,
   type PrReplies,
   type PrResolutions,
@@ -47,12 +51,16 @@ export async function listSessionIds(home: string): Promise<string[]> {
   }
 }
 
-/** A cheap look at a manifest: parsed JSON, `repo.path`/`repo.branch` read without full validation. */
+/** A cheap look at a manifest: parsed JSON, `repo.path`/`repo.branch` (or `run.path`/`run.repo`) read without full validation. */
 export interface ManifestPeek {
   id: string
   dir: string
   repoPath: string | null
   branch: string | null
+  /** `run.path` of a test-run manifest. */
+  runPath: string | null
+  /** `run.repo` of a test-run manifest (the checkout the run belongs to). */
+  runRepo: string | null
   raw: unknown
 }
 
@@ -61,12 +69,19 @@ export async function peekManifest(home: string, id: string): Promise<ManifestPe
   const raw = await readJson(path.join(dir, MANIFEST_FILE))
   if (raw === undefined || typeof raw !== 'object' || raw === null) return null
   const record = raw as Record<string, unknown>
-  const repo = typeof record.repo === 'object' && record.repo !== null ? (record.repo as Record<string, unknown>) : {}
+  const section = (key: string): Record<string, unknown> => {
+    const value = record[key]
+    return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {}
+  }
+  const repo = section('repo')
+  const run = section('run')
   return {
     id,
     dir,
     repoPath: typeof repo.path === 'string' ? repo.path : null,
     branch: typeof repo.branch === 'string' ? repo.branch : null,
+    runPath: typeof run.path === 'string' ? run.path : null,
+    runRepo: typeof run.repo === 'string' ? run.repo : null,
     raw,
   }
 }
@@ -127,12 +142,12 @@ export async function writePrReplies(dir: string, value: PrReplies): Promise<PrR
   return valid
 }
 
-/** The newest `review/sent/*.json` that validates; null when nothing was sent. */
+/** The newest code-review `review/sent/*.json` that validates; null when nothing was sent (test-run snapshots are skipped). */
 export async function readLatestSent(dir: string): Promise<SentSnapshot | null> {
   const stems = await listSentStems(dir)
   for (const stem of stems.reverse()) {
     const parsed = SentSnapshotSchema.safeParse(await readJson(path.join(dir, SENT_DIR, `${stem}.json`)))
-    if (parsed.success) return parsed.data
+    if (parsed.success && !isTestRunSent(parsed.data)) return parsed.data
   }
   return null
 }
@@ -168,23 +183,27 @@ export async function listSentStems(dir: string): Promise<string[]> {
   }
 }
 
-export interface SessionMatch {
+export interface SessionMatch<M extends Manifest = Manifest> {
   id: string
   dir: string
-  manifest: Manifest
+  manifest: M
 }
 
-/** Sessions of one repository (and branch when given) with a valid manifest, newest first by `updatedAt`. */
-export async function sessionsForRepo(home: string, repoPath: string, branch: string | null = null): Promise<SessionMatch[]> {
-  const matches: SessionMatch[] = []
+function newestFirst<M extends Manifest>(matches: SessionMatch<M>[]): SessionMatch<M>[] {
+  return matches.sort((a, b) => (a.manifest.updatedAt < b.manifest.updatedAt ? 1 : a.manifest.updatedAt > b.manifest.updatedAt ? -1 : 0))
+}
+
+/** Code-review sessions of one repository (and branch when given) with a valid manifest, newest first by `updatedAt`. */
+export async function sessionsForRepo(home: string, repoPath: string, branch: string | null = null): Promise<SessionMatch<CodeReviewManifest>[]> {
+  const matches: SessionMatch<CodeReviewManifest>[] = []
   for (const id of await listSessionIds(home)) {
     const peek = await peekManifest(home, id)
     if (peek === null || peek.repoPath !== repoPath || (branch !== null && peek.branch !== branch)) continue
     const parsed = ManifestSchema.safeParse(peek.raw)
-    if (!parsed.success) continue
+    if (!parsed.success || isTestRun(parsed.data)) continue
     matches.push({ id, dir: peek.dir, manifest: parsed.data })
   }
-  return matches.sort((a, b) => (a.manifest.updatedAt < b.manifest.updatedAt ? 1 : a.manifest.updatedAt > b.manifest.updatedAt ? -1 : 0))
+  return newestFirst(matches)
 }
 
 /**
@@ -192,6 +211,30 @@ export async function sessionsForRepo(home: string, repoPath: string, branch: st
  * fingerprints, so after an approval only the files changed since come back for review. Archived
  * sessions live under `archive/` and are never found here.
  */
-export async function openSessionForBranch(home: string, repoPath: string, branch: string | null): Promise<SessionMatch | null> {
+export async function openSessionForBranch(home: string, repoPath: string, branch: string | null): Promise<SessionMatch<CodeReviewManifest> | null> {
   return (await sessionsForRepo(home, repoPath, branch))[0] ?? null
+}
+
+/** The latest live test-run session of a run folder (`manifest.run.path`), newest first by `updatedAt`. Archived sessions are never found here. */
+export async function openSessionForRun(home: string, runPath: string): Promise<SessionMatch<TestRunManifest> | null> {
+  const matches: SessionMatch<TestRunManifest>[] = []
+  for (const id of await listSessionIds(home)) {
+    const peek = await peekManifest(home, id)
+    if (peek === null || peek.runPath !== runPath) continue
+    const parsed = ManifestSchema.safeParse(peek.raw)
+    if (!parsed.success || !isTestRun(parsed.data)) continue
+    matches.push({ id, dir: peek.dir, manifest: parsed.data })
+  }
+  return newestFirst(matches)[0] ?? null
+}
+
+/**
+ * Reusing a session after an approval: the reviewer decides again, so the overall decision goes back
+ * to undecided. File verdicts, comments and resolutions stay; `effectiveVerdict` drops the verdicts of
+ * files whose content changed since.
+ */
+export async function resetApprovedDecision(dir: string, now: string): Promise<void> {
+  const review = await readReview(dir)
+  if (review === null || review.sent?.decision !== 'approve' || review.overall.decision === 'undecided') return
+  await writeReview(dir, { ...review, overall: { decision: 'undecided' }, updatedAt: now })
 }

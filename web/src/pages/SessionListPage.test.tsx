@@ -91,7 +91,7 @@ describe('SessionListPage', () => {
     // No rail on the list: the bar is the wordmark, Shortcuts and the theme.
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
     expect(within(screen.getByRole('banner')).getByRole('button', { name: 'Keyboard shortcuts' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Review sessions')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Development')
 
     const first = screen.getByRole('link', { name: 'Trial countdown bar' })
     expect(first).toHaveAttribute('data-href', `/s/${SESSION_ID}`)
@@ -184,7 +184,7 @@ describe('SessionListPage', () => {
 
   it('flags a row whose repository moved to another branch than the session was published on', () => {
     const first = sessionListFixture[0]
-    if (!first || !('tickets' in first)) throw new Error('fixture')
+    if (!first || !('repo' in first)) throw new Error('fixture')
     renderPage({ sessions: [{ ...first, repo: { ...first.repo, branch: 'other-branch' } }] })
     const flag = screen.getByRole('status', { name: /Branch changed/ })
     expect(flag).toHaveAttribute('data-tone', 'warn')

@@ -11,6 +11,7 @@ import { HEADER_CHIP_CLASS, HEADER_INK_VARS } from './AppHeader'
 import { BarMenu } from './BarMenu'
 import { ModeToggle } from './ModeToggle'
 import { SectionTabs, type SubmitState } from './SectionTabs'
+import { useShellConfig } from './shell-config'
 import { SidebarToggle } from './SidebarToggle'
 import { useCurrentSection } from './useCurrentSection'
 import { useSessionSummary } from './useSessionSummary'
@@ -27,14 +28,17 @@ function submitState({ status, run }: Pick<ReturnType<typeof useSessionSummary>,
 
 /**
  * The 52px bar on top of every session page: the sidebar toggle, Sessions, the section tabs
- * with their counts, the Swipe/Grid switch (Files only), Shortcuts, the theme and the overflow
+ * with their counts, the Swipe/Grid switch (Files, or a test run's Review), Shortcuts, the theme and the overflow
  * menu. No identity and no status: those live in the rail. Its height is `--shell-h` (index.css).
  */
 export function SessionBar({ onHelp }: SessionBarProps) {
   const { detail } = useSessionContext()
+  const { kind } = useShellConfig()
+  const listLabel = kind === 'test-run' ? 'Test runs' : 'Sessions'
   const { saveStatus } = useReview()
   const summary = useSessionSummary()
-  const onFiles = useCurrentSection() === 'files'
+  // The Swipe | Grid switch: the code review's Files page, the test run's Review page.
+  const onModes = useCurrentSection() === (kind === 'test-run' ? 'review' : 'files')
   const saveText = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Not saved' : ''
 
   return (
@@ -49,12 +53,12 @@ export function SessionBar({ onHelp }: SessionBarProps) {
         <SidebarToggle />
         <Tooltip>
           <TooltipTrigger
-            render={<Link to="/" title="Sessions" className={cn(buttonVariants({ size: 'sm' }), HEADER_CHIP_CLASS, 'max-xl:w-(--header-control-h) max-xl:px-0 max-[520px]:hidden')} />}
+            render={<Link to={kind === 'test-run' ? '/t' : '/'} title={listLabel} className={cn(buttonVariants({ size: 'sm' }), HEADER_CHIP_CLASS, 'max-xl:w-(--header-control-h) max-xl:px-0 max-[520px]:hidden')} />}
           >
             <ChevronLeft aria-hidden />
-            <span className="max-xl:sr-only">Sessions</span>
+            <span className="max-xl:sr-only">{listLabel}</span>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Sessions</TooltipContent>
+          <TooltipContent side="bottom">{listLabel}</TooltipContent>
         </Tooltip>
         <SectionTabs detail={detail} submit={{ openComments: summary.openComments, state: submitState(summary) }} />
         <div className="ml-auto flex items-center gap-3 max-lg:gap-2.5">
@@ -66,7 +70,7 @@ export function SessionBar({ onHelp }: SessionBarProps) {
               {saveText}
             </span>
           )}
-          {onFiles && <ModeToggle />}
+          {onModes && <ModeToggle />}
           <Tooltip>
             <TooltipTrigger
               render={<Button size="sm" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={onHelp} className={cn(HEADER_CHIP_CLASS, 'max-lg:hidden')} />}

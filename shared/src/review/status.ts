@@ -1,7 +1,6 @@
 import type { AgentRunStatus } from '../schemas/agent.ts'
 import type { Resolution, Resolutions } from '../schemas/resolutions.ts'
-import type { Comment, FileReview, Review, Verdict } from '../schemas/review.ts'
-import type { TreeFile, WorkingTree } from '../schemas/tree.ts'
+import type { Comment, CommentTargetKind, FileReview, Review, Verdict } from '../schemas/review.ts'
 
 export const COMMENT_STATUSES = ['open', 'resolved'] as const
 export type CommentStatus = (typeof COMMENT_STATUSES)[number]
@@ -19,6 +18,21 @@ export const SESSION_STATUSES = [
   'approved',
 ] as const
 export type SessionStatus = (typeof SESSION_STATUSES)[number]
+
+/** What the review logic needs of a reviewable item: a changed file (`TreeFile`) or a test scenario (`path` = its id). */
+export type ReviewItem = { path: string; fingerprint: string }
+
+/** The items as an array or as anything carrying them in `files` (a `WorkingTree`). */
+export type ReviewItems = readonly ReviewItem[] | { readonly files: readonly ReviewItem[] }
+
+function itemsOf(source: ReviewItems): readonly ReviewItem[] {
+  return 'files' in source ? source.files : source
+}
+
+/** A comment on a reviewable item (a file or a test scenario): the reviewer responded to it, so it counts as reviewed. */
+export function isItemComment(kind: CommentTargetKind): boolean {
+  return kind === 'file' || kind === 'scenario'
+}
 
 function timeOf(iso: string): number {
   const t = Date.parse(iso)
@@ -51,13 +65,13 @@ export function mergeComments(review: Review, resolutions: Resolutions | null): 
 }
 
 /** The reviewer judged a version of the file whose content has changed since. */
-export function fileIsUpdated(entry: FileReview | null | undefined, file: TreeFile): boolean {
+export function fileIsUpdated(entry: FileReview | null | undefined, file: ReviewItem): boolean {
   if (!entry || entry.verdict === 'none' || entry.fingerprint === null) return false
   return entry.fingerprint !== file.fingerprint
 }
 
 /** The stored verdict, unless the file changed since it was given (then `none`). */
-export function effectiveVerdict(entry: FileReview | null | undefined, file: TreeFile): Verdict {
+export function effectiveVerdict(entry: FileReview | null | undefined, file: ReviewItem): Verdict {
   if (!entry) return 'none'
   return fileIsUpdated(entry, file) ? 'none' : entry.verdict
 }
@@ -66,7 +80,7 @@ export function effectiveVerdict(entry: FileReview | null | undefined, file: Tre
 export function commentedPaths(review: Review, resolutions: Resolutions | null = null): Set<string> {
   const paths = new Set<string>()
   for (const comment of mergeComments(review, resolutions)) {
-    if (comment.status === 'open' && comment.target.kind === 'file' && comment.target.ref !== null) paths.add(comment.target.ref)
+    if (comment.status === 'open' && isItemComment(comment.target.kind) && comment.target.ref !== null) paths.add(comment.target.ref)
   }
   return paths
 }
@@ -77,27 +91,28 @@ export function commentedPaths(review: Review, resolutions: Resolutions | null =
  */
 export function progress(
   review: Review | null,
-  tree: WorkingTree,
+  tree: ReviewItems,
   resolutions: Resolutions | null = null,
 ): { reviewed: number; total: number } {
-  const total = tree.files.length
+  const items = itemsOf(tree)
+  const total = items.length
   if (!review) return { reviewed: 0, total }
   const commented = commentedPaths(review, resolutions)
   let reviewed = 0
-  for (const file of tree.files) {
+  for (const file of items) {
     if (effectiveVerdict(review.files[file.path], file) !== 'none' || commented.has(file.path)) reviewed += 1
   }
   return { reviewed, total }
 }
 
 /** True when any judged file of the tree has changed since its verdict. */
-export function anyFileUpdated(review: Review, tree: WorkingTree): boolean {
-  return tree.files.some((file) => fileIsUpdated(review.files[file.path], file))
+export function anyFileUpdated(review: Review, tree: ReviewItems): boolean {
+  return itemsOf(tree).some((file) => fileIsUpdated(review.files[file.path], file))
 }
 
 /** True when every file of the tree has the effective verdict `approved` (vacuously true for an empty tree). */
-export function allFilesApproved(review: Review, tree: WorkingTree): boolean {
-  return tree.files.every((file) => effectiveVerdict(review.files[file.path], file) === 'approved')
+export function allFilesApproved(review: Review, tree: ReviewItems): boolean {
+  return itemsOf(tree).every((file) => effectiveVerdict(review.files[file.path], file) === 'approved')
 }
 
 /**
@@ -115,7 +130,7 @@ export function allFilesApproved(review: Review, tree: WorkingTree): boolean {
  */
 export function sessionStatus(input: {
   review: Review | null
-  tree: WorkingTree
+  tree: ReviewItems
   resolutions: Resolutions | null
   activeRun: boolean
   /** Status of the newest run, when the caller knows it. */
@@ -132,7 +147,7 @@ export function sessionStatus(input: {
     return 'sent'
   }
   if (review) {
-    const hasVerdict = tree.files.some((file) => effectiveVerdict(review.files[file.path], file) !== 'none')
+    const hasVerdict = itemsOf(tree).some((file) => effectiveVerdict(review.files[file.path], file) !== 'none')
     const { reviewed, total } = progress(review, tree, resolutions)
     if (total > 0 && reviewed === total) return 'ready'
     if (hasVerdict || review.comments.length > 0) return 'in-progress'

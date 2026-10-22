@@ -24,6 +24,8 @@ const review = reviewFixture()
 function renderList(currentPath: string, onNavigate = vi.fn()) {
   const value: ReviewContextValue = {
     state: { review, pendingReject: null, atEnd: false },
+    items: files,
+    itemKind: 'file',
     dispatch: vi.fn(),
     comments: [],
     commentsFor: () => [],

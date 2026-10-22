@@ -1,11 +1,11 @@
-import type { Review, SessionDetail } from '@review-dash/shared'
+import type { CodeReviewDetail, Review } from '@review-dash/shared'
 import { describe, expect, it } from 'vitest'
 import { commentFixture, resolutionsFixture, reviewFixture, sessionDetailFixture, withChangedFile } from '@/test/fixtures'
 import { landingSection } from './landing-section'
 
 const files = sessionDetailFixture.tree.files
 const detail = sessionDetailFixture
-const without = (patch: Partial<SessionDetail>): SessionDetail => ({ ...detail, ...patch })
+const without = (patch: Partial<CodeReviewDetail>): CodeReviewDetail => ({ ...detail, ...patch })
 
 function judged(verdict: 'approved' | 'rejected', count = files.length): Review['files'] {
   return Object.fromEntries(files.slice(0, count).map((file) => [file.path, { verdict, fingerprint: file.fingerprint, viewed: true }]))

@@ -68,6 +68,8 @@ const review = reviewFixture({
 function contextValue(dispatch = vi.fn(), draft = '', comments: CommentWithStatus[] = []): ReviewContextValue {
   return {
     state: { review, pendingReject: null, atEnd: false },
+    items: [changed, untouched],
+    itemKind: 'file',
     dispatch,
     comments: mergeComments(review, null),
     commentsFor: () => comments,

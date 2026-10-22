@@ -1,7 +1,7 @@
 import type { CommentTarget } from '@review-dash/shared'
 
-/** Where a composer's text is typed: a file card, or a spec, extra or evidence card. */
-export type DraftKind = 'file' | 'spec' | 'extra' | 'evidence'
+/** Where a composer's text is typed: a file card, a spec, extra or evidence card, or a test run's scenario, screenshot or data file (`run-file`), bug or log. */
+export type DraftKind = 'file' | 'spec' | 'extra' | 'evidence' | 'scenario' | 'run-file' | 'bug' | 'log'
 
 export interface UnsavedDraft {
   kind: DraftKind
@@ -21,7 +21,7 @@ export function draftKey(target: Pick<CommentTarget, 'kind' | 'ref'>): string {
 }
 
 function parseDraftKey(key: string): UnsavedDraft {
-  for (const kind of ['spec', 'extra', 'evidence'] as const) {
+  for (const kind of ['spec', 'extra', 'evidence', 'scenario', 'run-file', 'bug', 'log'] as const) {
     if (key.startsWith(`${kind}${SEPARATOR}`)) return { kind, ref: key.slice(kind.length + SEPARATOR.length) }
   }
   return { kind: 'file', ref: key }

@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 1,
+  "runId": "run-1",
+  "title": "Demo feature test run",
+  "feature": "f",
+  "area": "a",
+  "createdAt": "2026-10-21T10:00:00.000Z",
+  "updatedAt": "2026-10-21T11:00:00.000Z",
+  "publishedBy": {
+    "plan": {
+      "at": "2026-10-21T09:00:00.000Z"
+    },
+    "run": {
+      "at": "2026-10-21T11:00:00.000Z",
+      "hashes": {
+        "steps.md": "0123456789abcdef"
+      }
+    }
+  },
+  "roots": {
+    "run": ".",
+    "plan": "../..",
+    "bugs": "../../bugs"
+  },
+  "pages": [
+    "gaps",
+    "logs"
+  ],
+  "overview": [
+    {
+      "type": "stats",
+      "title": "Results",
+      "span": 2,
+      "items": [
+        {
+          "label": "Pass",
+          "value": 1,
+          "tone": "good"
+        },
+        {
+          "label": "Fail",
+          "value": 1,
+          "tone": "bad"
+        },
+        {
+          "label": "Gap",
+          "value": 1,
+          "tone": "warn"
+        }
+      ]
+    },
+    {
+      "type": "markdown",
+      "title": "Summary",
+      "markdown": "One scenario passed, one failed (bug x) and one could not be tested."
+    },
+    {
+      "type": "table",
+      "title": "Layers",
+      "columns": [
+        "Layer",
+        "Pass",
+        "Fail"
+      ],
+      "rows": [
+        [
+          "e2e",
+          1,
+          1
+        ],
+        [
+          "l1",
+          null,
+          0
+        ]
+      ]
+    },
+    {
+      "type": "key-value",
+      "title": "Environment",
+      "items": [
+        {
+          "key": "Build",
+          "value": "local"
+        },
+        {
+          "key": "Data",
+          "value": "seed 3"
+        }
+      ]
+    },
+    {
+      "type": "gallery",
+      "title": "Highlights",
+      "items": [
+        {
+          "path": "run:scenarios/s1-pass/screenshots/s1-01-a.png",
+          "caption": "Rows listed"
+        },
+        {
+          "path": "run:scenarios/s2-fail/screenshots/s2-01-a.png",
+          "caption": "Error banner"
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "title": "Walkthrough",
+      "path": "run:scenarios/s1-pass/videos/test-1-pass-1.mp4",
+      "chapters": [
+        {
+          "atSec": 0,
+          "label": "Start"
+        },
+        {
+          "atSec": 1,
+          "label": "Rows"
+        }
+      ]
+    },
+    {
+      "type": "log",
+      "title": "The failure",
+      "path": "run:logs/run.log",
+      "from": 5,
+      "to": 9,
+      "label": "empty result"
+    },
+    {
+      "type": "links",
+      "title": "Related",
+      "items": [
+        {
+          "label": "Bug x",
+          "ref": "bugs:x/x.md"
+        },
+        {
+          "label": "Scenario s2",
+          "scenario": "s2-fail"
+        },
+        {
+          "label": "Docs",
+          "url": "https://example.com/docs"
+        }
+      ]
+    },
+    {
+      "type": "scenario-list",
+      "title": "Failing",
+      "statuses": [
+        "fail"
+      ]
+    },
+    {
+      "type": "weird",
+      "title": "From a newer skill",
+      "payload": {
+        "a": 1
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "s1-pass",
+      "title": "Happy path",
+      "status": "pass",
+      "order": 0,
+      "layers": [
+        {
+          "name": "e2e",
+          "status": "pass"
+        }
+      ],
+      "steps": [
+        {
+          "label": "1",
+          "action": "Open the feature",
+          "expected": "Page loads",
+          "observed": "Page loads",
+          "result": "pass"
+        },
+        {
+          "label": "2",
+          "action": "Read the table",
+          "expected": "Three rows",
+          "observed": "Three rows",
+          "result": "pass"
+        }
+      ],
+      "evidence": {
+        "videos": [
+          {
+            "path": "run:scenarios/s1-pass/videos/test-1-pass-1.mp4",
+            "caption": "Full run",
+            "layer": "e2e",
+            "atSec": 0
+          }
+        ],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s1-pass/screenshots/s1-01-a.png",
+            "caption": "Rows listed"
+          }
+        ],
+        "data": [
+          {
+            "path": "run:scenarios/s1-pass/data/out.json",
+            "caption": "Output"
+          }
+        ]
+      },
+      "logs": [
+        {
+          "path": "run:logs/run.log",
+          "from": 1,
+          "to": 4,
+          "label": "startup"
+        }
+      ],
+      "links": {
+        "gaps": [],
+        "bugs": []
+      }
+    },
+    {
+      "id": "s2-fail",
+      "title": "Empty result",
+      "status": "fail",
+      "order": 1,
+      "layers": [
+        {
+          "name": "e2e",
+          "status": "fail",
+          "note": "error banner"
+        }
+      ],
+      "stepsMarkdown": "1. Filter to a value with no matches.\n2. Expect an empty state.\n\n**Observed:** an error banner.",
+      "evidence": {
+        "videos": [
+          {
+            "path": "run:scenarios/s2-fail/videos/test-2-fail-1.mp4",
+            "caption": "The failure",
+            "atSec": 1
+          }
+        ],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s2-fail/screenshots/s2-01-a.png",
+            "caption": "Error banner"
+          }
+        ],
+        "data": [
+          {
+            "path": "run:scenarios/s2-fail/data/out.json"
+          }
+        ]
+      },
+      "logs": [
+        {
+          "path": "run:logs/run.log",
+          "from": 5,
+          "to": 9,
+          "label": "error"
+        }
+      ],
+      "links": {
+        "gaps": [],
+        "bugs": [
+          "x"
+        ]
+      },
+      "notes": "See bug x."
+    },
+    {
+      "id": "s3-gap",
+      "title": "Export",
+      "status": "gap",
+      "order": 2,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Export the data",
+          "expected": "A file downloads"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s3-gap/screenshots/s3-01-a.png",
+            "caption": "Export button"
+          }
+        ],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g1"
+        ],
+        "bugs": []
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "id": "g1",
+      "title": "Export cannot be exercised here",
+      "status": "open",
+      "scenarios": [
+        "s3-gap"
+      ],
+      "markdown": "No download target in this environment."
+    }
+  ],
+  "bugs": [
+    {
+      "slug": "x",
+      "title": "Empty result shows an error",
+      "path": "bugs:x/x.md",
+      "jira": "DEMO-1",
+      "screenshots": [
+        "bugs:x/screenshots/1.png"
+      ],
+      "scenarios": [
+        "s2-fail"
+      ]
+    }
+  ],
+  "logs": [
+    {
+      "path": "run:logs/run.log",
+      "label": "Run log"
+    }
+  ]
+}

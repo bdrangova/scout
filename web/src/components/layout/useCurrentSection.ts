@@ -1,14 +1,14 @@
 import { SECTIONS } from '@review-dash/shared'
 import { useLocation } from 'react-router'
+import { useShellConfig } from './shell-config'
 
-type Section = (typeof SECTIONS)[number]
-
-/** The session section a `/s/:id/<section>/…` path is on; null anywhere else. */
-export function sectionOfPath(pathname: string): Section | null {
+/** The session section a `/<s|t>/:id/<section>/…` path is on among `sections` (the code review's by default); null anywhere else. */
+export function sectionOfPath(pathname: string, sections: readonly string[] = SECTIONS): string | null {
   const segment = pathname.split('/')[3]
-  return SECTIONS.find((section) => section === segment) ?? null
+  return sections.find((section) => section === segment) ?? null
 }
 
-export function useCurrentSection(): Section | null {
-  return sectionOfPath(useLocation().pathname)
+export function useCurrentSection(): string | null {
+  const { sections } = useShellConfig()
+  return sectionOfPath(useLocation().pathname, sections)
 }

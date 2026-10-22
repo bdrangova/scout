@@ -4,10 +4,11 @@ import { Link, useLocation, useSearchParams } from 'react-router'
 import { Kbd } from '@/components/ui/kbd'
 import { Segmented } from '@/components/ui/segmented'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { MODE_LABELS, MODE_PARAM, modeSearch, parseMode } from '@/lib/mode'
-import { sessionRoute } from '@/lib/paths'
+import { MODE_LABELS, MODE_PARAM, modeSearch, parseMode, parseRunMode } from '@/lib/mode'
+import { sessionFilesRoute, testRunRoute } from '@/lib/paths'
 import { useSessionContext } from '@/lib/session-context'
 import { cn } from '@/lib/utils'
+import { useShellConfig } from './shell-config'
 
 const MODE_ICONS: Record<Mode, LucideIcon> = { scroll: Rows3, swipe: GalleryHorizontal, grid: LayoutGrid }
 
@@ -19,15 +20,18 @@ const VISIBLE_MODES: readonly Mode[] = ['swipe', 'grid']
 
 /**
  * Swipe | Grid as a flat chooser (icons below `xl`, icons and words from `xl`) (`Segmented` look, links inside). Writes `?mode=`
- * on the files route (keeping the current file and the commit scope when already there). Needs a `TooltipProvider`.
+ * on the files route (keeping the current file and the commit scope when already there); in a test run on the review
+ * route (keeping the current scenario; `?mode=scroll` reads as swipe), or on `pathname` when the page (Gaps, Logs, Data
+ * setup, from their rail sections) names its own. Needs a `TooltipProvider`.
  */
-export function ModeToggle() {
+export function ModeToggle({ pathname: fixedPathname }: { pathname?: string } = {}) {
   const { sessionId } = useSessionContext()
   const location = useLocation()
   const [searchParams] = useSearchParams()
-  const mode = parseMode(searchParams.get(MODE_PARAM))
-  const filesBase = sessionRoute(sessionId)
-  const pathname = location.pathname.startsWith(filesBase) ? location.pathname : filesBase
+  const testRun = useShellConfig().kind === 'test-run'
+  const mode = testRun ? parseRunMode(searchParams.get(MODE_PARAM)) : parseMode(searchParams.get(MODE_PARAM))
+  const base = testRun ? testRunRoute(sessionId, 'review') : sessionFilesRoute(sessionId)
+  const pathname = fixedPathname ?? (location.pathname.startsWith(base) ? location.pathname : base)
 
   return (
     <Segmented aria-label="Review mode" data-slot="mode-toggle">

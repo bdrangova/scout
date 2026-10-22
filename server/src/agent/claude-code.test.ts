@@ -1,11 +1,11 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import type { SessionDetail } from '@review-dash/shared'
+import type { SessionDetail, TestRunManifest } from '@review-dash/shared'
 import { makeManifest, makeTree } from '@review-dash/shared/testing/fixtures'
 import { afterAll, describe, expect, it } from 'vitest'
 import type { AdapterEvent } from './adapter.ts'
-import { APPLY_REVIEW_ALLOWED_TOOLS, ClaudeCodeAdapter, applyReviewArgv, headlessEnv } from './claude-code.ts'
+import { APPLY_REVIEW_ALLOWED_TOOLS, ClaudeCodeAdapter, applyReviewArgv, applyTestReviewArgv, headlessEnv } from './claude-code.ts'
 import { DEFAULT_SAMPLE_PATH } from './fake.ts'
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'review-dash-claude-'))
@@ -173,5 +173,40 @@ describe('ClaudeCodeAdapter.applyFeedback', () => {
     const events = await collect(handle)
     expect(events.some((e) => e.type === 'error' && /failed to start/.test(e.message))).toBe(true)
     expect((await handle.exit).code).not.toBe(0)
+  })
+})
+
+describe('applyTestReviewArgv', () => {
+  it('runs /apply-test-review with the PR-free tool list', () => {
+    const argv = applyTestReviewArgv('20260926-1830-add-trial-bar-3f2a', 'sid-1', false)
+    expect(argv.slice(0, 4)).toEqual(['-p', '/apply-test-review 20260926-1830-add-trial-bar-3f2a', '--resume', 'sid-1'])
+    expect(argv.slice(argv.indexOf('--allowedTools') + 1, argv.indexOf('--max-turns'))).toEqual([...APPLY_REVIEW_ALLOWED_TOOLS])
+    expect(argv.join(' ')).not.toMatch(/git push|gh pr create|git commit/)
+    expect(applyTestReviewArgv('s', 'sid', true)).toContain('--fork-session')
+  })
+
+  it('spawns in the checkout of the run and never grants PR tools, even for approve', async () => {
+    const checkout = fs.mkdtempSync(path.join(tmp, 'checkout-'))
+    const bin = stubBinary('claude-cwd', 'echo "cwd=$(pwd -P)" >&2\nexit 0')
+    const base = makeManifest()
+    const manifest: TestRunManifest = {
+      schemaVersion: base.schemaVersion,
+      id: base.id,
+      title: base.title,
+      createdAt: base.createdAt,
+      updatedAt: base.updatedAt,
+      agent: { ...base.agent, sessionId: 'agent-session-9' },
+      tickets: [],
+      kind: 'test-run',
+      run: { path: path.join(checkout, 'plans', 'run'), repo: checkout, feature: null, area: null },
+    }
+    const adapter = new ClaudeCodeAdapter({ claudeBin: bin, env: { PATH: process.env.PATH ?? '' } })
+    expect(await adapter.canResume({ manifest }, { fork: true })).toEqual({ ok: true })
+    const handle = adapter.applyFeedback({ session: { manifest }, sentAt: '2026-09-26T18:47:36.000Z', decision: 'approve', fork: false, signal: new AbortController().signal, home: tmp })
+    expect(handle.argv[1]).toBe('-p')
+    expect(handle.argv[2]).toBe(`/apply-test-review ${manifest.id}`)
+    expect(handle.argv.join(' ')).not.toMatch(/git push|gh pr create/)
+    const events = await collect(handle)
+    expect(events.find((e) => e.type === 'stderr')).toEqual({ type: 'stderr', line: `cwd=${fs.realpathSync(checkout)}` })
   })
 })

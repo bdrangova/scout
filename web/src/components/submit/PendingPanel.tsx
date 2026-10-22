@@ -5,13 +5,15 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { Panel, PanelBody, PanelFooter, PanelHeader, PanelTitle } from '@/components/ui/panel'
 import { StatusDot } from '@/components/ui/status-dot'
-import { applyReviewCommand, describeApiError, desktopNewSessionUrl, startRun, type SendTarget } from '@/lib/runs'
+import { applyReviewCommand, describeApiError, desktopNewSessionUrl, startRun, type ReviewCommand, type SendTarget } from '@/lib/runs'
 import { cn } from '@/lib/utils'
 
 export interface PendingPanelProps {
   sessionId: string
-  /** Absolute repo path, for the Claude Desktop deep link in `new` mode. */
+  /** Absolute path of the agent's working directory, for the Claude Desktop deep link in `new` mode. */
   repoPath: string
+  /** The slash command to run; `/apply-review` unless this is a test run. */
+  command?: ReviewCommand
   mode: SendTarget
   /** The server's reason when it declined to start a run; `null` when no run was asked for. */
   reason: string | null
@@ -25,11 +27,11 @@ export interface PendingPanelProps {
  * Desktop deep link opens a fresh session with the command prefilled. Either way a headless fork
  * is one click away.
  */
-export function PendingPanel({ sessionId, repoPath, mode, reason, onRun, className }: PendingPanelProps) {
+export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-review', mode, reason, onRun, className }: PendingPanelProps) {
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const command = applyReviewCommand(sessionId)
+  const command = applyReviewCommand(sessionId, slash)
 
   async function fork() {
     setStarting(true)
@@ -72,7 +74,7 @@ export function PendingPanel({ sessionId, repoPath, mode, reason, onRun, classNa
       </PanelBody>
       <PanelFooter className="flex flex-wrap items-center gap-2">
         {mode === 'new' && (
-          <a href={desktopNewSessionUrl(repoPath, sessionId)} className={buttonVariants({ size: 'sm' })}>
+          <a href={desktopNewSessionUrl(repoPath, sessionId, slash)} className={buttonVariants({ size: 'sm' })}>
             <ExternalLinkIcon aria-hidden />
             Open in Claude Desktop
           </a>

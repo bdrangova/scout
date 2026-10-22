@@ -21,6 +21,12 @@ export type Hotkey =
   | 'section3'
   | 'section4'
   | 'section5'
+  | 'section6'
+  | 'toggleKind'
+  | 'prevScenario'
+  | 'nextScenario'
+  | 'prevEvidence'
+  | 'nextEvidence'
   | 'help'
 
 export type HotkeyHandlers = Partial<Record<Hotkey, () => void>>
@@ -46,9 +52,9 @@ export function hotkeyFor(event: KeyLike): Hotkey | null {
   if (typing) return null
   switch (event.key) {
     case 'ArrowLeft':
-      return 'prev'
+      return event.shiftKey ? 'prevEvidence' : 'prev'
     case 'ArrowRight':
-      return 'next'
+      return event.shiftKey ? 'nextEvidence' : 'next'
     case '[':
       return 'prevScope'
     case ']':
@@ -91,6 +97,17 @@ export function hotkeyFor(event: KeyLike): Hotkey | null {
       return 'section4'
     case '5':
       return 'section5'
+    case '6':
+      return 'section6'
+    case 'j':
+    case 'J':
+      return 'nextScenario'
+    case 'k':
+    case 'K':
+      return 'prevScenario'
+    case 't':
+    case 'T':
+      return 'toggleKind'
     case '?':
       return 'help'
     default:

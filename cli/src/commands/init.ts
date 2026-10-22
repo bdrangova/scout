@@ -3,10 +3,11 @@
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { SCHEMA_VERSION, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR, type Manifest } from '@review-dash/shared'
+import { SCHEMA_VERSION, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR, type CodeReviewManifest } from '@review-dash/shared'
 import { currentBranch, defaultBase, refExists, remoteUrl, topLevel } from '@review-dash/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
-import { openSessionForBranch, readReview, writeReview } from '../sessions.ts'
+import { openSessionForBranch, resetApprovedDecision } from '../sessions.ts'
+import { initTestRunSession, type InitTestRunResult } from './init-test-run.ts'
 import { newSessionId, resolveHome, sessionDir, writeManifest } from '../store.ts'
 
 /** Folders created under the session so the agent can write into them right away. */
@@ -17,7 +18,7 @@ export interface InitOptions {
   /** A path inside the repository. */
   repo: string
   title?: string | null
-  tickets?: Manifest['tickets']
+  tickets?: CodeReviewManifest['tickets']
   /** Base ref name; default `defaultBase(repo)` (origin/master → master → origin/main → main → origin/HEAD). */
   base?: string | null
   agentSession?: string | null
@@ -30,13 +31,13 @@ export interface InitResult {
   id: string
   dir: string
   url: string
-  manifest: Manifest
+  manifest: CodeReviewManifest
   /** True when the latest session for (repo, branch) was reused and its manifest refreshed. */
   reused: boolean
 }
 
 /** `KEY` or `KEY=url` → ticket. */
-export function parseTicket(spec: string): Manifest['tickets'][number] {
+export function parseTicket(spec: string): CodeReviewManifest['tickets'][number] {
   const eq = spec.indexOf('=')
   const key = (eq === -1 ? spec : spec.slice(0, eq)).trim()
   if (key === '') throw new Error(`invalid --ticket "${spec}": expected KEY or KEY=url`)
@@ -44,21 +45,10 @@ export function parseTicket(spec: string): Manifest['tickets'][number] {
   return { key, url: url === '' ? null : url }
 }
 
-function defaultTitle(tickets: Manifest['tickets'], branch: string | null): string {
+function defaultTitle(tickets: CodeReviewManifest['tickets'], branch: string | null): string {
   const subject = branch ?? 'review'
   const key = tickets[0]?.key
   return key === undefined ? subject : `${key}: ${subject}`
-}
-
-/**
- * Reusing a session after an approval: the reviewer decides again, so the overall decision goes back
- * to undecided. File verdicts, comments and resolutions stay; `effectiveVerdict` drops the verdicts of
- * files whose content changed since.
- */
-async function resetApprovedDecision(dir: string, now: string): Promise<void> {
-  const review = await readReview(dir)
-  if (review === null || review.sent?.decision !== 'approve' || review.overall.decision === 'undecided') return
-  await writeReview(dir, { ...review, overall: { decision: 'undecided' }, updatedAt: now })
 }
 
 export async function initSession(options: InitOptions): Promise<InitResult> {
@@ -76,7 +66,7 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
   const dir = sessionDir(options.home, id)
   for (const sub of SESSION_SUBDIRS) await mkdir(path.join(dir, sub), { recursive: true })
 
-  const manifest: Manifest = {
+  const manifest: CodeReviewManifest = {
     schemaVersion: SCHEMA_VERSION,
     id,
     title,
@@ -103,32 +93,70 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
 }
 
 interface InitFlags {
-  repo: string
+  kind: string
+  repo?: string
+  run?: string
   title?: string
   ticket?: string[]
   base?: string
+  feature?: string
+  area?: string
   agentSession?: string
   new?: boolean
   format: string
 }
 
+function printTestRun(result: InitTestRunResult, format: string): void {
+  if (format === 'brief') {
+    console.log(`${result.id}${result.reused ? ' (reused)' : ''}\n${result.dir}\n${result.url}`)
+    return
+  }
+  const { id, dir, url, reused, manifest } = result
+  console.log(JSON.stringify({ id, dir, url, reused, kind: 'test-run', runPath: manifest.run.path, repo: manifest.run.repo, feature: manifest.run.feature, area: manifest.run.area }))
+}
+
 export function registerInit(program: Command): void {
   program
     .command('init')
-    .description('Create a review session for a repository, or refresh the latest one for this branch; prints id, folder and URL')
-    .requiredOption('--repo <path>', 'path inside the repository')
-    .option('--base <ref>', 'base ref (default: origin/master, master, origin/main, main, then origin/HEAD)')
-    .option('--title <title>', 'session title, e.g. "QI-15472: Trial bar"')
+    .description('Create a review session for a repository (or a test-run folder), or refresh the latest one for this branch (run folder); prints id, folder and URL')
+    .option('--kind <kind>', 'code-review | test-run', 'code-review')
+    .option('--repo <path>', 'path inside the repository (test-run: the checkout containing the run folder; default: the run folder)')
+    .option('--run <path>', 'test-run: the feature-test run folder (must be inside the repository)')
+    .option('--base <ref>', 'code-review: base ref (default: origin/master, master, origin/main, main, then origin/HEAD)')
+    .option('--title <title>', 'session title, e.g. "QI-15472: Trial bar" (test-run default: the run folder name)')
     .option('--ticket <KEY[=url]>', 'ticket key with an optional URL (repeatable)', (value: string, previous: string[] = []) => [...previous, value])
-    .option('--new', 'always create a new session instead of reusing the latest one for this branch')
+    .option('--feature <name>', 'test-run: feature name (default: the folder two levels above test-runs/)')
+    .option('--area <name>', 'test-run: area name (default: the folder one level above test-runs/)')
+    .option('--new', 'always create a new session instead of reusing the latest one for this branch (run folder)')
     .option('--agent-session <id>', 'Claude Code session id')
     .option('--format <format>', 'json | brief', 'json')
     .action(async (flags: InitFlags) => {
+      const tickets = (flags.ticket ?? []).map(parseTicket)
+      if (flags.kind === 'test-run') {
+        if (flags.run === undefined) throw new Error('--run <path> is required with --kind test-run')
+        printTestRun(
+          await initTestRunSession({
+            home: resolveHome(),
+            run: path.resolve(flags.run),
+            repo: flags.repo === undefined ? null : path.resolve(flags.repo),
+            title: flags.title ?? null,
+            tickets,
+            feature: flags.feature ?? null,
+            area: flags.area ?? null,
+            agentSession: flags.agentSession ?? null,
+            fresh: flags.new === true,
+          }),
+          flags.format,
+        )
+        return
+      }
+      if (flags.kind !== 'code-review') throw new Error(`--kind must be code-review or test-run, got "${flags.kind}"`)
+      if (flags.repo === undefined) throw new Error('--repo <path> is required')
       const result = await initSession({
         home: resolveHome(),
         repo: path.resolve(flags.repo),
         title: flags.title ?? null,
-        tickets: (flags.ticket ?? []).map(parseTicket),
+        tickets,
         base: flags.base ?? null,
         agentSession: flags.agentSession ?? null,
         fresh: flags.new === true,
@@ -137,7 +165,7 @@ export function registerInit(program: Command): void {
         console.log(`${result.id}${result.reused ? ' (reused)' : ''}\n${result.dir}\n${result.url}`)
       } else {
         const { id, dir, url, reused, manifest } = result
-        console.log(JSON.stringify({ id, dir, url, reused, branch: manifest.repo.branch, baseRef: manifest.repo.baseRef }))
+        console.log(JSON.stringify({ id, dir, url, reused, kind: 'code-review', branch: manifest.repo.branch, baseRef: manifest.repo.baseRef }))
       }
     })
 }

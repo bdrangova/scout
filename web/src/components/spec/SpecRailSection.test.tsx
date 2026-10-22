@@ -1,4 +1,4 @@
-import type { SessionDetail } from '@review-dash/shared'
+import type { CodeReviewDetail } from '@review-dash/shared'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,7 +18,7 @@ const CONTENTS: Record<string, string> = {
   'spec/design.html': '<html><body><h2>Hidden in a frame</h2></body></html>',
 }
 
-const detail: SessionDetail = {
+const detail: CodeReviewDetail = {
   ...sessionDetailFixture,
   spec: [
     { path: 'jira.md', type: 'jira', title: 'QI-15472: Trial bar', url: null, sourcePath: null, capturedAt: null },

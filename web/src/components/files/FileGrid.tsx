@@ -70,7 +70,7 @@ export function FileGrid({ files, reviewFiles = files, currentPath, onOpen, onAp
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-5 md:px-6">
       <div className="flex items-start justify-between gap-4">
-        <Segmented aria-label="Show files" className="max-w-full overflow-x-auto">
+        <Segmented aria-label="Show files" className="max-w-full overflow-x-auto overflow-y-hidden">
           {FILTERS.map((option) => (
             <SegmentedItem
               key={option.id}

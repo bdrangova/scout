@@ -6,9 +6,9 @@ import { archiveErrorMessage, archiveSession, unarchiveSession } from '@/lib/arc
 /**
  * Archives the open session from its header. Reversible (the folder moves to `archive/`), but the
  * click leaves the page, so a toast says what happened and offers Undo: unarchive and come back to
- * where the reviewer was.
+ * where the reviewer was. `listPath` is the list the page returns to (`/t` for a test run).
  */
-export function useArchiveSession(id: string): { archiving: boolean; archive: () => Promise<void> } {
+export function useArchiveSession(id: string, listPath = '/'): { archiving: boolean; archive: () => Promise<void> } {
   const navigate = useNavigate()
   const location = useLocation()
   const [archiving, setArchiving] = useState(false)
@@ -35,7 +35,7 @@ export function useArchiveSession(id: string): { archiving: boolean; archive: ()
         },
       },
     })
-    await navigate('/')
+    await navigate(listPath)
   }
 
   return { archiving, archive }

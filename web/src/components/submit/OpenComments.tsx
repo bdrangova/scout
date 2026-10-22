@@ -3,6 +3,8 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   CircleCheckIcon,
+  BugIcon,
+  ClapperboardIcon,
   FileCode2Icon,
   ImageIcon,
   MessageSquareIcon,
@@ -37,6 +39,9 @@ const SECTION_ICON: Record<SectionKey, LucideIcon> = {
   evidence: ImageIcon,
   spec: ScrollTextIcon,
   extras: PaperclipIcon,
+  scenarios: ClapperboardIcon,
+  bugs: BugIcon,
+  logs: ScrollTextIcon,
 }
 
 /**
@@ -82,7 +87,7 @@ export function OpenComments({ comments, review, detail, title = 'Open comments'
       <PanelBody className="flex flex-col gap-3 text-[13px]">
         {sections.length === 0 && (
           <p className="py-2 text-[13px] font-medium text-ink-muted">
-            {total === 0 ? 'No comments yet. Reject or comment on a file and it shows up here.' : 'Every comment is resolved.'}
+            {total === 0 ? 'No comments yet. Reject or comment on an item and it shows up here.' : 'Every comment is resolved.'}
           </p>
         )}
         {sections.map((section) => {

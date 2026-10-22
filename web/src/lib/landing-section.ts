@@ -1,4 +1,4 @@
-import { effectiveVerdict, mergeComments, progress, sessionStatus, type CommentTarget, type Resolutions, type Review, type SessionDetail } from '@review-dash/shared'
+import { effectiveVerdict, mergeComments, progress, sessionStatus, type CommentTarget, type CodeReviewDetail, type Resolutions, type Review } from '@review-dash/shared'
 
 export type LandingSection = 'spec' | 'extras' | 'evidence' | 'files' | 'submit'
 
@@ -12,7 +12,7 @@ const KIND: Record<ArtifactSection, CommentTarget['kind']> = { spec: 'spec', ext
  * - nothing done yet: the first of spec, extras, evidence, files that has content (`files` when all are empty);
  * - started: `files`, unless only spec/extras/evidence has comments, then the first of those with open comments.
  */
-export function landingSection(detail: SessionDetail, review: Review, resolutions: Resolutions | null = null): LandingSection {
+export function landingSection(detail: CodeReviewDetail, review: Review, resolutions: Resolutions | null = null): LandingSection {
   const { tree } = detail
   const comments = mergeComments(review, resolutions)
   const open = comments.filter((comment) => comment.status === 'open')
@@ -33,3 +33,4 @@ export function landingSection(detail: SessionDetail, review: Review, resolution
   if (fileActivity) return 'files'
   return ARTIFACT_SECTIONS.find((section) => open.some((comment) => comment.target.kind === KIND[section])) ?? 'files'
 }
+

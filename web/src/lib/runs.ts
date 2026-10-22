@@ -59,16 +59,19 @@ export function cancelRun(runId: string): Promise<{ ok: true }> {
   return apiPost<{ ok: true }>(`/runs/${encodeURIComponent(runId)}/cancel`)
 }
 
-export function applyReviewCommand(sessionId: string): string {
-  return `/apply-review ${sessionId}`
+/** The slash command that applies sent feedback: `/apply-review` for a code review, `/apply-test-review` for a test run. */
+export type ReviewCommand = '/apply-review' | '/apply-test-review'
+
+export function applyReviewCommand(sessionId: string, command: ReviewCommand = '/apply-review'): string {
+  return `${command} ${sessionId}`
 }
 
 /**
- * Claude Desktop deep link that opens a new session in `repoPath` with the apply-review command
+ * Claude Desktop deep link that opens a new session in `repoPath` (the agent's working directory) with the apply command
  * prefilled (Desktop asks for confirmation before sending it).
  */
-export function desktopNewSessionUrl(repoPath: string, sessionId: string): string {
-  const query = encodeURIComponent(applyReviewCommand(sessionId))
+export function desktopNewSessionUrl(repoPath: string, sessionId: string, command: ReviewCommand = '/apply-review'): string {
+  const query = encodeURIComponent(applyReviewCommand(sessionId, command))
   return `claude://code/new?q=${query}&folder=${encodeURIComponent(repoPath)}`
 }
 

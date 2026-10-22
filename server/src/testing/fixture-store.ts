@@ -2,8 +2,9 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { Express } from 'express'
+import { fileURLToPath } from 'node:url'
 import { SCHEMA_VERSION } from '@review-dash/shared'
-import type { Manifest } from '@review-dash/shared'
+import type { CodeReviewDetail, CodeReviewManifest, SessionDetail, TestRunManifest } from '@review-dash/shared'
 import { defaultBase } from '@review-dash/shared/git/repo'
 import { createApp } from '../app.ts'
 import type { AppOverrides } from '../app.ts'
@@ -14,14 +15,36 @@ import type { FixtureRepo } from './fixture-repo.ts'
 
 export const FIXTURE_SESSION_ID = '20260101-0900-fixture-abcd'
 export const BROKEN_SESSION_ID = '20260102-1000-broken-ffff'
+export const TEST_RUN_SESSION_ID = '20260103-1100-testrun-aaaa'
 export const FIXTURE_T0 = '2026-01-01T09:00:00.000Z'
+
+const DEMO_RUN_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../fixtures/test-runs/demo/plans/f/a')
+
+/** A test-run session: its run folder is a copy of the demo run inside a fake checkout. */
+export interface FixtureTestRun {
+  id: string
+  manifest: TestRunManifest
+  /** `<home>/sessions/<id>` */
+  dir: string
+  /** The fake checkout (a plain folder, not a git repo) holding `plans/f/a/...`. */
+  repo: string
+  /** `<repo>/plans/f/a/test-runs/run-1` */
+  runPath: string
+}
+
+export function codeReviewDetail(detail: SessionDetail): CodeReviewDetail {
+  if (detail.kind === 'test-run') throw new Error('expected a code review detail')
+  return detail
+}
 
 export interface FixtureStore {
   home: string
   repo: FixtureRepo
   /** `<home>/sessions/<FIXTURE_SESSION_ID>` */
   dir: string
-  manifest: Manifest
+  manifest: CodeReviewManifest
+  /** Present with `createFixtureStore({ testRun: true })`. */
+  testRun?: FixtureTestRun
   cleanup(): Promise<void>
 }
 
@@ -54,7 +77,7 @@ async function writeFile(file: string, content: string | Buffer): Promise<void> 
  * repo (next to the store, or inside it with `repoInsideHome`), with evidence (indexed), extras
  * (invalid index, ignored), spec (indexed) and a PR description, plus a session with a broken manifest.
  */
-export async function createFixtureStore(options: { repoInsideHome?: boolean } = {}): Promise<FixtureStore> {
+export async function createFixtureStore(options: { repoInsideHome?: boolean; testRun?: boolean } = {}): Promise<FixtureStore> {
   const home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-store-')))
   let repoParent = os.tmpdir()
   if (options.repoInsideHome) {
@@ -64,7 +87,7 @@ export async function createFixtureStore(options: { repoInsideHome?: boolean } =
   const repo = await createFixtureRepo(repoParent)
   const dir = fixtureSessionDir(home)
 
-  const manifest: Manifest = {
+  const manifest: CodeReviewManifest = {
     schemaVersion: SCHEMA_VERSION,
     id: FIXTURE_SESSION_ID,
     title: 'Fixture session',
@@ -99,14 +122,37 @@ export async function createFixtureStore(options: { repoInsideHome?: boolean } =
 
   await writeFile(path.join(fixtureSessionDir(home, BROKEN_SESSION_ID), 'manifest.json'), JSON.stringify({ schemaVersion: SCHEMA_VERSION, id: BROKEN_SESSION_ID }))
 
+  const testRun = options.testRun ? await createTestRun(home) : undefined
   return {
     home,
     repo,
     dir,
     manifest,
+    ...(testRun ? { testRun } : {}),
     cleanup: async () => {
       await fs.rm(home, { recursive: true, force: true })
       await repo.cleanup()
+      if (testRun) await fs.rm(testRun.repo, { recursive: true, force: true })
     },
   }
+}
+
+async function createTestRun(home: string): Promise<FixtureTestRun> {
+  const repo = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-testrepo-')))
+  await fs.cp(DEMO_RUN_SOURCE, path.join(repo, 'plans', 'f', 'a'), { recursive: true })
+  const runPath = path.join(repo, 'plans', 'f', 'a', 'test-runs', 'run-1')
+  const manifest: TestRunManifest = {
+    schemaVersion: SCHEMA_VERSION,
+    id: TEST_RUN_SESSION_ID,
+    title: 'Fixture test run',
+    createdAt: FIXTURE_T0,
+    updatedAt: FIXTURE_T0,
+    agent: { type: 'claude-code', sessionId: 'agent-session-2', cliVersion: '2.1.241', entrypoint: 'cli' },
+    kind: 'test-run',
+    run: { path: runPath, repo, feature: 'f', area: 'a' },
+    tickets: [],
+  }
+  const dir = fixtureSessionDir(home, TEST_RUN_SESSION_ID)
+  await writeFile(path.join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+  return { id: TEST_RUN_SESSION_ID, manifest, dir, repo, runPath }
 }

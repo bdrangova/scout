@@ -4,6 +4,7 @@ import type {
   FileReview,
   Resolutions,
   ReviewAction,
+  ReviewItem,
   ReviewState,
 } from '@review-dash/shared'
 import { createContext, useContext } from 'react'
@@ -16,27 +17,33 @@ export type ReviewInput = StripNow<ReviewAction>
 
 export type SaveStatus = 'idle' | 'saving' | 'error'
 
+/** What a review's items are: the changed files of a code review, the scenarios of a test run. */
+export type ItemKind = 'file' | 'scenario'
+
 export interface ReviewContextValue {
   state: ReviewState
+  /** The reviewable items, live: the tree's files (`path`) or the scenarios (`path` = scenario id), with their fingerprints. */
+  items: readonly ReviewItem[]
+  itemKind: ItemKind
   dispatch: (action: ReviewInput) => void
   /** Every comment, merged with its open/resolved status and the agent's resolution. */
   comments: CommentWithStatus[]
   commentsFor: (target: CommentTarget) => CommentWithStatus[]
   fileReview: (path: string) => FileReview | null
-  /** The unsent comment typed on a file (kept across cards, never saved). */
-  draftFor: (path: string) => string
-  setDraft: (path: string, text: string) => void
+  /** The unsent comment typed on an item (kept across cards, never saved); `key` is a `draftKey` (a file's plain path). */
+  draftFor: (key: string) => string
+  setDraft: (key: string, text: string) => void
   /**
    * Composers with text typed and not added (file cards, spec, extras and evidence cards; not line
    * comment boxes, which close when the page is left). A send does not carry them.
    */
   unsavedDrafts: UnsavedDraft[]
   /**
-   * Approve or reject a file. A draft typed on it is sent along as its comment, so nothing typed is
+   * Approve or reject an item (a file, or a scenario by its id). A draft typed on it (key `draftKey({ kind: itemKind, ref: path })`) is sent along as its comment, so nothing typed is
    * lost, and a reject with a draft is final. Returns true when a comment went with the verdict.
    */
   setVerdict: (path: string, verdict: 'approved' | 'rejected', fingerprint: string | null) => boolean
-  /** Over the live tree: files with an effective verdict or an open comment. */
+  /** Over the live items: those with an effective verdict or an open comment. */
   progress: { reviewed: number; total: number }
   resolutions: Resolutions | null
   saveStatus: SaveStatus

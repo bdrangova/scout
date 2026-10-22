@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { ReviewResponseSchema, SCHEMA_VERSION, SendResponseSchema, SentSnapshotSchema, renderSentMarkdown } from '@review-dash/shared'
-import type { Resolutions, Review, SessionDetail } from '@review-dash/shared'
+import { ReviewResponseSchema, SCHEMA_VERSION, SendResponseSchema, CodeReviewSentSnapshotSchema, renderSentMarkdown } from '@review-dash/shared'
+import type { Resolutions, Review, CodeReviewDetail } from '@review-dash/shared'
 import { makeComment, makeReview } from '@review-dash/shared/testing/fixtures'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -12,11 +12,11 @@ import type { FixtureStore } from '../testing/fixture-store.ts'
 
 let store: FixtureStore
 let app: Express
-let detail: SessionDetail
+let detail: CodeReviewDetail
 beforeAll(async () => {
   store = await createFixtureStore()
   app = appFor(store.home, { fake: { delayMs: 0 } })
-  detail = (await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body as SessionDetail
+  detail = (await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body as CodeReviewDetail
 })
 afterAll(async () => {
   await closeApp(app)
@@ -77,7 +77,7 @@ describe('POST /api/sessions/:id/review/send', () => {
     const body = SendResponseSchema.parse(res.body)
     expect(body.run).toBeNull()
     expect(body.pending).toBeNull()
-    const { sent } = body
+    const sent = CodeReviewSentSnapshotSchema.parse(body.sent)
     expect(sent.comments.map((c) => c.id)).toEqual(['c1', 'c2', 'c4'])
     expect(sent.comments.every((c) => c.sentAt === sent.sentAt)).toBe(true)
     expect(sent).toMatchObject({
@@ -95,7 +95,7 @@ describe('POST /api/sessions/:id/review/send', () => {
     const stem = sent.sentAt.replaceAll(':', '-')
     const sentDir = path.join(store.dir, 'review', 'sent')
     expect(sent.patchPath).toBe(`review/sent/${stem}.patch`)
-    expect(SentSnapshotSchema.parse(JSON.parse(fs.readFileSync(path.join(sentDir, `${stem}.json`), 'utf8')))).toEqual(sent)
+    expect(CodeReviewSentSnapshotSchema.parse(JSON.parse(fs.readFileSync(path.join(sentDir, `${stem}.json`), 'utf8')))).toEqual(sent)
     const markdown = fs.readFileSync(path.join(sentDir, `${stem}.md`), 'utf8')
     expect(markdown).toBe(
       renderSentMarkdown(sent, { title: 'Fixture session', dashboardUrl: 'http://127.0.0.1:4546', evidence: detail.evidence, extras: detail.extras, spec: detail.spec }),

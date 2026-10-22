@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { PrCommentsResponseSchema, PutPrReplyResponseSchema, SentSnapshotSchema, SessionDetailSchema, SessionSummarySchema, StoreEventSchema } from '@review-dash/shared'
-import type { SessionDetail, StoreEvent } from '@review-dash/shared'
+import { PrCommentsResponseSchema, PutPrReplyResponseSchema, CodeReviewSentSnapshotSchema, CodeReviewDetailSchema, SessionSummarySchema, StoreEventSchema } from '@review-dash/shared'
+import type { CodeReviewDetail, StoreEvent } from '@review-dash/shared'
 import { makePrComment, makePrComments, makePrResolution, makeReview, T2, T3 } from '@review-dash/shared/testing/fixtures'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -42,7 +42,7 @@ describe('GET /sessions/:id/pr-comments', () => {
     expect(res.status).toBe(200)
     expect(PrCommentsResponseSchema.parse(res.body)).toEqual({ pr: null, fetchedAt: null, lastSendAt: null, comments: [], resolutions: null, counts: null })
     expect((await request(app).get('/api/sessions/20260101-0900-missing-0000/pr-comments')).status).toBe(404)
-    const detail = SessionDetailSchema.parse((await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body)
+    const detail = CodeReviewDetailSchema.parse((await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body)
     expect(detail.pr ?? null).toBeNull()
     expect(detail.prComments ?? null).toBeNull()
   })
@@ -56,7 +56,7 @@ describe('GET /sessions/:id/pr-comments', () => {
     expect(body.comments.map((c) => [c.id, c.status, c.inLastSend])).toEqual([['rc1', 'addressed', true], ['rc2', 'open', false], ['rc3', 'outdated', false]])
     expect(body.counts).toMatchObject({ total: 3, open: 1, addressed: 1, outdated: 1, addressedInLastSend: 1 })
 
-    const detail = (await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body as SessionDetail
+    const detail = (await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body as CodeReviewDetail
     expect(detail.pr).toMatchObject({ number: 482, state: 'open', url: 'https://github.com/acme/app/pull/482', headRef: 'feature/trial-bar' })
     expect(detail.prComments).toMatchObject({ open: 1, total: 3 })
     const list = (await request(app).get('/api/sessions')).body as unknown[]
@@ -251,7 +251,7 @@ describe('Submit with PR drafts', () => {
     })
     const res = await request(app).post(`/api/sessions/${FIXTURE_SESSION_ID}/review/send`).send({ decision: 'undecided', dispatch: false })
     expect(res.status).toBe(200)
-    const sent = SentSnapshotSchema.parse(res.body.sent)
+    const sent = CodeReviewSentSnapshotSchema.parse(res.body.sent)
     // rc6 is open but its draft is a reply: stale, left out. rc5 is posted.
     expect(sent.prReplies).toEqual([
       { commentId: 'rc1', kind: 'reply', body: 'Fixed, thanks.', url: 'https://github.com/acme/app/pull/482#discussion_r1' },

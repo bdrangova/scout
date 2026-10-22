@@ -2,11 +2,13 @@ import { Archive, Check, ChevronLeft, ExternalLink, GitPullRequest, Keyboard, Mo
 import { Link } from 'react-router'
 import { Menu, MenuContent, MenuGroup, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { Kbd } from '@/components/ui/kbd'
+import { isTestRunDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { THEME_SETTINGS } from '@/theme/theme'
 import { useTheme } from '@/theme/useTheme'
 import { HeaderIconButton } from './AppHeader'
 import { safePrUrl } from './pr-url'
+import { useShellConfig } from './shell-config'
 import { useArchiveSession } from './useArchiveSession'
 
 const THEME_LABEL = { light: 'Light', dark: 'Dark', system: 'System' } as const
@@ -22,23 +24,25 @@ interface BarMenuProps {
  */
 export function BarMenu({ onHelp }: BarMenuProps) {
   const { detail } = useSessionContext()
-  const { archiving, archive } = useArchiveSession(detail.manifest.id)
   const { theme, setTheme } = useTheme()
-  const prHref = detail.pr ? safePrUrl(detail.pr.url) : null
+  const config = useShellConfig()
+  const { archiving, archive } = useArchiveSession(detail.manifest.id, config.kind === 'test-run' ? '/t' : '/')
+  const pr = isTestRunDetail(detail) ? null : (detail.pr ?? null)
+  const prHref = pr ? safePrUrl(pr.url) : null
   return (
     <Menu>
       <MenuTrigger render={<HeaderIconButton aria-label="More actions" title="More actions" />}>
         <MoreHorizontal aria-hidden />
       </MenuTrigger>
       <MenuContent align="end">
-        <MenuItem className="min-[521px]:hidden" render={<Link to="/" />}>
+        <MenuItem className="min-[521px]:hidden" render={<Link to={config.kind === 'test-run' ? '/t' : '/'} />}>
           <ChevronLeft aria-hidden />
-          Sessions
+          {config.kind === 'test-run' ? 'Test runs' : 'Sessions'}
         </MenuItem>
-        {detail.pr && prHref && (
+        {pr && prHref && (
           <MenuItem className="min-[521px]:hidden" render={<a href={prHref} target="_blank" rel="noopener noreferrer" />}>
             <GitPullRequest aria-hidden />
-            PR #{detail.pr.number} on GitHub
+            PR #{pr.number} on GitHub
             <ExternalLink aria-hidden className="ml-auto" />
           </MenuItem>
         )}
@@ -59,7 +63,7 @@ export function BarMenu({ onHelp }: BarMenuProps) {
         <MenuSeparator className="lg:hidden" />
         <MenuItem disabled={archiving} onClick={() => void archive()}>
           <Archive aria-hidden />
-          Archive session
+          {config.kind === 'test-run' ? 'Archive test run' : 'Archive session'}
         </MenuItem>
       </MenuContent>
     </Menu>

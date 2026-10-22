@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { AgentRun } from '@review-dash/shared'
-import { FIXTURE_SESSION_ID, createFixtureStore, fixtureSessionDir } from '../testing/fixture-store.ts'
+import { FIXTURE_SESSION_ID, codeReviewDetail, createFixtureStore, fixtureSessionDir } from '../testing/fixture-store.ts'
 import type { FixtureStore } from '../testing/fixture-store.ts'
 import { Store } from './index.ts'
 import { activeRunId, listRuns, readResolutions, readReview, sentFiles } from './review.ts'
@@ -76,7 +76,7 @@ describe('review store helpers', () => {
 
     const store = new Store(fixture.home, { log: () => undefined })
     try {
-      const detail = await store.getSession(FIXTURE_SESSION_ID)
+      const detail = codeReviewDetail(await store.getSession(FIXTURE_SESSION_ID))
       expect(detail.activeRunId).toBe(active.id)
       expect(detail.status).toBe('agent-working')
     } finally {

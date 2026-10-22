@@ -9,7 +9,7 @@ import {
 } from '@review-dash/shared'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiRequestError, apiGet } from './api'
-import { commitsPath, fileContentsPath, filePatchPath, scopeTreePath, type DiffSide } from './paths'
+import { commitsPath, fileContentsPath, filePatchPath, scopeTreePath, type DiffSide, type SessionKind } from './paths'
 import { useStoreEvents } from './useStoreEvents'
 
 type Settled<T> = { ok: true; value: T } | { ok: false; error: Error }
@@ -75,8 +75,9 @@ export interface SessionListState {
   reload: () => void
 }
 
-export function useSessionList(): SessionListState {
-  const state = useAsync('sessions', () => apiGet<SessionListItem[]>('/sessions'))
+/** `GET /api/sessions?kind=`: the code reviews or the test runs; without `kind`, every session. */
+export function useSessionList(kind?: SessionKind): SessionListState {
+  const state = useAsync(`sessions:${kind ?? 'all'}`, () => apiGet<SessionListItem[]>(kind === undefined ? '/sessions' : `/sessions?kind=${kind}`))
   return { sessions: state.data, loading: state.loading, error: state.error, reload: state.reload }
 }
 

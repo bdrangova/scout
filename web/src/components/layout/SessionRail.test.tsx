@@ -161,3 +161,17 @@ describe('SessionRail', () => {
     })
   })
 })
+
+describe('SessionRail identity of a test run', () => {
+  beforeEach(() => window.localStorage.clear())
+
+  it('shows tickets, title, feature · area and the run folder shortened to its path in the checkout', () => {
+    renderShell(`/t/${SESSION_ID}/overview`, { kind: 'test-run' })
+    const side = within(rail())
+    expect(side.getByRole('group', { name: 'Tickets' })).toBeInTheDocument()
+    expect(side.getByRole('heading', { level: 2, name: 'Demo feature test run' })).toBeInTheDocument()
+    expect(side.getByText('f · a')).toBeInTheDocument()
+    expect(side.getByLabelText('Run folder plans/f/a/test-runs/run-1 in qbdvision')).toHaveTextContent('plans/f/a/test-runs/run-1')
+    expect(side.queryByText('into')).not.toBeInTheDocument()
+  })
+})

@@ -1,0 +1,476 @@
+{
+  "schemaVersion": 1,
+  "runId": "withdrawn-repropose",
+  "title": "Propose Withdrawn and Rejected records: baseline and gap demos",
+  "feature": "withdrawn-repropose",
+  "area": null,
+  "createdAt": "2026-10-21T09:15:00.000Z",
+  "updatedAt": "2026-10-22T15:40:00.000Z",
+  "publishedBy": {
+    "run": {
+      "at": "2026-10-22T15:40:00.000Z"
+    }
+  },
+  "roots": {
+    "run": ".",
+    "notes": "notes"
+  },
+  "pages": [
+    "gaps"
+  ],
+  "overview": [
+    {
+      "type": "stats",
+      "title": "Baseline and gaps",
+      "span": 2,
+      "items": [
+        {
+          "label": "Confirmed",
+          "value": 2,
+          "tone": "good"
+        },
+        {
+          "label": "Failing",
+          "value": 3,
+          "tone": "bad"
+        },
+        {
+          "label": "Open gaps",
+          "value": 3,
+          "tone": "warn"
+        },
+        {
+          "label": "Closed gaps",
+          "value": 2,
+          "tone": "neutral"
+        }
+      ]
+    },
+    {
+      "type": "markdown",
+      "title": "The ticket",
+      "markdown": "Withdrawn, Withdrawn (Cascaded), Rejected and Rejected (Cascaded) records can be proposed directly, with no edit and no new version. Today the user must click Edit, which creates a draft version, then Propose.\n\n- Server: an explicit proposable-states set plus `workflow_config` entries.\n- Rejected becomes proposable only once the rejection is final.\n- Archived records and records still on their approved version stay non-proposable.\n- Drafts Pending: no duplicate rows; listing Rejected is an open question.",
+      "span": 2
+    },
+    {
+      "type": "markdown",
+      "title": "Cucumber plan",
+      "markdown": "Existing scenarios in `suppliers.feature`, `control_methods.feature`, `rmp_2.feature` and `archive_6.feature` are extended for propose-after-withdraw. New scenarios cover the Drafts Pending dedupe and a rejected record with an approver still pending (7c). Guards for archived and approved-version records get their own checks."
+    },
+    {
+      "type": "markdown",
+      "title": "Playwright baseline",
+      "markdown": "Run on `master` against Rockets R US, project PRJ-18. Checks 1, 4 and 10 are **confirmed**: no propose from a withdrawn Supplier, bulk Propose disabled, duplicate rows in Drafts Pending. A single-record REST propose from Withdrawn already works, so the propose flag was probably off locally. Checks 2, 3, 5-9 and 11 wait for the after-run."
+    },
+    {
+      "type": "links",
+      "title": "Notes",
+      "items": [
+        {
+          "label": "01 Ticket draft",
+          "ref": "notes:01-withdrawn-rejected-repropose.md"
+        },
+        {
+          "label": "02 Cucumber test task",
+          "ref": "notes:02-cucumber-test-task.md"
+        },
+        {
+          "label": "03 Playwright verification",
+          "ref": "notes:03-playwright-verification.md"
+        },
+        {
+          "label": "D1 scenario",
+          "scenario": "d1-duplicates"
+        }
+      ]
+    },
+    {
+      "type": "timeline",
+      "title": "Rollout (future panel type)",
+      "events": [
+        {
+          "at": "2026-10-21",
+          "label": "Baseline recorded"
+        },
+        {
+          "at": "2026-10-22",
+          "label": "Gap demos D1-D5"
+        }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "b1-supplier-withdrawn",
+      "title": "Baseline: withdrawn Supplier offers only Edit Last Draft",
+      "status": "pass",
+      "order": 0,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Open the withdrawn Supplier S1 on master",
+          "expected": "Propose button available (the goal of the change)",
+          "observed": "Only \"Edit Last Draft\"; no #proposeButtonTop",
+          "result": "pass"
+        }
+      ],
+      "evidence": {
+        "videos": [
+          {
+            "path": "run:scenarios/b1-supplier-withdrawn/videos/baseline-master.mp4",
+            "caption": "Baseline recording on master (first 8 s)",
+            "atSec": 0
+          }
+        ],
+        "screenshots": [
+          {
+            "path": "run:scenarios/b1-supplier-withdrawn/screenshots/1-baseline-supplier-withdrawn.jpg",
+            "caption": "Withdrawn Supplier view page"
+          }
+        ],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [],
+        "bugs": []
+      },
+      "layers": [
+        {
+          "name": "UI",
+          "status": "pass",
+          "note": "CONFIRMED"
+        }
+      ],
+      "notes": "Passing here means the baseline blocker is confirmed on master."
+    },
+    {
+      "id": "b4-bulk-propose",
+      "title": "Baseline: bulk Propose disabled for a withdrawn row",
+      "status": "pass",
+      "order": 1,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Select only the withdrawn CM2 in the Control Methods table",
+          "expected": "Bulk Propose enabled after the change",
+          "observed": "Disabled on master",
+          "result": "pass"
+        },
+        {
+          "label": "2",
+          "action": "Select the Draft row CM3",
+          "expected": "Enabled",
+          "observed": "Enabled",
+          "result": "pass"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [
+          {
+            "path": "run:scenarios/b4-bulk-propose/screenshots/4-baseline-table-withdrawn-selected.jpg",
+            "caption": "Withdrawn row selected"
+          }
+        ],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [],
+        "bugs": []
+      },
+      "layers": [
+        {
+          "name": "UI",
+          "status": "pass",
+          "note": "CONFIRMED"
+        }
+      ]
+    },
+    {
+      "id": "b10-drafts-pending",
+      "title": "Baseline: Drafts Pending lists a withdrawn record twice",
+      "status": "fail",
+      "order": 2,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Open Drafts Pending with CM4 (proposed and withdrawn twice on 0.1)",
+          "expected": "One row",
+          "observed": "CM-49 appears twice",
+          "result": "fail"
+        },
+        {
+          "label": "2",
+          "action": "Select withdrawn CM1, Propose and submit",
+          "expected": "Moves to Proposed",
+          "observed": "Proposed on the same version, no new version",
+          "result": "pass"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [
+          {
+            "path": "run:scenarios/b10-drafts-pending/screenshots/10-baseline-drafts-pending.jpg",
+            "caption": "Drafts Pending"
+          },
+          {
+            "path": "run:scenarios/b10-drafts-pending/screenshots/10-baseline-drafts-pending-propose-result.jpg",
+            "caption": "After proposing CM1"
+          },
+          {
+            "path": "run:scenarios/b10-drafts-pending/screenshots/global-drafts-pending.jpg",
+            "caption": "Global Drafts Pending, clean company"
+          }
+        ],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [],
+        "bugs": []
+      },
+      "layers": [
+        {
+          "name": "UI",
+          "status": "fail",
+          "note": "duplicate rows"
+        },
+        {
+          "name": "REST",
+          "status": "pass",
+          "note": "single-record propose works"
+        }
+      ]
+    },
+    {
+      "id": "b10-cm1-history",
+      "title": "Baseline: CM-1 history after proposing from Drafts Pending",
+      "status": "uncertain",
+      "order": 3,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Open the CM-1 history",
+          "expected": "Single 0.1 entry with the latest state",
+          "observed": "Single 0.1 entry; the latest transition label needs a second look",
+          "result": "uncertain"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [
+          {
+            "path": "run:scenarios/b10-cm1-history/screenshots/10-baseline-cm1-history.jpg",
+            "caption": "CM-1 history"
+          }
+        ],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [],
+        "bugs": []
+      }
+    },
+    {
+      "id": "d1-duplicates",
+      "title": "D1 Project dashboard lists CM-1 three times",
+      "status": "fail",
+      "order": 4,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Open the project dashboard Drafts Pending",
+          "expected": "One row per record",
+          "observed": "CM-1 appears 3x, one per approval request on 0.1 (each withdrawn=1)",
+          "result": "fail"
+        }
+      ],
+      "evidence": {
+        "videos": [
+          {
+            "path": "run:scenarios/d1-duplicates/videos/gap-D1.mp4",
+            "caption": "D1 recording (first 8 s)",
+            "atSec": 0
+          }
+        ],
+        "screenshots": [],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g-d1"
+        ],
+        "bugs": []
+      },
+      "notes": "Home count (30) and the global page are correct: the global query joins with UNION."
+    },
+    {
+      "id": "d2-rejected-missing",
+      "title": "D2 Rejected records are missing from Drafts Pending",
+      "status": "gap",
+      "order": 5,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Open CM-3 (all approvers answered, rejected)",
+          "expected": "Propose available or listed in Drafts Pending",
+          "observed": "Only View/Edit Last Draft; 0 rows in Drafts Pending; Bulk Propose disabled",
+          "result": "gap"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g-d2"
+        ],
+        "bugs": []
+      },
+      "notes": "Recording gap-D2 exists in the source folder, not copied."
+    },
+    {
+      "id": "d3-no-hint",
+      "title": "D3 Proposer gets no hint while an approver is still pending",
+      "status": "gap",
+      "order": 6,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Compare CM-5 (Jules pending) with CM-3 as the proposer",
+          "expected": "A visible difference",
+          "observed": "Identical view; Jules still gets Approve / Reject on CM-5",
+          "result": "gap"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g-d3"
+        ],
+        "bugs": []
+      },
+      "notes": "Recording gap-D3 exists in the source folder, not copied."
+    },
+    {
+      "id": "d4-approve-then-reject",
+      "title": "D4 Approve then reject leaves a clean history",
+      "status": "pass",
+      "order": 7,
+      "steps": [
+        {
+          "label": "1",
+          "action": "One approver approves, the other rejects",
+          "expected": "Rejected with a Routing transition",
+          "observed": "History is [Rejected, Proposed(request), Draft], no Routing; both responses sit on the Proposed transition so hasPendingApproverResponses is false",
+          "result": "pass"
+        }
+      ],
+      "evidence": {
+        "videos": [
+          {
+            "path": "run:scenarios/d4-approve-then-reject/videos/gap-D4.mp4",
+            "caption": "D4 recording (first 8 s)",
+            "atSec": 0
+          }
+        ],
+        "screenshots": [],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g-d4"
+        ],
+        "bugs": []
+      },
+      "notes": "Gap closed. Oddity: the Rejected transition createdByUserId is Arlo, although Jules rejected."
+    },
+    {
+      "id": "d5-archived-restore",
+      "title": "D5 Archived Withdrawn record has no actions",
+      "status": "fail",
+      "order": 8,
+      "steps": [
+        {
+          "label": "1",
+          "action": "Open CM-7 (Withdrawn, v1.0, deletedAt set)",
+          "expected": "No propose action",
+          "observed": "No actions at all; both ticket guards block it",
+          "result": "fail"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g-d5"
+        ],
+        "bugs": []
+      },
+      "notes": "Gap closed; recording gap-D5 exists in the source folder, not copied."
+    }
+  ],
+  "gaps": [
+    {
+      "id": "g-d1",
+      "title": "D1 duplicate rows in project Drafts Pending",
+      "status": "open",
+      "scenarios": [
+        "d1-duplicates",
+        "b10-drafts-pending"
+      ],
+      "markdown": "The SQL fix can filter on `withdrawn=1` per approval request."
+    },
+    {
+      "id": "g-d2",
+      "title": "D2 Rejected records missing from Drafts Pending",
+      "status": "open",
+      "scenarios": [
+        "d2-rejected-missing"
+      ],
+      "markdown": "Open question in the ticket: should Rejected records be listed there?"
+    },
+    {
+      "id": "g-d3",
+      "title": "D3 No hint distinguishing pending from rejected",
+      "status": "open",
+      "scenarios": [
+        "d3-no-hint"
+      ]
+    },
+    {
+      "id": "g-d4",
+      "title": "D4 Approve then reject",
+      "status": "closed",
+      "scenarios": [
+        "d4-approve-then-reject"
+      ]
+    },
+    {
+      "id": "g-d5",
+      "title": "D5 Archived Withdrawn restore",
+      "status": "closed",
+      "scenarios": [
+        "d5-archived-restore"
+      ]
+    }
+  ]
+}

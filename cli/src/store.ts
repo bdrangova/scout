@@ -74,8 +74,8 @@ export async function readManifest(dir: string): Promise<Manifest> {
 }
 
 /** Validates, then writes atomically. Call this last: the manifest is the index of everything else. */
-export async function writeManifest(dir: string, manifest: Manifest): Promise<Manifest> {
-  const valid = ManifestSchema.parse(manifest)
-  await writeJsonAtomic(path.join(dir, MANIFEST_FILE), valid)
-  return valid
+export async function writeManifest<M extends Manifest>(dir: string, manifest: M): Promise<M> {
+  ManifestSchema.parse(manifest)
+  await writeJsonAtomic(path.join(dir, MANIFEST_FILE), manifest)
+  return manifest
 }

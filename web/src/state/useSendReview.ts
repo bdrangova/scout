@@ -1,7 +1,7 @@
 import type { AgentRun, Decision } from '@review-dash/shared'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { suggestDecision, verdictSummary } from '@/components/submit/verdict-summary'
+import { suggestDecision, suggestTestRunDecision, verdictSummary } from '@/components/submit/verdict-summary'
 import { pluralize } from '@/lib/format'
 import { useAsync } from '@/lib/hooks'
 import type { QueuedReplyCounts } from '@/lib/pr-replies'
@@ -9,6 +9,7 @@ import {
   DECISION_LABELS,
   SEND_TARGET_LABELS,
   applyReviewCommand,
+  type ReviewCommand,
   describeApiError,
   desktopNewSessionUrl,
   isRunActive,
@@ -35,6 +36,9 @@ export interface PendingState {
 }
 
 export interface SendReviewState {
+  /** The directory the agent works in (the repo, or a test run's checkout) and the slash command it is given. */
+  cwd: string
+  command: ReviewCommand
   origin: SessionOrigin
   /** Whether "Current session" is a possible target (a Desktop session needs a recorded id). */
   canContinue: boolean
@@ -70,6 +74,8 @@ function describeSend(input: {
   decision: Decision
   target: SendTarget
   notReviewed: number
+  /** Test runs word the decision as Accept / Changes requested and count scenarios, not files. */
+  testRun: boolean
 }): string {
   const items: string[] = []
   if (input.openComments > 0 || (input.queued.instructions === 0 && input.queued.replies === 0)) {
@@ -77,10 +83,16 @@ function describeSend(input: {
   }
   if (input.queued.instructions > 0) items.push(pluralize(input.queued.instructions, 'PR instruction'))
   if (input.queued.replies > 0) items.push(pluralize(input.queued.replies, 'PR reply', 'PR replies'))
-  if (input.decision !== 'undecided') items.push(DECISION_LABELS[input.decision])
+  if (input.decision !== 'undecided') items.push(input.testRun ? TEST_RUN_DECISION_LABELS[input.decision] : DECISION_LABELS[input.decision])
   const parts = [`Send ${items.join(' + ')} to the ${SEND_TARGET_LABELS[input.target].toLowerCase()}`]
-  if (input.notReviewed > 0) parts.push(`${pluralize(input.notReviewed, 'file')} not reviewed`)
+  if (input.notReviewed > 0) parts.push(`${pluralize(input.notReviewed, input.testRun ? 'scenario' : 'file')} not reviewed`)
   return parts.join(' · ')
+}
+
+const TEST_RUN_DECISION_LABELS: Record<Exclude<Decision, 'undecided'>, string> = {
+  approve: 'Accept',
+  'request-changes': 'Changes requested',
+  reject: DECISION_LABELS.reject,
 }
 
 type ParamsPatch = (next: URLSearchParams) => void
@@ -92,12 +104,17 @@ type ParamsPatch = (next: URLSearchParams) => void
  */
 export function useSendReview(): SendReviewState {
   const { sessionId, detail, reload: reloadDetail } = useSessionContext()
-  const { state, comments, dispatch, flushSave, reload: reloadReview } = useReview()
+  const testRun = detail.kind === 'test-run'
+  // The agent works in the repo (code review) or the checkout (test run); sent feedback is applied with that kind's command.
+  const cwd = detail.kind === 'test-run' ? detail.manifest.run.repo : detail.manifest.repo.path
+  const command: ReviewCommand = testRun ? '/apply-test-review' : '/apply-review'
+  const activeRunId = detail.activeRunId ?? null
+  const { state, items, comments, dispatch, flushSave, reload: reloadReview } = useReview()
   const { queued, flushReplies } = usePrComments()
   const decision = state.review.overall.decision
   const [params, setParams] = useSearchParams()
   // The runs list follows the session detail, which `SessionLiveUpdates` reloads on `run.updated`.
-  const runList = useAsync(`runs:${sessionId}:${detail.activeRunId ?? 'none'}`, () => listRuns(sessionId))
+  const runList = useAsync(`runs:${sessionId}:${activeRunId ?? 'none'}`, () => listRuns(sessionId))
   const [knownRuns, setKnownRuns] = useState<Record<string, AgentRun>>({})
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
@@ -119,7 +136,7 @@ export function useSendReview(): SendReviewState {
         : { reason: pendingParam === PENDING_SAVED ? null : pendingParam, mode: params.get(TARGET_PARAM) === 'new' ? 'new' : 'current' },
     [pendingParam, params],
   )
-  const selectedRunId = runParam === 'none' ? null : (runParam ?? detail.activeRunId)
+  const selectedRunId = runParam === 'none' ? null : (runParam ?? activeRunId)
 
   const runs = useMemo(() => {
     // The final run from the event stream may be newer than the list's copy of it.
@@ -134,19 +151,21 @@ export function useSendReview(): SendReviewState {
   const agentWorking = runs.some((run) => isRunActive(run.status))
 
   const openComments = comments.filter((comment) => comment.status === 'open').length
-  const files = verdictSummary(state.review, detail.tree)
+  const files = verdictSummary(state.review, { files: items })
   const latestRun = runs.reduce<AgentRun | null>((latest, run) => (latest === null || Date.parse(run.startedAt) > Date.parse(latest.startedAt) ? run : latest), null)
   const failedRun = !agentWorking && latestRun?.status === 'failed' ? latestRun : null
   // PR instructions and replies can go out on their own, without a decision (the server accepts it).
   const draftsOnly = queued.instructions + queued.replies > 0
   const sendBlocker = agentWorking
     ? 'Wait for the current run to finish'
-    : detail.tree.files.length === 0 && !draftsOnly
-      ? 'Nothing to review'
+    : items.length === 0 && !draftsOnly
+      ? testRun
+        ? 'No scenarios to review'
+        : 'Nothing to review'
       : decision === 'undecided' && !draftsOnly
         ? 'Pick a decision first'
         : null
-  const sendSummary = decision === 'undecided' && !draftsOnly ? null : describeSend({ openComments, queued, decision, target, notReviewed: files.notReviewed })
+  const sendSummary = decision === 'undecided' && !draftsOnly ? null : describeSend({ openComments, queued, decision, target, notReviewed: files.notReviewed, testRun })
 
   // Pre-select the decision the verdicts point to, once per visit; the reviewer can change it.
   const preselected = useRef(false)
@@ -154,9 +173,9 @@ export function useSendReview(): SendReviewState {
     if (preselected.current) return
     preselected.current = true
     if (decision !== 'undecided') return
-    const suggestion = suggestDecision(files)
+    const suggestion = testRun ? suggestTestRunDecision(files, openComments) : suggestDecision(files)
     if (suggestion !== 'undecided') dispatch({ type: 'SET_DECISION', decision: suggestion })
-  }, [decision, files, dispatch])
+  }, [decision, files, dispatch, testRun, openComments])
 
   const patchParams = useCallback(
     (patch: ParamsPatch) => {
@@ -218,11 +237,11 @@ export function useSendReview(): SendReviewState {
           next.set(TARGET_PARAM, target)
         })
         if (origin === 'desktop' && target === 'current') {
-          await navigator.clipboard.writeText(applyReviewCommand(sessionId)).catch(() => undefined)
+          await navigator.clipboard.writeText(applyReviewCommand(sessionId, command)).catch(() => undefined)
         }
         if (origin === 'desktop' && target === 'new') {
           // May be blocked after the await; the pending panel repeats the link.
-          window.location.assign(desktopNewSessionUrl(detail.manifest.repo.path, sessionId))
+          window.location.assign(desktopNewSessionUrl(cwd, sessionId, command))
         }
       }
       reloadReview()
@@ -232,9 +251,11 @@ export function useSendReview(): SendReviewState {
     } finally {
       setSending(false)
     }
-  }, [target, origin, sessionId, decision, flushSave, flushReplies, showRun, patchParams, detail.manifest.repo.path, reloadReview, reloadDetail])
+  }, [target, origin, sessionId, decision, flushSave, flushReplies, showRun, patchParams, cwd, command, reloadReview, reloadDetail])
 
   return {
+    cwd,
+    command,
     origin,
     canContinue,
     target,

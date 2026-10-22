@@ -1,7 +1,7 @@
 // `ai-review pr-link <id> --url <github pull url> [--number N]`: records a PR opened outside the flow, without gh.
 import path from 'node:path'
 import type { Command } from 'commander'
-import { SCHEMA_VERSION, type PrComments } from '@review-dash/shared'
+import { isTestRun, SCHEMA_VERSION, type PrComments } from '@review-dash/shared'
 import { findPrSession } from '../pr/session.ts'
 import { prCommentsPath, readPrComments, writePrComments } from '../sessions.ts'
 import { readManifest, resolveHome } from '../store.ts'
@@ -35,6 +35,7 @@ export async function prLink(options: PrLinkOptions): Promise<{ file: string; pr
   if (options.number != null && options.number !== parsed.number) throw new Error(`--number ${options.number} does not match the url (#${parsed.number})`)
   const session = await findPrSession(options)
   const manifest = await readManifest(session.dir)
+  if (isTestRun(manifest)) throw new Error(`session ${session.id} is a test run: GitHub pull requests only apply to code reviews`)
   const existing = await readPrComments(session.dir)
   const same = existing !== null && existing.pr.number === parsed.number && existing.pr.repo === parsed.repo
   const pr: PrComments['pr'] = same

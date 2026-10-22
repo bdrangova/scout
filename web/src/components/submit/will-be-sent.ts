@@ -11,6 +11,12 @@ export interface SendCounts {
   spec: number
   evidence: number
   extras: number
+  /** Test runs: the scenarios that carry comments, their comments (files included), and the comments on bugs and logs. */
+  scenarios: number
+  /** Scenario comments plus the comments on a scenario's screenshots and data files. */
+  scenarioComments: number
+  bugs: number
+  logs: number
   /** The open overall note: `draft` until it has been sent once, `sent` while it stays open after a send. */
   overall: 'draft' | 'sent' | null
   total: number
@@ -18,8 +24,9 @@ export interface SendCounts {
 
 /** What a send would carry, by kind: only open comments go to the agent. */
 export function sendCounts(comments: readonly CommentWithStatus[]): SendCounts {
-  const counts: SendCounts = { files: 0, fileComments: 0, lineComments: 0, spec: 0, evidence: 0, extras: 0, overall: null, total: 0 }
+  const counts: SendCounts = { files: 0, fileComments: 0, lineComments: 0, spec: 0, evidence: 0, extras: 0, scenarios: 0, scenarioComments: 0, bugs: 0, logs: 0, overall: null, total: 0 }
   const paths = new Set<string>()
+  const scenarioIds = new Set<string>()
   for (const comment of comments) {
     if (comment.status !== 'open') continue
     counts.total += 1
@@ -31,9 +38,16 @@ export function sendCounts(comments: readonly CommentWithStatus[]): SendCounts {
     } else if (kind === 'spec') counts.spec += 1
     else if (kind === 'evidence') counts.evidence += 1
     else if (kind === 'extra') counts.extras += 1
+    else if (kind === 'scenario') {
+      counts.scenarioComments += 1
+      if (ref !== null) scenarioIds.add(ref)
+    } else if (kind === 'run-file') counts.scenarioComments += 1
+    else if (kind === 'bug') counts.bugs += 1
+    else if (kind === 'log') counts.logs += 1
     else counts.overall = comment.sentAt === null ? 'draft' : 'sent'
   }
   counts.files = paths.size
+  counts.scenarios = scenarioIds.size
   return counts
 }
 
@@ -52,6 +66,9 @@ export function summaryRows(counts: SendCounts): SummaryRow[] {
   if (counts.spec > 0) rows.push({ label: 'Spec', value: String(counts.spec) })
   if (counts.evidence > 0) rows.push({ label: 'Evidence', value: String(counts.evidence) })
   if (counts.extras > 0) rows.push({ label: 'Extras', value: String(counts.extras) })
+  if (counts.scenarioComments > 0) rows.push({ label: 'Scenarios', value: `${pluralize(counts.scenarioComments, 'comment')} · ${pluralize(counts.scenarios, 'scenario')}` })
+  if (counts.bugs > 0) rows.push({ label: 'Bugs', value: String(counts.bugs) })
+  if (counts.logs > 0) rows.push({ label: 'Logs', value: String(counts.logs) })
   if (counts.overall) rows.push({ label: 'Overall note', value: counts.overall })
   return rows
 }

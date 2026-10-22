@@ -1,4 +1,4 @@
-import type { SessionDetail } from '@review-dash/shared'
+import type { CodeReviewDetail } from '@review-dash/shared'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -17,7 +17,7 @@ const CONTENTS: Record<string, string> = {
   'extras/sequence.mmd': 'sequenceDiagram\n A->>B: hi',
 }
 
-const detail: SessionDetail = {
+const detail: CodeReviewDetail = {
   ...sessionDetailFixture,
   extras: [
     { path: 'architecture.md', type: 'markdown', title: 'Architecture (markdown with a mermaid block and a very long title that wraps)' },

@@ -1,0 +1,181 @@
+-- UnitOperations
++------+----------------------+------+-------------------------------+
+| id   | currentState         | vId  | openReqs                      |
++------+----------------------+------+-------------------------------+
+|   31 | Proposed for Archive |   50 | 34:>Yash,37:archive>Yash      |
+|   32 | Proposed for Archive |   51 | 35:>Yash,38:archive>Kons      |
+|   33 | Proposed for Archive |   52 | 36:>Yash,39:archive>Yash,Kons |
+|   34 | Approved             |   53 | 33:>Yash                      |
++------+----------------------+------+-------------------------------+
+-- Steps
++------+---------------------------------+------+----------+
+| id   | currentState                    | vId  | openReqs |
++------+---------------------------------+------+----------+
+|    5 | Proposed for Archive (Cascaded) |    5 | NULL     |
+|    6 | Proposed for Archive (Cascaded) |    6 | NULL     |
+|    7 | Proposed for Archive (Cascaded) |    8 | NULL     |
++------+---------------------------------+------+----------+
+-- Materials
++------+--------------+------+------------------------+
+| id   | currentState | vId  | openReqs               |
++------+--------------+------+------------------------+
+|   15 | Draft        |   15 | NULL                   |
+|   16 | Draft        |   16 | NULL                   |
+|   17 | Draft        |   17 | NULL                   |
+|   18 | Draft        |   18 | NULL                   |
+|   19 | Draft        |   19 | NULL                   |
+|   20 | Draft        |   20 | NULL                   |
+|   21 | Approved     |   26 | 2:>Yash                |
+|   22 | Archived     |   28 | 3:>Yash,6:archive>Yash |
+|   23 | Proposed     |   23 | 4:>Yash                |
+|   24 | Routing      |   24 | 5:>Yash,Kons           |
+|   25 | Proposed     |   25 | 7:>Yash                |
++------+--------------+------+------------------------+
+-- LibraryMaterials
++------+----------------------+------+-------------------------+
+| id   | currentState         | vId  | openReqs                |
++------+----------------------+------+-------------------------+
+|    3 | Proposed for Archive |   17 | 6:>Yash,10:archive>Yash |
+|    4 | Proposed for Archive |   18 | 7:>Yash,11:archive>Yash |
+|    5 | Proposed for Archive |   19 | 8:>Yash,12:archive>Yash |
+|    6 | Approved             |   20 | 9:>Yash                 |
++------+----------------------+------+-------------------------+
+-- Suppliers
++------+----------------------+------+------------------------+
+| id   | currentState         | vId  | openReqs               |
++------+----------------------+------+------------------------+
+|    7 | Approved             |   19 | 6:>Yash                |
+|   10 | Proposed for Archive |   22 | 7:>Yash,8:archive>Yash |
++------+----------------------+------+------------------------+
+-- ControlMethods
++------+----------------------+------+------------------------+
+| id   | currentState         | vId  | openReqs               |
++------+----------------------+------+------------------------+
+|    6 | Proposed for Archive |   12 | 6:>Yash,7:archive>Yash |
++------+----------------------+------+------------------------+
+-- IQAs
++------+----------------------+------+--------------------------+
+| id   | currentState         | vId  | openReqs                 |
++------+----------------------+------+--------------------------+
+|   19 | Proposed for Archive |   83 | 24:>Yash,25:archive>Yash |
+|   25 | Proposed for Archive |   84 | 23:>Yash,26:archive>Yash |
+|   26 | Proposed for Archive |   85 | 20:>Yash,27:archive>Yash |
++------+----------------------+------+--------------------------+
+-- FQAs
++------+----------------------+------+------------------------+
+| id   | currentState         | vId  | openReqs               |
++------+----------------------+------+------------------------+
+|   21 | Proposed for Archive |   55 | 5:>Yash,8:archive>Yash |
++------+----------------------+------+------------------------+
+-- Documents
++------+--------------+------+----------+
+| id   | currentState | vId  | openReqs |
++------+--------------+------+----------+
+|    2 | Proposed     |    3 | 3:>Yash  |
++------+--------------+------+----------+
+-- Samples
++------+--------------+------+----------+
+| id   | currentState | vId  | openReqs |
++------+--------------+------+----------+
+|    2 | Draft        |    3 | NULL     |
++------+--------------+------+----------+
+-- Material library fields
++----+-------------------+-------------------+--------------+---------------------+
+| id | libraryMaterialId | fromLibraryStatus | currentState | deletedAt           |
++----+-------------------+-------------------+--------------+---------------------+
+| 15 |                 3 | Synced            | Draft        | NULL                |
+| 16 |                 3 | Synced            | Draft        | NULL                |
+| 17 |                 3 | Synced            | Draft        | NULL                |
+| 18 |                 4 | Synced            | Draft        | NULL                |
+| 19 |                 5 | Synced            | Draft        | NULL                |
+| 20 |                 6 | Synced            | Draft        | NULL                |
+| 21 |                 3 | Linked            | Approved     | NULL                |
+| 22 |                 3 | Project Only      | Archived     | 2026-10-12 13:44:32 |
+| 23 |                 4 | Linked            | Proposed     | NULL                |
+| 24 |                 5 | Linked            | Routing      | NULL                |
+| 25 |                 6 | Linked            | Proposed     | NULL                |
++----+-------------------+-------------------+--------------+---------------------+
+-- SampleToIQAs
++----+----------+-------+-----------+
+| id | sampleId | IQAId | deletedAt |
++----+----------+-------+-----------+
+|  1 |        1 |    12 | NULL      |
+|  2 |        2 |    26 | NULL      |
++----+----------+-------+-----------+
+-- ProcessParameterToIQAs (IQA 19,25,26)
++-----+-------+--------------------+-----------+
+| id  | iQAId | processParameterId | deletedAt |
++-----+-------+--------------------+-----------+
+|  80 |    19 |                 51 | NULL      |
+|  81 |    19 |                 52 | NULL      |
+|  82 |    19 |                 53 | NULL      |
+|  83 |    19 |                 54 | NULL      |
+|  84 |    19 |                 55 | NULL      |
+|  85 |    19 |                 56 | NULL      |
+|  86 |    19 |                 57 | NULL      |
+|  87 |    19 |                 58 | NULL      |
+|  88 |    19 |                 59 | NULL      |
+|  89 |    19 |                 60 | NULL      |
+|  90 |    19 |                 61 | NULL      |
+|  91 |    25 |                 62 | NULL      |
+|  92 |    25 |                 63 | NULL      |
+|  93 |    25 |                 64 | NULL      |
+|  94 |    25 |                 65 | NULL      |
+|  95 |    25 |                 66 | NULL      |
+|  96 |    25 |                 67 | NULL      |
+|  97 |    25 |                 68 | NULL      |
+|  99 |    26 |                 69 | NULL      |
+| 102 |    26 |                 70 | NULL      |
+| 105 |    26 |                 71 | NULL      |
+| 109 |    26 |                 72 | NULL      |
+| 112 |    26 |                 73 | NULL      |
+| 115 |    26 |                 74 | NULL      |
+| 118 |    26 |                 75 | NULL      |
+| 120 |    26 |                 76 | NULL      |
++-----+-------+--------------------+-----------+
+-- IQAToIQAs (IQA 19,25,26)
++----+-------------+-------+-----------+
+| id | targetIQAId | iQAId | deletedAt |
++----+-------------+-------+-----------+
+| 39 |          25 |    19 | NULL      |
+| 40 |          25 |    20 | NULL      |
+| 41 |          25 |    21 | NULL      |
+| 42 |          25 |    22 | NULL      |
+| 43 |          25 |    23 | NULL      |
+| 44 |          27 |    25 | NULL      |
+| 45 |          26 |    25 | NULL      |
+| 46 |          28 |    25 | NULL      |
+| 52 |          31 |    26 | NULL      |
+| 53 |          30 |    26 | NULL      |
+| 54 |          32 |    26 | NULL      |
+| 55 |          33 |    26 | NULL      |
+| 56 |          34 |    26 | NULL      |
++----+-------------+-------+-----------+
+-- IQAToFQAs (IQA 19,25,26 / FQA 21)
+-- IQAToFQALibraries
++----+-------+-------+--------+-----------+
+| id | IQAId | FQAId | status | deletedAt |
++----+-------+-------+--------+-----------+
+|  1 |    19 |    21 | Linked | NULL      |
++----+-------+-------+--------+-----------+
+-- IQAToFQALibraryLinkedVersions
++----+--------------+-------+--------+-----------+
+| id | IQAVersionId | FQAId | status | deletedAt |
++----+--------------+-------+--------+-----------+
+|  1 |           83 |    21 | Linked | NULL      |
++----+--------------+-------+--------+-----------+
+-- Approval responses (non-deleted) per model
++-----------------+----+
+| model           | n  |
++-----------------+----+
+| UnitOperation   | 20 |
+| Step            |  0 |
+| Material        |  4 |
+| LibraryMaterial |  6 |
+| Supplier        |  5 |
+| ControlMethod   |  3 |
+| IQA             | 12 |
+| FQA             |  3 |
+| Document        |  0 |
+| Sample          |  0 |
++-----------------+----+

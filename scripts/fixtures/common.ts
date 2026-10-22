@@ -10,6 +10,7 @@ import {
   type EvidenceIndex,
   type ExtrasIndex,
   type FileReview,
+  type CodeReviewManifest,
   type Manifest,
   type SpecIndex,
   type Verdict,
@@ -81,7 +82,7 @@ export interface ManifestInput {
   agentSessionId?: string | null
 }
 
-export function makeManifest(input: ManifestInput): Manifest {
+export function makeManifest(input: ManifestInput): CodeReviewManifest {
   return {
     schemaVersion: SCHEMA_VERSION,
     id: input.id,

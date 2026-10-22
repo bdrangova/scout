@@ -4,9 +4,10 @@ import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { Tag } from '@/components/ui/tag'
 import { usePrComments } from '@/state/pr-comments-context'
+import { cn } from '@/lib/utils'
 import { VERDICT_STYLE } from '@/lib/verdict'
 import { useJumpToPanel } from './jump-to-panel'
-import { commentSections, type SectionDetail } from './open-comments-sections'
+import { commentSections, isTestRunSection, type SectionDetail } from './open-comments-sections'
 import { RailHead } from './RailHead'
 import { UnsavedDraftsNotice } from './UnsavedDraftsNotice'
 import { prReplyRows, sendCounts, summaryRows } from './will-be-sent'
@@ -24,7 +25,12 @@ export function WillBeSent({ comments, review, detail }: WillBeSentProps) {
   const { queued } = usePrComments()
   const rows = [...summaryRows(counts), ...prReplyRows(queued)]
   const total = counts.total + queued.instructions + queued.replies
-  const files = useMemo(() => commentSections(open, review, detail).find((section) => section.key === 'files')?.groups ?? [], [open, review, detail])
+  // The rows that link to a card: the files of a code review, the scenarios of a test run.
+  const files = useMemo(
+    () => commentSections(open, review, detail).find((section) => section.key === 'files' || section.key === 'scenarios')?.groups ?? [],
+    [open, review, detail],
+  )
+  const itemLabel = isTestRunSection(detail) ? 'Scenarios with comments' : 'Files with comments'
   return (
     <section aria-label="Will be sent" className="flex flex-col gap-2.5">
       <RailHead title="Will be sent" count={total}>
@@ -44,7 +50,7 @@ export function WillBeSent({ comments, review, detail }: WillBeSentProps) {
         </dl>
       )}
       {files.length > 0 && (
-        <ul aria-label="Files with comments" className="m-0 flex list-none flex-col p-0">
+        <ul aria-label={itemLabel} className="m-0 flex list-none flex-col p-0">
           {files.map((group) => {
             const chip = group.chip ? VERDICT_STYLE[group.chip] : null
             const ChipIcon = chip?.icon
@@ -56,7 +62,7 @@ export function WillBeSent({ comments, review, detail }: WillBeSentProps) {
                   title={group.key}
                   className="flex min-h-[34px] items-center gap-2 rounded-sm px-1.5 text-[12.5px] hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
                 >
-                  <span className="min-w-0 flex-1 truncate font-mono font-semibold">{group.label}</span>
+                  <span className={cn('min-w-0 flex-1 truncate font-semibold', !isTestRunSection(detail) && 'font-mono')}>{group.label}</span>
                   <span className="inline-flex items-center gap-1 font-bold text-ink-muted tabular-nums" title={`${group.comments.length} open`}>
                     <MessageSquareIcon className="size-3" aria-hidden />
                     {group.comments.length}

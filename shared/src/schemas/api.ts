@@ -3,11 +3,12 @@ import { FINGERPRINT_RE, RUN_ID_RE, SESSION_ID_RE } from '../constants.ts'
 import { COMMENT_STATUSES, SESSION_STATUSES } from '../review/status.ts'
 import { AgentAdapterNameSchema, AgentRunSchema, AgentRunStatusSchema } from './agent.ts'
 import { EvidenceItemSchema, ExtraItemSchema, SpecItemSchema } from './artifacts.ts'
-import { ManifestSchema } from './manifest.ts'
+import { CodeReviewManifestSchema, TestRunManifestSchema, TicketSchema } from './manifest.ts'
 import { PrCommentCountsSchema, PrSummarySchema } from './pr-comments.ts'
 import { ResolutionSchema, ResolutionsSchema } from './resolutions.ts'
 import { CommentSchema, DecisionSchema, ReviewSchema } from './review.ts'
 import { SentSnapshotSchema } from './sent.ts'
+import { ScenarioSchema, TestRunIndexSchema } from './test-run.ts'
 import { WorkingTreeSchema } from './tree.ts'
 
 const isoDate = z.iso.datetime({ offset: true })
@@ -33,6 +34,7 @@ export const HealthSchema = z.object({
 export type Health = z.infer<typeof HealthSchema>
 
 export const SessionSummarySchema = z.object({
+  kind: z.literal('code-review').optional(),
   id: z.string().regex(SESSION_ID_RE),
   title: z.string(),
   /**
@@ -40,7 +42,7 @@ export const SessionSummarySchema = z.object({
    * is flagged). `baseRef` is the manifest's base ref name (e.g. `origin/main`); the live merge-base is not part of the summary.
    */
   repo: z.object({ path: z.string(), branch: z.string().nullable(), sessionBranch: z.string().nullable(), baseRef: z.string().min(1) }),
-  tickets: ManifestSchema.shape.tickets,
+  tickets: z.array(TicketSchema),
   status: SessionStatusSchema,
   progress: ProgressSchema,
   openComments: nonNegativeInt,
@@ -59,9 +61,40 @@ export const SessionSummarySchema = z.object({
 })
 export type SessionSummary = z.infer<typeof SessionSummarySchema>
 
+export const TestRunSummarySchema = z.object({
+  kind: z.literal('test-run'),
+  id: z.string().regex(SESSION_ID_RE),
+  title: z.string(),
+  createdAt: isoDate,
+  /** The latest of manifest, review, resolutions and the run index. */
+  updatedAt: isoDate,
+  run: z.object({ path: z.string(), feature: z.string().nullable(), area: z.string().nullable() }),
+  tickets: z.array(TicketSchema),
+  status: SessionStatusSchema,
+  counts: z.object({
+    scenarios: nonNegativeInt,
+    pass: nonNegativeInt,
+    fail: nonNegativeInt,
+    gap: nonNegativeInt,
+    na: nonNegativeInt,
+    blocked: nonNegativeInt,
+    uncertain: nonNegativeInt,
+    planned: nonNegativeInt,
+  }),
+  /** Scenarios with an effective verdict or an open comment, of `total`. */
+  reviewed: nonNegativeInt,
+  total: nonNegativeInt,
+  openComments: nonNegativeInt,
+  lastSend: z.object({ at: isoDate, decision: DecisionSchema }).nullable().optional(),
+  activeRunId: z.string().regex(RUN_ID_RE).nullable(),
+  latestRunStatus: AgentRunStatusSchema.nullable().optional(),
+})
+export type TestRunSummary = z.infer<typeof TestRunSummarySchema>
+
 /** Sessions whose manifest fails validation (or whose repo is gone) still appear, with the error. */
 export const SessionListItemSchema = z.union([
   SessionSummarySchema,
+  TestRunSummarySchema,
   z.object({ id: z.string(), error: z.string() }),
 ])
 export type SessionListItem = z.infer<typeof SessionListItemSchema>
@@ -77,7 +110,7 @@ export type ArchivedMarker = z.infer<typeof ArchivedMarkerSchema>
 export const ArchivedSessionSchema = z.object({
   id: z.string().regex(SESSION_ID_RE),
   title: z.string(),
-  tickets: ManifestSchema.shape.tickets,
+  tickets: z.array(TicketSchema),
   repo: z.object({ path: z.string(), branch: z.string().nullable(), baseRef: z.string().min(1).nullable() }),
   createdAt: isoDate,
   updatedAt: isoDate,
@@ -85,8 +118,9 @@ export const ArchivedSessionSchema = z.object({
 })
 export type ArchivedSession = z.infer<typeof ArchivedSessionSchema>
 
-export const SessionDetailSchema = z.object({
-  manifest: ManifestSchema,
+export const CodeReviewDetailSchema = z.object({
+  kind: z.literal('code-review').optional(),
+  manifest: CodeReviewManifestSchema,
   tree: WorkingTreeSchema,
   evidence: z.array(EvidenceItemSchema),
   extras: z.array(ExtraItemSchema),
@@ -102,6 +136,27 @@ export const SessionDetailSchema = z.object({
   /** The session's current PR (from `review/pr-comments.json`); null/absent when none is known. */
   pr: PrSummarySchema.nullable().optional(),
 })
+export type CodeReviewDetail = z.infer<typeof CodeReviewDetailSchema>
+
+/** A test run, derived live from the run folder; `index` is the parsed `test-run.json`. */
+export const TestRunDetailSchema = z.object({
+  kind: z.literal('test-run'),
+  manifest: TestRunManifestSchema,
+  index: TestRunIndexSchema,
+  /** Index problems that did not fail the parse (unsupported panels, dangling links, unreadable paths). */
+  warnings: z.array(z.string()),
+  /** The index scenarios in order, each with the fingerprint of its evidence list and steps. */
+  scenarios: z.array(ScenarioSchema.extend({ fingerprint: z.string().regex(FINGERPRINT_RE) })),
+  /** Referenced `alias:path`s that do not exist on disk. */
+  missing: z.array(z.string()),
+  computedAt: isoDate,
+  /** The agent run in progress and the status of the newest run (live per request, not cached with the index). */
+  activeRunId: z.string().regex(RUN_ID_RE).nullable().optional(),
+  latestRunStatus: AgentRunStatusSchema.nullable().optional(),
+})
+export type TestRunDetail = z.infer<typeof TestRunDetailSchema>
+
+export const SessionDetailSchema = z.union([CodeReviewDetailSchema, TestRunDetailSchema])
 export type SessionDetail = z.infer<typeof SessionDetailSchema>
 
 export const ReviewResponseSchema = z.object({
@@ -144,7 +199,7 @@ export type StartRunRequest = z.infer<typeof StartRunRequestSchema>
 
 export const StoreEventSchema = z.discriminatedUnion('type', [
   z.object({
-    type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated', 'pr-comments.updated']),
+    type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated', 'pr-comments.updated', 'testrun.updated']),
     sessionId: z.string(),
   }),
   z.object({ type: z.literal('run.updated'), sessionId: z.string(), runId: z.string() }),
