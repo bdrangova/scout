@@ -9,7 +9,7 @@ import type { SessionKind } from '@/lib/paths'
 /** A dashed, flat panel line inside the list: "No sessions match this filter." and the like. */
 export function ListNote({ children }: { children: ReactNode }) {
   return (
-    <li>
+    <li className="col-span-full">
       <Panel className="items-center border-dashed px-5 py-8 text-center text-[13px] font-medium text-ink-muted">
         {children}
       </Panel>

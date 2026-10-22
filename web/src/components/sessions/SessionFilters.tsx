@@ -1,10 +1,14 @@
 import { Archive, ChevronDown, Search } from 'lucide-react'
+import { SessionLayoutToggle } from './SessionLayoutToggle'
+import type { SessionListLayout } from './session-list-layout'
 import { Input } from '@/components/ui/input'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import type { SessionKind } from '@/lib/paths'
 import { STATUS_FILTERS, type StatusFilter } from '@/lib/session-status'
 
 interface SessionFiltersProps {
+  layout: SessionListLayout
+  onLayout: (layout: SessionListLayout) => void
   kind?: SessionKind
   filter: StatusFilter
   counts: Record<StatusFilter, number>
@@ -15,7 +19,7 @@ interface SessionFiltersProps {
 }
 
 /** Archive is a separate view; lifecycle filtering applies only to current sessions. */
-export function SessionFilters({ kind = 'code-review', filter, counts, onFilter, onToggleArchived, query, onQuery }: SessionFiltersProps) {
+export function SessionFilters({ kind = 'code-review', layout, onLayout, filter, counts, onFilter, onToggleArchived, query, onQuery }: SessionFiltersProps) {
   const archived = filter === 'archived'
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -25,6 +29,7 @@ export function SessionFilters({ kind = 'code-review', filter, counts, onFilter,
           <Archive aria-hidden />Archived
         </SegmentedItem>
       </Segmented>
+      <SessionLayoutToggle layout={layout} onLayout={onLayout} />
       <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 max-sm:ml-0 max-sm:grid max-sm:w-full max-sm:grid-cols-1">
         <label className="relative min-w-0 max-sm:w-full">
           <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-muted" />

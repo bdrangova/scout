@@ -7,6 +7,8 @@ import { sessionListFixture, testRunSummary } from '@/test/fixtures'
 import { stubEventSource } from '@/test/mock-event-source'
 import { ThemeProvider } from '@/theme'
 import { SessionListPage } from './SessionListPage'
+import { SESSION_LAYOUT_KEY } from '@/components/sessions/session-list-layout'
+import { SCENARIO_STATUS_LABEL } from '@/lib/scenario-status'
 
 const hooks = vi.hoisted(() => ({
   kinds: [] as (string | undefined)[],
@@ -43,8 +45,26 @@ function renderAt(path: string) {
 
 describe('SessionListPage kinds', () => {
   afterEach(() => {
+    localStorage.removeItem(SESSION_LAYOUT_KEY)
     hooks.kinds.length = 0
     vi.unstubAllGlobals()
+  })
+
+  it('uses the saved grid for test runs, showing run metadata and every outcome', async () => {
+    localStorage.setItem(SESSION_LAYOUT_KEY, 'grid')
+    hooks.current = { sessions: [RUN_A], loading: false, error: null, reload: () => {} }
+    renderAt('/t')
+    const card = screen.getByRole('link', { name: 'Run A' })
+    expect(card).toHaveAttribute('data-layout', 'grid')
+    expect(within(card).getByText(RUN_A.run.path)).toBeInTheDocument()
+    expect(within(card).getByText('Feature')).toBeInTheDocument()
+    expect(within(card).getByText('Area')).toBeInTheDocument()
+    for (const [status, label] of Object.entries(SCENARIO_STATUS_LABEL)) {
+      const fact = within(card).getByText(label).parentElement!
+      expect(fact.querySelector('dd')).toHaveTextContent(String(RUN_A.counts[status as keyof typeof SCENARIO_STATUS_LABEL]))
+    }
+    await userEvent.setup().click(card)
+    expect(screen.getByText('Run route')).toBeInTheDocument()
   })
 
   it('asks for the code reviews on / and the test runs on /t', () => {

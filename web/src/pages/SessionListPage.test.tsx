@@ -9,6 +9,7 @@ import { SESSION_ID, sessionListFixture } from '@/test/fixtures'
 import { MockEventSource, stubEventSource } from '@/test/mock-event-source'
 import { ThemeProvider } from '@/theme'
 import { SessionListPage } from './SessionListPage'
+import { SESSION_LAYOUT_KEY } from '@/components/sessions/session-list-layout'
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), info: vi.fn(), success: vi.fn(), warning: vi.fn() } }))
 
@@ -60,9 +61,72 @@ function json(status: number, body: unknown): Response {
 
 describe('SessionListPage', () => {
   afterEach(() => {
+    localStorage.removeItem(SESSION_LAYOUT_KEY)
     vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.clearAllMocks()
+  })
+
+  it('remembers grid layout across archives and remounts, with complete searchable code details', async () => {
+    const view = renderPage({ sessions: sessionListFixture }, { archived: archivedFixture })
+    const user = userEvent.setup()
+    expect(screen.getByRole('button', { name: 'List view' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'Grid view' }))
+    const card = screen.getByRole('link', { name: 'Trial countdown bar' })
+    expect(card).toHaveAttribute('data-layout', 'grid')
+    expect(within(card).getByText('/Users/bojana/Projects/qbdvision')).toBeInTheDocument()
+    expect(within(card).getByText('origin/main')).toBeInTheDocument()
+    expect(within(card).getByText('+272')).toBeInTheDocument()
+    expect(within(card).getByText('Reviewed')).toBeInTheDocument()
+    await user.type(screen.getByRole('searchbox'), 'Trial countdown')
+    expect(within(screen.getByRole('list', { name: 'Sessions' })).getAllByRole('listitem')).toHaveLength(1)
+    await user.clear(screen.getByRole('searchbox'))
+    await user.click(screen.getByRole('button', { name: 'Archived · 1' }))
+    const archive = screen.getByRole('listitem', { name: 'Archived session Old trial bar spike' })
+    expect(within(archive).getByText('Created')).toBeInTheDocument()
+    expect(within(archive).getByText('Last updated')).toBeInTheDocument()
+    expect(archive.querySelector('[data-layout="grid"]')).toBeInTheDocument()
+    view.unmount()
+    renderAt()
+    expect(screen.getByRole('button', { name: 'Grid view' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'List view' }))
+    expect(screen.getByRole('link', { name: 'Trial countdown bar' })).not.toHaveAttribute('data-layout', 'grid')
+  })
+
+  it('opens grid cards with Enter while child controls keep their own actions', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(200, { id: SESSION_ID }))
+    vi.stubGlobal('fetch', fetchMock)
+    renderPage({ sessions: sessionListFixture })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Grid view' }))
+    const card = screen.getByRole('link', { name: 'Trial countdown bar' })
+    await user.click(within(card).getByRole('link', { name: 'QI-15472' }))
+    expect(screen.queryByText('Session route')).not.toBeInTheDocument()
+    const archive = within(card).getByRole('button', { name: 'Archive Trial countdown bar' })
+    archive.focus()
+    await user.keyboard('{Enter}')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(`/api/sessions/${SESSION_ID}/archive`, expect.objectContaining({ method: 'POST' })))
+    expect(screen.queryByText('Session route')).not.toBeInTheDocument()
+    const next = screen.getByRole('link', { name: 'Bulk export of batch records' })
+    next.focus()
+    await user.keyboard('{Enter}')
+    expect(screen.getByText('Session route')).toBeInTheDocument()
+  })
+
+  it('keeps grid restore functional and deletion behind its confirmation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(200, { id: archivedFixture[0]?.id }))
+    vi.stubGlobal('fetch', fetchMock)
+    renderPage({ sessions: [] }, { archived: archivedFixture })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Grid view' }))
+    await user.click(screen.getByRole('button', { name: 'Archived · 1' }))
+    await user.click(screen.getByRole('button', { name: 'Delete Old trial bar spike' }))
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Restore Old trial bar spike' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(`/api/sessions/${archivedFixture[0]?.id}/unarchive`, expect.objectContaining({ method: 'POST' })))
+    expect(screen.getByText('No archived sessions.')).toBeInTheDocument()
   })
 
   it('refetches both lists once, 300 ms after a burst of store events', () => {

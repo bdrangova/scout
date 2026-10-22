@@ -129,3 +129,7 @@ Dark-mode controls use cool blue-white fills with navy text: header buttons use 
 
 ## Scout with test-run reviews
 Development and Test runs share the Scout header, cool-white control tokens, compact review rows, search, review filters and reversible archive actions. Test-run identity shows its feature/area and run folder, with quiet outcome counts; its review progress counts scenarios. Both kinds share the idle mascot in their initial empty state, the static mark at review completion, and the working animation for live agent runs. The archive API and client cache keys accept the same optional kind filter as the live list, so each archive view stays within its kind.
+
+### Dashboard layouts
+
+Sessions and Archived share a List/Grid control. List is the compact default; the chosen layout persists locally across views and session kinds. Grid uses one, two, or three columns as space allows, with complete wrapping titles and metadata, paired facts, and footer actions. Code-review cards show repository, branches, review counts, change totals, and pull-request details. Test-run cards show feature, area, run folder, and every scenario outcome. Archived cards show available manifest metadata and dates, with Restore and confirmed Delete actions. Empty states retain the Scout mascot.

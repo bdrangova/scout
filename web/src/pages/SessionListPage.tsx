@@ -1,3 +1,6 @@
+import { LiveSessionCard } from '@/components/sessions/SessionCards'
+import { SESSION_CARD_GRID, useSessionListLayout } from '@/components/sessions/session-list-layout'
+import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { otherKindRoute, type SessionKind } from '@/lib/paths'
@@ -17,6 +20,7 @@ import { useHotkeys } from '@/lib/useHotkeys'
 
 export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }) {
   const list = useSessionList(kind)
+  const { layout, setLayout } = useSessionListLayout()
   const navigate = useNavigate()
   const [helpOpen, setHelpOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -34,7 +38,7 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
         <div className="mx-auto flex w-full max-w-[1300px] flex-col gap-[18px]">
           <div className="flex flex-col gap-5">
             <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : 'Development'}</h1>
-            <SessionFilters kind={kind} filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} />
+            <SessionFilters layout={layout} onLayout={setLayout} kind={kind} filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} />
           </div>
 
           {list.error ? (
@@ -45,6 +49,7 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
             <div className="flex flex-col gap-4">
               <p className="m-0 text-xs text-ink-muted">Archived sessions are kept here. Restore a session to open it again.</p>
               <ArchivedList
+                layout={layout}
                 items={list.archived.filter((item) => matchesSessionSearch(item, query))}
                 emptyMessage={query.trim() ? 'No archived sessions match your search.' : undefined}
                 error={list.archivedError}
@@ -57,9 +62,9 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
             <EmptyState kind={kind} />
           ) : (
             <div className="flex flex-col gap-2">
-              {sessions.length > 0 && <SessionListHead />}
-              <ul className="m-0 flex list-none flex-col gap-3.5 p-0">
-                {sessions.map((item) => isTestRunSummary(item) ? <TestRunRow key={item.id} session={item} onArchive={list.archive} /> : <SessionRow key={item.id} session={item} onArchive={list.archive} />)}
+              {layout === 'list' && sessions.length > 0 && <SessionListHead />}
+              <ul aria-label="Sessions" className={cn('m-0 list-none p-0', layout === 'grid' ? SESSION_CARD_GRID : 'flex flex-col gap-3.5')}>
+                {sessions.map((item) => layout === 'grid' ? <LiveSessionCard key={item.id} session={item} onArchive={list.archive} /> : isTestRunSummary(item) ? <TestRunRow key={item.id} session={item} onArchive={list.archive} /> : <SessionRow key={item.id} session={item} onArchive={list.archive} />)}
                 {visible.length === 0 && <ListNote>{kind === 'test-run' ? 'No test runs match this filter or search.' : 'No sessions match this filter or search.'}</ListNote>}
               </ul>
               {unavailable.length > 0 && (

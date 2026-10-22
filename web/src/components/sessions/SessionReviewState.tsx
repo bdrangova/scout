@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { ReviewProgress } from './ReviewProgress'
 
 /** Dashboard language explains the submitted decision without changing lifecycle semantics. */
-export function SessionReviewState({ session }: { session: LiveSummary }) {
+export function SessionReviewState({ session, showProgress = true }: { session: LiveSummary; showProgress?: boolean }) {
   const source = statusSourceOf(session)
   const unit = session.kind === 'test-run' ? 'scenarios' : 'files'
   const total = session.kind === 'test-run' ? session.total : session.stats.files
@@ -24,12 +24,12 @@ export function SessionReviewState({ session }: { session: LiveSummary }) {
         <Icon aria-hidden className="size-3.5 shrink-0" />{label}
       </span>
       {decisionLabel && <span className="text-[11px] text-ink-muted">{decisionLabel}</span>}
-      {status === 'updated' && session.openComments > 0 && <span className="text-xs text-ink-muted">{session.openComments} open {session.openComments === 1 ? 'comment' : 'comments'}</span>}
+      {showProgress && status === 'updated' && session.openComments > 0 && <span className="text-xs text-ink-muted">{session.openComments} open {session.openComments === 1 ? 'comment' : 'comments'}</span>}
       {runSpec && RunIcon ? (
         <span role="status" aria-label={runSpec.label} data-run={run} className={cn('inline-flex items-center gap-1.5 text-[11px] font-medium', runSpec.textClass)}>
           <RunIcon aria-hidden className={cn('size-3', runSpec.pulse && 'animate-pulse motion-reduce:animate-none')} />{runSpec.label}
         </span>
-      ) : source.progress.reviewed > 0 && status !== 'approved' ? <ReviewProgress reviewed={source.progress.reviewed} total={source.progress.total} unit={unit} /> : <span aria-label={`${total} ${unit}`} title={session.kind === 'test-run' ? `${total} scenarios` : `+${session.stats.additions} −${session.stats.deletions}`} className="text-xs text-ink-muted">{total} {unit}</span>}
+      ) : !showProgress ? null : source.progress.reviewed > 0 && status !== 'approved' ? <ReviewProgress reviewed={source.progress.reviewed} total={source.progress.total} unit={unit} /> : <span aria-label={`${total} ${unit}`} title={session.kind === 'test-run' ? `${total} scenarios` : `+${session.stats.additions} −${session.stats.deletions}`} className="text-xs text-ink-muted">{total} {unit}</span>}
     </div>
   )
 }
