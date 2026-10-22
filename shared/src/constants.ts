@@ -31,6 +31,13 @@ export const COLLAPSE_GLOBS: readonly string[] = [
 /** The session sections in tab order; the single source for the tabs, the `1–5` hotkeys and the shortcut help. */
 export const SECTIONS = ['spec', 'extras', 'evidence', 'files', 'submit'] as const
 
+/** The test-run sections in tab order (`overview`, `review`, the optional pages, `submit`). */
+export const TEST_SECTIONS = ['overview', 'review', 'gaps', 'data-setup', 'logs', 'submit'] as const
+
+/** The index the publish skills write into a test run folder (`<run>/test-run.json`). */
+export const TEST_RUN_INDEX_FILE = 'test-run.json'
+export const TEST_RUN_INDEX_SCHEMA_VERSION = 1
+
 /** Files the agent writes into the session folder; the server watches them live. */
 /** Session folders live under `<home>/sessions/<id>`; archived ones are moved whole to `<home>/archive/<id>`. */
 export const SESSIONS_DIR = 'sessions'

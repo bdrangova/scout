@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { commentFixture, reviewFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
 import { renderShell } from '@/test/render-shell'
@@ -84,6 +84,21 @@ describe('SessionBar', () => {
     const files = renderShell(`/s/${SESSION_ID}/files/a.ts?mode=grid`)
     const toggle = within(files.bar).getByRole('group', { name: 'Review mode' })
     expect(within(toggle).getByRole('link', { name: 'Grid' })).toHaveAttribute('aria-current', 'true')
+  })
+
+  it('shows Swipe / Grid on a test run\'s Review route, keeping the scenario and the mode', () => {
+    const { bar } = renderShell(`/t/${SESSION_ID}/review/s2-fail?mode=grid`, { kind: 'test-run' })
+    const toggle = within(bar).getByRole('group', { name: 'Review mode' })
+    expect(within(toggle).getByRole('link', { name: 'Grid' })).toHaveAttribute('aria-current', 'true')
+    expect(within(toggle).getByRole('link', { name: 'Swipe' })).toHaveAttribute('href', `/t/${SESSION_ID}/review/s2-fail?mode=swipe`)
+  })
+
+  it('has no Swipe / Grid on a test run\'s other pages', () => {
+    for (const section of ['overview', 'gaps', 'submit']) {
+      const { bar } = renderShell(`/t/${SESSION_ID}/${section}`, { kind: 'test-run' })
+      expect(within(bar).queryByRole('group', { name: 'Review mode' })).not.toBeInTheDocument()
+      cleanup()
+    }
   })
 
   it('has no Swipe / Grid on the other pages', () => {

@@ -1,0 +1,100 @@
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter, Route, Routes } from 'react-router'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { ArchivedListState, SessionListState } from '@/lib/hooks'
+import { sessionListFixture, testRunSummary } from '@/test/fixtures'
+import { stubEventSource } from '@/test/mock-event-source'
+import { ThemeProvider } from '@/theme'
+import { SessionListPage } from './SessionListPage'
+
+const hooks = vi.hoisted(() => ({
+  kinds: [] as (string | undefined)[],
+  current: { sessions: null, loading: false, error: null, reload: () => {} } as SessionListState,
+  archived: { archived: [], loading: false, error: null, reload: () => {} } as ArchivedListState,
+}))
+
+vi.mock('@/lib/hooks', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/hooks')>()),
+  useSessionList: (kind?: string) => {
+    hooks.kinds.push(kind)
+    return hooks.current
+  },
+  useArchivedSessions: () => hooks.archived,
+}))
+
+const RUN_A = testRunSummary({ id: '20261021-1100-run-a-aa11', title: 'Run A', updatedAt: '2026-10-21T11:00:00.000Z' })
+const RUN_B = testRunSummary({ id: '20261020-1100-run-b-bb22', title: 'Run B', status: 'approved', reviewed: 3, updatedAt: '2026-10-20T11:00:00.000Z' })
+
+function renderAt(path: string) {
+  stubEventSource()
+  return render(
+    <ThemeProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/" element={<SessionListPage />} />
+          <Route path="/t" element={<SessionListPage kind="test-run" />} />
+          <Route path="/t/:id" element={<p>Run route</p>} />
+        </Routes>
+      </MemoryRouter>
+    </ThemeProvider>,
+  )
+}
+
+describe('SessionListPage kinds', () => {
+  afterEach(() => {
+    hooks.kinds.length = 0
+    vi.unstubAllGlobals()
+  })
+
+  it('asks for the code reviews on / and the test runs on /t', () => {
+    hooks.current = { sessions: sessionListFixture, loading: false, error: null, reload: () => {} }
+    const { unmount } = renderAt('/')
+    expect(new Set(hooks.kinds)).toEqual(new Set(['code-review']))
+    unmount()
+    hooks.kinds.length = 0
+    renderAt('/t')
+    expect(new Set(hooks.kinds)).toEqual(new Set(['test-run']))
+  })
+
+  it('shows the Development | Test runs toggle with the current kind pressed, linking / and /t', () => {
+    hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
+    renderAt('/t')
+    const toggle = screen.getByRole('group', { name: 'Session type' })
+    expect(within(toggle).getByRole('link', { name: 'Test runs' })).toHaveAttribute('aria-current', 'true')
+    expect(within(toggle).getByRole('link', { name: 'Test runs' })).toHaveAttribute('href', '/t')
+    expect(within(toggle).getByRole('link', { name: 'Development' })).not.toHaveAttribute('aria-current')
+    expect(within(toggle).getByRole('link', { name: 'Development' })).toHaveAttribute('href', '/')
+  })
+
+  it('titles the page "Test runs" and shows the empty state, not an error, when there is none', () => {
+    hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
+    renderAt('/t')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Test runs')
+    expect(screen.getByText('No test runs yet')).toBeInTheDocument()
+    expect(screen.queryByText(/Couldn't load/)).not.toBeInTheDocument()
+  })
+
+  it('lists test run rows newest first on the status filters, and opens one', async () => {
+    hooks.current = { sessions: [RUN_B, RUN_A], loading: false, error: null, reload: () => {} }
+    renderAt('/t')
+    const rows = screen.getAllByRole('link').filter((link) => link.hasAttribute('data-href'))
+    expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual(['Run A', 'Run B'])
+    expect(screen.getByRole('option', { name: 'Approved (1)' })).toBeInTheDocument()
+    const user = userEvent.setup()
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Review status' }), 'approved')
+    expect(screen.getAllByRole('link').filter((link) => link.hasAttribute('data-href'))).toHaveLength(1)
+    await user.click(screen.getByRole('link', { name: 'Run B' }))
+    expect(screen.getByText('Run route')).toBeInTheDocument()
+  })
+
+  it('switches between the lists with the T key', async () => {
+    hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
+    renderAt('/')
+    const user = userEvent.setup()
+    await user.keyboard('t')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Test runs')
+    await user.keyboard('t')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Development')
+  })
+})

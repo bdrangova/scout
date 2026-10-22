@@ -26,6 +26,12 @@ describe('hotkeyFor', () => {
     expect(key({ key: 'q' })).toBeNull()
   })
 
+  it('maps Shift+arrows to the evidence keys and leaves the plain arrows alone', () => {
+    expect(key({ key: 'ArrowLeft', shiftKey: true })).toBe('prevEvidence')
+    expect(key({ key: 'ArrowRight', shiftKey: true })).toBe('nextEvidence')
+    expect(key({ key: 'ArrowLeft', shiftKey: false })).toBe('prev')
+  })
+
   it('ignores modifier combinations except ⌘/Ctrl+Enter', () => {
     expect(key({ key: 'a', metaKey: true })).toBeNull()
     expect(key({ key: 'a', ctrlKey: true })).toBeNull()

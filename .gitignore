@@ -8,3 +8,6 @@ playwright-report/
 .env*
 .idea/
 *.tsbuildinfo
+
+# Versioned sample logs are required by the test-run fixtures.
+!fixtures/test-runs/**/*.log

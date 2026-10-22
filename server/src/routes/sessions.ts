@@ -1,16 +1,36 @@
 import { Router } from 'express'
+import type { ApiError, ManifestKind } from '@review-dash/shared'
 import type { Store } from '../store/index.ts'
+import { queryString } from './params.ts'
+
+/** The validated `?kind=` (`undefined` when absent), or null after answering 400. */
+function kindFilter(value: unknown): ManifestKind | undefined | null {
+  const kind = queryString(value)
+  if (kind === undefined) return undefined
+  return kind === 'code-review' || kind === 'test-run' ? kind : null
+}
 
 export function sessionsRouter(store: Store): Router {
   const router = Router()
 
-  router.get('/sessions', async (_req, res) => {
-    res.json(await store.listSessions())
+  router.get('/sessions', async (req, res) => {
+    const kind = kindFilter(req.query.kind)
+    if (kind === null) {
+      const body: ApiError = { error: 'query parameter kind must be "code-review" or "test-run"' }
+      res.status(400).json(body)
+      return
+    }
+    res.json(await store.listSessions(kind))
   })
 
   // Before `/sessions/:id`, or "archived" would be read as a session id.
-  router.get('/sessions/archived', async (_req, res) => {
-    res.json(await store.listArchived())
+  router.get('/sessions/archived', async (req, res) => {
+    const kind = kindFilter(req.query.kind)
+    if (kind === null) {
+      res.status(400).json({ error: 'query parameter kind must be "code-review" or "test-run"' })
+      return
+    }
+    res.json(await store.listArchived(kind))
   })
 
   // Archived sessions only: a live id is 404 and nothing is touched. No event is emitted.

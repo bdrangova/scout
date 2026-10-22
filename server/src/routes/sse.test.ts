@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { AgentRunEventSchema, AgentRunSchema, SCHEMA_VERSION, StoreEventSchema } from '@review-dash/shared'
-import type { Resolutions, Review, SessionDetail, StoreEvent } from '@review-dash/shared'
+import type { Resolutions, Review, CodeReviewDetail, StoreEvent } from '@review-dash/shared'
 import { makeComment, makeReview } from '@review-dash/shared/testing/fixtures'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Express } from 'express'
@@ -108,7 +108,7 @@ describe('GET /api/events', () => {
     expect(reader.messages.slice(before).filter(isStoreEvent('session.updated'))).toHaveLength(1)
 
     // Repo edit → tree.updated with a new fingerprint (the tree was computed by the earlier send).
-    const detail = (await (await fetch(`${server.url}${sessionUrl}`)).json()) as SessionDetail
+    const detail = (await (await fetch(`${server.url}${sessionUrl}`)).json()) as CodeReviewDetail
     before = reader.messages.length
     await store.repo.write('src/app.ts', "export const app = 'v3'\n")
     const updated = await reader.waitFor(isStoreEvent('tree.updated'), { timeoutMs: 10_000, from: before })
@@ -117,7 +117,7 @@ describe('GET /api/events', () => {
     expect(event.sessionId).toBe(FIXTURE_SESSION_ID)
     expect(event.fingerprint).not.toBe(detail.tree.fingerprint)
     expect(event.durationMs).toBeGreaterThanOrEqual(0)
-    const after = (await (await fetch(`${server.url}${sessionUrl}`)).json()) as SessionDetail
+    const after = (await (await fetch(`${server.url}${sessionUrl}`)).json()) as CodeReviewDetail
     expect(after.tree.fingerprint).toBe(event.fingerprint)
     expect(after.tree.files.find((f) => f.path === 'src/app.ts')?.fingerprint).not.toBe(detail.tree.files.find((f) => f.path === 'src/app.ts')?.fingerprint)
 
@@ -127,7 +127,7 @@ describe('GET /api/events', () => {
     await store.repo.git(['commit', '-q', '-m', 'v3'])
     await new Promise((resolve) => setTimeout(resolve, 900))
     const headSha = (await store.repo.git(['rev-parse', 'HEAD'])).trim()
-    const committed = (await (await fetch(`${server.url}${sessionUrl}`)).json()) as SessionDetail
+    const committed = (await (await fetch(`${server.url}${sessionUrl}`)).json()) as CodeReviewDetail
     expect(committed.tree.headSha).toBe(headSha)
     // The tree fingerprint includes headSha, so the commit does emit; file fingerprints are unchanged.
     expect(committed.tree.files.find((f) => f.path === 'src/app.ts')?.fingerprint).toBe(after.tree.files.find((f) => f.path === 'src/app.ts')?.fingerprint)

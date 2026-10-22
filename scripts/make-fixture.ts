@@ -40,6 +40,7 @@ import {
 import { ensureMedia } from './fixtures/media.ts'
 import { writePrFreshSession, writePrMergedSession, writePrMixedSession, writePrNoCommentsSession } from './fixtures/pr-sessions.ts'
 import { writeActiveRunSession, writeAllVerdictsSession, writeApprovedSession, writeChangesSentSession, writeFailedRunSession, writeInProgressSession } from './fixtures/review-sessions.ts'
+import { writeTestRunSessions } from './fixtures/test-run-session.ts'
 import { buildCleanRepo, buildTrialRepo } from './fixtures/trial-app.ts'
 import { TRIAL_TITLE, writeReviewedSession, writeUnreviewedSession } from './fixtures/trial-sessions.ts'
 import { buildVarietyRepo } from './fixtures/variety-app.ts'
@@ -128,6 +129,10 @@ async function main(): Promise<void> {
   reports.push({ id: PR_NO_COMMENTS_SESSION_ID, title: TRIAL_TITLE, covers: 'PR #133 known, zero comments (the PR tab link only)', repo: trial, tree: prNoCommentsTree })
   const prMergedTree = await writePrMergedSession(trial, trialOrigin)
   reports.push({ id: PR_MERGED_SESSION_ID, title: TRIAL_TITLE, covers: 'merged PR #127; three comments addressed in the approved send', repo: trial, tree: prMergedTree })
+
+  for (const run of await writeTestRunSessions(reposDir)) {
+    reports.push({ id: run.id, title: run.title, covers: run.covers, repo: run.repo, tree: null })
+  }
 
   printSummary(reports)
 }

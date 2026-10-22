@@ -9,11 +9,7 @@ export const TicketSchema = z.object({
 })
 export type Ticket = z.infer<typeof TicketSchema>
 
-/**
- * `manifest.json`: written by `ai-review init` only. Everything else about a session (the diff,
- * the artifacts, the PR description) is read live from the repo working tree and the session folder.
- */
-export const ManifestSchema = z.object({
+const baseFields = {
   schemaVersion: z.literal(SCHEMA_VERSION),
   id: z.string().regex(SESSION_ID_RE),
   title: z.string().min(1),
@@ -25,6 +21,17 @@ export const ManifestSchema = z.object({
     cliVersion: z.string().nullable(),
     entrypoint: z.string().nullable(),
   }),
+  tickets: z.array(TicketSchema),
+}
+
+/**
+ * `manifest.json` of a code review: written by `ai-review init` only. Everything else about a session (the diff,
+ * the artifacts, the PR description) is read live from the repo working tree and the session folder.
+ * `kind` is absent from manifests written before test runs existed.
+ */
+export const CodeReviewManifestSchema = z.object({
+  ...baseFields,
+  kind: z.literal('code-review').optional(),
   repo: z.object({
     /** Absolute path of the repository top level (posix separators). */
     path: z.string().min(1),
@@ -33,6 +40,38 @@ export const ManifestSchema = z.object({
     /** A ref name (e.g. `origin/main`); the base SHA is `git merge-base <baseRef> HEAD`, computed live. */
     baseRef: z.string().min(1),
   }),
-  tickets: z.array(TicketSchema),
 })
+export type CodeReviewManifest = z.infer<typeof CodeReviewManifestSchema>
+
+/** `manifest.json` of a test run: the content is read live from `run.path` (`<run>/test-run.json` and the files it names). */
+export const TestRunManifestSchema = z.object({
+  ...baseFields,
+  kind: z.literal('test-run'),
+  run: z.object({
+    /** Absolute path of the run folder (posix separators), inside `repo`. */
+    path: z.string().min(1),
+    /** Absolute path of the checkout (repository top level) the run belongs to; where the agent runs. */
+    repo: z.string().min(1),
+    feature: z.string().nullable(),
+    area: z.string().nullable(),
+  }),
+})
+export type TestRunManifest = z.infer<typeof TestRunManifestSchema>
+
+export const ManifestSchema = z.union([CodeReviewManifestSchema, TestRunManifestSchema])
 export type Manifest = z.infer<typeof ManifestSchema>
+
+export type ManifestKind = 'code-review' | 'test-run'
+
+export function isTestRun(manifest: Manifest): manifest is TestRunManifest {
+  return manifest.kind === 'test-run'
+}
+
+export function manifestKind(manifest: Manifest): ManifestKind {
+  return manifest.kind ?? 'code-review'
+}
+
+/** The directory the agent works in: the repo of a code review, the checkout of a test run. */
+export function agentCwd(manifest: Manifest): string {
+  return isTestRun(manifest) ? manifest.run.repo : manifest.repo.path
+}

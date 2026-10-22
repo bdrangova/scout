@@ -1,5 +1,5 @@
 import type { EvidenceItem, ExtraItem, SpecItem } from '../schemas/artifacts.ts'
-import type { Manifest } from '../schemas/manifest.ts'
+import type { CodeReviewManifest, TestRunManifest } from '../schemas/manifest.ts'
 import type { PrComment, PrComments, PrIdentity, PrResolution } from '../schemas/pr-comments.ts'
 import type { Resolution, Resolutions } from '../schemas/resolutions.ts'
 import type { Comment, Review } from '../schemas/review.ts'
@@ -85,7 +85,7 @@ export function makeTree(overrides: Partial<WorkingTree> = {}): WorkingTree {
   }
 }
 
-export function makeManifest(overrides: Partial<Manifest> = {}): Manifest {
+export function makeManifest(overrides: Partial<CodeReviewManifest> = {}): CodeReviewManifest {
   return {
     schemaVersion: SCHEMA_VERSION,
     id: SESSION_ID,
@@ -100,6 +100,21 @@ export function makeManifest(overrides: Partial<Manifest> = {}): Manifest {
       baseRef: 'origin/main',
     },
     tickets: [{ key: 'QI-15472', url: 'https://acme.atlassian.net/browse/QI-15472' }],
+    ...overrides,
+  }
+}
+
+export function makeTestRunManifest(overrides: Partial<TestRunManifest> = {}): TestRunManifest {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    kind: 'test-run',
+    id: SESSION_ID,
+    title: 'Demo feature test run',
+    createdAt: T0,
+    updatedAt: T0,
+    agent: { type: 'claude-code', sessionId: 'agent-session-1', cliVersion: '2.1.241', entrypoint: 'cli' },
+    run: { path: '/Users/me/Projects/app/plans/f/a/test-runs/run-1', repo: '/Users/me/Projects/app', feature: 'f', area: 'a' },
+    tickets: [],
     ...overrides,
   }
 }

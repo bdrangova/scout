@@ -1,12 +1,12 @@
 import { effectiveVerdict, type TreeFile, type Verdict } from '@review-dash/shared'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { AnimatePresence, motion, useDragControls, useMotionValue, useTransform, type PanInfo } from 'motion/react'
-import { useState, type PointerEvent } from 'react'
-import { Button } from '@/components/ui/button'
+import { AnimatePresence } from 'motion/react'
 import { fileTypeClass, fileTypeOf } from '@/lib/file-type'
 import type { ScopeReview } from '@/lib/scope'
 import { cn } from '@/lib/utils'
 import { useReview } from '@/state/review-context'
+import { PEEK_COUNT, PEEK_INSET, PEEK_RISE, useExitDirection, type ExitDirection } from './deck-motion'
+import { NavButton, SwipeFrame } from './DeckParts'
 import { FileReviewCard } from './FileReviewCard'
 import { useVerdictAction } from './useVerdictAction'
 
@@ -19,42 +19,6 @@ export interface CardDeckProps {
   commentFocusToken?: number
   /** Set when `files` are one scope's files: verdicts are read from and pinned to the full diff. */
   scope?: ScopeReview
-}
-
-type ExitDirection = 'left' | 'right' | 'up' | 'none'
-
-/** A swipe commits past this horizontal offset (px) or velocity (px/s). */
-const SWIPE_OFFSET = 120
-const SWIPE_VELOCITY = 500
-
-/** The stacked layers behind the card: each one steps in by this much and up by this much (px). */
-const PEEK_INSET = 16
-const PEEK_RISE = 13
-/** How many of the next files show as layers behind the card. */
-const PEEK_COUNT = 2
-
-const cardVariants = {
-  enter: { y: 10, scale: 0.985 },
-  center: { y: 0, scale: 1, transition: { duration: 0.18 } },
-  exit: (direction: ExitDirection) => {
-    switch (direction) {
-      case 'right':
-        return { x: 720, rotate: 14, opacity: 0, transition: { duration: 0.28 } }
-      case 'left':
-        return { x: -720, rotate: -14, opacity: 0, transition: { duration: 0.28 } }
-      case 'up':
-        return { y: -48, opacity: 0, transition: { duration: 0.2 } }
-      default:
-        return { opacity: 0, transition: { duration: 0.12 } }
-    }
-  },
-}
-
-interface Tracked {
-  path: string
-  verdict: Verdict
-  openComments: number
-  exitDirection: ExitDirection
 }
 
 export function CardDeck({ files, currentPath, sessionId, onNavigate, commentFocusToken = 0, scope }: CardDeckProps) {
@@ -79,20 +43,7 @@ export function CardDeck({ files, currentPath, sessionId, onNavigate, commentFoc
     }
   }
 
-  // The fly-off direction is derived from what happened to the card that just left: approved
-  // flies right, rejected flies left, a comment-only advance lifts off, anything else fades.
-  const [tracked, setTracked] = useState<Tracked>(() => ({ path: currentPath, ...signatureOf(currentPath), exitDirection: 'none' }))
-  const signature = signatureOf(currentPath)
-  if (tracked.path !== currentPath) {
-    const previous = signatureOf(tracked.path)
-    let exitDirection: ExitDirection = 'none'
-    if (previous.verdict === 'approved' && tracked.verdict !== 'approved') exitDirection = 'right'
-    else if (previous.verdict === 'rejected' && tracked.verdict !== 'rejected') exitDirection = 'left'
-    else if (previous.openComments > tracked.openComments) exitDirection = 'up'
-    setTracked({ path: currentPath, ...signature, exitDirection })
-  } else if (tracked.verdict !== signature.verdict || tracked.openComments !== signature.openComments) {
-    setTracked({ ...tracked, ...signature })
-  }
+  const exitDirection = useExitDirection(currentPath, signatureOf)
 
   function commit(direction: 'left' | 'right') {
     if (!current) return
@@ -129,14 +80,14 @@ export function CardDeck({ files, currentPath, sessionId, onNavigate, commentFoc
               />
             )
           })}
-          <AnimatePresence initial={false} custom={tracked.exitDirection}>
+          <AnimatePresence initial={false} custom={exitDirection}>
             {current && (
               <SwipeCard
                 key={current.path}
                 file={current}
                 sessionId={sessionId}
                 position={{ index, total: files.length }}
-                exitDirection={tracked.exitDirection}
+                exitDirection={exitDirection}
                 commentFocusToken={commentFocusToken}
                 scope={scope}
                 onCommit={commit}
@@ -156,29 +107,6 @@ export function CardDeck({ files, currentPath, sessionId, onNavigate, commentFoc
   )
 }
 
-interface NavButtonProps {
-  label: string
-  disabled: boolean
-  onClick: () => void
-  children: React.ReactNode
-}
-
-/** The round raised arrows beside the deck (hidden on narrow screens, where ←/→ and swiping remain). */
-function NavButton({ label, disabled, onClick, children }: NavButtonProps) {
-  return (
-    <Button
-      size="icon"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="hidden size-[46px] shrink-0 self-center rounded-full hover:bg-yellow hover:text-on-yellow md:inline-flex [&_svg]:size-5"
-    >
-      {children}
-    </Button>
-  )
-}
-
 interface SwipeCardProps {
   file: TreeFile
   sessionId: string
@@ -189,49 +117,21 @@ interface SwipeCardProps {
   onCommit: (direction: 'left' | 'right') => void
 }
 
-/** Owns its own motion values so an exiting card never shares them with the next one. */
+/** The swipe frame around one file card; a drag from the header commits a verdict. */
 function SwipeCard({ file, sessionId, position, exitDirection, commentFocusToken, scope, onCommit }: SwipeCardProps) {
-  const controls = useDragControls()
-  const x = useMotionValue(0)
-  const rotate = useTransform(x, [-320, 0, 320], [-9, 0, 9])
-  const opacity = useTransform(x, [-360, -140, 0, 140, 360], [0.35, 1, 1, 1, 0.35])
-
-  function startDrag(event: PointerEvent<HTMLDivElement>) {
-    // Buttons in the header (the layout toggle) keep working as buttons.
-    if (event.target instanceof Element && event.target.closest('button, a, input, textarea, select')) return
-    controls.start(event)
-  }
-
-  function handleDragEnd(_event: unknown, info: PanInfo) {
-    if (info.offset.x > SWIPE_OFFSET || info.velocity.x > SWIPE_VELOCITY) onCommit('right')
-    else if (info.offset.x < -SWIPE_OFFSET || info.velocity.x < -SWIPE_VELOCITY) onCommit('left')
-  }
-
   return (
-    <motion.div
-      className="absolute inset-0"
-      style={{ x, rotate, opacity }}
-      drag="x"
-      dragControls={controls}
-      dragListener={false}
-      dragSnapToOrigin
-      dragElastic={0.9}
-      onDragEnd={handleDragEnd}
-      custom={exitDirection}
-      variants={cardVariants}
-      initial="enter"
-      animate="center"
-      exit="exit"
-    >
-      <FileReviewCard
-        file={file}
-        sessionId={sessionId}
-        position={position}
-        commentFocusToken={commentFocusToken}
-        scope={scope}
-        onHeaderPointerDown={startDrag}
-        className="h-full"
-      />
-    </motion.div>
+    <SwipeFrame exitDirection={exitDirection} onCommit={onCommit}>
+      {(startDrag) => (
+        <FileReviewCard
+          file={file}
+          sessionId={sessionId}
+          position={position}
+          commentFocusToken={commentFocusToken}
+          scope={scope}
+          onHeaderPointerDown={startDrag}
+          className="h-full"
+        />
+      )}
+    </SwipeFrame>
   )
 }

@@ -1,10 +1,10 @@
 import type { Resolutions } from '../schemas/resolutions.ts'
 import type { Comment, Decision, Review } from '../schemas/review.ts'
 import type { SentPrReply } from '../schemas/pr-comments.ts'
-import type { SentSnapshot } from '../schemas/sent.ts'
+import type { SentSnapshot, TestRunSentSnapshot } from '../schemas/sent.ts'
 import type { WorkingTree } from '../schemas/tree.ts'
 import { SCHEMA_VERSION } from '../constants.ts'
-import { effectiveVerdict, mergeComments } from './status.ts'
+import { effectiveVerdict, isItemComment, mergeComments } from './status.ts'
 import type { CommentWithStatus } from './status.ts'
 
 /** `review/sent/<stem>.json|.md|.patch`: the ISO timestamp with `:` replaced by `-`. */
@@ -42,7 +42,7 @@ export function buildSentSnapshot(input: {
 
   const commented = new Set<string>()
   for (const comment of comments) {
-    if (comment.target.kind === 'file' && comment.target.ref !== null) commented.add(comment.target.ref)
+    if (isItemComment(comment.target.kind) && comment.target.ref !== null) commented.add(comment.target.ref)
   }
 
   const files: SentSnapshot['files'] = []
@@ -80,8 +80,52 @@ export function buildSentSnapshot(input: {
   }
 }
 
+/**
+ * The test-run counterpart of `buildSentSnapshot`: every scenario with its effective verdict (keyed by id in `review.files`),
+ * the open comments stamped with `sentAt = now`, and the counts. Pure; the server writes it to `review/sent/<stem>.json`
+ * and renders it with `renderTestRunSentMarkdown`.
+ */
+export function buildTestRunSentSnapshot(
+  review: Review,
+  scenarios: readonly Omit<TestRunSentSnapshot['scenarios'][number], 'verdict'>[],
+  decision: Decision,
+  resolutions: Resolutions | null,
+  now: string,
+  run: TestRunSentSnapshot['run'],
+): TestRunSentSnapshot {
+  const open = mergeComments(review, resolutions).filter((comment) => comment.status === 'open')
+  const comments = open.map((comment) => ({ ...plainComment(comment), sentAt: now }))
+  const commented = new Set<string>()
+  for (const comment of comments) {
+    if (isItemComment(comment.target.kind) && comment.target.ref !== null) commented.add(comment.target.ref)
+  }
+
+  const counts = { scenarios: 0, approved: 0, rejected: 0, commented: 0, unreviewed: 0, openComments: comments.length }
+  const sentScenarios: TestRunSentSnapshot['scenarios'] = scenarios.map((scenario) => {
+    const verdict = effectiveVerdict(review.files[scenario.id], { path: scenario.id, fingerprint: scenario.fingerprint })
+    counts.scenarios += 1
+    if (verdict === 'approved') counts.approved += 1
+    else if (verdict === 'rejected') counts.rejected += 1
+    else if (commented.has(scenario.id)) counts.commented += 1
+    else counts.unreviewed += 1
+    return { id: scenario.id, title: scenario.title, status: scenario.status, verdict, fingerprint: scenario.fingerprint }
+  })
+
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    kind: 'test-run',
+    sessionId: review.sessionId,
+    sentAt: now,
+    decision,
+    run,
+    scenarios: sentScenarios,
+    comments,
+    counts,
+  }
+}
+
 /** Marks a snapshot as sent on the live review: `sent`, `sentAt` on each included comment, the decision. */
-export function stampSent(review: Review, sent: SentSnapshot, now: string): Review {
+export function stampSent(review: Review, sent: SentSnapshot | TestRunSentSnapshot, now: string): Review {
   const included = new Set(sent.comments.map((comment) => comment.id))
   return {
     ...review,

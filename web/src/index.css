@@ -11,6 +11,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* The list pages reserve the scrollbar gutter so the Development and Test runs lists keep the same width whether or not they scroll. */
+html:has([data-page='session-list']) { scrollbar-gutter: stable; }
+
 /* ===== "fine border retro" tokens (design/retro/base-core.css) =====
    Light values live on :root, dark ones on `.dark` (set on <html> by ThemeProvider).
    The shadcn names (background, card, border, ...) are aliases of the design tokens so

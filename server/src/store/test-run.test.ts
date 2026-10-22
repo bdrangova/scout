@@ -1,0 +1,125 @@
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { TestRunIndexSchema } from '@review-dash/shared'
+import type { Scenario, TestRunIndex, TestRunManifest } from '@review-dash/shared'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { FIXTURE_T0, TEST_RUN_SESSION_ID, createFixtureStore } from '../testing/fixture-store.ts'
+import type { FixtureStore } from '../testing/fixture-store.ts'
+import { deriveRunDetail, normalizeRef, parseRunIndex, resolveRoots, scenarioFingerprint, servablePaths } from './test-run.ts'
+
+let store: FixtureStore
+let manifest: TestRunManifest
+let index: TestRunIndex
+beforeAll(async () => {
+  store = await createFixtureStore({ testRun: true })
+  manifest = store.testRun?.manifest ?? (() => { throw new Error('no test run') })()
+  const parsed = parseRunIndex(await fs.readFile(path.join(manifest.run.path, 'test-run.json'), 'utf8'))
+  if (!parsed.ok) throw new Error(parsed.error)
+  index = parsed.index
+})
+afterAll(() => store.cleanup())
+
+describe('normalizeRef', () => {
+  it('collapses empty and dot segments and rejects malformed refs', () => {
+    expect(normalizeRef('run:a//b/./c.png')).toBe('run:a/b/c.png')
+    expect(normalizeRef('run:../x')).toBeNull()
+    expect(normalizeRef('run:/x')).toBeNull()
+    expect(normalizeRef('run:.')).toBeNull()
+    expect(normalizeRef('nocolon')).toBeNull()
+  })
+})
+
+describe('parseRunIndex', () => {
+  it('warns about unsupported panels and dangling links without failing', async () => {
+    const broken = JSON.parse(await fs.readFile(path.join(manifest.run.path, 'test-run.json'), 'utf8')) as { scenarios: { links: { bugs: string[] } }[] }
+    const [first] = broken.scenarios
+    if (first) first.links.bugs = ['ghost']
+    const parsed = parseRunIndex(JSON.stringify(broken))
+    expect(parsed).toMatchObject({ ok: true })
+    if (parsed.ok) expect(parsed.warnings).toEqual(['overview[9]: unknown panel type "weird"', 'scenario s1-pass links bug ghost, which is not in the index'])
+  })
+
+  it('fails on invalid JSON and on an invalid index', () => {
+    expect(parseRunIndex('{')).toMatchObject({ ok: false, error: expect.stringMatching(/not valid JSON/) })
+    expect(parseRunIndex('{"schemaVersion":1}')).toMatchObject({ ok: false, error: expect.stringMatching(/invalid/) })
+  })
+})
+
+describe('resolveRoots', () => {
+  it('resolves every root against the run folder, realpath-ed', async () => {
+    const roots = await resolveRoots(manifest, index)
+    const plan = path.join(store.testRun?.repo ?? '', 'plans', 'f', 'a')
+    expect(roots).toEqual({ run: manifest.run.path, plan, bugs: path.join(plan, 'bugs') })
+  })
+
+  it('refuses a root outside the checkout and a run folder outside it', async () => {
+    await expect(resolveRoots(manifest, { roots: { run: '.', up: '../../../../../..' } })).rejects.toMatchObject({ status: 422 })
+    const outside = await fs.realpath(os.tmpdir())
+    const moved: TestRunManifest = { ...manifest, run: { ...manifest.run, repo: outside === manifest.run.repo ? '/' : path.join(manifest.run.path, 'scenarios') } }
+    await expect(resolveRoots(moved, { roots: { run: '.' } })).rejects.toMatchObject({ status: 422, message: expect.stringMatching(/not inside/) })
+    await expect(resolveRoots({ ...manifest, run: { ...manifest.run, path: path.join(manifest.run.repo, 'nope') } }, { roots: { run: '.' } })).rejects.toMatchObject({ status: 422 })
+  })
+
+  it('keeps a root whose folder does not exist yet', async () => {
+    const roots = await resolveRoots(manifest, { roots: { run: '.', later: '../later' } })
+    expect(roots['later']).toBe(path.join(path.dirname(manifest.run.path), 'later'))
+  })
+})
+
+describe('servablePaths', () => {
+  it('is exactly the refs the index names, including data, panels, logs, bugs and data setup', async () => {
+    const roots = await resolveRoots(manifest, index)
+    const withSetup = TestRunIndexSchema.parse({
+      ...index,
+      dataSetup: { steps: [], videos: [{ path: 'run:setup/v.mp4' }], screenshots: [{ path: 'run:setup/./s.png' }] },
+    })
+    expect([...servablePaths(withSetup, roots)].sort()).toEqual(
+      [
+        'bugs:x/screenshots/1.png',
+        'bugs:x/x.md',
+        'run:logs/run.log',
+        'run:scenarios/s1-pass/data/out.json',
+        'run:scenarios/s1-pass/screenshots/s1-01-a.png',
+        'run:scenarios/s1-pass/videos/test-1-pass-1.mp4',
+        'run:scenarios/s2-fail/data/out.json',
+        'run:scenarios/s2-fail/screenshots/s2-01-a.png',
+        'run:scenarios/s2-fail/videos/test-2-fail-1.mp4',
+        'run:scenarios/s3-gap/screenshots/s3-01-a.png',
+        'run:setup/s.png',
+        'run:setup/v.mp4',
+      ].sort(),
+    )
+  })
+
+  it('leaves out refs whose alias has no root', () => {
+    expect([...servablePaths(index, { run: '/x' })].every((ref) => ref.startsWith('run:'))).toBe(true)
+  })
+})
+
+describe('scenarioFingerprint', () => {
+  const scenario = (overrides: Partial<Scenario> = {}): Scenario => {
+    const base = index.scenarios[0]
+    if (!base) throw new Error('no scenario')
+    return { ...base, ...overrides }
+  }
+  const stats = (size: number) => new Map([['run:scenarios/s1-pass/screenshots/s1-01-a.png', { size }]])
+
+  it('depends on evidence sizes, step text and status, not on logs, captions or notes', () => {
+    const baseline = scenarioFingerprint(scenario(), stats(10))
+    expect(baseline).toMatch(/^[0-9a-f]{16}$/)
+    expect(scenarioFingerprint(scenario(), stats(10))).toBe(baseline)
+    expect(scenarioFingerprint(scenario(), stats(11))).not.toBe(baseline)
+    expect(scenarioFingerprint(scenario({ status: 'fail' }), stats(10))).not.toBe(baseline)
+    expect(scenarioFingerprint(scenario({ steps: [{ action: 'other' }] }), stats(10))).not.toBe(baseline)
+    expect(scenarioFingerprint(scenario({ logs: [], notes: 'changed' }), stats(10))).toBe(baseline)
+  })
+})
+
+describe('deriveRunDetail', () => {
+  it('derives the detail with the injected clock', async () => {
+    const detail = await deriveRunDetail(manifest, () => FIXTURE_T0)
+    expect(detail).toMatchObject({ kind: 'test-run', computedAt: FIXTURE_T0, missing: [] })
+    expect(detail.manifest.id).toBe(TEST_RUN_SESSION_ID)
+  })
+})

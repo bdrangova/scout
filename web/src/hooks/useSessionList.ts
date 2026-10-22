@@ -1,9 +1,10 @@
-import type { ArchivedSession, SessionListItem, SessionSummary } from '@review-dash/shared'
+import type { ArchivedSession, SessionListItem } from '@review-dash/shared'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { archiveErrorMessage, archiveSession, unarchiveSession } from '@/lib/archive'
 import { useArchivedSessions, useSessionList as useSessions } from '@/lib/hooks'
-import { byLastActivity, countByFilter, matchesFilter, type StatusFilter } from '@/lib/session-status'
+import type { SessionKind } from '@/lib/paths'
+import { byLastActivity, countByFilter, matchesFilter, type LiveSummary, type StatusFilter } from '@/lib/session-status'
 import { useHiddenIds } from '@/lib/useHiddenIds'
 import { useStoreEvents } from '@/lib/useStoreEvents'
 
@@ -26,19 +27,19 @@ export interface SessionListView {
   archivedError: Error | null
   reload: () => void
   reloadArchived: () => void
-  archive: (session: SessionSummary) => Promise<void>
+  archive: (session: LiveSummary) => Promise<void>
   unarchive: (session: ArchivedSession) => Promise<void>
   /** Hides an archived row at once (after a permanent delete). */
   hideArchived: (id: string) => void
 }
 
 /**
- * Everything the Sessions page shows: both fetches, the status filter, the rows hidden by an
+ * Everything the Sessions page shows for one kind (code reviews or test runs): both fetches, the status filter, the rows hidden by an
  * archive/unarchive/delete made here, and the debounced refetch that follows any store event.
  */
-export function useSessionList(): SessionListView {
-  const live = useSessions()
-  const archivedList = useArchivedSessions()
+export function useSessionList(kind: SessionKind = 'code-review'): SessionListView {
+  const live = useSessions(kind)
+  const archivedList = useArchivedSessions(kind)
   const [liveFilter, setLiveFilter] = useState<StatusFilter>('all')
   const [archivedView, setArchivedView] = useState(false)
   const filter: StatusFilter = archivedView ? 'archived' : liveFilter
@@ -75,6 +76,7 @@ export function useSessionList(): SessionListView {
     'run.updated': scheduleReload,
     'tree.updated': scheduleReload,
     'resolutions.updated': scheduleReload,
+    'testrun.updated': scheduleReload,
   })
   useEffect(
     () => () => {
@@ -83,7 +85,7 @@ export function useSessionList(): SessionListView {
     [],
   )
 
-  async function archive(session: SessionSummary) {
+  async function archive(session: LiveSummary) {
     try {
       await archiveSession(session.id)
       hideLive(session.id)

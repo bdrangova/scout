@@ -2,15 +2,18 @@ import {
   emptyReview,
   mergeComments,
   type Comment,
+  type CodeReviewDetail,
   type CommitList,
   type CommentTarget,
   type Commit,
   type Resolutions,
   type Review,
   type ReviewResponse,
-  type SessionDetail,
   type SessionListItem,
   type SessionSummary,
+  type TestRunDetail,
+  type TestRunIndex,
+  type TestRunSummary,
   type TreeFile,
   type WorkingTree,
 } from '@review-dash/shared'
@@ -22,6 +25,7 @@ import {
   makeExtra,
   makeManifest,
   makeSpec,
+  makeTestRunManifest,
   makeTree,
   makeTreeFile,
 } from '@review-dash/shared/testing/fixtures'
@@ -73,7 +77,7 @@ export const manifestFixture = makeManifest({
   tickets: [{ key: 'QI-15472', url: 'https://example.atlassian.net/browse/QI-15472' }],
 })
 
-export const sessionDetailFixture: SessionDetail = {
+export const sessionDetailFixture: CodeReviewDetail = {
   manifest: manifestFixture,
   tree: treeFixture,
   evidence: [
@@ -89,7 +93,7 @@ export const sessionDetailFixture: SessionDetail = {
 }
 
 /** The same detail with `path` recomputed on disk (a new fingerprint) and the tree fingerprint moved along. */
-export function withChangedFile(detail: SessionDetail, path: string, label = 'v2'): SessionDetail {
+export function withChangedFile(detail: CodeReviewDetail, path: string, label = 'v2'): CodeReviewDetail {
   const files = detail.tree.files.map((file) => (file.path === path ? { ...file, fingerprint: fp(`${path}:${label}`) } : file))
   const fingerprint = fp(files.map((file) => file.fingerprint).join('|'))
   return { ...detail, tree: { ...detail.tree, files, fingerprint, computedAt: '2026-09-27T10:00:00.000Z' } }
@@ -164,6 +168,103 @@ export const sessionListFixture: SessionListItem[] = [
   }),
   { id: '20260920-0800-broken-manifest-0000', error: 'repository not found: /Users/bojana/Projects/gone is not a git checkout' },
 ]
+
+const emptyEvidence = { videos: [], screenshots: [], data: [] }
+
+/** The test run of `fixtures/test-runs/demo/.../run-1`: three scenarios (pass, fail with bug x, gap), the gaps and logs pages, one bug and one log. */
+export const testRunIndexFixture: TestRunIndex = {
+  schemaVersion: 1,
+  runId: 'run-1',
+  title: 'Demo feature test run',
+  feature: 'f',
+  area: 'a',
+  createdAt: '2026-10-21T10:00:00.000Z',
+  updatedAt: '2026-10-21T11:00:00.000Z',
+  publishedBy: { plan: { at: '2026-10-21T09:00:00.000Z' }, run: { at: '2026-10-21T11:00:00.000Z' } },
+  roots: { run: '.', plan: '../..', bugs: '../../bugs' },
+  pages: ['gaps', 'logs'],
+  overview: [{ type: 'markdown', title: 'Summary', markdown: 'One scenario passed, one failed (bug x) and one could not be tested.' }],
+  scenarios: [
+    {
+      id: 's1-pass',
+      title: 'Happy path',
+      status: 'pass',
+      order: 0,
+      layers: [{ name: 'e2e', status: 'pass' }],
+      steps: [{ label: '1', action: 'Open the feature', expected: 'Page loads', observed: 'Page loads', result: 'pass' }],
+      evidence: {
+        videos: [{ path: 'run:scenarios/s1-pass/videos/test-1-pass-1.mp4', caption: 'Full run', atSec: 0 }],
+        screenshots: [{ path: 'run:scenarios/s1-pass/screenshots/s1-01-a.png', caption: 'Rows listed' }],
+        data: [{ path: 'run:scenarios/s1-pass/data/out.json', caption: 'Output' }],
+      },
+      logs: [{ path: 'run:logs/run.log', from: 1, to: 4, label: 'startup' }],
+      links: { gaps: [], bugs: [] },
+    },
+    {
+      id: 's2-fail',
+      title: 'Empty result',
+      status: 'fail',
+      order: 1,
+      layers: [{ name: 'e2e', status: 'fail', note: 'error banner' }],
+      stepsMarkdown: '1. Filter to a value with no matches.\n2. Expect an empty state.',
+      evidence: { ...emptyEvidence, screenshots: [{ path: 'run:scenarios/s2-fail/screenshots/s2-01-a.png', caption: 'Error banner' }] },
+      logs: [{ path: 'run:logs/run.log', from: 5, to: 9, label: 'error' }],
+      links: { gaps: [], bugs: ['x'] },
+      notes: 'See bug x.',
+    },
+    {
+      id: 's3-gap',
+      title: 'Export',
+      status: 'gap',
+      order: 2,
+      steps: [{ label: '1', action: 'Export the data', expected: 'A file downloads' }],
+      evidence: { ...emptyEvidence, screenshots: [{ path: 'run:scenarios/s3-gap/screenshots/s3-01-a.png', caption: 'Export button' }] },
+      logs: [],
+      links: { gaps: ['g1'], bugs: [] },
+    },
+  ],
+  gaps: [{ id: 'g1', title: 'Export cannot be exercised here', status: 'open', scenarios: ['s3-gap'], markdown: 'No download target in this environment.' }],
+  bugs: [{ slug: 'x', title: 'Empty result shows an error', path: 'bugs:x/x.md', jira: 'DEMO-1', screenshots: ['bugs:x/screenshots/1.png'], scenarios: ['s2-fail'] }],
+  logs: [{ path: 'run:logs/run.log', label: 'Run log' }],
+}
+
+export const testRunManifestFixture = makeTestRunManifest({
+  title: 'Demo feature test run',
+  run: { path: '/Users/bojana/Projects/qbdvision/plans/f/a/test-runs/run-1', repo: '/Users/bojana/Projects/qbdvision', feature: 'f', area: 'a' },
+  tickets: [{ key: 'QI-15472', url: 'https://example.atlassian.net/browse/QI-15472' }],
+})
+
+export const testRunDetailFixture: TestRunDetail = {
+  kind: 'test-run',
+  manifest: testRunManifestFixture,
+  index: testRunIndexFixture,
+  warnings: [],
+  scenarios: testRunIndexFixture.scenarios.map((scenario) => ({ ...scenario, fingerprint: fp(`scenario:${scenario.id}:v1`) })),
+  missing: [],
+  computedAt: '2026-10-21T11:00:00.000Z',
+}
+
+/** The same test run with a scenario's evidence changed on disk (a new fingerprint). */
+export function withChangedScenario(detail: TestRunDetail, id: string, label = 'v2'): TestRunDetail {
+  return { ...detail, scenarios: detail.scenarios.map((scenario) => (scenario.id === id ? { ...scenario, fingerprint: fp(`scenario:${id}:${label}`) } : scenario)) }
+}
+
+export function testRunSummary(overrides: Partial<TestRunSummary> & Pick<TestRunSummary, 'id' | 'title'>): TestRunSummary {
+  return {
+    kind: 'test-run',
+    createdAt: '2026-10-21T10:00:00.000Z',
+    updatedAt: '2026-10-21T11:00:00.000Z',
+    run: { path: '/Users/bojana/Projects/qbdvision/plans/f/a/test-runs/run-1', feature: 'f', area: 'a' },
+    tickets: [],
+    status: 'unreviewed',
+    counts: { scenarios: 3, pass: 1, fail: 1, gap: 1, na: 0, blocked: 0, uncertain: 0, planned: 0 },
+    reviewed: 0,
+    total: 3,
+    openComments: 0,
+    activeRunId: null,
+    ...overrides,
+  }
+}
 
 export const PATCH_FIXTURE = `diff --git a/src/main/client/hooks/useTrial.ts b/src/main/client/hooks/useTrial.ts
 index 1111111..2222222 100644

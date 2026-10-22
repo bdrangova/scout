@@ -2,8 +2,10 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
+import { isTestRunSent, renderTestRunSentMarkdown, SentSnapshotSchema, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type TestRunIndex, type TestRunSentSnapshot } from '@review-dash/shared'
+import { dashboardOrigin, readConfig } from '../config.ts'
 import { listSentStems, SENT_DIR } from '../sessions.ts'
-import { manifestExists, resolveHome, sessionDir } from '../store.ts'
+import { manifestExists, readManifest, resolveHome, sessionDir } from '../store.ts'
 
 export type FeedbackFormat = 'markdown' | 'json'
 
@@ -14,15 +16,59 @@ export interface Feedback {
   content: string
 }
 
-/** The most recent `review/sent/<stem>.<md|json>`; throws when nothing was sent yet. */
+async function readIfExists(file: string): Promise<string | null> {
+  try {
+    return await readFile(file, 'utf8')
+  } catch (error) {
+    if ((error as { code?: string }).code === 'ENOENT') return null
+    throw error
+  }
+}
+
+/** Bug and log names for the renderer, from `<run>/test-run.json`; empty when the index is missing or invalid. */
+async function readIndexNames(runPath: string): Promise<Pick<TestRunIndex, 'bugs' | 'logs'>> {
+  const raw = await readIfExists(path.join(runPath, TEST_RUN_INDEX_FILE))
+  if (raw === null) return {}
+  try {
+    const parsed = TestRunIndexSchema.safeParse(JSON.parse(raw))
+    return parsed.success ? { bugs: parsed.data.bugs, logs: parsed.data.logs } : {}
+  } catch {
+    return {}
+  }
+}
+
+/** Renders a test-run snapshot the way the dashboard does when it wrote no `.md` next to it. */
+async function renderTestRunFeedback(options: { home: string; id: string; snapshot: TestRunSentSnapshot }): Promise<string> {
+  const manifest = await readManifest(sessionDir(options.home, options.id))
+  const runPath = options.snapshot.run.path
+  return renderTestRunSentMarkdown(options.snapshot, {
+    title: manifest.title,
+    dashboardUrl: dashboardOrigin(await readConfig(options.home)),
+    index: await readIndexNames(runPath),
+  })
+}
+
+/**
+ * The most recent `review/sent/<stem>.<md|json>`; throws when nothing was sent yet. The `.md` on disk is preferred; a test-run
+ * snapshot without one is rendered from its `.json` (both snapshot shapes are read).
+ */
 export async function readLatestFeedback(options: { home: string; id: string; format: FeedbackFormat }): Promise<Feedback> {
   const dir = sessionDir(options.home, options.id)
   if (!(await manifestExists(dir))) throw new Error(`session ${options.id} not found under ${options.home} (no manifest.json)`)
   const stems = await listSentStems(dir)
   const stem = stems[stems.length - 1]
   if (stem === undefined) throw new Error(`no feedback sent yet for session ${options.id} (nothing under ${path.join(dir, SENT_DIR)})`)
-  const file = path.join(dir, SENT_DIR, `${stem}.${options.format === 'json' ? 'json' : 'md'}`)
-  return { stem, file, content: await readFile(file, 'utf8') }
+  const jsonFile = path.join(dir, SENT_DIR, `${stem}.json`)
+  const file = options.format === 'json' ? jsonFile : path.join(dir, SENT_DIR, `${stem}.md`)
+  const content = await readIfExists(file)
+  if (content !== null) return { stem, file, content }
+  if (options.format === 'markdown') {
+    const snapshot = SentSnapshotSchema.safeParse(JSON.parse(await readFile(jsonFile, 'utf8')))
+    if (snapshot.success && isTestRunSent(snapshot.data)) {
+      return { stem, file, content: await renderTestRunFeedback({ home: options.home, id: options.id, snapshot: snapshot.data }) }
+    }
+  }
+  throw new Error(`${file} not found`)
 }
 
 interface FeedbackFlags {

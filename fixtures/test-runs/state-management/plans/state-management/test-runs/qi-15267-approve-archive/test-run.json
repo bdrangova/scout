@@ -1,0 +1,759 @@
+{
+  "schemaVersion": 1,
+  "runId": "qi-15267-approve-archive",
+  "title": "QI-15267 Approve for Archive end to end",
+  "feature": "state-management",
+  "area": "approve-for-archive",
+  "createdAt": "2026-10-12T09:00:00.000Z",
+  "updatedAt": "2026-10-12T17:30:00.000Z",
+  "publishedBy": {
+    "plan": {
+      "at": "2026-10-12T08:30:00.000Z"
+    },
+    "run": {
+      "at": "2026-10-12T17:30:00.000Z"
+    }
+  },
+  "roots": {
+    "run": ".",
+    "plan": "../..",
+    "bugs": "../../bugs"
+  },
+  "pages": [
+    "gaps",
+    "data-setup",
+    "logs"
+  ],
+  "overview": [
+    {
+      "type": "stats",
+      "title": "Results",
+      "span": 2,
+      "items": [
+        {
+          "label": "Pass",
+          "value": 2,
+          "tone": "good"
+        },
+        {
+          "label": "Fail",
+          "value": 2,
+          "tone": "bad"
+        },
+        {
+          "label": "Gap",
+          "value": 1,
+          "tone": "warn"
+        },
+        {
+          "label": "Blocked",
+          "value": 1,
+          "tone": "neutral"
+        },
+        {
+          "label": "Bugs",
+          "value": 3,
+          "tone": "bad",
+          "hint": "2 pre-existing"
+        }
+      ]
+    },
+    {
+      "type": "markdown",
+      "title": "Summary",
+      "markdown": "Scenarios S1-S12 ran on 2026-10-12 against Archivers R US with flag-OFF comparisons where a result looked odd.\n\n- **No regression** in the new approve pipeline: S8 and the stale label are pre-existing or cosmetic.\n- **One parity gap:** an IQA that is itself Proposed for Archive loses the legacy v1.1 version (S9b).\n- **S9** first looked like a regression, a false alarm from forced link data; the clean rerun passes.\n- DB restored to `pristine`, flag back ON."
+    },
+    {
+      "type": "table",
+      "title": "By layer",
+      "columns": [
+        "Layer",
+        "Pass",
+        "Fail",
+        "Gap / blocked"
+      ],
+      "rows": [
+        [
+          "UI",
+          4,
+          2,
+          2
+        ],
+        [
+          "DB",
+          3,
+          1,
+          0
+        ],
+        [
+          "API",
+          1,
+          0,
+          0
+        ],
+        [
+          "Email",
+          1,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "type": "key-value",
+      "title": "Environment",
+      "items": [
+        {
+          "key": "Company",
+          "value": "Archivers R US (client_local_ArchiversRUS)"
+        },
+        {
+          "key": "Stack",
+          "value": "qbdvision dev, Node 22, backend :3000, Vite :8080"
+        },
+        {
+          "key": "Flags ON",
+          "value": "ApproveForArchive, ProposeForArchive, Reject, Withdraw"
+        },
+        {
+          "key": "Flags OFF",
+          "value": "stateManagementService, ProposeForApproval"
+        },
+        {
+          "key": "Users",
+          "value": "Ryan 1349 (proposer), Yash 1350, Kons 1351, Stan 1352"
+        }
+      ]
+    },
+    {
+      "type": "links",
+      "title": "Documents",
+      "items": [
+        {
+          "label": "Test plan",
+          "ref": "plan:test-plan.md"
+        },
+        {
+          "label": "Steps",
+          "ref": "run:steps.md"
+        },
+        {
+          "label": "Data setup plan",
+          "ref": "run:data-setup/data-setup-plan.md"
+        },
+        {
+          "label": "Failing scenario S8",
+          "scenario": "s8-reject-then-approve"
+        },
+        {
+          "label": "Bug: approve after reject",
+          "ref": "bugs:approve-for-archive-approve-after-reject-accepted/approve-for-archive-approve-after-reject-accepted.md"
+        },
+        {
+          "label": "Jira QI-15267",
+          "url": "https://example.atlassian.net/browse/QI-15267"
+        }
+      ]
+    },
+    {
+      "type": "scenario-list",
+      "title": "Needs attention",
+      "statuses": [
+        "fail",
+        "gap",
+        "blocked"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "s1-uo-approve",
+      "title": "S1 Approve a Unit Operation archive as the single approver",
+      "status": "pass",
+      "order": 0,
+      "layers": [
+        {
+          "name": "UI",
+          "status": "pass"
+        },
+        {
+          "name": "DB",
+          "status": "pass",
+          "note": "new version 1.1, 1 response"
+        },
+        {
+          "name": "Email",
+          "status": "pass",
+          "note": "tap log only"
+        }
+      ],
+      "steps": [
+        {
+          "label": "1",
+          "action": "As Yash, open UO-1 (Proposed for Archive) and choose Approve / Reject, then Approve",
+          "expected": "E-signature dialog with email and password",
+          "observed": "Dialog shown with the email field",
+          "result": "pass"
+        },
+        {
+          "label": "2",
+          "action": "Sign and confirm",
+          "expected": "UO Archived (v1.1), Step Archived (Cascaded)",
+          "observed": "UO Archived, Step \"Archived (Cascaded)\", 1 new response",
+          "result": "pass"
+        },
+        {
+          "label": "3",
+          "action": "Open the Process Explorer",
+          "expected": "UO-1 gone from the tree",
+          "observed": "UO-1 no longer listed",
+          "result": "pass"
+        }
+      ],
+      "evidence": {
+        "videos": [
+          {
+            "path": "run:scenarios/s1-uo-approve/videos/batch-A-uo-approve.mp4",
+            "caption": "Batch A, first 8 s of the approval",
+            "layer": "UI",
+            "atSec": 0
+          }
+        ],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s1-uo-approve/screenshots/s1-01-esign-dialog.jpg",
+            "caption": "E-signature dialog",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s1-uo-approve/screenshots/s1-02-after-approve.jpg",
+            "caption": "After approval",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s1-uo-approve/screenshots/s1-03-process-explorer-active.jpg",
+            "caption": "Process Explorer",
+            "layer": "UI"
+          }
+        ],
+        "data": [
+          {
+            "path": "run:scenarios/s1-uo-approve/data/state-a-s1.txt",
+            "caption": "State dump after S1"
+          }
+        ]
+      },
+      "logs": [
+        {
+          "path": "run:logs/backend-rich-approve.log",
+          "from": 1,
+          "to": 30,
+          "label": "backend console during the approve"
+        }
+      ],
+      "links": {
+        "gaps": [],
+        "bugs": [
+          "approve-for-archive-stale-latest-label"
+        ]
+      },
+      "notes": "The extra open archive request and the \"Proposed for Archive\" transition on the new version are identical with the flag OFF."
+    },
+    {
+      "id": "s3-permission",
+      "title": "S3 Approve as a user without the approver permission",
+      "status": "pass",
+      "order": 1,
+      "layers": [
+        {
+          "name": "UI",
+          "status": "pass"
+        },
+        {
+          "name": "API",
+          "status": "pass",
+          "note": "websocket replay"
+        }
+      ],
+      "steps": [
+        {
+          "label": "1",
+          "action": "Demote Kons to a standard user and open UO-2",
+          "expected": "No approve action",
+          "observed": "403 \"Access denied.\", no Approve button",
+          "result": "pass"
+        },
+        {
+          "label": "2",
+          "action": "Replay the approve frame with a wrong, then the correct password",
+          "expected": "Refused",
+          "observed": "400 \"Invalid password\" first, then 403 \"Access denied.\"; DB unchanged",
+          "result": "pass"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s3-permission/screenshots/s3-01-uo2-as-demoted-kons.jpg",
+            "caption": "UO-2 as the demoted user",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s3-permission/screenshots/s3-stan-login-state.jpg",
+            "caption": "Stan login attempt",
+            "layer": "UI"
+          }
+        ],
+        "data": [
+          {
+            "path": "run:scenarios/s3-permission/data/s3-results.txt",
+            "caption": "Replay results"
+          }
+        ]
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g-stan-login"
+        ],
+        "bugs": []
+      },
+      "notes": "Parity with flag OFF. The ticket text \"Unauthorized action...\" is never produced on this path; both flows answer \"Access denied.\"."
+    },
+    {
+      "id": "s4-wrong-password",
+      "title": "S4 Wrong e-signature password",
+      "status": "gap",
+      "order": 2,
+      "layers": [
+        {
+          "name": "UI",
+          "status": "pass",
+          "note": "\"Password is incorrect.\""
+        },
+        {
+          "name": "PIN variant",
+          "status": "gap",
+          "note": "no user has a signing pin"
+        }
+      ],
+      "steps": [
+        {
+          "label": "1",
+          "action": "Open UO-1 as Yash and approve with a wrong password",
+          "expected": "Error, nothing saved",
+          "observed": "\"Password is incorrect.\", DB dump identical",
+          "result": "pass"
+        },
+        {
+          "label": "2",
+          "action": "Repeat with a signing pin",
+          "expected": "Pin error",
+          "observed": "Not run: no user has a pin",
+          "result": "gap"
+        }
+      ],
+      "evidence": {
+        "videos": [
+          {
+            "path": "run:scenarios/s4-wrong-password/videos/wrong-password.mp4",
+            "caption": "The e-signature dialog",
+            "layer": "UI"
+          }
+        ],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s4-wrong-password/screenshots/s4-01-uo1-before.jpg",
+            "caption": "Before",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s4-wrong-password/screenshots/s4-02-wrong-password-dialog.jpg",
+            "caption": "Dialog with the wrong password",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s4-wrong-password/screenshots/s4-03-wrong-password-result.jpg",
+            "caption": "Result",
+            "layer": "UI"
+          }
+        ],
+        "data": [
+          {
+            "path": "run:scenarios/s4-wrong-password/data/state-a-s4.txt",
+            "caption": "State dump, identical to before"
+          }
+        ]
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g-pin"
+        ],
+        "bugs": []
+      }
+    },
+    {
+      "id": "s8-reject-then-approve",
+      "title": "S8 Second approver approves after the first rejected",
+      "status": "fail",
+      "order": 3,
+      "layers": [
+        {
+          "name": "UI",
+          "status": "fail",
+          "note": "buttons still shown"
+        },
+        {
+          "name": "DB",
+          "status": "fail",
+          "note": "approval recorded"
+        },
+        {
+          "name": "Flag OFF",
+          "status": "fail",
+          "note": "identical, pre-existing"
+        }
+      ],
+      "steps": [
+        {
+          "label": "1",
+          "action": "Yash rejects UO-3 (approvers Yash and Kons)",
+          "expected": "Request closed",
+          "observed": "UO-3 and its Step are Rejected",
+          "result": "pass"
+        },
+        {
+          "label": "2",
+          "action": "Kons opens UO-3",
+          "expected": "No Approve / Reject",
+          "observed": "Approve is still enabled",
+          "result": "fail"
+        },
+        {
+          "label": "3",
+          "action": "Kons approves",
+          "expected": "Refused, nothing stored",
+          "observed": "Accepted; response approve=1 stored, state stays Rejected",
+          "result": "fail"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s8-reject-then-approve/screenshots/s8-01-yash-reject-dialog.jpg",
+            "caption": "Yash rejects",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s8-reject-then-approve/screenshots/s8-03-kons-sees-rejected-uo3.jpg",
+            "caption": "Kons sees Rejected but can approve",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s8-reject-then-approve/screenshots/s8-04-kons-approve-after-reject.jpg",
+            "caption": "Approval accepted",
+            "layer": "UI"
+          }
+        ],
+        "data": [
+          {
+            "path": "run:scenarios/s8-reject-then-approve/data/state-c-s8-kons.txt",
+            "caption": "State after Kons approves"
+          }
+        ]
+      },
+      "logs": [],
+      "links": {
+        "gaps": [],
+        "bugs": [
+          "approve-for-archive-approve-after-reject-accepted"
+        ]
+      },
+      "notes": "Known bug re-confirmed; same with the flag OFF, so not a regression."
+    },
+    {
+      "id": "s9b-iqa-proposed",
+      "title": "S9b IQA Proposed for Archive when its FQA is approved",
+      "status": "fail",
+      "order": 4,
+      "layers": [
+        {
+          "name": "Flag ON",
+          "status": "fail",
+          "note": "IQA untouched, no 1.1"
+        },
+        {
+          "name": "Flag OFF",
+          "status": "pass",
+          "note": "legacy adds v1.1"
+        }
+      ],
+      "steps": [
+        {
+          "label": "1",
+          "action": "Ryan proposes IQA-19, then FQA-21, for archive; Yash approves the FQA",
+          "expected": "IQA-19 unlinked and re-versioned as in the legacy flow",
+          "observed": "Flag ON: FQA-21 Archived, IQA-19 untouched (v83), Approve enabled. Flag OFF: IQA-19 gets v1.1",
+          "result": "fail"
+        },
+        {
+          "label": "2",
+          "action": "Yash approves IQA-19 himself",
+          "expected": "IQA-19 Archived",
+          "observed": "Archived (v95), link rows NULL",
+          "result": "pass"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s9b-iqa-proposed/screenshots/on-1-iqa19-before.jpg",
+            "caption": "Flag ON, before",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s9b-iqa-proposed/screenshots/on-2-iqa19-after-fqa-approve.jpg",
+            "caption": "Flag ON, after the FQA approval",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s9b-iqa-proposed/screenshots/off-2b-iqa19-v1.1-selected.jpg",
+            "caption": "Flag OFF, v1.1 selected",
+            "layer": "UI"
+          }
+        ],
+        "data": [
+          {
+            "path": "run:scenarios/s9b-iqa-proposed/data/state-s9n-on-after-fqa.txt",
+            "caption": "State after the FQA approval, flag ON"
+          }
+        ]
+      },
+      "logs": [
+        {
+          "path": "run:logs/db-plumbing.sql",
+          "from": 1,
+          "to": 25,
+          "label": "SQL plumbing used for the link data"
+        }
+      ],
+      "links": {
+        "gaps": [],
+        "bugs": [
+          "approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa"
+        ]
+      }
+    },
+    {
+      "id": "s12-project-records",
+      "title": "S12 Project records: Supplier, Control Method, Document",
+      "status": "blocked",
+      "order": 5,
+      "layers": [
+        {
+          "name": "Supplier",
+          "status": "pass"
+        },
+        {
+          "name": "Control Method",
+          "status": "pass"
+        },
+        {
+          "name": "Document",
+          "status": "blocked",
+          "note": "muhammara has no Node 22 binding"
+        }
+      ],
+      "steps": [
+        {
+          "label": "1",
+          "action": "Approve the archive of Supplier 10 and Control Method 6",
+          "expected": "Archived",
+          "observed": "Both archived",
+          "result": "pass"
+        },
+        {
+          "label": "2",
+          "action": "Approve the archive of Document 2",
+          "expected": "Archived",
+          "observed": "Cannot run: PDF stamping fails on Node 22",
+          "result": "blocked"
+        }
+      ],
+      "evidence": {
+        "videos": [],
+        "screenshots": [
+          {
+            "path": "run:scenarios/s12-project-records/screenshots/s12-01-sup10-before.jpg",
+            "caption": "Supplier 10 before",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s12-project-records/screenshots/s12-02-sup10-after.jpg",
+            "caption": "Supplier 10 after",
+            "layer": "UI"
+          },
+          {
+            "path": "run:scenarios/s12-project-records/screenshots/s12-04-cm6-after.jpg",
+            "caption": "Control Method 6 after",
+            "layer": "UI"
+          }
+        ],
+        "data": []
+      },
+      "logs": [],
+      "links": {
+        "gaps": [
+          "g-document"
+        ],
+        "bugs": []
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "id": "g-document",
+      "title": "Document approval blocked",
+      "status": "open",
+      "scenarios": [
+        "s12-project-records"
+      ],
+      "markdown": "`muhammara` (PDF stamping) has no native binding for Node 22 in `qbdvision`. Needs a decision: build it (`npm rebuild muhammara`) or accept the gap."
+    },
+    {
+      "id": "g-pin",
+      "title": "Signing-pin user not found",
+      "status": "open",
+      "scenarios": [
+        "s4-wrong-password"
+      ],
+      "markdown": "No local user has a signing pin, so the pin variant of S4 stays untested."
+    },
+    {
+      "id": "g-stan-login",
+      "title": "Stan cannot log in locally",
+      "status": "accepted",
+      "scenarios": [
+        "s3-permission"
+      ],
+      "markdown": "Cognito rejects the helper password. The demoted Kons covers the Standard User case."
+    }
+  ],
+  "bugs": [
+    {
+      "slug": "approve-for-archive-approve-after-reject-accepted",
+      "title": "Approve after a reject is accepted and recorded",
+      "path": "bugs:approve-for-archive-approve-after-reject-accepted/approve-for-archive-approve-after-reject-accepted.md",
+      "jira": "QI-15268",
+      "screenshots": [
+        "bugs:approve-for-archive-approve-after-reject-accepted/screenshots/1-rejected-buttons-still-shown.jpg",
+        "bugs:approve-for-archive-approve-after-reject-accepted/screenshots/2-second-approver-approve-dialog.jpg",
+        "bugs:approve-for-archive-approve-after-reject-accepted/screenshots/3-approve-accepted-no-error.jpg"
+      ],
+      "scenarios": [
+        "s8-reject-then-approve"
+      ]
+    },
+    {
+      "slug": "approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa",
+      "title": "FQA archive does not unlink or re-version an IQA that is Proposed for Archive",
+      "path": "bugs:approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa/approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa.md",
+      "jira": "QI-15269",
+      "screenshots": [
+        "bugs:approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa/screenshots/iqa19-before.jpg",
+        "bugs:approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa/screenshots/iqa19-after-flag-on.jpg",
+        "bugs:approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa/screenshots/iqa19-after-flag-off.jpg"
+      ],
+      "scenarios": [
+        "s9b-iqa-proposed"
+      ]
+    },
+    {
+      "slug": "approve-for-archive-stale-latest-label",
+      "title": "Cascaded children show a stale \"Latest\" label",
+      "path": "bugs:approve-for-archive-stale-latest-label/approve-for-archive-stale-latest-label.md",
+      "jira": "QI-15270",
+      "screenshots": [
+        "bugs:approve-for-archive-stale-latest-label/screenshots/redo-before-pp31-b-result.jpg",
+        "bugs:approve-for-archive-stale-latest-label/screenshots/redo-after-pp31-b-result.jpg"
+      ],
+      "scenarios": [
+        "s1-uo-approve"
+      ]
+    }
+  ],
+  "dataSetup": {
+    "steps": [
+      {
+        "label": "1",
+        "action": "Restore the lean project snapshot and create the lean UO-1..3 as Ryan",
+        "expected": "Three Unit Operations proposed for archive",
+        "observed": "UO 31, 32, 33 Proposed for Archive (Yash / Kons / both)",
+        "result": "pass"
+      },
+      {
+        "label": "2",
+        "action": "Import the rich project; approve in bulk after a stack restart",
+        "expected": "24 records approved",
+        "observed": "23 of 24 approved, the Document excluded (see gap g-document)",
+        "result": "pass"
+      },
+      {
+        "label": "3",
+        "action": "Plumbing SQL: push supplier qualification dates, insert the IQA-FQA link",
+        "expected": "Records proposable",
+        "observed": "Done, see logs/db-plumbing.sql",
+        "result": "pass"
+      }
+    ],
+    "videos": [
+      {
+        "path": "run:data-setup/videos/01-ryan-lean-project.mp4",
+        "caption": "Ryan builds the lean project (first 8 s)",
+        "atSec": 0
+      }
+    ],
+    "screenshots": [
+      {
+        "path": "run:data-setup/screenshots/01-lib-propose-select.jpg",
+        "caption": "Ryan proposes library materials for approval"
+      },
+      {
+        "path": "run:data-setup/screenshots/05-yash-lib-esign.jpg",
+        "caption": "Yash signs the approval"
+      },
+      {
+        "path": "run:data-setup/screenshots/13-archive-mtl1.jpg",
+        "caption": "MTL-1 proposed for archive"
+      },
+      {
+        "path": "run:data-setup/screenshots/20-archive-iqa19.jpg",
+        "caption": "IQA-19 proposed for archive"
+      }
+    ],
+    "snapshotPath": "/Users/bojanadrangova/Projects/qbdvision/plans/05-development/state-management/test-runs/qi-15267-approve-archive-20261012/db-snapshots/pristine-client_local_ArchiversRUS.sql",
+    "notes": "Baseline `pristine`. Restore with `db-snapshots/restore.sh pristine`; the dump is not part of this fixture (placeholder)."
+  },
+  "logs": [
+    {
+      "path": "run:logs/backend-rich-approve.log",
+      "label": "Backend console, rich approve"
+    },
+    {
+      "path": "run:logs/state-pristine.txt",
+      "label": "State dump of pristine"
+    },
+    {
+      "path": "run:logs/db-plumbing.sql",
+      "label": "SQL plumbing"
+    },
+    {
+      "path": "run:logs/flag-changes.txt",
+      "label": "Feature flag changes"
+    }
+  ]
+}

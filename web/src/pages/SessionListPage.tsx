@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { otherKindRoute, type SessionKind } from '@/lib/paths'
+import { TestRunRow } from '@/components/sessions/TestRunRow'
 import { ShortcutHelp } from '@/components/common/ShortcutHelp'
 import { ArchivedList } from '@/components/sessions/ArchivedList'
 import { BrokenRow } from '@/components/sessions/BrokenRow'
@@ -9,34 +12,35 @@ import { SessionRow } from '@/components/sessions/SessionRow'
 import { matchesSessionSearch } from '@/components/sessions/session-search'
 import { SessionsBar } from '@/components/sessions/SessionsBar'
 import { useSessionList } from '@/hooks/useSessionList'
-import { isSessionSummary } from '@/lib/session-status'
+import { isLiveSummary, isTestRunSummary } from '@/lib/session-status'
 import { useHotkeys } from '@/lib/useHotkeys'
 
-export function SessionListPage() {
-  const list = useSessionList()
+export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }) {
+  const list = useSessionList(kind)
+  const navigate = useNavigate()
   const [helpOpen, setHelpOpen] = useState(false)
   const [query, setQuery] = useState('')
   const archived = list.filter === 'archived'
   const visible = list.visible.filter((item) => matchesSessionSearch(item, query))
-  const sessions = visible.filter(isSessionSummary)
-  const unavailable = visible.filter((item) => !isSessionSummary(item))
-  useHotkeys({ help: () => setHelpOpen((open) => !open) })
+  const sessions = visible.filter(isLiveSummary)
+  const unavailable = visible.filter((item) => !isLiveSummary(item))
+  useHotkeys({ help: () => setHelpOpen((open) => !open), toggleKind: () => navigate(otherKindRoute(kind)) })
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SessionsBar onHelp={() => setHelpOpen(true)} />
+    <div data-page="session-list" className="flex min-h-screen flex-col">
+      <SessionsBar kind={kind} onHelp={() => setHelpOpen(true)} />
 
       <main className="flex flex-1 flex-col px-6 pt-7 pb-14">
         <div className="mx-auto flex w-full max-w-[1300px] flex-col gap-[18px]">
           <div className="flex flex-col gap-5">
-            <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : 'Review sessions'}</h1>
-            <SessionFilters filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} />
+            <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : 'Development'}</h1>
+            <SessionFilters kind={kind} filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} />
           </div>
 
           {list.error ? (
             <ErrorState message={`Couldn't load the sessions: ${list.error.message}`} onRetry={list.reload} />
           ) : list.loading ? (
-            <LoadingState archived={archived} />
+            <LoadingState archived={archived} kind={kind} />
           ) : archived ? (
             <div className="flex flex-col gap-4">
               <p className="m-0 text-xs text-ink-muted">Archived sessions are kept here. Restore a session to open it again.</p>
@@ -50,19 +54,19 @@ export function SessionListPage() {
               />
             </div>
           ) : list.items.length === 0 ? (
-            <EmptyState />
+            <EmptyState kind={kind} />
           ) : (
             <div className="flex flex-col gap-2">
               {sessions.length > 0 && <SessionListHead />}
               <ul className="m-0 flex list-none flex-col gap-3.5 p-0">
-                {sessions.map((item) => <SessionRow key={item.id} session={item} onArchive={list.archive} />)}
-                {visible.length === 0 && <ListNote>No sessions match this filter or search.</ListNote>}
+                {sessions.map((item) => isTestRunSummary(item) ? <TestRunRow key={item.id} session={item} onArchive={list.archive} /> : <SessionRow key={item.id} session={item} onArchive={list.archive} />)}
+                {visible.length === 0 && <ListNote>{kind === 'test-run' ? 'No test runs match this filter or search.' : 'No sessions match this filter or search.'}</ListNote>}
               </ul>
               {unavailable.length > 0 && (
                 <details className="mt-4 text-ink-muted">
                   <summary className="cursor-pointer text-xs font-medium">{unavailable.length} {unavailable.length === 1 ? 'session' : 'sessions'} unavailable</summary>
                   <p className="my-3 text-xs">These sessions could not be loaded. Their details are available below.</p>
-                  <ul className="m-0 flex list-none flex-col gap-2 p-0">{unavailable.map((item) => !isSessionSummary(item) && <BrokenRow key={item.id} item={item} />)}</ul>
+                  <ul className="m-0 flex list-none flex-col gap-2 p-0">{unavailable.map((item) => !isLiveSummary(item) && <BrokenRow key={item.id} item={item} />)}</ul>
                 </details>
               )}
             </div>

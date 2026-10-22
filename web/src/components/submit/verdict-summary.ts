@@ -1,4 +1,4 @@
-import { effectiveVerdict, type Comment, type Decision, type Review, type Verdict, type WorkingTree } from '@review-dash/shared'
+import { effectiveVerdict, type Comment, type Decision, isItemComment, type Review, type ReviewItem, type Verdict } from '@review-dash/shared'
 
 export interface VerdictSummary {
   approved: number
@@ -11,10 +11,10 @@ export interface VerdictSummary {
  * Files of the live tree by effective verdict (a verdict pinned to an older fingerprint counts
  * as none); a file without a verdict but with a comment counts as `commented`.
  */
-export function verdictSummary(review: Review, tree: WorkingTree): VerdictSummary {
+export function verdictSummary(review: Review, tree: { files: readonly ReviewItem[] }): VerdictSummary {
   const commented = new Set<string>()
   for (const comment of review.comments) {
-    if (comment.target.kind === 'file' && comment.target.ref !== null) commented.add(comment.target.ref)
+    if (isItemComment(comment.target.kind) && comment.target.ref !== null) commented.add(comment.target.ref)
   }
   const summary: VerdictSummary = { approved: 0, rejected: 0, commented: 0, notReviewed: 0 }
   for (const file of tree.files) {
@@ -54,4 +54,9 @@ export function suggestDecision(summary: VerdictSummary): Decision {
   const total = summary.approved + summary.rejected + summary.commented + summary.notReviewed
   if (total > 0 && summary.approved === total) return 'approve'
   return 'undecided'
+}
+
+/** A test run's suggestion: changes requested when a scenario is rejected or any comment is open, otherwise accept. */
+export function suggestTestRunDecision(summary: VerdictSummary, openComments: number): Decision {
+  return summary.rejected > 0 || openComments > 0 ? 'request-changes' : 'approve'
 }

@@ -12,6 +12,7 @@ import { useEvidenceNav } from '@/components/evidence/useEvidenceNav'
 import { Kbd } from '@/components/ui/kbd'
 import { pluralize } from '@/lib/format'
 import { evidenceRoute } from '@/lib/paths'
+import { useCodeReviewDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { useHotkeys } from '@/lib/useHotkeys'
 import { useOpenCommentCount } from '@/lib/useOpenCommentCount'
@@ -21,7 +22,8 @@ const COLUMN = 'mx-auto flex h-[calc(100dvh-var(--shell-h))] w-full max-w-[1400p
 
 /** `/s/:id/evidence/*path?`: the URL names the current item by its path in `evidence/` (default: the first). The list is in the rail. */
 export function EvidencePage() {
-  const { sessionId, detail } = useSessionContext()
+  const { sessionId } = useSessionContext()
+  const detail = useCodeReviewDetail()
   const params = useParams()
   const navigate = useNavigate()
   const open = useOpenCommentCount('evidence')

@@ -1,0 +1,47 @@
+import { Link } from 'react-router'
+import { Kbd } from '@/components/ui/kbd'
+import { Segmented } from '@/components/ui/segmented'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
+import type { SessionKind } from '@/lib/paths'
+
+const KINDS: readonly { kind: SessionKind; label: string; to: string }[] = [
+  { kind: 'code-review', label: 'Development', to: '/' },
+  { kind: 'test-run', label: 'Test runs', to: '/t' },
+]
+
+/**
+ * Development | Test runs, as a flat chooser of links (`Segmented` look, like `ModeToggle`) between the two lists.
+ * `T` toggles it (bound by the page). Needs a `TooltipProvider`.
+ */
+export function SessionKindToggle({ kind }: { kind: SessionKind }) {
+  return (
+    <Segmented aria-label="Session type" data-slot="kind-toggle">
+      {KINDS.map((candidate) => {
+        const active = candidate.kind === kind
+        return (
+          <Tooltip key={candidate.kind}>
+            <TooltipTrigger
+              render={
+                <Link
+                  to={candidate.to}
+                  aria-current={active ? 'true' : undefined}
+                  className={cn(
+                    'inline-flex h-[26px] items-center justify-center rounded-sm px-[11px] text-[12.5px] font-bold text-ink transition-colors hover:bg-hover',
+                    'aria-[current=true]:bg-selected aria-[current=true]:text-on-selected aria-[current=true]:hover:bg-selected',
+                  )}
+                />
+              }
+            >
+              {candidate.label}
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {candidate.label}
+              {!active && <Kbd>T</Kbd>}
+            </TooltipContent>
+          </Tooltip>
+        )
+      })}
+    </Segmented>
+  )
+}

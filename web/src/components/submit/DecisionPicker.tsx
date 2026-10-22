@@ -41,8 +41,17 @@ const OPTIONS: readonly Option[] = [
   },
 ]
 
+/** A choice with its own wording; the colours and icon come from the standard option of the same value. */
+export interface DecisionChoice {
+  value: Exclude<Decision, 'undecided'>
+  label: string
+  hint: string
+}
+
 export interface DecisionPickerProps {
   value: Decision
+  /** The choices to offer (default: approve, request changes, reject). */
+  choices?: readonly DecisionChoice[]
   onChange: (decision: Decision) => void
   disabled?: boolean
   className?: string
@@ -52,11 +61,12 @@ export interface DecisionPickerProps {
  * Approve / request changes / reject as radio cards; the chosen one stays chosen when clicked again.
  * Three columns only when the picker itself is wide enough (container query); otherwise full-width rows.
  */
-export function DecisionPicker({ value, onChange, disabled = false, className }: DecisionPickerProps) {
+export function DecisionPicker({ value, choices, onChange, disabled = false, className }: DecisionPickerProps) {
+  const options = choices ? choices.flatMap((choice) => OPTIONS.filter((option) => option.value === choice.value).map((option) => ({ ...option, ...choice }))) : OPTIONS
   return (
     <div className={cn('@container', className)}>
-      <div role="radiogroup" aria-label="Decision" className="grid gap-2.5 @2xl:grid-cols-3">
-        {OPTIONS.map((option) => {
+      <div role="radiogroup" aria-label="Decision" className={cn('grid gap-2.5', options.length === 3 ? '@2xl:grid-cols-3' : '@2xl:grid-cols-2')}>
+        {options.map((option) => {
           const selected = value === option.value
           const Icon = option.icon
           return (

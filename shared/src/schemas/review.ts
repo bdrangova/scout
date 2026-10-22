@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { COMMENT_ID_RE, FINGERPRINT_RE, SCHEMA_VERSION, SECTIONS, SESSION_ID_RE } from '../constants.ts'
+import { COMMENT_ID_RE, FINGERPRINT_RE, SCHEMA_VERSION, SECTIONS, SESSION_ID_RE, TEST_SECTIONS } from '../constants.ts'
 
 const isoDate = z.iso.datetime({ offset: true })
 
@@ -15,15 +15,20 @@ export type Mode = z.infer<typeof ModeSchema>
 export const SectionSchema = z.enum(SECTIONS)
 export type Section = z.infer<typeof SectionSchema>
 
-export const CommentTargetKindSchema = z.enum(['overall', 'file', 'evidence', 'extra', 'spec'])
+export const CommentTargetKindSchema = z.enum(['overall', 'file', 'evidence', 'extra', 'spec', 'scenario', 'run-file', 'bug', 'log'])
 export type CommentTargetKind = z.infer<typeof CommentTargetKindSchema>
+
+/** What the reviewer means by a comment on a test run: the step is unclear, the result is wrong, or the behaviour is as intended. */
+export const CommentKindSchema = z.enum(['not-clear', 'incorrect', 'expected-behaviour'])
+export type CommentKind = z.infer<typeof CommentKindSchema>
 
 export const LineSideSchema = z.enum(['old', 'new'])
 export type LineSide = z.infer<typeof LineSideSchema>
 
 /**
  * A line (or a short range, `line..endLine`) of one side of a file's diff: `old` numbers the
- * before side, `new` the after side. Only a `file` comment carries one.
+ * before side, `new` the after side. Only a `file` comment carries one, and a `log` comment
+ * (a line of a run log, side `new`).
  */
 export const LineAnchorSchema = z
   .object({
@@ -43,6 +48,9 @@ export type LineAnchor = z.infer<typeof LineAnchorSchema>
  * `ref` is the repo path for `file`, the artifact's path relative to its folder (`evidence/`,
  * `extras/`, `spec/`) for the artifact kinds, and null for `overall`. A `file` comment may be
  * anchored to a line of the diff; without `anchor` it is a file-level comment.
+ * Test runs: `scenario` ref = scenario id, `run-file` ref = the `alias:path` of a screenshot or data file of a scenario
+ * (listed under the scenario that holds the file), `bug` ref = the bug slug, `log` ref = the log's
+ * `alias:path`; a `log` comment may carry an anchor with side `new`.
  */
 export const CommentTargetSchema = z
   .object({
@@ -60,8 +68,11 @@ export const CommentTargetSchema = z
         input: ref,
       })
     }
-    if (anchor !== undefined && kind !== 'file') {
+    if (anchor !== undefined && kind !== 'file' && kind !== 'log') {
       ctx.issues.push({ code: 'custom', message: `a ${kind} comment cannot be anchored to a line`, path: ['anchor'], input: anchor })
+    }
+    if (anchor !== undefined && kind === 'log' && anchor.side !== 'new') {
+      ctx.issues.push({ code: 'custom', message: 'a log comment anchors to the new side', path: ['anchor', 'side'], input: anchor.side })
     }
   })
 export type CommentTarget = z.infer<typeof CommentTargetSchema>
@@ -70,6 +81,8 @@ export const CommentSchema = z.object({
   id: z.string().regex(COMMENT_ID_RE),
   target: CommentTargetSchema,
   body: z.string(),
+  /** Test runs only: what the reviewer means (see `CommentKindSchema`). */
+  kind: CommentKindSchema.optional(),
   timestampSec: z.number().nonnegative().nullable(),
   createdAt: isoDate,
   updatedAt: isoDate.nullable(),
@@ -92,7 +105,7 @@ export const ReviewSchema = z
   .object({
     schemaVersion: z.literal(SCHEMA_VERSION),
     sessionId: z.string().regex(SESSION_ID_RE),
-    /** Keyed by repo path. */
+    /** Keyed by item id: the repo path of a code review, the scenario id of a test run. */
     files: z.record(z.string(), FileReviewSchema),
     comments: z.array(CommentSchema),
     /** Next comment number; never decremented, ids are never reused. */
@@ -103,7 +116,8 @@ export const ReviewSchema = z
     ui: z.object({
       mode: ModeSchema,
       currentFile: z.string().nullable(),
-      section: SectionSchema,
+      /** Test runs keep the current scenario id in `currentFile`. */
+      section: z.enum([...SECTIONS, ...TEST_SECTIONS]),
     }),
     updatedAt: isoDate,
   })

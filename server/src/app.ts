@@ -14,6 +14,7 @@ import { filesRouter } from './routes/files.ts'
 import { healthRouter } from './routes/health.ts'
 import { prCommentsRouter } from './routes/pr-comments.ts'
 import { reviewRouter } from './routes/review.ts'
+import { runFilesRouter } from './routes/run-files.ts'
 import { runsRouter } from './routes/runs.ts'
 import { scopesRouter } from './routes/scopes.ts'
 import { sendRouter } from './routes/send.ts'
@@ -106,6 +107,7 @@ export function createApp(config: Config, overrides: AppOverrides = {}): Express
   api.use(filesRouter(store))
   api.use(scopesRouter(store))
   api.use(artifactsRouter(store))
+  api.use(runFilesRouter(store))
   api.use(reviewRouter(store))
   api.use(prCommentsRouter(store))
   api.use(sendRouter({ store, runs, adapter, dashboardUrl: config.dashboardUrl }))

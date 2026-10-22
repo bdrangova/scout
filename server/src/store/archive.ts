@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { ARCHIVED_FILE, ArchivedMarkerSchema } from '@review-dash/shared'
+import { ARCHIVED_FILE, ArchivedMarkerSchema, agentCwd, isTestRun } from '@review-dash/shared'
 import type { ArchivedSession, Manifest } from '@review-dash/shared'
 import { isMissing, readTextIfExists, writeFileAtomic } from './fs.ts'
 
@@ -85,7 +85,7 @@ export function archivedSession(manifest: Manifest, archivedAt: string): Archive
     id: manifest.id,
     title: manifest.title,
     tickets: manifest.tickets,
-    repo: { path: manifest.repo.path, branch: manifest.repo.branch, baseRef: manifest.repo.baseRef },
+    repo: isTestRun(manifest) ? { path: agentCwd(manifest), branch: null, baseRef: null } : { path: manifest.repo.path, branch: manifest.repo.branch, baseRef: manifest.repo.baseRef },
     createdAt: manifest.createdAt,
     updatedAt: manifest.updatedAt,
     archivedAt,

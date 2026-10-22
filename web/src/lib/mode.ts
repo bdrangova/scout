@@ -19,6 +19,11 @@ export function parseMode(value: string | null | undefined): Mode {
   }
 }
 
+/** A test run has no scroll mode: `?mode=scroll` reads as swipe. */
+export function parseRunMode(value: string | null | undefined): Exclude<Mode, 'scroll'> {
+  return parseMode(value) === 'grid' ? 'grid' : 'swipe'
+}
+
 /** The search string that switches to `mode` and keeps every other param (the commit scope). */
 export function modeSearch(params: URLSearchParams, mode: Mode): string {
   const next = new URLSearchParams(params)

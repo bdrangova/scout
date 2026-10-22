@@ -2,9 +2,10 @@ import { execFile, spawn } from 'node:child_process'
 import type { ChildProcess, SpawnOptions } from 'node:child_process'
 import path from 'node:path'
 import readline from 'node:readline'
-import type { Decision, SessionDetail } from '@review-dash/shared'
+import { agentCwd, isTestRun } from '@review-dash/shared'
+import type { Decision } from '@review-dash/shared'
 import { errorMessage } from '../errors.ts'
-import type { AdapterEvent, AgentAdapter, AgentExit, AgentRunHandle, ApplyFeedbackRequest, CanResumeResult } from './adapter.ts'
+import type { AdapterEvent, AgentAdapter, AgentExit, AgentSession, AgentRunHandle, ApplyFeedbackRequest, CanResumeResult } from './adapter.ts'
 import { AsyncQueue } from './async-queue.ts'
 import { parseStreamJsonLine } from './stream-json.ts'
 
@@ -42,6 +43,32 @@ export function applyReviewArgv(sessionId: string, agentSessionId: string, decis
     'acceptEdits',
     '--allowedTools',
     ...allowedTools(decision),
+    '--max-turns',
+    '80',
+    '--max-budget-usd',
+    '10',
+  ]
+}
+
+/**
+ * Arguments of the headless `/apply-test-review` command. The tool list is the PR-free base whatever the decision was:
+ * a test review never commits, pushes or opens a PR.
+ */
+export function applyTestReviewArgv(sessionId: string, agentSessionId: string, fork: boolean): string[] {
+  return [
+    '-p',
+    `/apply-test-review ${sessionId}`,
+    '--resume',
+    agentSessionId,
+    ...(fork ? ['--fork-session'] : []),
+    '--output-format',
+    'stream-json',
+    '--verbose',
+    '--include-partial-messages',
+    '--permission-mode',
+    'acceptEdits',
+    '--allowedTools',
+    ...APPLY_REVIEW_ALLOWED_TOOLS,
     '--max-turns',
     '80',
     '--max-budget-usd',
@@ -138,7 +165,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     this.escalation = options.escalation ?? { termAfterMs: 10_000, killAfterMs: 20_000 }
   }
 
-  async canResume(session: SessionDetail, opts: { fork: boolean }): Promise<CanResumeResult> {
+  async canResume(session: AgentSession, opts: { fork: boolean }): Promise<CanResumeResult> {
     if (this.claudeBin === null) {
       return { ok: false, reason: 'the claude CLI was not found: set AI_REVIEW_CLAUDE_BIN or install it in ~/.local/bin' }
     }
@@ -183,9 +210,9 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       return { argv: [], pid: null, exit: Promise.resolve({ code: null, signal: null }), [Symbol.asyncIterator]: () => queue[Symbol.asyncIterator]() }
     }
 
-    const args = applyReviewArgv(manifest.id, agentSessionId, req.decision, req.fork)
+    const args = isTestRun(manifest) ? applyTestReviewArgv(manifest.id, agentSessionId, req.fork) : applyReviewArgv(manifest.id, agentSessionId, req.decision, req.fork)
     const child = this.spawnFn(bin, args, {
-      cwd: manifest.repo.path,
+      cwd: agentCwd(manifest),
       env: headlessEnv(this.env, req.home),
       stdio: ['ignore', 'pipe', 'pipe'],
     })

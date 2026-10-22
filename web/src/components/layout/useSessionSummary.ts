@@ -1,6 +1,7 @@
 import { sessionStatus, type Decision } from '@review-dash/shared'
 import { useMemo } from 'react'
 import { verdictSummary, suggestDecision, type VerdictSummary } from '@/components/submit/verdict-summary'
+import { isTestRunDetail } from '@/lib/detail-kind'
 import { reviewStatusOf, runChipFor, type ReviewStatus, type RunChipKind } from '@/lib/session-status'
 import { reviewBreakdown } from '@/lib/review-breakdown'
 import { useSessionContext } from '@/lib/session-context'
@@ -27,15 +28,17 @@ export interface SessionSummaryView {
  */
 export function useSessionSummary(): SessionSummaryView {
   const { detail } = useSessionContext()
-  const { state, progress, comments, resolutions } = useReview()
-  const { tree } = detail
+  const { state, progress, comments, resolutions, items } = useReview()
+  // A test run's detail carries no run state yet (the Submit milestone adds it): no agent run is shown for it.
+  const activeRunId = isTestRunDetail(detail) ? null : detail.activeRunId
+  const latestRunStatus = isTestRunDetail(detail) ? null : detail.latestRunStatus
   const openComments = useMemo(() => comments.filter((comment) => comment.status === 'open').length, [comments])
   return useMemo(() => {
-    const verdicts = reviewBreakdown(verdictSummary(state.review, tree), progress)
+    const verdicts = reviewBreakdown(verdictSummary(state.review, { files: items }), progress)
     // The review state ignores the run; the run overlay is derived apart, with the same precedence as the server (working over failed).
     const lastSend = state.review?.sent ?? null
-    const status = reviewStatusOf({ status: sessionStatus({ review: state.review, tree, resolutions, activeRun: false }), progress, openComments, lastSend })
-    const run = runChipFor(detail.activeRunId !== null, detail.latestRunStatus)
+    const status = reviewStatusOf({ status: sessionStatus({ review: state.review, tree: items, resolutions, activeRun: false }), progress, openComments, lastSend })
+    const run = runChipFor(activeRunId !== null, latestRunStatus)
     return { status, run, progress, openComments, verdicts, suggestion: suggestDecision(verdicts), lastSend }
-  }, [state.review, tree, resolutions, detail.activeRunId, detail.latestRunStatus, progress, openComments])
+  }, [state.review, items, resolutions, activeRunId, latestRunStatus, progress, openComments])
 }

@@ -6,12 +6,14 @@ import { ExtraCard } from '@/components/extras/ExtraCard'
 import { ExtrasRailSection } from '@/components/extras/ExtrasRailSection'
 import { TARGET_ATTR } from '@/components/spec/rail-targets'
 import { pluralize } from '@/lib/format'
+import { useCodeReviewDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { useOpenCommentCount } from '@/lib/useOpenCommentCount'
 
 /** The files of the session's `extras/` folder (markdown, HTML, mermaid), one card each. */
 export function ExtrasPage() {
-  const { sessionId, detail } = useSessionContext()
+  const { sessionId } = useSessionContext()
+  const detail = useCodeReviewDetail()
   const open = useOpenCommentCount('extra')
   const extras = detail.extras
   const items = pluralize(extras.length, 'item')

@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { ManifestSchema, derivePrComments, mergeComments } from '@review-dash/shared'
+import { ManifestSchema, derivePrComments, manifestKind, mergeComments, type ManifestKind } from '@review-dash/shared'
 import { topLevel } from '@review-dash/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
 import { listSessionIds, peekManifest, readPrComments, readPrResolutions, readResolutions, readReview } from '../sessions.ts'
@@ -10,6 +10,7 @@ import { resolveHome } from '../store.ts'
 
 export interface PendingSession {
   id: string
+  kind: ManifestKind
   title: string
   sentAt: string
   openComments: number
@@ -32,7 +33,7 @@ export function pendingMessage(sessions: PendingSession[]): string {
     .map(
       (s) =>
         `The review dashboard has ${s.openComments} open comment${s.openComments === 1 ? '' : 's'}${s.openPrComments > 0 ? ` and ${s.openPrComments} open GitHub PR comment${s.openPrComments === 1 ? '' : 's'}` : ''} on session ${s.id} ("${s.title}", sent ${s.sentAt}). ` +
-        `Run /apply-review ${s.id} when appropriate: ${s.url}`,
+        `Run /${s.kind === 'test-run' ? 'apply-test-review' : 'apply-review'} ${s.id} when appropriate: ${s.url}`,
     )
     .join('\n')
 }
@@ -44,7 +45,7 @@ export async function pendingForRepo(options: { home: string; repo: string }): P
   const parts: string[] = []
   for (const id of await listSessionIds(options.home)) {
     const peek = await peekManifest(options.home, id)
-    if (peek === null || peek.repoPath !== repoPath) continue
+    if (peek === null || (peek.repoPath !== repoPath && peek.runRepo !== repoPath)) continue
     const review = await readReview(peek.dir)
     if (review === null || review.sent === null) continue
     const manifest = ManifestSchema.safeParse(peek.raw)
@@ -52,7 +53,8 @@ export async function pendingForRepo(options: { home: string; repo: string }): P
     const open = mergeComments(review, await readResolutions(peek.dir)).filter((c) => c.status === 'open' && c.sentAt !== null)
     const openPr = derivePrComments(await readPrComments(peek.dir), await readPrResolutions(peek.dir), review.sent.at).filter((v) => !v.isReply && v.status === 'open' && v.trusted)
     if (open.length === 0 && openPr.length === 0) continue
-    sessions.push({ id, title: manifest.data.title, sentAt: review.sent.at, openComments: open.length, openPrComments: openPr.length, url: dashboardUrl(config, id) })
+    const kind = manifestKind(manifest.data)
+    sessions.push({ id, kind, title: manifest.data.title, sentAt: review.sent.at, openComments: open.length, openPrComments: openPr.length, url: dashboardUrl(config, id, kind) })
     parts.push(`${id}:${open.map((c) => c.id).sort().join(',')}:${openPr.map((c) => c.id).sort().join(',')}`)
   }
   sessions.sort((a, b) => (a.sentAt < b.sentAt ? 1 : a.sentAt > b.sentAt ? -1 : 0))
@@ -68,7 +70,7 @@ interface PendingFlags {
 export function registerPending(program: Command): void {
   program
     .command('pending')
-    .description('List sessions of a repository with sent review comments still open (for the UserPromptSubmit hook)')
+    .description('List sessions (code reviews and test runs) of a repository with sent review comments still open (for the UserPromptSubmit hook)')
     .option('--repo <path>', 'path inside the repository (default: cwd)')
     .option('--format <format>', 'json | brief', 'json')
     .action(async (flags: PendingFlags) => {

@@ -227,7 +227,7 @@ ApiError = { error, reason?, isLarge? }
 ```
 GET  /health
 GET  /sessions                                    SessionListItem[] newest first (summary uses the cached tree; computes it if absent)
-GET  /sessions/archived                           ArchivedSession[] newest archivedAt first (registered before /sessions/:id)
+GET  /sessions/archived[?kind=code-review|test-run] ArchivedSession[] newest archivedAt first; optional kind filter, otherwise all kinds (registered before /sessions/:id)
 GET  /sessions/:id                                SessionDetail (tree from the cache, recomputed when stale); 404 unknown or malformed id,
                                                   422 { error: 'repo-missing: <path>' } when the repository is gone, 422 for an invalid manifest or a git failure
 POST /sessions/:id/archive                        → { id }; moves sessions/<id> to archive/<id> (emits session.removed via the watcher);
@@ -272,6 +272,81 @@ scope-tree.ts   computeScopeTree({ repo, scope, signal? }): Promise<{ tree: Work
 ```
 
 `computeWorkingTree` runs `git diff <mergeBase>` (`-M50%`, `--full-index`, fixed `a/`/`b/` prefixes so user config cannot change the output), adds a `--no-index` patch per untracked file, parses numstat and name-status, reads sizes (disk after, `cat-file --batch-check` before), applies the rules, splits the patch per file, fingerprints, and reports `durationMs`. Omitted files are excluded from the diff by pathspec. It is built for a 400-file, 1.2 MB patch: one `git diff`, one numstat, one name-status, one `cat-file --batch-check` (before sizes and blob ids), one `hash-object --stdin-paths` (after blob ids of binary/omitted files); `splitPatch` and fingerprinting are linear in the patch size. The only per-file git call is the `--no-index` patch of each untracked file.
+
+## Test runs (`kind: 'test-run'`)
+
+A test run is a second session kind in the same store: `~/.ai-review/sessions/<id>/` holds `manifest.json` plus all review state exactly as for a code review (`review.json`, `resolutions.json`, `sent/`, `runs/`). The content is read live from the run folder (`manifest.run.path`) through the index the publish skills write. Dashboard routes live under `/t/<id>`.
+
+### schemas/manifest.ts
+
+`ManifestSchema = z.union([CodeReviewManifestSchema, TestRunManifestSchema])`. `CodeReviewManifest` is the shape above with `kind?: 'code-review'` (absent in older manifests). `TestRunManifest` = the same `schemaVersion/id/title/createdAt/updatedAt/agent/tickets` plus `kind: 'test-run'` and `run: { path /* absolute run folder, inside repo */, repo /* absolute checkout, where the agent runs */, feature: string|null, area: string|null }`, no `repo`. Helpers: `isTestRun(m)`, `manifestKind(m)` (`'code-review'` default), `agentCwd(m)` (`repo.path` or `run.repo`). `SCHEMA_VERSION` stays 2.
+
+### schemas/test-run.ts: `<run>/test-run.json` (`TEST_RUN_INDEX_FILE`, `TEST_RUN_INDEX_SCHEMA_VERSION = 1`)
+
+```ts
+TestRunIndex = {
+  schemaVersion: 1, runId: string, title: string, feature: string|null, area: string|null, createdAt, updatedAt,
+  publishedBy: { plan?: P, dataSetup?: P, run?: P },          // P = { at: iso, hashes?: Record<string,string> } (source hashes, so a rerun rewrites only what changed)
+  roots: Record<alias, relPath>,                              // alias /^[a-z][a-z0-9-]*$/; `run` must exist and be "."
+  pages: ('gaps'|'data-setup'|'logs')[],                      // optional pages, default []
+  overview: Panel[],                                          // default []
+  scenarios: Scenario[],                                      // ids unique
+  gaps?: { id, title, status: string, scenarios: string[], markdown? }[],
+  bugs?: { slug, title, path: Ref, jira?, screenshots: Ref[], scenarios: string[] }[],
+  dataSetup?: { steps: Step[], videos: Evidence[], screenshots: Evidence[], snapshotPath?: string /* local path to copy, not a Ref */, notes? },
+  logs?: { path: Ref, label }[],
+}
+Scenario = { id /^[A-Za-z][\w-]*$/, title, status: 'planned'|'pass'|'fail'|'uncertain'|'gap'|'na'|'blocked',
+  layers?: { name, status, note? }[], steps?: Step[], stepsMarkdown?: string,   // the skills write the step text; the server never parses steps.md
+  evidence: { videos, screenshots, data: Evidence[] },      // each defaults to []
+  logs: { path: Ref, from: line>=1, to: line>=from, label? }[],  // excerpts
+  links: { gaps: string[] /* gap ids */, bugs: string[] /* bug slugs */ }, notes?, order: int>=0 }
+Step = { label?, action?, expected?, observed?, result? }
+Evidence = { path: Ref, caption?, layer?, atSec? /* chapter on the video timeline */ }
+```
+
+`roots` values are relative to the run folder with no leading `/`; `..` is allowed only as a leading chain (`../..`, `../../bugs`) because the plan and the bugs sit above the run folder (`plan: '../..'` is the plan folder holding `test-plan.md`). The server additionally refuses roots that resolve outside `run.repo`.
+
+**Refs.** Every path in the index is `<alias>:<relative path>` (`RunRefSchema`, `/^[a-z][a-z0-9-]*:[^\0]+$/`), no leading `/` and no `..` segment on either separator. `parseRunRef(ref)` returns `{ alias, path }` or `null`. Example: `run:scenarios/s1-pass/videos/a.mp4`, `bugs:x/x.md`, `plan:test-plan.md`.
+
+**Panels** (`overview`): `PanelSchema = z.union([discriminated union on type, unsupported fallback])`. Types: `markdown {markdown}`, `stats {items: {label, value, tone?, hint?}[]}`, `table {columns, rows}`, `key-value {items: {key, value}[]}`, `gallery {items: Evidence[]}`, `video {path, caption?, chapters?: {atSec, label}[]}`, `log {path, from, to, label?}`, `links {items: {label, scenario?|ref?|url?}[]}`, `scenario-list {ids?, statuses?}`; each with optional `title` and `span: 1|2`. Anything else (an unknown type, or a known type with a broken shape) parses as `{ type: 'unsupported', originalType, reason: 'unknown-type'|'invalid-shape', original }`: the index stays valid, the dashboard shows a placeholder and the server reports a warning.
+
+**Fingerprints.** A scenario's fingerprint (16 hex, `FINGERPRINT_RE`) is computed by the server over its sorted evidence paths and sizes, the step text and the status; never over logs. A verdict stores it in `review.files[<scenario id>].fingerprint`, so "updated since your verdict" works as for files. `review.files` is keyed by item id: the repo path of a code review, the scenario id of a test run; `ui.currentFile` holds the current scenario id; `ui.section` accepts `SECTIONS` and `TEST_SECTIONS` (`overview, review, gaps, data-setup, logs, submit`).
+
+### Review additions
+
+`CommentTargetKind` adds `scenario` (ref = scenario id), `bug` (ref = slug) and `log` (ref = the log's `alias:path`; may carry an anchor, side `new` only). `Comment.kind?: 'not-clear'|'incorrect'|'expected-behaviour'` (`CommentKindSchema`) says what the reviewer means. `ReviewItem = { path, fingerprint }` (`TreeFile` fits; a scenario is `{ path: id, fingerprint }`); `effectiveVerdict`, `fileIsUpdated`, `anyFileUpdated`, `allFilesApproved`, `progress`, `sessionStatus` and the reducer's `ReviewContext` take items (`ReviewItem[]` or `{ files }`); `ReviewContext.itemKind` (`'file'` default, `'scenario'`) sets the target of a verdict's own comment. `isItemComment(kind)` is true for `file` and `scenario` and decides "commented" everywhere (`commentedPaths`, reducer, sent counts).
+
+### schemas/sent.ts, review/sent.ts
+
+`SentSnapshotSchema = z.union([CodeReviewSentSnapshotSchema, TestRunSentSnapshotSchema])`; `SentSnapshot` stays the code-review type, `AnySentSnapshot` is the union, `isTestRunSent(s)` narrows. `TestRunSentSnapshot = { schemaVersion: 2, kind: 'test-run', sessionId, sentAt, decision, run: { path, indexFingerprint: string|null }, scenarios: { id, title, status, verdict, fingerprint }[] /* all scenarios, effective verdict */, comments: Comment[] /* open, sentAt stamped */, counts: { scenarios, approved, rejected, commented, unreviewed, openComments } }`. `buildTestRunSentSnapshot(review, scenarios, decision, resolutions, now, run)` builds it (`scenarios` = `{ id, title, status, fingerprint }[]`); there is no patch. `stampSent` accepts either kind.
+
+### api.ts additions
+
+`TestRunSummary = { kind: 'test-run', id, title, createdAt, updatedAt, run: { path, feature, area }, tickets, status, counts: { scenarios, pass, fail, gap, na, blocked, uncertain, planned }, reviewed, total, openComments, lastSend?, activeRunId, latestRunStatus? }`; `SessionListItem = SessionSummary | TestRunSummary | { id, error }` (`SessionSummary.kind?: 'code-review'`). `SessionDetail = CodeReviewDetail (kind?: 'code-review') | TestRunDetail`, `TestRunDetail = { kind: 'test-run', manifest, index, warnings: string[], scenarios: (Scenario & { fingerprint })[], missing: string[], computedAt }`. `StoreEvent` adds `{ type: 'testrun.updated', sessionId }`.
+
+### review/test-run-markdown.ts
+
+`renderTestRunSentMarkdown(sent, { title, dashboardUrl, index: { bugs?, logs? } })`:
+
+```
+# Test review feedback — <title> (<id>)
+Sent: <iso> · Decision: **<DECISION>** · Dashboard: <dashboardUrl>/t/<id>/review
+Run: `<run.path>`
+
+## Overall                      comments with no target
+## Scenarios (n rejected, n approved, n commented, n not reviewed)
+### <id> · <title>              only scenarios with a verdict or a comment, index order
+Verdict: **<VERDICT>** · Status: <status>
+- [c<n>] at 1:05 **[kind]** body      timestamp when set, kind prefix when set, multi-line bodies quoted with `  > `
+## Bugs                         ### <slug> — <title>
+## Logs                         ### <alias:path> — <label>; a line comment is `- [c<n>] alias:path:12 **[kind]** body`
+## Required response            same wording as the code-review renderer, without the patch sentence
+```
+
+Empty sections are omitted; `\n` endings, one trailing newline. The grouping and quoting helpers shared with `renderSentMarkdown` live in `review/markdown-helpers.ts`.
+
+Fixture run folder: `fixtures/test-runs/demo/plans/f/a/test-runs/run-1/` (see `fixtures/test-runs/README.md`); the schema tests parse its `test-run.json`.
 
 ## Migration notes
 

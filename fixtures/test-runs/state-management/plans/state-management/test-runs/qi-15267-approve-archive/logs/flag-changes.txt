@@ -1,0 +1,25 @@
+stateManagementServiceApproveForArchive [False]
+stateManagementServiceApproveForArchive [True]
+stateManagementServiceApproveForArchive [False]
+stateManagementService [False]
+stateManagementServiceApproveForArchive [True]
+stateManagementServiceProposeForApproval [False]
+stateManagementServiceProposeForArchive [True]
+stateManagementServiceReject [True]
+stateManagementServiceWithdraw [True]
+stateManagementServiceApproveForArchive [False]
+stateManagementServiceApproveForArchive [True]
+[False]
+stateManagementServiceApproveForArchive [True]
+stateManagementServiceApproveForArchive [False]
+stateManagementServiceApproveForArchive [True]
+stateManagementServiceApproveForArchive [False]
+stateManagementServiceApproveForArchive [True]
+stateManagementServiceApproveForArchive [False] (set by user, manual repro)
+stateManagementServiceApproveForArchive [True] (set by user after manual repro)
+stateManagementServiceApproveForArchive [False]
+stateManagementServiceApproveForArchive [True]
+2026-10-12T17:26:50Z stateManagementServiceApproveForArchive -> false (IQA states OFF run)
+2026-10-12T17:34:47Z stateManagementServiceApproveForArchive -> true (IQA states ON natural-only re-run)
+2026-10-12T17:38:56Z stateManagementServiceApproveForArchive -> false (IQA states OFF natural re-run for screenshots)
+2026-10-12T17:45:19Z stateManagementServiceApproveForArchive -> true (restored; DB restored to pristine)

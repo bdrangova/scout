@@ -2,8 +2,10 @@ import { useMemo } from 'react'
 import { Navigate, useParams } from 'react-router'
 import { SessionError } from '@/components/layout/SessionError'
 import { SessionErrorBar } from '@/components/layout/SessionErrorBar'
+import { ShellConfigProvider } from '@/components/layout/ShellConfigProvider'
 import { SessionShell } from '@/components/layout/SessionShell'
 import { StatusDot } from '@/components/ui/status-dot'
+import { isTestRunDetail } from '@/lib/detail-kind'
 import { useSessionDetail } from '@/lib/hooks'
 import { SessionContext, type SessionContextValue } from '@/lib/session-context'
 import { PrCommentsProvider } from '@/state/PrCommentsProvider'
@@ -37,13 +39,18 @@ export function SessionLayout() {
     )
   }
 
+  // A test run opened under /s: hand it to its own routes.
+  if (isTestRunDetail(value.detail)) return <Navigate to={`/t/${encodeURIComponent(id)}`} replace />
+
   return (
     <SessionContext.Provider value={value}>
-      <ReviewProvider>
-        <PrCommentsProvider sessionId={id}>
-          <SessionShell />
-        </PrCommentsProvider>
-      </ReviewProvider>
+      <ShellConfigProvider kind="code-review">
+        <ReviewProvider>
+          <PrCommentsProvider sessionId={id}>
+            <SessionShell />
+          </PrCommentsProvider>
+        </ReviewProvider>
+      </ShellConfigProvider>
     </SessionContext.Provider>
   )
 }

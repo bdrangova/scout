@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router'
 import { landingSection } from '@/lib/landing-section'
-import { useSessionContext } from '@/lib/session-context'
+import { useCodeReviewDetail } from '@/lib/detail-kind'
 import { useReview } from '@/state/review-context'
 
 /**
@@ -8,7 +8,7 @@ import { useReview } from '@/state/review-context'
  * inside `ReviewProvider`, which has already loaded the review, so there is no flash of another page.
  */
 export function SessionIndexRedirect() {
-  const { detail } = useSessionContext()
+  const detail = useCodeReviewDetail()
   const { state, resolutions } = useReview()
   return <Navigate to={landingSection(detail, state.review, resolutions)} replace />
 }

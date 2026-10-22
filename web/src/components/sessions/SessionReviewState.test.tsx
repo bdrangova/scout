@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { sessionSummary } from '@/test/fixtures'
+import { sessionSummary, testRunSummary } from '@/test/fixtures'
 import { SessionReviewState } from './SessionReviewState'
 
 const lastSend = { at: '2026-10-01T10:00:00.000Z', decision: 'approve' as const }
@@ -17,4 +17,11 @@ describe('Dashboard review language', () => {
     expect(screen.getByRole('status', { name: 'Review sent · Changes requested' })).toHaveAttribute('data-status', 'sent')
     expect(screen.getByRole('status', { name: 'Run failed' })).toHaveAttribute('data-run', 'failed')
   })
+
+  it('describes test-run progress in scenarios rather than files', () => {
+    render(<SessionReviewState session={testRunSummary({ id: 'run', title: 'Run', status: 'in-progress', reviewed: 1, total: 3 })} />)
+    expect(screen.getByText('1 of 3 scenarios reviewed')).toBeInTheDocument()
+    expect(screen.queryByText(/files reviewed/)).not.toBeInTheDocument()
+  })
+
 })

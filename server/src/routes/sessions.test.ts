@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { SessionDetailSchema, SessionListItemSchema, SessionSummarySchema } from '@review-dash/shared'
+import { CodeReviewDetailSchema, SessionListItemSchema, SessionSummarySchema } from '@review-dash/shared'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Express } from 'express'
@@ -73,7 +73,7 @@ describe('GET /api/sessions/:id', () => {
   it('returns the SessionDetail with the live tree, derived artifacts, status and PR description', async () => {
     const res = await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)
     expect(res.status).toBe(200)
-    const detail = SessionDetailSchema.parse(res.body)
+    const detail = CodeReviewDetailSchema.parse(res.body)
     expect(detail.manifest.id).toBe(FIXTURE_SESSION_ID)
     expect(detail.manifest.repo.baseRef).toBe('origin/master')
     expect(detail.tree.baseRef).toBe('origin/master')
@@ -114,8 +114,8 @@ describe('GET /api/sessions/:id', () => {
   })
 
   it('serves the second request from the cache (same computedAt and fingerprint)', async () => {
-    const first = SessionDetailSchema.parse((await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body)
-    const second = SessionDetailSchema.parse((await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body)
+    const first = CodeReviewDetailSchema.parse((await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body)
+    const second = CodeReviewDetailSchema.parse((await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body)
     expect(second.tree.computedAt).toBe(first.tree.computedAt)
     expect(second.tree.fingerprint).toBe(first.tree.fingerprint)
   })

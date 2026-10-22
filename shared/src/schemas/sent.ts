@@ -2,14 +2,16 @@ import { z } from 'zod'
 import { FINGERPRINT_RE, SCHEMA_VERSION, SESSION_ID_RE } from '../constants.ts'
 import { SentPrReplySchema } from './pr-comments.ts'
 import { CommentSchema, DecisionSchema, VerdictSchema } from './review.ts'
+import { ScenarioStatusSchema } from './test-run.ts'
 import { FileStatusSchema } from './tree.ts'
 
 const isoDate = z.iso.datetime({ offset: true })
 const nonNegativeInt = z.number().int().nonnegative()
 
 /** `review/sent/<iso>.json`, next to the `.md` rendering and the `.patch` (the full diff at send time). */
-export const SentSnapshotSchema = z.object({
+export const CodeReviewSentSnapshotSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
+  kind: z.literal('code-review').optional(),
   sessionId: z.string().regex(SESSION_ID_RE),
   sentAt: isoDate,
   decision: DecisionSchema,
@@ -47,4 +49,47 @@ export const SentSnapshotSchema = z.object({
     openComments: nonNegativeInt,
   }),
 })
-export type SentSnapshot = z.infer<typeof SentSnapshotSchema>
+export type SentSnapshot = z.infer<typeof CodeReviewSentSnapshotSchema>
+
+/** `review/sent/<iso>.json` of a test run (next to the `.md`; there is no patch). */
+export const TestRunSentSnapshotSchema = z.object({
+  schemaVersion: z.literal(SCHEMA_VERSION),
+  kind: z.literal('test-run'),
+  sessionId: z.string().regex(SESSION_ID_RE),
+  sentAt: isoDate,
+  decision: DecisionSchema,
+  run: z.object({
+    path: z.string().min(1),
+    /** Fingerprint of `test-run.json` at send time; null when unknown. */
+    indexFingerprint: z.string().regex(FINGERPRINT_RE).nullable(),
+  }),
+  /** Every scenario of the run, with its effective verdict at send time. */
+  scenarios: z.array(
+    z.object({
+      id: z.string().min(1),
+      title: z.string(),
+      status: ScenarioStatusSchema,
+      verdict: VerdictSchema,
+      fingerprint: z.string().regex(FINGERPRINT_RE),
+    }),
+  ),
+  /** The open comments at send time. */
+  comments: z.array(CommentSchema),
+  counts: z.object({
+    scenarios: nonNegativeInt,
+    approved: nonNegativeInt,
+    rejected: nonNegativeInt,
+    commented: nonNegativeInt,
+    unreviewed: nonNegativeInt,
+    openComments: nonNegativeInt,
+  }),
+})
+export type TestRunSentSnapshot = z.infer<typeof TestRunSentSnapshotSchema>
+
+export const SentSnapshotSchema = z.union([CodeReviewSentSnapshotSchema, TestRunSentSnapshotSchema])
+/** Either kind of snapshot; `SentSnapshot` is the code-review one. */
+export type AnySentSnapshot = z.infer<typeof SentSnapshotSchema>
+
+export function isTestRunSent(sent: AnySentSnapshot): sent is TestRunSentSnapshot {
+  return sent.kind === 'test-run'
+}

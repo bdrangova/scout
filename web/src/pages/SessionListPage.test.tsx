@@ -87,7 +87,7 @@ describe('SessionListPage', () => {
   it('keeps session identity prominent, review activity distinct, and unavailable details out of the main list', async () => {
     renderPage({ sessions: sessionListFixture })
     expect(screen.getByRole('banner')).toHaveTextContent('Scout')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Review sessions')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Development')
     const first = screen.getByRole('link', { name: 'Trial countdown bar' })
     expect(first).toHaveAttribute('data-href', `/s/${SESSION_ID}`)
     expect(within(first).getByRole('status', { name: 'Awaiting review' })).toHaveAttribute('data-status', 'unreviewed')
@@ -142,7 +142,7 @@ describe('SessionListPage', () => {
 
   it('tells when no live row matches the filter', async () => {
     const first = sessionListFixture[0]
-    if (!first || !('tickets' in first)) throw new Error('fixture')
+    if (!first || !('repo' in first)) throw new Error('fixture')
     renderPage({ sessions: [first] })
     await userEvent.setup().selectOptions(screen.getByRole('combobox', { name: 'Review status' }), 'approved')
     expect(screen.getByText('No sessions match this filter or search.')).toBeInTheDocument()
@@ -151,7 +151,7 @@ describe('SessionListPage', () => {
 
   it('keeps many tickets on one scrollable line below the title', () => {
     const first = sessionListFixture[0]
-    if (!first || !('tickets' in first)) throw new Error('fixture')
+    if (!first || !('repo' in first)) throw new Error('fixture')
     const tickets = [15472, 15473, 15480, 15491, 15502, 15510].map((n) => ({ key: `QI-${n}`, url: null }))
     renderPage({ sessions: [{ ...first, tickets }] })
     const row = screen.getByRole('link', { name: 'Trial countdown bar' })
@@ -164,7 +164,7 @@ describe('SessionListPage', () => {
 
   it('flags a row whose repository moved to another branch than the session was published on', () => {
     const first = sessionListFixture[0]
-    if (!first || !('tickets' in first)) throw new Error('fixture')
+    if (!first || !('repo' in first)) throw new Error('fixture')
     renderPage({ sessions: [{ ...first, repo: { ...first.repo, branch: 'other-branch' } }] })
     const flag = screen.getByRole('status', { name: /Branch changed/ })
     expect(flag).toHaveAttribute('data-tone', 'warn')

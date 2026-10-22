@@ -1,4 +1,4 @@
-import type { AgentRunStatus, SessionListItem, SessionStatus, SessionSummary } from '@review-dash/shared'
+import type { AgentRunStatus, SessionListItem, SessionStatus, SessionSummary, TestRunSummary } from '@review-dash/shared'
 import { pluralize } from './format'
 import { DECISION_LABELS } from './runs'
 import { STATUS_TONE, type Tone } from './status-tone'
@@ -29,8 +29,25 @@ export const STATUS_FILTERS: readonly { id: StatusFilter; label: string; status:
   { id: 'archived', label: 'Archived', status: null },
 ]
 
-export function isSessionSummary(item: SessionListItem): item is SessionSummary {
+/** A row that loaded: a code review or a test run (not a broken manifest). */
+export type LiveSummary = SessionSummary | TestRunSummary
+
+export function isLiveSummary(item: SessionListItem): item is LiveSummary {
   return !('error' in item)
+}
+
+export function isTestRunSummary(item: SessionListItem): item is TestRunSummary {
+  return isLiveSummary(item) && item.kind === 'test-run'
+}
+
+export function isSessionSummary(item: SessionListItem): item is SessionSummary {
+  return isLiveSummary(item) && item.kind !== 'test-run'
+}
+
+/** The fields the status wording reads, the same for both kinds (a test run's `reviewed/total` is the progress). */
+export function statusSourceOf(summary: LiveSummary): StatusSource {
+  if (summary.kind !== 'test-run') return summary
+  return { status: summary.status, progress: { reviewed: summary.reviewed, total: summary.total }, openComments: summary.openComments, lastSend: summary.lastSend }
 }
 
 /** `unreviewed` → Awaiting review; the rest map 1:1. A run state counts under the review status it overlays (`reviewStatusOf`); `agent-working` and `run-failed` alone fall back to Changes sent. */
@@ -139,7 +156,7 @@ export function countByFilter(items: readonly SessionListItem[], archivedCount =
     archived: archivedCount,
   }
   for (const item of items) {
-    if (isSessionSummary(item)) counts[statusFilterOf(reviewStatusOf(item))] += 1
+    if (isLiveSummary(item)) counts[statusFilterOf(reviewStatusOf(statusSourceOf(item)))] += 1
   }
   return counts
 }
@@ -148,13 +165,13 @@ export function countByFilter(items: readonly SessionListItem[], archivedCount =
 export function matchesFilter(item: SessionListItem, filter: StatusFilter): boolean {
   if (filter === 'all') return true
   if (filter === 'archived') return false
-  return isSessionSummary(item) && statusFilterOf(reviewStatusOf(item)) === filter
+  return isLiveSummary(item) && statusFilterOf(reviewStatusOf(statusSourceOf(item))) === filter
 }
 
 /** Newest activity first (the server already orders; sorting again keeps a refetch stable), broken rows last. */
 export function byLastActivity(a: SessionListItem, b: SessionListItem): number {
-  const aOk = isSessionSummary(a)
-  const bOk = isSessionSummary(b)
+  const aOk = isLiveSummary(a)
+  const bOk = isLiveSummary(b)
   if (aOk && bOk) return Date.parse(b.updatedAt) - Date.parse(a.updatedAt)
   if (aOk !== bOk) return aOk ? -1 : 1
   return a.id < b.id ? 1 : a.id > b.id ? -1 : 0

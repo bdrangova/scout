@@ -103,14 +103,58 @@ export function evidenceRoute(sessionId: string, path: string): string {
   return `/s/${encodeURIComponent(sessionId)}/evidence/${encodePath(path)}`
 }
 
-/** The session's index route: it redirects to the step the review should open on (`lib/landing-section.ts`). */
+export type SessionKind = 'code-review' | 'test-run'
+
+/** The route prefix of a session kind: `/s` for code reviews, `/t` for test runs. */
+export function basePathOf(kind: SessionKind): '/s' | '/t' {
+  return kind === 'test-run' ? '/t' : '/s'
+}
+
+/** The session's own route (`/s/:id` or `/t/:id`), optionally on one section; the bare route redirects to the step the review should open on (`lib/landing-section.ts`). */
+export function sessionRoute(kind: SessionKind, sessionId: string, section?: string): string {
+  const base = `${basePathOf(kind)}/${encodeURIComponent(sessionId)}`
+  return section === undefined ? base : `${base}/${section}`
+}
+
+/** Route inside a test run: `/t/:id/<section>[/<sub>]` (`sub` is encoded, e.g. a scenario id on `review`). */
+export function testRunRoute(sessionId: string, section: string, sub?: string): string {
+  const base = sessionRoute('test-run', sessionId, section)
+  return sub === undefined ? base : `${base}/${encodePath(sub)}`
+}
+
+/** The code review's index route: it redirects to the step the review should open on (`lib/landing-section.ts`). */
 export function sessionIndexRoute(sessionId: string): string {
-  return `/s/${encodeURIComponent(sessionId)}`
+  return sessionRoute('code-review', sessionId)
 }
 
 /** The Files page, the base of the file routes. */
-export function sessionRoute(sessionId: string): string {
-  return `/s/${encodeURIComponent(sessionId)}/files`
+export function sessionFilesRoute(sessionId: string): string {
+  return sessionRoute('code-review', sessionId, 'files')
+}
+
+/**
+ * URL of a file of a test run's folder, from an index ref `alias:rel/path`: `/api/sessions/:id/run/file/<alias>/<rel/path>`
+ * (usable as `<img src>` / `<video src>`). A value without `alias:` is returned as one path under the `run` alias.
+ */
+export function runFileUrl(sessionId: string, ref: string): string {
+  return `/api${sessionApiPath(sessionId)}/run/file/${runRefPath(ref)}`
+}
+
+/** URL of a slice of a run log: `/api/sessions/:id/run/log/<alias>/<path>?from=&to=` (1-based, inclusive lines). */
+export function runLogUrl(sessionId: string, ref: string, from?: number, to?: number): string {
+  const query = new URLSearchParams()
+  if (from !== undefined) query.set('from', String(from))
+  if (to !== undefined) query.set('to', String(to))
+  const search = query.size > 0 ? `?${query.toString()}` : ''
+  return `/api${sessionApiPath(sessionId)}/run/log/${runRefPath(ref)}${search}`
+}
+
+/** `alias:rel/path` → `alias/rel/path`, each segment escaped. */
+function runRefPath(ref: string): string {
+  const colon = ref.indexOf(':')
+  const alias = colon === -1 ? 'run' : ref.slice(0, colon)
+  const path = colon === -1 ? ref : ref.slice(colon + 1)
+  return `${encodeURIComponent(alias)}/${encodePath(path)}`
 }
 
 /** Last path segment of the repo path (`/Users/x/Projects/qbdvision` → `qbdvision`). */
@@ -118,4 +162,15 @@ export function repoName(repoPath: string): string {
   const trimmed = repoPath.replace(/\/+$/, '')
   const slash = trimmed.lastIndexOf('/')
   return slash === -1 ? trimmed : trimmed.slice(slash + 1)
+}
+
+/** The run folder inside its checkout (`plans/f/a/test-runs/run-1`); the whole path when it is not under the repo. */
+export function shortRunPath(run: { path: string; repo: string }): string {
+  const repo = run.repo.replace(/\/+$/, '')
+  return run.path.startsWith(`${repo}/`) ? run.path.slice(repo.length + 1) : run.path
+}
+
+/** The other session list: `/` from the test runs, `/t` from the code reviews (what `T` opens). */
+export function otherKindRoute(kind: SessionKind): string {
+  return kind === 'test-run' ? '/' : '/t'
 }

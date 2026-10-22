@@ -1,0 +1,300 @@
+13:58:40.959 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ] [RequestId: ]
+13:58:40.966 [timeEnd] Starting up injection...: 4.991943359375 ms
+13:58:40.966 [log] %s: %s Starting up injection... 5.038ms
+13:58:40.987 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
+13:58:40.987 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:58:40.990 [timeEnd] Security Context DB Initialization: 2.9638671875 ms
+13:58:40.990 [log] %s: %s Security Context DB Initialization 3.016ms
+13:58:40.991 [timeEnd] Freezing security context: 0.0419921875 ms
+13:58:40.991 [log] %s: %s Freezing security context 0.07ms
+13:58:41.019 [log] Retrieving approvals...
+13:58:41.216 [timeEnd] Adding Pending Approvals: 192.013916015625 ms
+13:58:41.216 [log] %s: %s Adding Pending Approvals 192.118ms
+13:58:41.233 [log] <INFO> [Editables::EditablesHandler] :: Getting editables with parameters:  [Referer: ] undefined
+13:58:41.233 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ws://localhost:3001] [RequestId: 44c56ffa-fba9-48d8-a6fa-5c3046a1dd55]
+13:58:41.242 [timeEnd] Starting up injection...: 0.342041015625 ms
+13:58:41.242 [log] %s: %s Starting up injection... 0.435ms
+13:58:41.251 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
+13:58:41.251 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:58:41.253 [timeEnd] Security Context DB Initialization: 1.736083984375 ms
+13:58:41.253 [log] %s: %s Security Context DB Initialization 1.762ms
+13:58:41.253 [timeEnd] Freezing security context: 0.025146484375 ms
+13:58:41.253 [log] %s: %s Freezing security context 0.054ms
+13:58:41.893 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model ControlMethod
+13:58:41.895 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model Document
+13:58:41.896 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model FQA
+13:58:41.901 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model IQA
+13:58:41.905 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model LibraryMaterial
+13:58:41.908 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model Material
+13:58:41.911 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model Process
+13:58:41.912 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model Supplier
+13:58:41.912 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model TPPSection
+13:58:41.913 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model UnitOperation
+13:58:42.017 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 1
+13:58:42.017 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 2
+13:58:42.017 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 3
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 4
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 5
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 6
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 7
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 8
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 9
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 10
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 11
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 12
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 20
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 21
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 22
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 23
+13:58:42.018 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 24
+13:58:42.019 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 26
+13:58:42.019 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 27
+13:58:42.019 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 28
+13:58:42.019 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 29
+13:58:42.019 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 30
+13:58:42.019 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 31
+13:58:42.019 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 33
+13:58:42.086 [timeEnd] Loading data Supplier: 173.6318359375 ms
+13:58:42.086 [log] %s: %s Loading data Supplier 173.688ms
+13:58:42.086 [timeEnd] Parsing data Supplier: 0.072998046875 ms
+13:58:42.086 [log] %s: %s Parsing data Supplier 0.089ms
+13:58:42.086 [timeEnd] Load child instances Supplier: 0.005126953125 ms
+13:58:42.086 [log] %s: %s Load child instances Supplier 0.02ms
+13:58:42.096 [timeEnd] Loading data ControlMethod: 202.27392578125 ms
+13:58:42.096 [log] %s: %s Loading data ControlMethod 202.313ms
+13:58:42.096 [timeEnd] Parsing data ControlMethod: 0.05322265625 ms
+13:58:42.096 [log] %s: %s Parsing data ControlMethod 0.073ms
+13:58:42.096 [timeEnd] Load child instances ControlMethod: 0.0048828125 ms
+13:58:42.096 [log] %s: %s Load child instances ControlMethod 0.021ms
+13:58:42.096 [timeEnd] Loading data Document: 200.800048828125 ms
+13:58:42.096 [log] %s: %s Loading data Document 200.809ms
+13:58:42.096 [timeEnd] Parsing data Document: 0.038818359375 ms
+13:58:42.096 [log] %s: %s Parsing data Document 0.048ms
+13:58:42.096 [timeEnd] Load child instances Document: 0.0029296875 ms
+13:58:42.096 [log] %s: %s Load child instances Document 0.012ms
+13:58:42.096 [timeEnd] Loading data Process: 184.90185546875 ms
+13:58:42.096 [log] %s: %s Loading data Process 184.913ms
+13:58:42.096 [timeEnd] Parsing data Process: 0.02099609375 ms
+13:58:42.096 [log] %s: %s Parsing data Process 0.029ms
+13:58:42.097 [timeEnd] Load child instances Process: 0.002197265625 ms
+13:58:42.097 [log] %s: %s Load child instances Process 0.012ms
+13:58:42.097 [timeEnd] Loading data LibraryMaterial: 191.678955078125 ms
+13:58:42.097 [log] %s: %s Loading data LibraryMaterial 191.66ms
+13:58:42.098 [timeEnd] Parsing data LibraryMaterial: 0.10888671875 ms
+13:58:42.098 [log] %s: %s Parsing data LibraryMaterial 0.152ms
+13:58:42.098 [timeEnd] Load child instances LibraryMaterial: 0.005126953125 ms
+13:58:42.098 [log] %s: %s Load child instances LibraryMaterial 0.026ms
+13:58:42.099 [timeEnd] Loading data TPPSection: 186.595947265625 ms
+13:58:42.099 [log] %s: %s Loading data TPPSection 186.627ms
+13:58:42.099 [timeEnd] Parsing data TPPSection: 0.02685546875 ms
+13:58:42.099 [log] %s: %s Parsing data TPPSection 0.042ms
+13:58:42.100 [timeEnd] Loading data Material: 191.634033203125 ms
+13:58:42.100 [log] %s: %s Loading data Material 191.652ms
+13:58:42.100 [timeEnd] Parsing data Material: 0.092041015625 ms
+13:58:42.100 [log] %s: %s Parsing data Material 0.103ms
+13:58:42.101 [timeEnd] Loading data IQA: 200.27294921875 ms
+13:58:42.101 [log] %s: %s Loading data IQA 200.283ms
+13:58:42.102 [timeEnd] Parsing data IQA: 0.148193359375 ms
+13:58:42.102 [log] %s: %s Parsing data IQA 0.16ms
+13:58:42.102 [timeEnd] Load child instances IQA: 0.0029296875 ms
+13:58:42.102 [log] %s: %s Load child instances IQA 0.018ms
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 1
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 2
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 3
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 4
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 5
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 6
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 7
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 8
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 9
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 10
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 11
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 12
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 20
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 21
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 22
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 23
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 24
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 26
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 27
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 28
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 29
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 30
+13:58:42.102 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 31
+13:58:42.103 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 33
+13:58:42.103 [timeEnd] Loading data UnitOperation: 189.992919921875 ms
+13:58:42.103 [log] %s: %s Loading data UnitOperation 190.006ms
+13:58:42.103 [timeEnd] Parsing data UnitOperation: 0.159912109375 ms
+13:58:42.103 [log] %s: %s Parsing data UnitOperation 0.174ms
+13:58:42.103 [timeEnd] Load child instances UnitOperation: 0.0029296875 ms
+13:58:42.103 [log] %s: %s Load child instances UnitOperation 0.016ms
+13:58:42.106 [timeEnd] Loading data FQA: 209.600830078125 ms
+13:58:42.106 [log] %s: %s Loading data FQA 209.65ms
+13:58:42.106 [timeEnd] Parsing data FQA: 0.132080078125 ms
+13:58:42.106 [log] %s: %s Parsing data FQA 0.15ms
+13:58:42.108 [timeEnd] Load child instances TPPSection: 9.406982421875 ms
+13:58:42.109 [log] %s: %s Load child instances TPPSection 9.559ms
+13:58:42.112 [timeEnd] Load child instances Material: 11.77001953125 ms
+13:58:42.112 [log] %s: %s Load child instances Material 11.804ms
+13:58:42.122 [timeEnd] Load child instances FQA: 15.19384765625 ms
+13:58:42.122 [log] %s: %s Load child instances FQA 15.267ms
+13:58:42.276 [timeEnd] Loading data for 56 records: 383.383056640625 ms
+13:58:42.276 [log] %s: %s Loading data for 56 records 383.422ms
+13:58:42.293 [log] <INFO> [Editables::EditablesListRequestHandler] :: Tracking user activity...
+13:58:42.416 [log] <INFO> [Framework::ImmediateWebSocketClientFeedbackProvider] :: [recovery-persist] stored result under key=6df78cb7-b029-4719-b9e3-afd60553aa94 user=1350
+13:58:42.419 [log] <INFO> [Framework::WebSocketsClient] :: Websocket connection closed: [ConnectionId: df94f622-0c86-4131-a878-b0240b82610a]
+13:58:49.665 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ws://localhost:3001] [RequestId: fd879e7a-b4a0-45be-90bd-904359bff19e]
+13:58:49.671 [timeEnd] Starting up injection...: 0.296142578125 ms
+13:58:49.671 [log] %s: %s Starting up injection... 0.455ms
+13:58:49.680 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
+13:58:49.680 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:58:49.682 [timeEnd] Security Context DB Initialization: 1.844970703125 ms
+13:58:49.682 [log] %s: %s Security Context DB Initialization 1.987ms
+13:58:49.682 [timeEnd] Freezing security context: 0.037841796875 ms
+13:58:49.682 [log] %s: %s Freezing security context 0.082ms
+13:58:50.033 [log] 
+Websockets: Starting EditablesApproveOrRejectOrWithdrawDecoratorRequestHandler...
+13:58:50.034 [log] Account setup complete (attempt 0). Status is CONFIRMED.
+13:58:50.034 [log] <INFO> [Framework::ServerSideFeatureFlagManager] :: Configuring LaunchDarkly for local development server: http://localhost:8765
+13:58:50.045 [log] <INFO> [Framework::ServerSideFeatureFlagManager] :: LaunchDarkly default client initialized successfully
+13:58:50.046 [log] <INFO> [Framework::ServerSideFeatureFlagManager] :: Feature flag result from default LD env: stateManagementServiceApproveForArchive = true
+13:58:50.048 [error] Unknown feature flag "stateManagementServiceApprove"; returning default value
+13:58:50.048 [error] <ERROR> [Framework::ServerSideFeatureFlagManager] :: Feature flag stateManagementServiceApprove does NOT EXIST in the default LD env, so it can never be enabled. Every caller is silently getting the default of false. This is almost always a typo in FEATURE_FLAGS (common_feature_flags.js) or a flag that was never created — check the spelling against the LaunchDarkly dashboard, remembering that keys are case-sensitive. Note that a key holding the CLIENT spelling will land here too: the React SDK camel-cases keys (so LD's "recordPDFImport" reaches the browser as "recordPdfImport") while this Node SDK needs LaunchDarkly's raw key. stateManagementServiceApprove
+13:58:50.096 [timeEnd] DependenciesGetterContext.getDependencies::ControlMethod-4: 2.634033203125 ms
+13:58:50.096 [log] %s: %s DependenciesGetterContext.getDependencies::ControlMethod-4 2.76ms
+13:58:50.125 [timeEnd] DependenciesGetterContext.getDependents: 28.239013671875 ms
+13:58:50.125 [log] %s: %s DependenciesGetterContext.getDependents 28.344ms
+13:58:50.295 [timeEnd] DependenciesGetterContext.getDependencies::IQA-35: 166.972900390625 ms
+13:58:50.295 [log] %s: %s DependenciesGetterContext.getDependencies::IQA-35 167.031ms
+13:58:50.302 [timeEnd] DependenciesGetterContext.getDependencies::IQA-36: 174.51904296875 ms
+13:58:50.302 [log] %s: %s DependenciesGetterContext.getDependencies::IQA-36 174.565ms
+13:58:50.306 [timeEnd] DependenciesGetterContext.getDependencies::IQA-31: 180.0791015625 ms
+13:58:50.306 [log] %s: %s DependenciesGetterContext.getDependencies::IQA-31 180.109ms
+13:58:50.307 [timeEnd] DependenciesGetterContext.getDependencies::IQA-33: 179.93701171875 ms
+13:58:50.307 [log] %s: %s DependenciesGetterContext.getDependencies::IQA-33 179.954ms
+13:58:50.308 [timeEnd] DependenciesGetterContext.getDependencies::IQA-34: 180.548095703125 ms
+13:58:50.308 [log] %s: %s DependenciesGetterContext.getDependencies::IQA-34 180.568ms
+13:58:50.309 [timeEnd] DependenciesGetterContext.getDependencies::IQA-32: 182.862060546875 ms
+13:58:50.309 [log] %s: %s DependenciesGetterContext.getDependencies::IQA-32 182.889ms
+13:58:50.311 [timeEnd] DependenciesGetterContext.getDependencies::IQA-30: 185.739013671875 ms
+13:58:50.311 [log] %s: %s DependenciesGetterContext.getDependencies::IQA-30 185.781ms
+13:58:50.327 [timeEnd] DependenciesGetterContext.getDependents: 15.277099609375 ms
+13:58:50.327 [log] %s: %s DependenciesGetterContext.getDependents 15.329ms
+13:58:50.370 [timeEnd] DependenciesGetterContext.getDependencies::ControlMethod-4: 1.051025390625 ms
+13:58:50.370 [log] %s: %s DependenciesGetterContext.getDependencies::ControlMethod-4 1.108ms
+13:58:50.504 [log] <INFO> [Framework::ImmediateWebSocketClientFeedbackProvider] :: [recovery-persist] stored result under key=37733a34-263f-44eb-8504-8d123d06989a user=1350
+13:58:50.514 [log] Verifying user test1+ryanArchiver@qbdvision.com in company 303 in status CONFIRMED
+13:58:50.516 [log] Sending email to Ryan Archiver <test1+ryanArchiver@qbdvision.com> with subject: Approval response from QbDVision
+13:58:50.519 [log] <INFO> [Email::DynamoDBNotificationSender] :: Matches:  [
+  [
+    "test1+ryanArchiver@qbdvision.com",
+    "test1+ryanArchiver@qbdvision.com"
+  ]
+]
+13:58:50.519 [log] <INFO> [Email::DynamoDBNotificationSender] :: Sending email to:  test1+ryanArchiver@qbdvision.com
+13:58:50.887 [warning] Timer 'Recalculating training for Bulk Approval' already exists
+13:58:50.889 [error] (node:49795) Warning: Label 'Recalculating training for Bulk Approval' already exists for console.time()
+13:58:51.009 [log] <INFO> [Framework::ImmediateWebSocketClientFeedbackProvider] :: [recovery-persist] stored result under key=37733a34-263f-44eb-8504-8d123d06989a user=1350
+13:58:51.011 [log] <INFO> [Framework::ServerSideFeatureFlagManager] :: LaunchDarkly default client connection closed
+13:58:51.022 [log] <INFO> [Framework::WebSocketsClient] :: Websocket connection closed: [ConnectionId: 06d6cd65-5033-4ad3-b953-b587d177b574]
+13:58:51.025 [log] <INFO> [Editables::EditablesHandler] :: TOTAL OPERATION TIME (batchApproveOrReject): 1.36s
+13:59:06.487 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ] [RequestId: ]
+13:59:06.489 [timeEnd] Starting up injection...: 0.3720703125 ms
+13:59:06.489 [log] %s: %s Starting up injection... 0.488ms
+13:59:06.503 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
+13:59:06.503 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:59:06.507 [timeEnd] Security Context DB Initialization: 3.701904296875 ms
+13:59:06.507 [log] %s: %s Security Context DB Initialization 3.828ms
+13:59:06.507 [timeEnd] Freezing security context: 0.110107421875 ms
+13:59:06.507 [log] %s: %s Freezing security context 0.183ms
+13:59:06.531 [log] Retrieving approvals...
+13:59:06.569 [timeEnd] Adding Pending Approvals: 30.942138671875 ms
+13:59:06.569 [log] %s: %s Adding Pending Approvals 31.04ms
+13:59:06.578 [log] <INFO> [Editables::EditablesHandler] :: Getting editables with parameters:  [Referer: ] undefined
+13:59:06.579 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ws://localhost:3001] [RequestId: fedf99d6-278a-4cf4-a4e3-071ea605784d]
+13:59:06.585 [timeEnd] Starting up injection...: 0.228759765625 ms
+13:59:06.585 [log] %s: %s Starting up injection... 0.316ms
+13:59:06.594 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
+13:59:06.594 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:59:06.596 [timeEnd] Security Context DB Initialization: 1.9150390625 ms
+13:59:06.596 [log] %s: %s Security Context DB Initialization 1.968ms
+13:59:06.596 [timeEnd] Freezing security context: 0.027099609375 ms
+13:59:06.596 [log] %s: %s Freezing security context 0.061ms
+13:59:06.959 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model ControlMethod
+13:59:06.962 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model Document
+13:59:06.964 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model FQA
+13:59:06.966 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model IQA
+13:59:06.973 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model LibraryMaterial
+13:59:06.974 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model Material
+13:59:06.990 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model Process
+13:59:06.991 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model Supplier
+13:59:06.992 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model TPPSection
+13:59:06.993 [log] <INFO> [Editables::EditablesListRequestHandler] :: Looking up list of instances for model UnitOperation
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 1
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 2
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 3
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 4
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 5
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 6
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 7
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 8
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 9
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 10
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 11
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 12
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 20
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 21
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 22
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 23
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 24
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 26
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 27
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 28
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 29
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 30
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 31
+13:59:07.106 [warning] <WARNING> [Editables::EditablesHelper] :: Cannot find order position for UnitOperation 33
+13:59:07.135 [timeEnd] Loading data Supplier: 143.7578125 ms
+13:59:07.135 [log] %s: %s Loading data Supplier 143.811ms
+13:59:07.135 [timeEnd] Parsing data Supplier: 0.074951171875 ms
+13:59:07.135 [log] %s: %s Parsing data Supplier 0.088ms
+13:59:07.135 [timeEnd] Load child instances Supplier: 0.005126953125 ms
+13:59:07.135 [log] %s: %s Load child instances Supplier 0.02ms
+13:59:07.142 [timeEnd] Loading data Document: 179.318115234375 ms
+13:59:07.142 [log] %s: %s Loading data Document 179.358ms
+13:59:07.142 [timeEnd] Parsing data Document: 0.0458984375 ms
+13:59:07.142 [log] %s: %s Parsing data Document 0.062ms
+13:59:07.142 [timeEnd] Load child instances Document: 0.0048828125 ms
+13:59:07.142 [log] %s: %s Load child instances Document 0.02ms
+13:59:07.145 [timeEnd] Loading data Process: 155.280029296875 ms
+13:59:07.145 [log] %s: %s Loading data Process 155.298ms
+13:59:07.145 [timeEnd] Parsing data Process: 0.028076171875 ms
+13:59:07.145 [log] %s: %s Parsing data Process 0.04ms
+13:59:07.145 [timeEnd] Load child instances Process: 0.003173828125 ms
+13:59:07.145 [log] %s: %s Load child instances Process 0.018ms
+13:59:07.150 [timeEnd] Loading data ControlMethod: 190.02294921875 ms
+13:59:07.150 [log] %s: %s Loading data ControlMethod 190.052ms
+13:59:07.150 [timeEnd] Parsing data ControlMethod: 0.0380859375 ms
+13:59:07.150 [log] %s: %s Parsing data ControlMethod 0.053ms
+13:59:07.150 [timeEnd] Load child instances ControlMethod: 0.00390625 ms
+13:59:07.150 [log] %s: %s Load child instances ControlMethod 0.018ms
+13:59:07.153 [timeEnd] Loading data TPPSection: 160.446044921875 ms
+13:59:07.153 [log] %s: %s Loading data TPPSection 160.471ms
+13:59:07.153 [timeEnd] Parsing data TPPSection: 0.03515625 ms
+13:59:07.153 [log] %s: %s Parsing data TPPSection 0.048ms
+13:59:07.153 [timeEnd] Loading data Material: 178.783203125 ms
+13:59:07.153 [log] %s: %s Loading data Material 178.804ms
+13:59:07.154 [timeEnd] Parsing data Material: 0.094970703125 ms
+13:59:07.154 [log] %s: %s Parsing data Material 0.111ms
+13:59:07.155 [timeEnd] Loading data FQA: 190.706787109375 ms
+13:59:07.155 [log] %s: %s Loading data FQA 190.708ms
+13:59:07.155 [timeEnd] Parsing data FQA: 0.1298828125 ms
+13:59:07.155 [log] %s: %s Parsing data FQA 0.156ms
+13:59:07.156 [timeEnd] Loading data IQA: 188.94482421875 ms
+13:59:07.156 [log] %s: %s Loading data IQA 188.96ms
+13:59:07.156 [timeEnd] Parsing data IQA: 0.161865234375 ms
+13:59:07.156 [log] %s: %s Parsing data IQA 0.174ms
+13:59:07.156 [timeEnd] Load child instances IQA: 0.006103515625 ms
+13:59:07.156 [log] %s: %s Load child instances IQA 0.022ms
+13:59:07.157 [timeEnd] Loading data LibraryMaterial: 183.77392578125 ms
+13:59:07.157 [log] %s: %s Loading data LibraryMaterial 183.78ms

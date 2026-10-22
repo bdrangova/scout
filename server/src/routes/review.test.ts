@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { ReviewResponseSchema, ReviewSchema, SCHEMA_VERSION, emptyReview } from '@review-dash/shared'
-import type { PutReviewRequest, Resolutions, Review, SessionDetail } from '@review-dash/shared'
+import type { PutReviewRequest, Resolutions, Review, CodeReviewDetail } from '@review-dash/shared'
 import { makeComment } from '@review-dash/shared/testing/fixtures'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -12,11 +12,11 @@ import type { FixtureStore } from '../testing/fixture-store.ts'
 
 let store: FixtureStore
 let app: Express
-let detail: SessionDetail
+let detail: CodeReviewDetail
 beforeAll(async () => {
   store = await createFixtureStore()
   app = appFor(store.home)
-  detail = (await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body as SessionDetail
+  detail = (await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body as CodeReviewDetail
 })
 afterAll(async () => {
   await closeApp(app)

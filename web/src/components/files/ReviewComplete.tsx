@@ -1,5 +1,5 @@
 import { ScoutMark } from '@/components/brand/Scout'
-import type { SessionDetail } from '@review-dash/shared'
+import type { CodeReviewDetail } from '@review-dash/shared'
 import { ArrowLeftIcon, FileTextIcon, ImageIcon, PackageIcon, SendIcon, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -10,7 +10,7 @@ import { Panel, PanelBody, PanelHeader, PanelTitle } from '@/components/ui/panel
 export interface ReviewCompleteProps {
   sessionId: string
   /** The section counts, as the header tabs show them; an empty section gets no button. */
-  detail: Pick<SessionDetail, 'evidence' | 'spec' | 'extras'>
+  detail: Pick<CodeReviewDetail, 'evidence' | 'spec' | 'extras'>
   /** Leave the end state and return to the files. */
   onBack: () => void
   /** The current view (cards, list or grid), kept behind the panel, blurred and inert. */

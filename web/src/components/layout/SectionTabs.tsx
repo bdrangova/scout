@@ -1,7 +1,9 @@
-import { SECTIONS, type SessionDetail } from '@review-dash/shared'
-import { CircleAlert, FileText, Files, Image, Package, Send, Check, type LucideIcon } from 'lucide-react'
+import type { SessionDetail } from '@review-dash/shared'
+import { Bug, CircleAlert, Database, FileText, Files, Image, LayoutDashboard, ListChecks, Package, ScrollText, Send, Check, type LucideIcon } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router'
+import { isTestRunDetail } from '@/lib/detail-kind'
 import { PrTab } from './PrTab'
+import { useShellConfig, visibleSectionsOf, type ShellConfig } from './shell-config'
 import { useCurrentSection } from './useCurrentSection'
 import { cn } from '@/lib/utils'
 
@@ -9,7 +11,7 @@ interface SectionTab {
   to: string
   label: string
   icon: LucideIcon
-  /** Shown when > 0 (Files always shows its count). */
+  /** Shown when > 0 (Files and Review always show their count). */
   count?: number
   /** Submit only: the review is ready to send, or the last run failed. */
   state?: SubmitState
@@ -24,16 +26,31 @@ export interface SubmitTab {
   state: SubmitState
 }
 
-/** Tabs in the shared `SECTIONS` order (also the `1–5` hotkey order); the PR link is not one of them. */
-function sectionTabs(detail: SessionDetail, submit: SubmitTab): SectionTab[] {
-  const tabs: Record<(typeof SECTIONS)[number], SectionTab> = {
-    spec: { to: 'spec', label: 'Spec', icon: FileText, count: detail.spec.length },
-    extras: { to: 'extras', label: 'Extras', icon: Package, count: detail.extras.length },
-    evidence: { to: 'evidence', label: 'Evidence', icon: Image, count: detail.evidence.length },
-    files: { to: 'files', label: 'Files', icon: Files, count: detail.tree.files.length },
-    submit: { to: 'submit', label: 'Submit', icon: Send, count: submit.openComments, state: submit.state },
-  }
-  return SECTIONS.map((section) => tabs[section])
+const SECTION_ICONS: Record<string, LucideIcon> = {
+  spec: FileText,
+  extras: Package,
+  evidence: Image,
+  files: Files,
+  submit: Send,
+  overview: LayoutDashboard,
+  review: ListChecks,
+  gaps: Bug,
+  'data-setup': Database,
+  logs: ScrollText,
+}
+
+/** Sections whose tab shows its count even at zero. */
+const ALWAYS_COUNTED: ReadonlySet<string> = new Set(['files', 'review'])
+
+/** Tabs in the kind's section order (also the number-hotkey order), only the visible ones; the PR link is not one of them. */
+function sectionTabs(config: ShellConfig, detail: SessionDetail, submit: SubmitTab): SectionTab[] {
+  return visibleSectionsOf(config, detail).map((section) => ({
+    to: section,
+    label: config.sectionLabel(section),
+    icon: SECTION_ICONS[section] ?? FileText,
+    count: section === 'submit' ? submit.openComments : config.sectionCount?.(section, detail),
+    state: section === 'submit' ? submit.state : undefined,
+  }))
 }
 
 const STATE_CLASS = { ready: { link: 'text-paper', fill: 'bg-st-ready' }, failed: { link: 'text-paper', fill: 'bg-st-failed' } } as const
@@ -50,7 +67,7 @@ function tabName(tab: SectionTab, counted: boolean): string {
 }
 
 function showsCount(tab: SectionTab): tab is SectionTab & { count: number } {
-  return tab.count !== undefined && (tab.to === 'files' || tab.count > 0)
+  return tab.count !== undefined && (ALWAYS_COUNTED.has(tab.to) || tab.count > 0)
 }
 
 /**
@@ -60,10 +77,12 @@ function showsCount(tab: SectionTab): tab is SectionTab & { count: number } {
  */
 export function SectionTabs({ detail, submit }: { detail: SessionDetail; submit: SubmitTab }) {
   const location = useLocation()
+  const config = useShellConfig()
   const onFiles = useCurrentSection() === 'files'
+  const tabs = sectionTabs(config, detail, submit)
   return (
     <nav aria-label="Sections" className="ml-1 flex items-stretch [filter:drop-shadow(2px_2px_0_var(--sh))]">
-      {sectionTabs(detail, submit).map((tab) => {
+      {tabs.map((tab) => {
         const counted = showsCount(tab)
         return (
           <NavLink
@@ -92,7 +111,7 @@ export function SectionTabs({ detail, submit }: { detail: SessionDetail; submit:
           </NavLink>
         )
       })}
-      {detail.pr && <PrTab pr={detail.pr} />}
+      {!isTestRunDetail(detail) && detail.pr && <PrTab pr={detail.pr} />}
     </nav>
   )
 }

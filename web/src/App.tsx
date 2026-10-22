@@ -1,6 +1,7 @@
 import { RouterProvider, createBrowserRouter } from 'react-router'
 import { DiffWorkerProvider } from './components/diff/DiffWorkerProvider'
 import { SessionIndexRedirect } from './components/layout/SessionIndexRedirect'
+import { TestRunIndexRedirect } from './components/layout/TestRunIndexRedirect'
 import { Toaster } from './components/ui/sonner'
 import { EvidencePage } from './pages/EvidencePage'
 import { ExtrasPage } from './pages/ExtrasPage'
@@ -9,13 +10,22 @@ import { SessionLayout } from './pages/SessionLayout'
 import { SessionListPage } from './pages/SessionListPage'
 import { SpecPage } from './pages/SpecPage'
 import { SubmitPage } from './pages/SubmitPage'
+import { TestRunLayout } from './pages/TestRunLayout'
+import { DataSetupPage } from './pages/testrun/DataSetupPage'
+import { GapsPage } from './pages/testrun/GapsPage'
+import { LogsPage } from './pages/testrun/LogsPage'
+import { OverviewPage } from './pages/testrun/OverviewPage'
+import { ReviewPage } from './pages/testrun/ReviewPage'
+import { TestRunSubmitPage } from './pages/testrun/TestRunSubmitPage'
 
 // Web routes from the contract: `/`, `/s/:id/files`, `/s/:id/files/*path`,
 // `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/submit`.
 // `/s/:id` itself redirects to the step the review should open on (lib/landing-section.ts).
+// Test runs: `/t` (list), `/t/:id/{overview,review,review/:scenarioId,gaps,data-setup,logs,submit}`; `/t/:id` redirects like `/s/:id`.
 // `/__kit` is the dev-only primitives gallery (web/src/pages/KitPage.tsx).
 const router = createBrowserRouter([
   { path: '/', Component: SessionListPage },
+  { path: '/t', element: <SessionListPage kind="test-run" /> },
   ...(import.meta.env.DEV
     ? [{ path: '/__kit', HydrateFallback: () => null, lazy: async () => ({ Component: (await import('./pages/KitPage')).KitPage }) }]
     : []),
@@ -31,6 +41,20 @@ const router = createBrowserRouter([
       { path: 'spec', Component: SpecPage },
       { path: 'extras', Component: ExtrasPage },
       { path: 'submit', Component: SubmitPage },
+    ],
+  },
+  {
+    path: '/t/:id',
+    Component: TestRunLayout,
+    children: [
+      { index: true, Component: TestRunIndexRedirect },
+      { path: 'overview', Component: OverviewPage },
+      { path: 'review', Component: ReviewPage },
+      { path: 'review/:scenarioId', Component: ReviewPage },
+      { path: 'gaps', Component: GapsPage },
+      { path: 'data-setup', Component: DataSetupPage },
+      { path: 'logs', Component: LogsPage },
+      { path: 'submit', Component: TestRunSubmitPage },
     ],
   },
 ])

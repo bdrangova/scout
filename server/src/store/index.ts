@@ -1,13 +1,17 @@
 import { constants as fsConstants } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { RUN_ID_RE, SCHEMA_VERSION, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@review-dash/shared'
+import readline from 'node:readline'
+import { RUN_ID_RE, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@review-dash/shared'
 import type {
   AgentRun,
+  AnySentSnapshot,
   ArchivedSession,
+  CodeReviewManifest,
   CommitList,
   FileContentsSide,
   Manifest,
+  ManifestKind,
   PrComments,
   PrCommentsResponse,
   PrReplies,
@@ -22,10 +26,13 @@ import type {
   Review,
   ReviewResponse,
   Scope,
-  SentSnapshot,
   SessionDetail,
   SessionListItem,
+  SessionStatus,
   SessionSummary,
+  TestRunDetail,
+  TestRunManifest,
+  TestRunSummary,
   TreeFile,
   WorkingTree,
 } from '@review-dash/shared'
@@ -47,6 +54,7 @@ import type { StorePaths } from './paths.ts'
 import { REVIEW_FILE, activeRunId, latestRunStatus, listRuns, readPrComments, readPrReplies, readPrResolutions, writePrReplies, readResolutions, readReview, readRun, runFile, runLogFile, sentFiles } from './review.ts'
 import { ScopeCache } from './scopes.ts'
 import type { ScopeCacheOptions } from './scopes.ts'
+import { deriveRunDetail, indexFingerprint, loadRunIndex, normalizeRef, refToAbsolute, resolveRoots, servablePaths } from './test-run.ts'
 import { TreeCache } from './tree.ts'
 import type { SessionTree, TreeCacheOptions } from './tree.ts'
 
@@ -102,15 +110,31 @@ export interface StoreOptions {
   log?: (message: string) => void
 }
 
+/** Most lines one log request returns. */
+export const LOG_SLICE_MAX_LINES = 2000
+
+export interface TestRunLogSlice {
+  path: string
+  from: number
+  to: number
+  total: number
+  lines: string[]
+}
+
+/** The type a run file is served as: the shared map, plus plain text for logs. */
+function runFileType(relative: string): string | null {
+  return mimeFromPath(relative) ?? (/\.(log|out|err)$/i.test(relative) ? 'text/plain; charset=utf-8' : null)
+}
+
 function timeOf(iso: string | undefined): number {
   if (iso === undefined) return Number.NEGATIVE_INFINITY
   const t = Date.parse(iso)
   return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t
 }
 
-/** The latest of the manifest, the review, the resolutions and the tree computation. */
-export function latestUpdatedAt(manifest: Manifest, state: ReviewState, tree: WorkingTree): string {
-  const candidates = [manifest.updatedAt, state.review?.updatedAt, state.resolutions?.updatedAt, tree.computedAt]
+/** The latest of the manifest, the review, the resolutions and `contentAt` (the tree computation, or the run index's `updatedAt`). */
+export function latestUpdatedAt(manifest: Manifest, state: ReviewState, contentAt: string): string {
+  const candidates = [manifest.updatedAt, state.review?.updatedAt, state.resolutions?.updatedAt, contentAt]
   let best = manifest.updatedAt
   for (const candidate of candidates) {
     if (candidate !== undefined && timeOf(candidate) > timeOf(best)) best = candidate
@@ -118,7 +142,7 @@ export function latestUpdatedAt(manifest: Manifest, state: ReviewState, tree: Wo
   return best
 }
 
-export function sessionSummary(manifest: Manifest, state: ReviewState, tree: WorkingTree): SessionSummary {
+export function sessionSummary(manifest: CodeReviewManifest, state: ReviewState, tree: WorkingTree): SessionSummary {
   const openComments = state.review === null ? 0 : mergeComments(state.review, state.resolutions).filter((c) => c.status === 'open').length
   return {
     id: manifest.id,
@@ -129,11 +153,44 @@ export function sessionSummary(manifest: Manifest, state: ReviewState, tree: Wor
     progress: progress(state.review, tree, state.resolutions),
     openComments,
     stats: { files: tree.stats.files, additions: tree.stats.additions, deletions: tree.stats.deletions },
-    updatedAt: latestUpdatedAt(manifest, state, tree),
+    updatedAt: latestUpdatedAt(manifest, state, tree.computedAt),
     activeRunId: state.activeRunId,
     latestRunStatus: state.latestRunStatus ?? null,
     lastSend: state.review?.sent ?? null,
     ...prFields(state),
+  }
+}
+
+/** The scenarios of a run as review items: the id is the key of the verdict in `review.files`. */
+export function scenarioItems(detail: TestRunDetail): { path: string; fingerprint: string }[] {
+  return detail.scenarios.map((scenario) => ({ path: scenario.id, fingerprint: scenario.fingerprint }))
+}
+
+function testRunStatus(state: ReviewState, detail: TestRunDetail): SessionStatus {
+  return sessionStatus({ review: state.review, tree: scenarioItems(detail), resolutions: state.resolutions, activeRun: state.activeRunId !== null, latestRunStatus: state.latestRunStatus })
+}
+
+export function testRunSummary(manifest: TestRunManifest, state: ReviewState, detail: TestRunDetail): TestRunSummary {
+  const openComments = state.review === null ? 0 : mergeComments(state.review, state.resolutions).filter((c) => c.status === 'open').length
+  const counts = { scenarios: detail.scenarios.length, pass: 0, fail: 0, gap: 0, na: 0, blocked: 0, uncertain: 0, planned: 0 }
+  for (const scenario of detail.scenarios) counts[scenario.status] += 1
+  const { reviewed, total } = progress(state.review, scenarioItems(detail), state.resolutions)
+  return {
+    kind: 'test-run',
+    id: manifest.id,
+    title: manifest.title,
+    createdAt: manifest.createdAt,
+    updatedAt: latestUpdatedAt(manifest, state, detail.index.updatedAt),
+    run: { path: manifest.run.path, feature: manifest.run.feature, area: manifest.run.area },
+    tickets: manifest.tickets,
+    status: testRunStatus(state, detail),
+    counts,
+    reviewed,
+    total,
+    openComments,
+    lastSend: state.review?.sent ?? null,
+    activeRunId: state.activeRunId,
+    latestRunStatus: state.latestRunStatus ?? null,
   }
 }
 
@@ -219,6 +276,9 @@ export class Store {
   /** `<home>/cache/objects`: where virtual merge-base objects go (never the user's repo). */
   private readonly overlayRoot: string
   private readonly manifests = new ManifestReader()
+  /** Derived test-run details by session id, dropped by the run watcher; `indexStamp` guards against a missed event. */
+  private readonly runDetails = new Map<string, { detail: TestRunDetail; indexStamp: string }>()
+  private readonly runDetailsInFlight = new Map<string, Promise<TestRunDetail>>()
   private readonly reviewLock = new KeyedLock()
   private readonly prRepliesLock = new KeyedLock()
   private readonly log: (message: string) => void
@@ -245,6 +305,7 @@ export class Store {
   dropTree(id: string): void {
     this.trees.drop(id)
     this.scopes.invalidate(id)
+    this.invalidateRun(id)
   }
 
   /** Folder names under `sessions/` that look like session ids (unsorted). */
@@ -267,23 +328,77 @@ export class Store {
     return this.manifests.read(path.join(this.paths.sessionsDir, id), id)
   }
 
-  /** Every folder under `sessions/`, newest first; broken folders and unreadable repos appear as `{ id, error }`. */
-  async listSessions(): Promise<SessionListItem[]> {
-    const items = await Promise.all((await this.sessionFolders()).map((id) => this.listItem(id)))
+  /**
+   * Every folder under `sessions/`, newest first; broken folders and unreadable repos appear as `{ id, error }`.
+   * With `kind` only sessions of that kind are listed (a folder whose manifest cannot be read has no kind and is left out).
+   */
+  async listSessions(kind?: ManifestKind): Promise<SessionListItem[]> {
+    const listed = await Promise.all((await this.sessionFolders()).map((id) => this.listItem(id, kind)))
+    const items = listed.filter((item): item is SessionListItem => item !== null)
     return items.sort((a, b) => listSortKey(b) - listSortKey(a) || b.id.localeCompare(a.id))
   }
 
-  private async listItem(id: string): Promise<SessionListItem> {
-    if (!SESSION_ID_RE.test(id)) return { id, error: 'folder name is not a valid session id' }
+  private async listItem(id: string, kind: ManifestKind | undefined): Promise<SessionListItem | null> {
+    if (!SESSION_ID_RE.test(id)) return kind === undefined ? { id, error: 'folder name is not a valid session id' } : null
     const result = await this.readManifest(id)
-    if (!result.ok) return { id, error: result.error }
-    const session: LoadedSession = { id, dir: path.join(this.paths.sessionsDir, id), manifest: result.manifest }
+    if (!result.ok) return kind === undefined ? { id, error: result.error } : null
+    const { manifest } = result
+    if (kind !== undefined && manifestKind(manifest) !== kind) return null
+    const session: LoadedSession = { id, dir: path.join(this.paths.sessionsDir, id), manifest }
     try {
+      if (isTestRun(manifest)) {
+        const [state, detail] = await Promise.all([this.reviewState(session), this.runDetail(manifest)])
+        return testRunSummary(manifest, state, detail)
+      }
       const [state, { tree }] = await Promise.all([this.reviewState(session), this.tree(session)])
-      return sessionSummary(result.manifest, state, tree)
+      return sessionSummary(manifest, state, tree)
     } catch (err) {
       return { id, error: errorMessage(err) }
     }
+  }
+
+  /** The cached derived detail of a test run; recomputed after `invalidateRun` or when `test-run.json` changed on disk. 422 when the index is unusable. */
+  async runDetail(manifest: TestRunManifest): Promise<TestRunDetail> {
+    const stamp = await this.indexStamp(manifest)
+    const cached = this.runDetails.get(manifest.id)
+    if (cached !== undefined && cached.indexStamp === stamp) return cached.detail
+    const pending = this.runDetailsInFlight.get(manifest.id)
+    if (pending !== undefined) return pending
+    const compute = deriveRunDetail(manifest)
+      .then((detail) => {
+        this.runDetails.set(manifest.id, { detail, indexStamp: stamp })
+        return detail
+      })
+      .finally(() => this.runDetailsInFlight.delete(manifest.id))
+    this.runDetailsInFlight.set(manifest.id, compute)
+    return compute
+  }
+
+  private async indexStamp(manifest: TestRunManifest): Promise<string> {
+    try {
+      const stat = await fs.stat(path.join(manifest.run.path, TEST_RUN_INDEX_FILE))
+      return `${manifest.run.path}:${stat.mtimeMs}:${stat.size}`
+    } catch {
+      return `${manifest.run.path}:missing`
+    }
+  }
+
+  /** The run folder or its media changed: the next read derives the detail again. */
+  invalidateRun(id: string): void {
+    this.runDetails.delete(id)
+    this.runDetailsInFlight.delete(id)
+  }
+
+  /** The directories a run watcher needs: the run folder and every resolved root (the run folder alone when the index is unusable). */
+  async runWatchPaths(manifest: TestRunManifest): Promise<string[]> {
+    const paths = [manifest.run.path]
+    try {
+      const loaded = await loadRunIndex(manifest.run.path)
+      if (loaded?.ok) paths.push(...Object.values(await resolveRoots(manifest, loaded.index)))
+    } catch (err) {
+      this.log(`test run ${manifest.id}: watching the run folder only: ${errorMessage(err)}`)
+    }
+    return paths
   }
 
   /** 404 when the folder or manifest is missing (or the id is malformed), 422 when the manifest is invalid. */
@@ -312,7 +427,20 @@ export class Store {
 
   /** The live working tree, per-file patches and commit list (cached; 422 `repo-missing: <path>` when the repo is gone). */
   tree(session: LoadedSession): Promise<SessionTree> {
-    return this.trees.get({ id: session.id, repo: session.manifest.repo.path, baseRef: session.manifest.repo.baseRef })
+    const { repo } = this.codeReview(session)
+    return this.trees.get({ id: session.id, repo: repo.path, baseRef: repo.baseRef })
+  }
+
+  /** The manifest of a code review; 404 for a test run, which has no repo working tree to diff. */
+  codeReview(session: LoadedSession): CodeReviewManifest {
+    if (isTestRun(session.manifest)) throw notFound(`session ${session.id} is a test run: it has no working tree`)
+    return session.manifest
+  }
+
+  /** The manifest of a test run; 404 for a code review. */
+  testRun(session: LoadedSession): TestRunManifest {
+    if (!isTestRun(session.manifest)) throw notFound(`session ${session.id} is a code review, not a test run`)
+    return session.manifest
   }
 
   async commits(id: string): Promise<CommitList> {
@@ -330,7 +458,7 @@ export class Store {
       throw notFound(`commit ${scope.slice(0, 12)} is not in ${commits.baseSha.slice(0, 12)}..${commits.headSha.slice(0, 12)} of session ${id}`)
     }
     try {
-      return { session, result: await this.scopes.get(id, session.manifest.repo.path, scope) }
+      return { session, result: await this.scopes.get(id, this.codeReview(session).repo.path, scope) }
     } catch (err) {
       if (err instanceof HttpError) throw err
       throw new HttpError(422, `git failed: ${errorMessage(err)}`)
@@ -346,7 +474,7 @@ export class Store {
   /** `before` is the scope's base blob; `after` is the commit's blob, or the file on disk for `uncommitted`. */
   async scopeContents(id: string, scope: Scope, filePath: string, side: FileContentsSide): Promise<FileContents> {
     const { session, result } = await this.scopeTree(id, scope)
-    return this.contentsOf(session.manifest.repo.path, result.tree, this.treeFile(result.tree, filePath), side, scope === 'uncommitted' ? null : scope)
+    return this.contentsOf(this.codeReview(session).repo.path, result.tree, this.treeFile(result.tree, filePath), side, scope === 'uncommitted' ? null : scope)
   }
 
   artifacts(session: LoadedSession): Promise<SessionArtifacts> {
@@ -364,6 +492,10 @@ export class Store {
 
   async getSession(id: string): Promise<SessionDetail> {
     const session = await this.loadSession(id)
+    if (isTestRun(session.manifest)) {
+      const [state, detail] = await Promise.all([this.reviewState(session), this.runDetail(session.manifest)])
+      return { ...detail, activeRunId: state.activeRunId, latestRunStatus: state.latestRunStatus ?? null }
+    }
     const [state, { tree }, artifacts, prDescription] = await Promise.all([
       this.reviewState(session),
       this.tree(session),
@@ -416,7 +548,7 @@ export class Store {
   async fileContents(id: string, filePath: string, side: FileContentsSide): Promise<FileContents> {
     const session = await this.loadSession(id)
     const { tree } = await this.tree(session)
-    return this.contentsOf(session.manifest.repo.path, tree, this.treeFile(tree, filePath), side, null)
+    return this.contentsOf(this.codeReview(session).repo.path, tree, this.treeFile(tree, filePath), side, null)
   }
 
   /** The env that reads a virtual base tree (memoized in `resolveBase`); nothing for a commit base. */
@@ -463,6 +595,68 @@ export class Store {
     const absolute = safeJoin(root, relPath)
     if (!(await isFile(absolute))) throw notFound(`${JSON.stringify(relPath)} is missing from session ${id}`)
     return { root, relative: path.relative(root, absolute), contentType: mimeFromPath(relPath) }
+  }
+
+  /** `test-run.json`'s fingerprint, for the send snapshot. */
+  runIndexFingerprint(manifest: TestRunManifest): Promise<string | null> {
+    return indexFingerprint(manifest.run.path)
+  }
+
+  /**
+   * A file of a test run, only when the index names it (`ref` is `alias:relative/path`; anything else is 404). The leaf must be a
+   * regular file (a symlink is refused) and its directory must resolve inside the alias's root, so a link planted in the run folder leads nowhere.
+   */
+  async testRunFile(id: string, ref: string): Promise<ServedFile> {
+    const session = await this.loadSession(id)
+    const manifest = this.testRun(session)
+    const detail = await this.runDetail(manifest)
+    const roots = await resolveRoots(manifest, detail.index)
+    const normal = normalizeRef(ref)
+    const target = normal === null ? null : refToAbsolute(roots, normal)
+    if (normal === null || target === null || !servablePaths(detail.index, roots).has(normal)) throw notFound(`${JSON.stringify(ref)} is not a file of test run ${id}`)
+    const absolute = safeJoin(target.root, target.relative)
+    await this.assertRegularFile(target.root, absolute, ref)
+    return { root: target.root, relative: path.relative(target.root, absolute), contentType: runFileType(target.relative) }
+  }
+
+  private async assertRegularFile(root: string, absolute: string, shown: string): Promise<void> {
+    try {
+      const parent = await fs.realpath(path.dirname(absolute))
+      if (parent !== root && !parent.startsWith(root + path.sep)) throw notFound(`${JSON.stringify(shown)} is not inside the run`)
+      if (!(await fs.lstat(absolute)).isFile()) throw notFound(`${JSON.stringify(shown)} is not a regular file`)
+    } catch (err) {
+      if (isMissing(err)) throw notFound(`${JSON.stringify(shown)} is missing from the run`)
+      throw err
+    }
+  }
+
+  /**
+   * Lines `from..to` (1-based, at most `LOG_SLICE_MAX_LINES`) of a log the index names, and the file's total line count.
+   * Streams the file, never buffering it; opened with `O_NOFOLLOW` after the same checks as `testRunFile`.
+   */
+  async testRunLog(id: string, ref: string, from: number, to: number): Promise<TestRunLogSlice> {
+    const file = await this.testRunFile(id, ref)
+    const absolute = path.join(file.root, file.relative)
+    let handle: Awaited<ReturnType<typeof fs.open>>
+    try {
+      handle = await fs.open(absolute, fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW)
+    } catch (err) {
+      if (isMissing(err) || (err as NodeJS.ErrnoException).code === 'ELOOP') throw notFound(`${JSON.stringify(ref)} is not a regular file of the run`)
+      throw err
+    }
+    const last = Math.min(to, from + LOG_SLICE_MAX_LINES - 1)
+    const lines: string[] = []
+    let total = 0
+    try {
+      const reader = readline.createInterface({ input: handle.createReadStream({ encoding: 'utf8', autoClose: false }), crlfDelay: Number.POSITIVE_INFINITY })
+      for await (const line of reader) {
+        total += 1
+        if (total >= from && total <= last) lines.push(line)
+      }
+    } finally {
+      await handle.close()
+    }
+    return { path: normalizeRef(ref) ?? ref, from, to: lines.length === 0 ? from : from + lines.length - 1, total, lines }
   }
 
   /** `pr-comments.json` merged with `pr-resolutions.json` (an empty response when never synced); 422 when a file is invalid. */
@@ -577,12 +771,12 @@ export class Store {
     }
   }
 
-  /** `review/sent/<stem>.json`, `.md` and `.patch` for one Submit. */
-  async writeSent(sessionDir: string, snapshot: SentSnapshot, markdown: string, patch: string): Promise<void> {
+  /** `review/sent/<stem>.json`, `.md` and (for a code review; a test run has none) `.patch` for one Submit. */
+  async writeSent(sessionDir: string, snapshot: AnySentSnapshot, markdown: string, patch: string | null): Promise<void> {
     const files = sentFiles(sessionDir, snapshot.sentAt)
     await writeFileAtomic(files.json, `${JSON.stringify(snapshot, null, 2)}\n`)
     await writeFileAtomic(files.markdown, markdown)
-    await writeFileAtomic(files.patch, patch)
+    if (patch !== null) await writeFileAtomic(files.patch, patch)
   }
 
   async writeRun(sessionDir: string, run: AgentRun): Promise<void> {
@@ -639,7 +833,7 @@ export class Store {
   }
 
   /** Every readable manifest under `archive/`, newest `archivedAt` first; broken folders are skipped. */
-  async listArchived(): Promise<ArchivedSession[]> {
+  async listArchived(kind?: ManifestKind): Promise<ArchivedSession[]> {
     let names: string[]
     try {
       const entries = await fs.readdir(this.paths.archiveDir, { withFileTypes: true })
@@ -656,6 +850,7 @@ export class Store {
         this.log(`archived session ${id}: ${result.error}`)
         continue
       }
+      if (kind !== undefined && manifestKind(result.manifest) !== kind) continue
       items.push(archivedSession(result.manifest, await readArchivedAt(dir)))
     }
     return items.sort((a, b) => Date.parse(b.archivedAt) - Date.parse(a.archivedAt) || b.id.localeCompare(a.id))

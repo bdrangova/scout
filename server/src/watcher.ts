@@ -2,11 +2,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import chokidar from 'chokidar'
 import type { FSWatcher } from 'chokidar'
-import { RUN_ID_RE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE } from '@review-dash/shared'
+import { RUN_ID_RE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, isTestRun } from '@review-dash/shared'
 import type { StoreEvent } from '@review-dash/shared'
 import { errorMessage } from './errors.ts'
 import type { StoreEventBus } from './events.ts'
 import { RepoWatcher } from './repo-watcher.ts'
+import { RunWatcher } from './run-watcher.ts'
 import type { Store } from './store/index.ts'
 
 export interface WatcherOptions {
@@ -15,6 +16,8 @@ export interface WatcherOptions {
   pollInterval?: number
   /** Debounce for `session.updated` after artifact writes (default 300 ms). */
   debounceMs?: number
+  /** Debounce for `testrun.updated` after run-folder writes (default 200 ms). */
+  runDebounceMs?: number
   log?: (message: string) => void
 }
 
@@ -41,6 +44,7 @@ export class StoreWatcher {
   private watcher: FSWatcher | null = null
   private readyPromise: Promise<void> = Promise.resolve()
   private readonly repos: RepoWatcher
+  private readonly runs: RunWatcher
   private readonly sessionTimers = new Map<string, NodeJS.Timeout>()
   /** Sessions reported removed and not yet back: a manifest event for one of them is a `session.added`. */
   private readonly removedIds = new Set<string>()
@@ -53,6 +57,18 @@ export class StoreWatcher {
   ) {
     this.log = options.log ?? ((message) => console.warn(message))
     this.repos = new RepoWatcher((sessionId) => this.store.invalidateTree(sessionId), this.log)
+    this.runs = new RunWatcher({
+      bus,
+      invalidate: (sessionId) => {
+        this.store.invalidateRun(sessionId)
+        // The index may have moved a root: follow it.
+        void this.syncRun(sessionId)
+      },
+      log: this.log,
+      ...(options.stabilityThreshold !== undefined ? { stabilityThreshold: options.stabilityThreshold } : {}),
+      ...(options.pollInterval !== undefined ? { pollInterval: options.pollInterval } : {}),
+      ...(options.runDebounceMs !== undefined ? { debounceMs: options.runDebounceMs } : {}),
+    })
   }
 
   get active(): boolean {
@@ -97,12 +113,18 @@ export class StoreWatcher {
     for (const timer of this.sessionTimers.values()) clearTimeout(timer)
     this.sessionTimers.clear()
     this.repos.close()
+    await this.runs.close()
     const watcher = this.watcher
     this.watcher = null
     if (watcher) await watcher.close()
   }
 
-  /** Starts a repo watch for every session whose manifest reads. */
+  /** The run folders currently watched (test runs), by session id. */
+  get watchedRuns(): ReadonlyMap<string, readonly string[]> {
+    return this.runs.active
+  }
+
+  /** Starts a repo watch (code review) or a run watch (test run) for every session whose manifest reads. */
   private async syncRepos(): Promise<void> {
     for (const id of await this.store.sessionIds()) await this.syncRepo(id)
   }
@@ -110,11 +132,25 @@ export class StoreWatcher {
   private async syncRepo(sessionId: string): Promise<void> {
     try {
       const result = await this.store.readManifest(sessionId)
-      if (result.ok) this.repos.watch(sessionId, result.manifest.repo.path)
-      else this.repos.unwatch(sessionId)
+      if (!result.ok) {
+        this.repos.unwatch(sessionId)
+        this.runs.unwatch(sessionId)
+      } else if (isTestRun(result.manifest)) {
+        this.repos.unwatch(sessionId)
+        await this.runs.watch(sessionId, await this.store.runWatchPaths(result.manifest))
+      } else {
+        this.runs.unwatch(sessionId)
+        this.repos.watch(sessionId, result.manifest.repo.path)
+      }
     } catch (err) {
       this.log(`could not read manifest of ${sessionId}: ${errorMessage(err)}`)
     }
+  }
+
+  /** Re-resolves the roots of a test run after its index changed. */
+  private async syncRun(sessionId: string): Promise<void> {
+    if (!this.runs.active.has(sessionId)) return
+    await this.syncRepo(sessionId)
   }
 
   /** Prunes the traversal to the folders and files that matter. */
@@ -168,6 +204,7 @@ export class StoreWatcher {
     if (timer) clearTimeout(timer)
     this.sessionTimers.delete(sessionId)
     this.repos.unwatch(sessionId)
+    this.runs.unwatch(sessionId)
     this.store.dropTree(sessionId)
     if (this.removedIds.has(sessionId)) return
     this.removedIds.add(sessionId)
@@ -197,6 +234,7 @@ export class StoreWatcher {
       }
       await this.syncRepo(sessionId)
       this.store.invalidateTree(sessionId)
+      this.store.invalidateRun(sessionId)
       // A folder moved back quickly (unarchive) can surface as a `change` of a manifest chokidar
       // had not yet reported unlinked: it is still a session coming back.
       const wasRemoved = this.removedIds.delete(sessionId)

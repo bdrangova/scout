@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ResolutionsSchema, SCHEMA_VERSION, mergeComments } from '@review-dash/shared'
-import type { Resolutions, SessionDetail } from '@review-dash/shared'
+import { ResolutionsSchema, SCHEMA_VERSION, isTestRun, mergeComments } from '@review-dash/shared'
+import type { Resolutions } from '@review-dash/shared'
 import { writeFileAtomic } from '../store/fs.ts'
 import { storePaths } from '../store/paths.ts'
 import { RESOLUTIONS_FILE, readResolutions, readReview } from '../store/review.ts'
-import type { AdapterEvent, AgentAdapter, AgentExit, AgentRunHandle, ApplyFeedbackRequest, CanResumeResult } from './adapter.ts'
+import type { AdapterEvent, AgentAdapter, AgentSession, AgentExit, AgentRunHandle, ApplyFeedbackRequest, CanResumeResult } from './adapter.ts'
 import { AsyncQueue, sleep } from './async-queue.ts'
 import { parseStreamJsonLine } from './stream-json.ts'
 
@@ -39,7 +39,7 @@ export class FakeAdapter implements AgentAdapter {
     this.now = options.now ?? (() => new Date().toISOString())
   }
 
-  async canResume(_session: SessionDetail, _opts: { fork: boolean }): Promise<CanResumeResult> {
+  async canResume(_session: AgentSession, _opts: { fork: boolean }): Promise<CanResumeResult> {
     return { ok: true }
   }
 
@@ -66,8 +66,10 @@ export class FakeAdapter implements AgentAdapter {
       if (req.signal.aborted) return { code: null, signal: 'SIGINT' }
       for (const event of parseStreamJsonLine(line)) queue.push({ ...event, raw: line })
     }
-    const applied = await this.resolveSentComments(req.session.manifest.id, req.home)
-    if (applied.length > 0) await markFixtureRepo(req.session.manifest.repo.path, req.home, applied)
+    const { manifest } = req.session
+    const applied = await this.resolveSentComments(manifest.id, req.home)
+    // A test run's checkout is not a fixture repo and nothing is written into it: the resolutions are the whole effect.
+    if (applied.length > 0 && !isTestRun(manifest)) await markFixtureRepo(manifest.repo.path, req.home, applied)
     return { code: 0, signal: null }
   }
 

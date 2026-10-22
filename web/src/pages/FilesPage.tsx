@@ -15,6 +15,7 @@ import { useCommits, useScopeTree } from '@/lib/hooks'
 import { isCardMode, MODE_PARAM, parseMode, readLastCardMode, rememberCardMode } from '@/lib/mode'
 import { fileRoute } from '@/lib/paths'
 import { indexByPath, parseScope, resolveScope, SCOPE_PARAM, searchString, stepScope, withScope, type ScopeReview } from '@/lib/scope'
+import { useCodeReviewDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { useHotkeys, type HotkeyHandlers } from '@/lib/useHotkeys'
 import { useMergesHidden } from '@/lib/useMergesHidden'
@@ -28,7 +29,8 @@ function useLastValue<T>(value: T | null): T | null {
 }
 
 export function FilesPage() {
-  const { sessionId, detail } = useSessionContext()
+  const { sessionId } = useSessionContext()
+  const detail = useCodeReviewDetail()
   const { state, dispatch } = useReview()
   const sendVerdict = useVerdictAction()
   const params = useParams()

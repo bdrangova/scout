@@ -7,6 +7,11 @@ describe('comment drafts', () => {
     expect(draftKey({ kind: 'spec', ref: 'plan.md' })).toBe('spec::plan.md')
     expect(draftKey({ kind: 'extra', ref: 'notes.md' })).toBe('extra::notes.md')
     expect(draftKey({ kind: 'evidence', ref: 'a.png' })).toBe('evidence::a.png')
+    expect(draftKey({ kind: 'run-file', ref: 'run:s1/a.png' })).toBe('run-file::run:s1/a.png')
+  })
+
+  it('reads a run-file draft back with its ref', () => {
+    expect(unsavedDraftsOf({ 'run-file::run:s1/a.png': 'why' })).toEqual([{ kind: 'run-file', ref: 'run:s1/a.png' }])
   })
 
   it('lists the drafts with text, in order, and ignores blank ones', () => {

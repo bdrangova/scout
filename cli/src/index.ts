@@ -16,6 +16,7 @@ import { registerPrSync } from './commands/pr-sync.ts'
 import { PrSyncError } from './pr/gh.ts'
 import { registerPending } from './commands/pending.ts'
 import { registerResolve } from './commands/resolve.ts'
+import { registerRunIndex } from './commands/run-index.ts'
 import { registerStatus } from './commands/status.ts'
 
 const program = new Command()
@@ -39,6 +40,7 @@ registerPrComments(program)
 registerPrTrust(program)
 registerOpen(program)
 registerArchive(program)
+registerRunIndex(program)
 registerInstall(program)
 
 try {

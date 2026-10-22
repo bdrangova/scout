@@ -24,8 +24,8 @@ export interface VideoPlayerProps {
   active: boolean
   /** `timeupdate`, for the active-comment highlight. */
   onTimeUpdate: (seconds: number) => void
-  /** "Comment at 0:42": the video is paused and the comment box gets the timestamp. */
-  onCommentAt: (seconds: number) => void
+  /** "Comment at 0:42": the video is paused and the comment box gets the timestamp. Without it the button is not shown. */
+  onCommentAt?: (seconds: number) => void
 }
 
 /** media-chrome reads these custom properties; they point at the design tokens so the bar follows the theme. */
@@ -69,7 +69,7 @@ export function VideoPlayer({ src, videoRef, comments, activeCommentId, active, 
     const video = videoRef.current
     const seconds = video ? video.currentTime : time
     video?.pause()
-    onCommentAt(seconds)
+    onCommentAt?.(seconds)
   }
 
   return (
@@ -101,10 +101,12 @@ export function VideoPlayer({ src, videoRef, comments, activeCommentId, active, 
         </MediaController>
       </div>
       <div className="flex flex-none flex-wrap items-center gap-3 pt-1">
-        <Button size="sm" onClick={commentAt}>
-          <MessageSquarePlus aria-hidden />
-          Comment at {formatDuration(time)}
-        </Button>
+        {onCommentAt && (
+          <Button size="sm" onClick={commentAt}>
+            <MessageSquarePlus aria-hidden />
+            Comment at {formatDuration(time)}
+          </Button>
+        )}
         <span className="font-mono text-xs text-ink-muted tabular-nums">
           {paused ? `paused at ${formatDuration(time)}` : 'playing'}
           {duration > 0 ? ` · ${formatDuration(duration)} total` : ''}

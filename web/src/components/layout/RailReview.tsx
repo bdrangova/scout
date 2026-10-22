@@ -4,6 +4,7 @@ import { VerdictBar } from '@/components/session/VerdictBar'
 import { Tag } from '@/components/ui/tag'
 import type { VerdictSummary } from '@/components/submit/verdict-summary'
 import { VERDICT_STYLE, type VerdictKind } from '@/lib/verdict'
+import { isTestRunDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { cn } from '@/lib/utils'
 import { BranchChangedNotice } from './BranchChangedNotice'
@@ -86,7 +87,7 @@ export function RailReview({ summary, density, submitTo }: RailReviewProps) {
         {compact && run !== 'working' && <DecisionTag decision={suggestion} />}
         <StatusLegend className="ml-auto" />
       </div>
-      <BranchChangedNotice sessionBranch={detail.manifest.repo.branch} current={detail.tree.branch} />
+      {!isTestRunDetail(detail) && <BranchChangedNotice sessionBranch={detail.manifest.repo.branch} current={detail.tree.branch} />}
       {!compact && run !== 'working' && (
         <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
           <span>{status === 'ready' ? 'Decision' : 'Suggested decision'}</span>

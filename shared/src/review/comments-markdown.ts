@@ -3,13 +3,8 @@ import type { Comment, CommentTargetKind } from '../schemas/review.ts'
 import type { SentSnapshot } from '../schemas/sent.ts'
 import { formatLineAnchor } from './line-anchor.ts'
 import { anchorExcerpt, filePatchFor, parsePatchLines, type PatchLine } from './patch-lines.ts'
+import { decisionLabel, formatTimestamp, groupByRef, orderedRefs, requiredResponseText, trimTrailingSlash } from './markdown-helpers.ts'
 import { renderPrCommentsMarkdown, renderPrRepliesMarkdown, type PrCommentsMarkdownInput } from './pr-comments-markdown.ts'
-
-const REQUIRED_RESPONSE =
-  'Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. ' +
-  'For each comment run `ai-review resolve <id> --comment c<n> --status resolved --note "…"` ' +
-  '(or `--status open --note "…"` to reply without resolving). ' +
-  'The exact diff the reviewer saw is in `<patch>` (relative to the session folder).'
 
 /** What the renderer needs besides the snapshot: the session title, the dashboard origin and the artifacts for display names. */
 export interface SentMarkdownContext {
@@ -23,17 +18,6 @@ export interface SentMarkdownContext {
   patch?: string
   /** The synced GitHub PR comments; the open ones get their own section (never counted as the reviewer's comments). */
   prComments?: PrCommentsMarkdownInput
-}
-
-function decisionLabel(decision: SentSnapshot['decision']): string {
-  return decision.toUpperCase().replaceAll('-', ' ')
-}
-
-function formatTimestamp(sec: number): string {
-  const whole = Math.floor(sec)
-  const minutes = Math.floor(whole / 60)
-  const seconds = whole % 60
-  return `${minutes}:${String(seconds).padStart(2, '0')}`
 }
 
 /**
@@ -54,36 +38,11 @@ function commentLines(comment: Comment, patchLines: readonly PatchLine[] | null 
   return lines
 }
 
-function groupByRef(comments: Comment[], kind: Exclude<CommentTargetKind, 'overall'>): Map<string, Comment[]> {
-  const groups = new Map<string, Comment[]>()
-  for (const comment of comments) {
-    if (comment.target.kind !== kind || comment.target.ref === null) continue
-    const group = groups.get(comment.target.ref)
-    if (group) group.push(comment)
-    else groups.set(comment.target.ref, [comment])
-  }
-  return groups
-}
-
-/** Refs in known order first, then any no longer known in first-comment order. */
-function orderedRefs(groups: Map<string, Comment[]>, known: readonly string[]): string[] {
-  const ordered = known.filter((ref) => groups.has(ref))
-  const seen = new Set(ordered)
-  for (const ref of groups.keys()) {
-    if (!seen.has(ref)) ordered.push(ref)
-  }
-  return ordered
-}
-
 /** The file's lines from the sent patch, parsed only when one of its comments is anchored. */
 function patchLinesFor(patch: string | undefined, path: string, comments: readonly Comment[]): PatchLine[] | null {
   if (patch === undefined || !comments.some((comment) => comment.target.anchor !== undefined)) return null
   const section = filePatchFor(patch, path)
   return section === null ? null : parsePatchLines(section)
-}
-
-function trimTrailingSlash(url: string): string {
-  return url.replace(/\/+$/, '')
 }
 
 function artifactSection(
@@ -163,7 +122,7 @@ export function renderSentMarkdown(sent: SentSnapshot, ctx: SentMarkdownContext)
   if (prReplies !== null) sections.push(prReplies)
 
   sections.push(
-    ['## Required response', REQUIRED_RESPONSE.replaceAll('<id>', sent.sessionId).replaceAll('<patch>', sent.patchPath)].join('\n'),
+    ['## Required response', requiredResponseText(sent.sessionId, sent.patchPath)].join('\n'),
   )
 
   return `${sections.join('\n\n')}\n`

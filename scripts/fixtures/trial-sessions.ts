@@ -17,7 +17,7 @@ import {
   stampSent,
   type EvidenceIndex,
   type ExtrasIndex,
-  type Manifest,
+  type CodeReviewManifest,
   type Resolutions,
   type Review,
   type SpecIndex,
@@ -71,7 +71,7 @@ const SPEC_INDEX: SpecIndex = {
   ],
 }
 
-export function trialManifest(id: string, repo: string, origin: string, createdAt: string, agentSessionId: string | null): Manifest {
+export function trialManifest(id: string, repo: string, origin: string, createdAt: string, agentSessionId: string | null): CodeReviewManifest {
   return makeManifest({
     id,
     title: TRIAL_TITLE,

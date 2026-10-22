@@ -5,7 +5,7 @@ import { makeComment, makeReview } from '@review-dash/shared/testing/fixtures'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Store } from '../store/index.ts'
 import { writeReview } from '../store/review.ts'
-import { FIXTURE_SESSION_ID, createFixtureStore } from '../testing/fixture-store.ts'
+import { FIXTURE_SESSION_ID, codeReviewDetail, createFixtureStore } from '../testing/fixture-store.ts'
 import type { FixtureStore } from '../testing/fixture-store.ts'
 import { FakeAdapter, isInside, markFixtureRepo } from './fake.ts'
 
@@ -79,7 +79,7 @@ describe('FakeAdapter and the fixture repo marker', () => {
       expect(await fs.readFile(readme, 'utf8')).toBe('# Fixture repo\n<!-- ai-review fake adapter: applied c1, c2 -->\n')
       // The README now shows up in the live tree.
       store.trees.drop(FIXTURE_SESSION_ID)
-      const detail = await store.getSession(FIXTURE_SESSION_ID)
+      const detail = codeReviewDetail(await store.getSession(FIXTURE_SESSION_ID))
       expect(detail.tree.files.find((f) => f.path === 'README.md')).toMatchObject({ status: 'modified', additions: 1, deletions: 0 })
     } finally {
       store.close()

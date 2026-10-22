@@ -1,9 +1,11 @@
 import { Archive, ChevronDown, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
+import type { SessionKind } from '@/lib/paths'
 import { STATUS_FILTERS, type StatusFilter } from '@/lib/session-status'
 
 interface SessionFiltersProps {
+  kind?: SessionKind
   filter: StatusFilter
   counts: Record<StatusFilter, number>
   onFilter: (filter: StatusFilter) => void
@@ -13,7 +15,7 @@ interface SessionFiltersProps {
 }
 
 /** Archive is a separate view; lifecycle filtering applies only to current sessions. */
-export function SessionFilters({ filter, counts, onFilter, onToggleArchived, query, onQuery }: SessionFiltersProps) {
+export function SessionFilters({ kind = 'code-review', filter, counts, onFilter, onToggleArchived, query, onQuery }: SessionFiltersProps) {
   const archived = filter === 'archived'
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -26,7 +28,7 @@ export function SessionFilters({ filter, counts, onFilter, onToggleArchived, que
       <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 max-sm:ml-0 max-sm:grid max-sm:w-full max-sm:grid-cols-1">
         <label className="relative min-w-0 max-sm:w-full">
           <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-muted" />
-          <Input type="search" value={query} onChange={(event) => onQuery(event.target.value)} aria-label="Search sessions" placeholder="Search sessions…" title="Search by title, ticket, repository, or branch" className="h-9 w-64 pl-9 max-sm:w-full" />
+          <Input type="search" value={query} onChange={(event) => onQuery(event.target.value)} aria-label="Search sessions" placeholder={kind === 'test-run' ? 'Search test runs…' : 'Search sessions…'} title={kind === 'test-run' ? 'Search by title, ticket, feature, area, or run folder' : 'Search by title, ticket, repository, or branch'} className="h-9 w-64 pl-9 max-sm:w-full" />
         </label>
         {!archived && (
           <div className="relative min-w-0">

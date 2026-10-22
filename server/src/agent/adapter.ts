@@ -16,10 +16,13 @@ export function adapterEventBody(event: AdapterEvent): AdapterEventBody {
   return body as AdapterEventBody
 }
 
+/** What an adapter reads of a session: only the manifest (agent session id, repo or run folder). */
+export type AgentSession = Pick<SessionDetail, 'manifest'>
+
 export type CanResumeResult = { ok: true } | { ok: false; reason: string }
 
 export interface ApplyFeedbackRequest {
-  session: SessionDetail
+  session: AgentSession
   sentAt: string
   /** The decision the reviewer sent; `approve` lets the agent commit, push and open a PR. */
   decision: Decision
@@ -45,6 +48,6 @@ export interface AgentRunHandle extends AsyncIterable<AdapterEvent> {
 
 export interface AgentAdapter {
   readonly kind: AgentAdapterName
-  canResume(session: SessionDetail, opts: { fork: boolean }): Promise<CanResumeResult>
+  canResume(session: AgentSession, opts: { fork: boolean }): Promise<CanResumeResult>
   applyFeedback(req: ApplyFeedbackRequest): AgentRunHandle
 }

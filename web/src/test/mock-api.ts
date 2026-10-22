@@ -1,4 +1,4 @@
-import type { CommitList, PutReviewRequest, Review, ReviewResponse, WorkingTree } from '@review-dash/shared'
+import type { CommitList, PutReviewRequest, Review, ReviewResponse, SessionListItem, WorkingTree } from '@review-dash/shared'
 import { vi, type Mock } from 'vitest'
 import { PATCH_FIXTURE } from './fixtures'
 
@@ -18,6 +18,8 @@ export interface ReviewApiMockOptions {
   commits?: CommitList
   /** Served for `GET /sessions/:id/scopes/:scope`, keyed by scope (404 for the others). */
   scopes?: Record<string, WorkingTree>
+  /** Served for `GET /sessions?kind=`, keyed by kind (an empty list for a kind that is absent). */
+  sessions?: Partial<Record<'code-review' | 'test-run', SessionListItem[]>>
 }
 
 export interface ReviewApiMock {
@@ -42,7 +44,7 @@ export function urlOf(input: RequestInfo | URL): string {
   return typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
 }
 
-/** Stubs `fetch` for the review GET/PUT, the per-file patch route and the extras/spec content routes. */
+/** Stubs `fetch` for the review GET/PUT, the session list (`?kind=`), the per-file patch route and the extras/spec content routes. */
 export function mockReviewApi(response: ReviewResponse, options: ReviewApiMockOptions = {}): ReviewApiMock {
   const puts: PutReviewRequest[] = []
   const patchRequests: string[] = []
@@ -63,6 +65,8 @@ export function mockReviewApi(response: ReviewResponse, options: ReviewApiMockOp
       if (outcome.kind === 'conflict') return json(409, { error: 'stale', current: outcome.current })
       return json(outcome.status, { error: outcome.error })
     }
+    const list = /\/sessions\?kind=([\w-]+)$/.exec(url)
+    if (method === 'GET' && list) return json(200, options.sessions?.[list[1] === 'test-run' ? 'test-run' : 'code-review'] ?? [])
     if (method === 'GET' && /\/commits$/.test(url)) {
       return options.commits ? json(200, options.commits) : json(404, { error: 'unmocked commits' })
     }
