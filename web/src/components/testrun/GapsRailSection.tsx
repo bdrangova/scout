@@ -9,7 +9,7 @@ export interface GapsRailSectionProps {
   onSelect: (selection: GapBugSelection) => void;
 }
 
-/** The Gaps & bugs page's block in the session rail: the Swipe | Grid toggle, the known gaps and the bugs. */
+/** The Gaps & bugs page's block in the session rail: the known gaps and the bugs. */
 export function GapsRailSection(props: GapsRailSectionProps) {
   return (
     <RunRailSection

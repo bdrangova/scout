@@ -35,7 +35,7 @@ describe("LogsPage", () => {
   });
 
   it("lists the logs in the rail with the scenarios that link to them", async () => {
-    await renderRunPage(<LogsPage />, FILES);
+    await renderRunPage(<LogsPage />, FILES, undefined, "/t/test/logs");
     const list = within(rail()).getByRole("list", { name: "Logs" });
     expect(
       within(list).getByRole("button", { name: /Run log/ }),
@@ -50,7 +50,7 @@ describe("LogsPage", () => {
   });
 
   it("renders only a window of a large log and marks the lines scenarios link to", async () => {
-    await renderRunPage(<LogsPage />, FILES);
+    await renderRunPage(<LogsPage />, FILES, undefined, "/t/test/logs");
     await screen.findByText("line 1 ok");
     const rows = rowNumbers();
     expect(rows.length).toBeLessThan(LINES / 2);
@@ -72,12 +72,13 @@ describe("LogsPage", () => {
   });
 
   it("keeps Find and Failures in the rail, not in the viewer's header", async () => {
-    await renderRunPage(<LogsPage />, FILES);
+    await renderRunPage(<LogsPage />, FILES, undefined, "/t/test/logs");
     await screen.findByText("line 1 ok");
     const side = within(rail());
     expect(side.getByRole("button", { name: "Failures" })).toBeInTheDocument();
     expect(side.getByRole("searchbox", { name: "Find in log" })).toBeInTheDocument();
-    expect(side.getByRole("group", { name: "Review mode" })).toBeInTheDocument();
+    expect(side.queryByRole("group", { name: "Review mode" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("group", { name: "Review mode" })).toBeInTheDocument();
     expect(
       within(screen.getByRole("region", { name: "Logs" })).queryByRole("button", {
         name: "Failures",
@@ -87,7 +88,7 @@ describe("LogsPage", () => {
 
   it("scrolls to the next failure and finds text from the rail", async () => {
     const user = userEvent.setup();
-    await renderRunPage(<LogsPage />, FILES);
+    await renderRunPage(<LogsPage />, FILES, undefined, "/t/test/logs");
     await screen.findByText("line 1 ok");
     await user.click(within(rail()).getByRole("button", { name: "Failures" }));
     expect(
@@ -112,10 +113,10 @@ describe("LogsPage", () => {
 
   it("shows a tile per log in the grid and opens its card from the tile", async () => {
     const user = userEvent.setup();
-    await renderRunPage(<LogsPage />, FILES);
+    await renderRunPage(<LogsPage />, FILES, undefined, "/t/test/logs");
     await user.click(
       within(
-        within(rail()).getByRole("group", { name: "Review mode" }),
+        within(screen.getByRole("banner")).getByRole("group", { name: "Review mode" }),
       ).getByRole("link", { name: "Grid" }),
     );
     const grid = screen.getByRole("list", { name: "Logs grid" });
@@ -127,7 +128,7 @@ describe("LogsPage", () => {
 
   it("stores a log comment anchored to the clicked line", async () => {
     const user = userEvent.setup();
-    const api = await renderRunPage(<LogsPage />, FILES);
+    const api = await renderRunPage(<LogsPage />, FILES, undefined, "/t/test/logs");
     await screen.findByText("line 1 ok");
     fireEvent.scroll(viewer(), { target: { scrollTop: 0 } });
     await user.click(screen.getByRole("button", { name: "Comment on line 7" }));

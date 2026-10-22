@@ -9,7 +9,7 @@ export interface DataSetupRailSectionProps {
   onSelect: (key: string) => void;
 }
 
-/** The Data setup page's block in the session rail: the Swipe | Grid toggle and the setup steps (the current one is the card). */
+/** The Data setup page's block in the session rail: the setup steps (the current one is the card). */
 export function DataSetupRailSection({
   bands,
   currentKey,

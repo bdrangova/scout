@@ -1,5 +1,5 @@
 import { ChevronLeft, Keyboard } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Kbd } from '@/components/ui/kbd'
@@ -28,7 +28,7 @@ function submitState({ status, run }: Pick<ReturnType<typeof useSessionSummary>,
 
 /**
  * The 52px bar on top of every session page: the sidebar toggle, Sessions, the section tabs
- * with their counts, the Swipe/Grid switch (Files, or a test run's Review), Shortcuts, the theme and the overflow
+ * with their counts, the Swipe/Grid switch (Files, or a test run's card pages), Shortcuts, the theme and the overflow
  * menu. No identity and no status: those live in the rail. Its height is `--shell-h` (index.css).
  */
 export function SessionBar({ onHelp }: SessionBarProps) {
@@ -37,8 +37,9 @@ export function SessionBar({ onHelp }: SessionBarProps) {
   const listLabel = kind === 'test-run' ? 'Test runs' : 'Sessions'
   const { saveStatus } = useReview()
   const summary = useSessionSummary()
-  // The Swipe | Grid switch: the code review's Files page, the test run's Review page.
-  const onModes = useCurrentSection() === (kind === 'test-run' ? 'review' : 'files')
+  const { pathname } = useLocation()
+  const section = useCurrentSection()
+  const onModes = kind === 'test-run' ? ['review', 'gaps', 'logs', 'data-setup'].includes(section ?? '') : section === 'files'
   const saveText = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Not saved' : ''
 
   return (
@@ -70,7 +71,7 @@ export function SessionBar({ onHelp }: SessionBarProps) {
               {saveText}
             </span>
           )}
-          {onModes && <ModeToggle />}
+          {onModes && <ModeToggle pathname={kind === 'test-run' ? pathname : undefined} />}
           <Tooltip>
             <TooltipTrigger
               render={<Button size="sm" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={onHelp} className={cn(HEADER_CHIP_CLASS, 'max-lg:hidden')} />}

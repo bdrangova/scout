@@ -3,6 +3,10 @@ import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { expect } from "vitest";
 import { MemoryRouter } from "react-router";
+import { SessionBar } from "@/components/layout/SessionBar";
+import { ShellConfigProvider } from "@/components/layout/ShellConfigProvider";
+import { SidebarProvider } from "@/components/layout/SidebarProvider";
+import { ThemeProvider } from "@/theme/ThemeProvider";
 import { RailSlotProvider } from "@/components/layout/RailSlot";
 import { SessionContext } from "@/lib/session-context";
 import { ReviewProvider } from "@/state/ReviewProvider";
@@ -30,11 +34,18 @@ export async function renderRunPage(
         value={{ sessionId: SESSION_ID, detail, reload: () => {} }}
       >
         <ReviewProvider>
-          <RailSlotProvider>
-            <Rail />
-            {page}
-            <Where />
-          </RailSlotProvider>
+          <ThemeProvider>
+            <ShellConfigProvider kind="test-run">
+              <SidebarProvider>
+                <RailSlotProvider>
+                  <SessionBar onHelp={() => {}} />
+                  <Rail />
+                  <main>{page}</main>
+                  <Where />
+                </RailSlotProvider>
+              </SidebarProvider>
+            </ShellConfigProvider>
+          </ThemeProvider>
         </ReviewProvider>
       </SessionContext.Provider>
     </MemoryRouter>,

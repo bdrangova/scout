@@ -93,8 +93,15 @@ describe('SessionBar', () => {
     expect(within(toggle).getByRole('link', { name: 'Swipe' })).toHaveAttribute('href', `/t/${SESSION_ID}/review/s2-fail?mode=swipe`)
   })
 
+  it.each(['gaps', 'logs', 'data-setup'])('shows the mode control in the header on %s and keeps its route', (section) => {
+    const { bar } = renderShell(`/t/${SESSION_ID}/${section}?mode=grid`, { kind: 'test-run' })
+    const toggle = within(bar).getByRole('group', { name: 'Review mode' })
+    expect(within(toggle).getByRole('link', { name: 'Grid' })).toHaveAttribute('aria-current', 'true')
+    expect(within(toggle).getByRole('link', { name: 'Swipe' })).toHaveAttribute('href', `/t/${SESSION_ID}/${section}?mode=swipe`)
+  })
+
   it('has no Swipe / Grid on a test run\'s other pages', () => {
-    for (const section of ['overview', 'gaps', 'submit']) {
+    for (const section of ['overview', 'submit']) {
       const { bar } = renderShell(`/t/${SESSION_ID}/${section}`, { kind: 'test-run' })
       expect(within(bar).queryByRole('group', { name: 'Review mode' })).not.toBeInTheDocument()
       cleanup()

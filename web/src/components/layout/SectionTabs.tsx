@@ -102,7 +102,7 @@ export function SectionTabs({ detail, submit }: { detail: SessionDetail; submit:
                 <span className={cn('step-tab-in', isActive ? 'bg-hdr-ink' : signal ? STATE_CLASS[signal].fill : 'bg-surface')}>
                   <span className="step-tab-c">
                     <Icon aria-hidden className={signal ? 'stroke-[3]' : undefined} />
-                    <span className={cn(isActive ? 'max-[520px]:sr-only' : 'max-lg:sr-only')}>{tab.label}</span>
+                    <span className={cn(isActive ? 'max-[520px]:sr-only' : config.kind === 'test-run' ? 'max-2xl:sr-only' : 'max-lg:sr-only')}>{tab.label}</span>
                     {counted && <span className={cn('text-[11.5px] font-semibold tabular-nums max-md:hidden', isActive || signal ? 'opacity-85' : 'text-ink-muted')}>{tab.count}</span>}
                   </span>
                 </span>

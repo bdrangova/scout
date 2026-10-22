@@ -84,7 +84,7 @@ describe("DataSetupPage", () => {
 
   it("lists the steps in the rail and shows the current step as a card", async () => {
     const user = userEvent.setup();
-    await renderRunPage(<DataSetupPage />, {}, withSetup);
+    await renderRunPage(<DataSetupPage />, {}, withSetup, "/t/test/data-setup");
     const steps = within(rail()).getByRole("list", { name: "Setup steps" });
     expect(
       within(steps).getByRole("button", { name: "D1" }),
@@ -113,12 +113,13 @@ describe("DataSetupPage", () => {
 
   it("shows a tile per step in the grid", async () => {
     const user = userEvent.setup();
-    await renderRunPage(<DataSetupPage />, {}, withSetup);
+    await renderRunPage(<DataSetupPage />, {}, withSetup, "/t/test/data-setup");
     await user.click(
       within(
-        within(rail()).getByRole("group", { name: "Review mode" }),
+        within(screen.getAllByRole("banner").find((header) => header.dataset.slot === "session-bar")!).getByRole("group", { name: "Review mode" }),
       ).getByRole("link", { name: "Grid" }),
     );
+    expect(within(rail()).queryByRole("group", { name: "Review mode" })).not.toBeInTheDocument();
     const grid = screen.getByRole("list", { name: "Setup steps grid" });
     expect(within(grid).getAllByRole("button")).toHaveLength(3);
     expect(screen.queryByRole("article")).toBeNull();
@@ -129,7 +130,7 @@ describe("DataSetupPage", () => {
   });
 
   it("shows the test data table, snapshot path, environment and deviations below the cards", async () => {
-    await renderRunPage(<DataSetupPage />, {}, withSetup);
+    await renderRunPage(<DataSetupPage />, {}, withSetup, "/t/test/data-setup");
     expect(
       within(screen.getByRole("table", { name: "Steps" })).getByText(
         "Seed 3 rows",
@@ -146,7 +147,7 @@ describe("DataSetupPage", () => {
 
   it("copies the snapshot path to the clipboard", async () => {
     const user = userEvent.setup();
-    await renderRunPage(<DataSetupPage />, {}, withSetup);
+    await renderRunPage(<DataSetupPage />, {}, withSetup, "/t/test/data-setup");
     const writeText = vi.spyOn(navigator.clipboard, "writeText");
     await user.click(screen.getByRole("button", { name: "Copy path" }));
     expect(writeText).toHaveBeenCalledWith("/Users/me/snapshots/run-1.dump");

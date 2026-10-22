@@ -33,7 +33,7 @@ describe("GapsPage", () => {
   });
 
   it("lists the gaps and the bugs in the rail and shows the first bug as the card in the main area", async () => {
-    await renderRunPage(<GapsPage />, FILES);
+    await renderRunPage(<GapsPage />, FILES, undefined, "/t/test/gaps");
     const side = within(rail());
     expect(
       within(side.getByRole("table", { name: "Known gaps" })).getByText(
@@ -64,15 +64,16 @@ describe("GapsPage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("puts the Swipe | Grid toggle in the rail and shows a card per bug and gap in the grid", async () => {
+  it("puts the Swipe | Grid toggle in the header and shows a card per bug and gap in the grid", async () => {
     const user = userEvent.setup();
-    await renderRunPage(<GapsPage />, FILES);
+    await renderRunPage(<GapsPage />, FILES, undefined, "/t/test/gaps");
     await user.click(
       within(
-        within(rail()).getByRole("group", { name: "Review mode" }),
+        within(screen.getByRole("banner")).getByRole("group", { name: "Review mode" }),
       ).getByRole("link", { name: "Grid" }),
     );
     expect(screen.getByTestId("where")).toHaveTextContent("?mode=grid");
+    expect(within(rail()).queryByRole("group", { name: "Review mode" })).not.toBeInTheDocument();
     const grid = screen.getByRole("list", { name: "Gaps and bugs grid" });
     expect(within(grid).getAllByRole("button")).toHaveLength(2);
     expect(
@@ -90,7 +91,7 @@ describe("GapsPage", () => {
   });
 
   it("shows a gap as the card when it is picked in the rail", async () => {
-    await renderRunPage(<GapsPage />, FILES);
+    await renderRunPage(<GapsPage />, FILES, undefined, "/t/test/gaps");
     const user = userEvent.setup();
     await user.click(
       within(rail()).getByRole("button", {
@@ -110,7 +111,7 @@ describe("GapsPage", () => {
 
   it("moves between the cards with the next button and the arrow keys", async () => {
     const user = userEvent.setup();
-    await renderRunPage(<GapsPage />, FILES);
+    await renderRunPage(<GapsPage />, FILES, undefined, "/t/test/gaps");
     await user.click(screen.getByRole("button", { name: "Next item" }));
     expect(
       screen.getByRole("region", { name: "Gap Export cannot be exercised here" }),
@@ -127,7 +128,7 @@ describe("GapsPage", () => {
   });
 
   it("stores Agree and a kinded comment on the bug target", async () => {
-    const api = await renderRunPage(<GapsPage />, FILES);
+    const api = await renderRunPage(<GapsPage />, FILES, undefined, "/t/test/gaps");
     const user = userEvent.setup();
     const detail = await screen.findByRole("region", {
       name: "Bug Empty result shows an error",

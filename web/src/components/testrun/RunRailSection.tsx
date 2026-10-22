@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import { useLocation } from "react-router";
-import { ModeToggle } from "@/components/layout/ModeToggle";
 import { RailSection } from "@/components/layout/RailSlot";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -10,18 +8,15 @@ export interface RunRailSectionProps {
   count?: number;
   /** Filters and pickers of the page (Find, Failures); they live here, not in the page header. */
   picker?: ReactNode;
-  /** Show the Swipe | Grid toggle in the heading. Off where the page's toggle is in the session bar (Review). */
-  modeToggle?: boolean;
   /** The list. */
   children: ReactNode;
 }
 
 /**
- * A test-run page's block in the session rail, like the Files page's tree: the heading with the Swipe | Grid
- * toggle (not on Review, where it is in the session bar), the page's pickers, then the scrolling list that selects the current card.
+ * A test-run page's block in the session rail: its heading, pickers, and scrolling list.
+ * The Swipe | Grid toggle lives in the shared session header.
  */
-export function RunRailSection({ heading, count, picker, modeToggle = true, children }: RunRailSectionProps) {
-  const { pathname } = useLocation();
+export function RunRailSection({ heading, count, picker, children }: RunRailSectionProps) {
   return (
     <RailSection>
       <TooltipProvider delay={150}>
@@ -31,11 +26,6 @@ export function RunRailSection({ heading, count, picker, modeToggle = true, chil
               <h2 className="m-0 text-[13px] font-bold">{heading}</h2>
               {count !== undefined && (
                 <span className="text-xs font-semibold text-ink-muted tabular-nums">{count}</span>
-              )}
-              {modeToggle && (
-                <span className="ml-auto">
-                  <ModeToggle pathname={pathname} />
-                </span>
               )}
             </div>
             {picker}

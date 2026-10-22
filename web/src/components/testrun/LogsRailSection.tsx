@@ -14,7 +14,7 @@ export interface LogsRailSectionProps {
   search: LogSearch;
 }
 
-/** The Logs page's block in the session rail: the Swipe | Grid toggle, Find and Failures, then the log list. */
+/** The Logs page's block in the session rail: Find and Failures, then the log list. */
 export function LogsRailSection({ search, ...list }: LogsRailSectionProps) {
   const grid = useRunGrid();
   return (

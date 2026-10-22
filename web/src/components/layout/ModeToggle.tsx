@@ -22,7 +22,7 @@ const VISIBLE_MODES: readonly Mode[] = ['swipe', 'grid']
  * Swipe | Grid as a flat chooser (icons below `xl`, icons and words from `xl`) (`Segmented` look, links inside). Writes `?mode=`
  * on the files route (keeping the current file and the commit scope when already there); in a test run on the review
  * route (keeping the current scenario; `?mode=scroll` reads as swipe), or on `pathname` when the page (Gaps, Logs, Data
- * setup, from their rail sections) names its own. Needs a `TooltipProvider`.
+ * setup, from the session header) names its own. Needs a `TooltipProvider`.
  */
 export function ModeToggle({ pathname: fixedPathname }: { pathname?: string } = {}) {
   const { sessionId } = useSessionContext()

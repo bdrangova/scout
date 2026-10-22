@@ -16,7 +16,7 @@ export function ScenarioRailSection({
   onSelect,
 }: ScenarioRailSectionProps) {
   return (
-    <RunRailSection heading="Scenarios" count={scenarios.length} modeToggle={false}>
+    <RunRailSection heading="Scenarios" count={scenarios.length}>
       <ScenarioSidebar
         scenarios={scenarios}
         currentId={currentId}
