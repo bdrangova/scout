@@ -29,7 +29,6 @@ export function SessionFilters({ kind = 'code-review', layout, onLayout, filter,
           <Archive aria-hidden />Archived
         </SegmentedItem>
       </Segmented>
-      <SessionLayoutToggle layout={layout} onLayout={onLayout} />
       <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 max-sm:ml-0 max-sm:grid max-sm:w-full max-sm:grid-cols-1">
         <label className="relative min-w-0 max-sm:w-full">
           <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-muted" />
@@ -45,6 +44,7 @@ export function SessionFilters({ kind = 'code-review', layout, onLayout, filter,
             <ChevronDown aria-hidden className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-ink-muted" />
           </div>
         )}
+        <div className="max-sm:justify-self-end"><SessionLayoutToggle layout={layout} onLayout={onLayout} /></div>
       </div>
     </div>
   )
