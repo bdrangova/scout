@@ -9,15 +9,15 @@ import { readReview } from '../sessions.ts'
 import { readManifest, resolveHome, sessionDir } from '../store.ts'
 
 export function registerPrReport(program: Command): void {
-  const command = program.command('pr-report').description('Exchange review reports with any Claude/Codex review skill or skill chain')
-  command.command('show').argument('<sessionId>').description('Read the current report and human proposal decisions/notes for the next session-side review pass').action(async (id: string) => {
+  const command = program.command('pr-report').description('Exchange review reports with a review skill')
+  command.command('show').argument('<sessionId>').description('Read the current report and human decisions/notes').action(async (id: string) => {
     await load(id)
     const dir = sessionDir(resolveHome(), id)
     console.log(JSON.stringify({ report: await readReport(dir), review: await readReview(dir) }, null, 2))
   })
-  command.command('schema').description('Print the report JSON schema for any reviewer adapter').action(() => console.log(JSON.stringify(z.toJSONSchema(PrReviewReportSchema), null, 2)))
+  command.command('schema').description('Print the report JSON schema').action(() => console.log(JSON.stringify(z.toJSONSchema(PrReviewReportSchema), null, 2)))
   command.command('template').argument('<sessionId>').requiredOption('--pr <url>').requiredOption('--number <number>').requiredOption('--repository <owner/repo>')
-    .description('Print a report template with the complete current file fingerprints; fill findings and reviewer provenance in your agent session')
+    .description('Print a report template with current file fingerprints')
     .action(async (id: string, flags: { pr: string; number: string; repository: string }) => {
       const manifest = await load(id)
       const { tree } = await computeWorkingTree({ repo: manifest.repo.path, baseRef: manifest.repo.baseRef })

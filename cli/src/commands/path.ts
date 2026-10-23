@@ -30,7 +30,7 @@ export function registerPath(program: Command): void {
     .command('path')
     .argument('<id>', 'session id')
     .argument('[folder]', `${[...PATH_KINDS, RUN_KIND].join(' | ')} (default: the session folder; run: the run folder of a test-run session)`)
-    .description('Print the absolute path of a session folder, of its evidence, extras or spec folder, or the run folder of a test-run session')
+    .description('Print the path of a session folder, or its evidence, extras, spec or run folder')
     .action(async (id: string, folder: string | undefined) => {
       console.log(await sessionPath({ home: resolveHome(), id, kind: folder ?? null }))
     })

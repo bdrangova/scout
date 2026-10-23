@@ -1,9 +1,7 @@
-import { useSessionContext } from '@/lib/session-context'
 import { cn } from '@/lib/utils'
 import { RailIdentity } from './RailIdentity'
 import { RailReview } from './RailReview'
 import { RailSlotOutlet } from './RailSlot'
-import { useShellConfig } from './shell-config'
 import { useSidebar } from './sidebar-context'
 import { useCurrentSection } from './useCurrentSection'
 import { useDrawerBehaviour } from './useDrawerBehaviour'
@@ -14,14 +12,12 @@ import { useSessionSummary } from './useSessionSummary'
 const BELOW_BAR = 'sticky top-(--shell-h) h-[calc(100dvh-var(--shell-h))]'
 
 /**
- * The 296px rail beside every session page: the identity, the review state, then the block the
- * page puts in (`RailSection`). Sticky beside the content at 1024px and up; below that a left
+ * The 296px rail beside every session page: the identity, the block the page puts in
+ * (`RailSection`), then the review progress at the bottom. Sticky beside the content at 1024px and up; below that a left
  * drawer, opened and closed by the bar's toggle.
  */
 export function SessionRail() {
   const { desktop, open, close } = useSidebar()
-  const { sessionId } = useSessionContext()
-  const { basePath } = useShellConfig()
   const section = useCurrentSection()
   const [density, toggleDensity] = useRailDensity(section === 'files' ? 'files' : 'other')
   const summary = useSessionSummary()
@@ -40,8 +36,8 @@ export function SessionRail() {
       )}
     >
       <RailIdentity density={density} onToggleDensity={toggleDensity} />
-      <RailReview summary={summary} density={density} submitTo={`${basePath}/${encodeURIComponent(sessionId)}/submit`} />
       <RailSlotOutlet />
+      <RailReview summary={summary} density={density} />
     </aside>
   )
 

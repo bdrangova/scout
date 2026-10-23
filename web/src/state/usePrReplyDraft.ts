@@ -84,7 +84,7 @@ export function usePrReplyDraft(root: PrCommentView): PrReplyDraftState {
           return false
         }
         const message = reason instanceof Error ? reason.message : String(reason)
-        toast.error("Couldn't save the text", { description: `${message}. It will retry on the next change.` })
+        toast.error("Couldn't save the text", { description: `${message}. Retries on next change.` })
         setStatus('error')
         return false
       }

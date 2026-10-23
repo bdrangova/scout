@@ -691,7 +691,7 @@ describe("Test run review", () => {
       const user = userEvent.setup();
       await user.click(within(card).getByRole("button", { name: "Comment on Happy path" }));
       await user.type(within(card).getByRole("textbox", { name: "Comment on Happy path" }), "Looks off");
-      expect(within(card).getByText("Your comment is sent with the verdict.")).toBeInTheDocument();
+      expect(within(card).getByText("Sent with the verdict.")).toBeInTheDocument();
       await user.click(within(card).getByRole("button", { name: "Reject" }));
       expect(await screen.findByText("2 / 3", { selector: "p" })).toBeInTheDocument();
       await waitFor(() => expect(api.puts.some((put) => put.review.files["s1-pass"]?.verdict === "rejected")).toBe(true));

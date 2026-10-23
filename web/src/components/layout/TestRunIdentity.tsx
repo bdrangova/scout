@@ -3,7 +3,7 @@ import { Folder } from 'lucide-react'
 import { TicketStrip } from '@/components/session/TicketStrip'
 import { Tag } from '@/components/ui/tag'
 import { repoName, shortRunPath } from '@/lib/paths'
-import { DensityButton } from './DensityButton'
+import { CompactIdentity, DensityButton } from './DensityButton'
 import type { RailDensity } from './useRailDensity'
 
 interface TestRunIdentityProps {
@@ -19,14 +19,7 @@ export function TestRunIdentity({ detail, density, onToggleDensity }: TestRunIde
   const subject = [run.feature, run.area].filter((part): part is string => part !== null && part !== '').join(' · ')
 
   if (density === 'compact') {
-    return (
-      <div data-density="compact" className="flex h-[41px] shrink-0 items-center gap-1 border-b-fine border-line px-2">
-        <DensityButton density={density} onClick={onToggleDensity} />
-        <span className="min-w-0 flex-1 truncate text-[13.5px] font-bold" title={manifest.title}>
-          {manifest.title}
-        </span>
-      </div>
-    )
+    return <CompactIdentity title={manifest.title} onClick={onToggleDensity} />
   }
   return (
     <div data-density="roomy" className="shrink-0 border-b-fine border-line px-3.5 py-3">

@@ -62,7 +62,7 @@ export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-rev
       <PanelHeader className="bg-warn-bg">
         <StatusDot tone="warn" label="" aria-hidden />
         <PanelTitle>Feedback saved</PanelTitle>
-        <span className="text-[12.5px] font-medium text-ink-muted">no run started</span>
+        <span className="text-[12.5px] font-medium text-ink-muted">not started</span>
       </PanelHeader>
       <PanelBody className="flex flex-col gap-2 text-[13.5px] leading-[1.45]">
         {reason && <p className="font-medium text-ink-muted">{reason}</p>}

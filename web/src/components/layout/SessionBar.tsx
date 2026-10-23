@@ -1,8 +1,11 @@
-import { ChevronLeft, Keyboard } from 'lucide-react'
+import { BookOpen, ChevronLeft, Keyboard } from 'lucide-react'
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
+import { SkillsHelp } from '@/components/common/SkillsHelp'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Kbd } from '@/components/ui/kbd'
+import { Kbd, KbdGroup } from '@/components/ui/kbd'
+import { useHotkeys } from '@/lib/useHotkeys'
 import { sessionListRoute } from '@/lib/paths'
 import { useSessionContext } from '@/lib/session-context'
 import { cn } from '@/lib/utils'
@@ -22,6 +25,8 @@ export interface SessionBarProps {
   onHelp: () => void
 }
 
+const ICON_CHIP = cn(HEADER_CHIP_CLASS, 'w-(--header-control-h) px-0')
+
 function submitState({ status, run }: Pick<ReturnType<typeof useSessionSummary>, 'status' | 'run'>): SubmitState {
   if (run === 'failed') return 'failed'
   return status === 'ready' ? 'ready' : null
@@ -33,9 +38,11 @@ function submitState({ status, run }: Pick<ReturnType<typeof useSessionSummary>,
  * menu. No identity and no status: those live in the rail. Its height is `--shell-h` (index.css).
  */
 export function SessionBar({ onHelp }: SessionBarProps) {
+  const [skillsOpen, setSkillsOpen] = useState(false)
+  useHotkeys({ help: () => setSkillsOpen((open) => !open) })
   const { detail } = useSessionContext()
   const { kind } = useShellConfig()
-  const listLabel = kind === 'test-run' ? 'Test runs' : kind === 'pr-review' ? 'PR review' : 'Sessions'
+  const listLabel = kind === 'test-run' ? 'Test runs' : kind === 'pr-review' ? 'PR reviews' : 'Sessions'
   const { saveStatus } = useReview()
   const summary = useSessionSummary()
   const { pathname } = useLocation()
@@ -55,10 +62,10 @@ export function SessionBar({ onHelp }: SessionBarProps) {
         <SidebarToggle />
         <Tooltip>
           <TooltipTrigger
-            render={<Link to={sessionListRoute(kind)} title={listLabel} className={cn(buttonVariants({ size: 'sm' }), HEADER_CHIP_CLASS, 'max-xl:w-(--header-control-h) max-xl:px-0 max-[520px]:hidden')} />}
+            render={<Link to={sessionListRoute(kind)} title={listLabel} className={cn(buttonVariants({ size: 'sm' }), ICON_CHIP, 'max-[520px]:hidden')} />}
           >
             <ChevronLeft aria-hidden />
-            <span className="max-xl:sr-only">{listLabel}</span>
+            <span className="sr-only">{listLabel}</span>
           </TooltipTrigger>
           <TooltipContent side="bottom">{listLabel}</TooltipContent>
         </Tooltip>
@@ -74,22 +81,31 @@ export function SessionBar({ onHelp }: SessionBarProps) {
           )}
           {onModes && <ModeToggle pathname={kind === 'test-run' ? pathname : undefined} />}
           <Tooltip>
-            <TooltipTrigger
-              render={<Button size="sm" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={onHelp} className={cn(HEADER_CHIP_CLASS, 'max-lg:hidden')} />}
-            >
-              <Keyboard aria-hidden />
-              <span className="max-xl:sr-only">Shortcuts</span>
-              <Kbd className="max-xl:hidden">?</Kbd>
+            <TooltipTrigger render={<Button size="sm" aria-label="Skills" onClick={() => setSkillsOpen(true)} className={cn(ICON_CHIP, 'max-lg:hidden')} />}>
+              <BookOpen aria-hidden />
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              Keyboard shortcuts
+              Skills
               <Kbd>?</Kbd>
             </TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger render={<Button size="sm" aria-label="Keyboard shortcuts" onClick={onHelp} className={cn(ICON_CHIP, 'max-lg:hidden')} />}>
+              <Keyboard aria-hidden />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              Keyboard shortcuts
+              <KbdGroup>
+                <Kbd>Ctrl</Kbd>
+                <Kbd>?</Kbd>
+              </KbdGroup>
+            </TooltipContent>
+          </Tooltip>
           <ThemeToggle className="max-lg:hidden" />
-          <BarMenu onHelp={onHelp} />
+          <BarMenu onHelp={onHelp} onSkills={() => setSkillsOpen(true)} />
         </div>
       </header>
+      <SkillsHelp open={skillsOpen} onOpenChange={setSkillsOpen} />
     </TooltipProvider>
   )
 }

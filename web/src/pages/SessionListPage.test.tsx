@@ -360,7 +360,7 @@ describe('SessionListPage', () => {
     await user.click(screen.getByRole('button', { name: 'Archived · 1' }))
     await user.type(screen.getByRole('searchbox', { name: 'Search sessions' }), 'unknown-ticket')
     expect(screen.getByText('No archived sessions match your search.')).toBeInTheDocument()
-    expect(screen.queryByText('No sessions yet')).not.toBeInTheDocument()
+    expect(screen.queryByText('No sessions')).not.toBeInTheDocument()
   })
 
   it('uses the archive loading state even when the live list has failed', async () => {
@@ -449,7 +449,7 @@ describe('SessionListPage', () => {
 
   it('shows the empty state, the loading state and the error state with a retry', async () => {
     const { unmount } = renderPage({ sessions: [] })
-    expect(screen.getByText('No sessions yet')).toBeInTheDocument()
+    expect(screen.getByText('No sessions')).toBeInTheDocument()
     expect(screen.getByText('ai-review init --repo <path>')).toBeInTheDocument()
     unmount()
 

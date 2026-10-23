@@ -17,7 +17,7 @@ export function PrCommentMeta({ view, root = false, showLocation = false }: { vi
       </time>
       {root && <PrStatusChip view={view} />}
       {root && !view.trusted && (
-        <Tag size="sm" tone="warn" title="Not from a trusted author: its text is not sent to the agent">
+        <Tag size="sm" tone="warn" title="Untrusted author: text not sent to agent">
           <ShieldAlert aria-hidden />
           Not sent to agent
         </Tag>

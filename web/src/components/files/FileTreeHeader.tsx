@@ -22,11 +22,11 @@ export function FileTreeHeader({ count, allExpanded, disabled = false, collapsed
   const foldLabel = collapsed ? 'Expand files' : 'Collapse files'
   const FoldIcon = collapsed ? ChevronRight : ChevronDown
   return (
-    <div className="flex shrink-0 items-center gap-2 px-2 pb-2.5">
+    <div className="flex shrink-0 items-center gap-2 pb-2.5">
       <Button
         variant="ghost"
         size="icon-sm"
-        className="-ml-1 size-7 rounded-md"
+        className="-ml-[3px] size-7 rounded-md"
         aria-label={foldLabel}
         title={foldLabel}
         aria-expanded={!collapsed}

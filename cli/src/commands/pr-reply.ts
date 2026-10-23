@@ -143,7 +143,7 @@ interface PrReplyFlags {
 export function registerPrReply(program: Command): void {
   program
     .command('pr-reply')
-    .description('Post the replies approved with the last Submit to their GitHub threads, via gh (only texts in the latest sent snapshot, each at most once)')
+    .description('Post replies approved in the last Submit to their GitHub threads, via gh')
     .option('--session <id>', 'session id (default: the open session for this branch)')
     .option('--repo <path>', 'path inside the repository (default: cwd)')
     .option('--dry-run', 'print what would be posted without calling GitHub')

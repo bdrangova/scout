@@ -26,7 +26,7 @@ const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string
     ],
   },
   {
-    title: 'PR review',
+    title: 'PR reviews',
     skills: [{ command: '/publish-pr-review <PR url>', when: 'Findings + repro. Nothing posted to GitHub.' }],
   },
 ]
@@ -39,7 +39,7 @@ export function SkillsHelp({ open, onOpenChange }: SkillsHelpProps) {
         <DialogHeader>
           <DialogTitle>Skills</DialogTitle>
           <DialogDescription>
-            Install once per repo: <code className="font-mono text-xs text-ink">ai-review install --repo &lt;path&gt;</code>. Run in Claude Code. Loop: publish → review + Submit → apply → repeat.
+            Install: <code className="font-mono text-xs text-ink">ai-review install --repo &lt;path&gt;</code>. Loop: publish → review → apply.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-5">

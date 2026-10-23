@@ -103,12 +103,12 @@ export function useAutosave({ sessionId, review, initialBase, dispatch, paused =
           syncedRef.current = current
           dispatch({ type: 'LOAD', review: current })
           toast.warning('Review reloaded from disk', {
-            description: 'It changed elsewhere; your unsaved edits were replaced.',
+            description: 'Changed elsewhere; your edits were replaced.',
           })
           setStatus('idle')
         } else {
           const message = reason instanceof Error ? reason.message : String(reason)
-          toast.error("Couldn't save the review", { description: `${message}. It will retry on the next change.` })
+          toast.error("Couldn't save the review", { description: `${message}. Retries on next change.` })
           setStatus('error')
         }
         return false

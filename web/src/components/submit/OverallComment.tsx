@@ -56,7 +56,7 @@ export function OverallComment({ comment, onAdd, onEdit, onDelete }: OverallComm
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
         onKeyDown={onKeyDown}
-        placeholder="What should Claude Code know about the change as a whole?"
+        placeholder="Anything Claude should know overall?"
         rows={3}
         className="min-h-[92px]"
       />

@@ -7,7 +7,7 @@ import { baseTooltip } from '@/lib/branch-tooltip'
 import { repoName } from '@/lib/paths'
 import { isTestRunDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
-import { DensityButton } from './DensityButton'
+import { CompactIdentity, DensityButton } from './DensityButton'
 import { TestRunIdentity } from './TestRunIdentity'
 import type { RailDensity } from './useRailDensity'
 
@@ -37,14 +37,7 @@ export function RailIdentity({ density, onToggleDensity }: RailIdentityProps) {
   const baseRef = tree.baseRef || manifest.repo.baseRef
 
   if (density === 'compact') {
-    return (
-      <div data-density="compact" className="flex h-[41px] shrink-0 items-center gap-1 border-b-fine border-line px-2">
-        <DensityButton density={density} onClick={onToggleDensity} />
-        <span className="min-w-0 flex-1 truncate text-[13.5px] font-bold" title={manifest.title}>
-          {manifest.title}
-        </span>
-      </div>
-    )
+    return <CompactIdentity title={manifest.title} onClick={onToggleDensity} />
   }
   return (
     <div data-density="roomy" className="shrink-0 border-b-fine border-line px-3.5 py-3">

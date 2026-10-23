@@ -23,7 +23,7 @@ export function FileTileFooter({ file, verdict, viewed, openComments, updated, p
   return (
     <span className="flex min-h-[22px] w-full flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-ink-muted">
       {!reviewable ? (
-        <span title="A later change undid this one, so there is nothing to review in the full diff">no net change in the full diff</span>
+        <span title="A later change undid this one">no net change</span>
       ) : (
         <ReviewWord kind={kind} viewed={viewed} />
       )}

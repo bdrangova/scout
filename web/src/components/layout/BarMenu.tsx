@@ -1,4 +1,4 @@
-import { Archive, Check, ChevronLeft, ExternalLink, GitPullRequest, Keyboard, MoreHorizontal } from 'lucide-react'
+import { Archive, Check, BookOpen, ChevronLeft, ExternalLink, GitPullRequest, Keyboard, MoreHorizontal } from 'lucide-react'
 import { Link } from 'react-router'
 import { Menu, MenuContent, MenuGroup, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { Kbd } from '@/components/ui/kbd'
@@ -17,13 +17,15 @@ const THEME_LABEL = { light: 'Light', dark: 'Dark', system: 'System' } as const
 interface BarMenuProps {
   /** Opens the keyboard shortcut help. */
   onHelp: () => void
+  /** Opens the skills help. */
+  onSkills: () => void
 }
 
 /**
  * The bar's overflow menu: Archive (a toast offers Undo), and below 1024px the Shortcuts and
  * Theme controls that no longer fit in the bar.
  */
-export function BarMenu({ onHelp }: BarMenuProps) {
+export function BarMenu({ onHelp, onSkills }: BarMenuProps) {
   const { detail } = useSessionContext()
   const { theme, setTheme } = useTheme()
   const config = useShellConfig()
@@ -38,7 +40,7 @@ export function BarMenu({ onHelp }: BarMenuProps) {
       <MenuContent align="end">
         <MenuItem className="min-[521px]:hidden" render={<Link to={sessionListRoute(config.kind)} />}>
           <ChevronLeft aria-hidden />
-          {config.kind === 'test-run' ? 'Test runs' : config.kind === 'pr-review' ? 'PR review' : 'Sessions'}
+          {config.kind === 'test-run' ? 'Test runs' : config.kind === 'pr-review' ? 'PR reviews' : 'Sessions'}
         </MenuItem>
         {pr && prHref && (
           <MenuItem className="min-[521px]:hidden" render={<a href={prHref} target="_blank" rel="noopener noreferrer" />}>
@@ -47,6 +49,10 @@ export function BarMenu({ onHelp }: BarMenuProps) {
             <ExternalLink aria-hidden className="ml-auto" />
           </MenuItem>
         )}
+        <MenuItem className="lg:hidden" onClick={onSkills}>
+          <BookOpen aria-hidden />
+          Skills
+        </MenuItem>
         <MenuItem className="lg:hidden" onClick={onHelp}>
           <Keyboard aria-hidden />
           Keyboard shortcuts

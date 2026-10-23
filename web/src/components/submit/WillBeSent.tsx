@@ -38,7 +38,7 @@ export function WillBeSent({ comments, review, detail }: WillBeSentProps) {
       </RailHead>
       <UnsavedDraftsNotice className="w-full" />
       {rows.length === 0 ? (
-        <p className="m-0 text-[12.5px] font-medium text-ink-muted">No open comments. The decision alone is sent.</p>
+        <p className="m-0 text-[12.5px] font-medium text-ink-muted">No open comments.</p>
       ) : (
         <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[12.5px]">
           {rows.map((row) => (

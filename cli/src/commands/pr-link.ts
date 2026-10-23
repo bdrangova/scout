@@ -71,7 +71,7 @@ export function registerPrLink(program: Command): void {
   program
     .command('pr-link')
     .argument('[id]', 'session id (default: the open session for this branch)')
-    .description('Record a GitHub PR opened outside the flow (no gh needed); run pr-sync later for its title, state and comments')
+    .description('Record a PR opened outside the flow; run pr-sync for details')
     .option('--repo <path>', 'path inside the repository (default: cwd)')
     .requiredOption('--url <url>', 'https://github.com/<owner>/<repo>/pull/<number>')
     .option('--number <n>', 'pull request number (checked against the url)')

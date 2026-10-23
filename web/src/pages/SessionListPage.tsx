@@ -36,7 +36,7 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
       <main className="flex flex-1 flex-col px-6 pt-7 pb-14">
         <div className="mx-auto flex w-full max-w-[1300px] flex-col gap-[18px]">
           <div className="flex flex-col gap-5">
-            <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : kind === 'pr-review' ? 'PR review' : 'Development'}</h1>
+            <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : kind === 'pr-review' ? 'PR reviews' : 'Development'}</h1>
             <SessionFilters layout={layout} onLayout={setLayout} kind={kind} filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} />
           </div>
 
@@ -46,7 +46,7 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
             <LoadingState archived={archived} kind={kind} />
           ) : archived ? (
             <div className="flex flex-col gap-4">
-              <p className="m-0 text-xs text-ink-muted">Archived sessions are kept here. Restore a session to open it again.</p>
+              <p className="m-0 text-xs text-ink-muted">Restore an archived session to open it.</p>
               <ArchivedList
                 kind={kind}
                 layout={layout}
@@ -69,7 +69,7 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
               {unavailable.length > 0 && (
                 <details className="mt-4 text-ink-muted">
                   <summary className="cursor-pointer text-xs font-medium">{unavailable.length} {unavailable.length === 1 ? 'session' : 'sessions'} unavailable</summary>
-                  <p className="my-3 text-xs">These sessions could not be loaded. Their details are available below.</p>
+                  <p className="my-3 text-xs">Couldn't load these.</p>
                   <ul className="m-0 flex list-none flex-col gap-2 p-0">{unavailable.map((item) => !isLiveSummary(item) && <BrokenRow key={item.id} item={item} />)}</ul>
                 </details>
               )}

@@ -41,7 +41,7 @@ type KeyLike = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 't
 /**
  * The hotkey a key press maps to, or null. Ignored while typing in inputs, textareas and
  * contenteditable elements (also inside shadow roots), except ⌘/Ctrl+Enter. ⌘/Ctrl+Z is the undo
- * shortcut and, like the single keys, leaves a text field's own undo alone. Ctrl+? is `altHelp` (the sessions list's shortcuts help).
+ * shortcut and, like the single keys, leaves a text field's own undo alone. `?` is `help` (Skills); Ctrl+? is `altHelp` (the shortcuts help).
  */
 export function hotkeyFor(event: KeyLike): Hotkey | null {
   if (event.defaultPrevented) return null

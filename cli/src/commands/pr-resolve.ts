@@ -64,7 +64,7 @@ export function registerPrResolve(program: Command): void {
   program
     .command('pr-resolve')
     .argument('<id>', 'session id')
-    .description('Record how a GitHub PR comment was handled in pr-resolutions.json (addressed with a note, or declined with a reason)')
+    .description('Record how a PR comment was handled (addressed or declined)')
     .option('--comment <id>', 'PR comment id from pr-comments.json, e.g. rc123, rv45, ic67')
     .option('--status <status>', 'addressed | declined')
     .option('--note <text>', 'what changed and where, or the reason it was declined')

@@ -29,7 +29,7 @@ export function ProposalCard({ finding, changed = false }: { finding: PrFinding;
       <Tag tone={proposal.verdict === 'approved' && !outdated ? 'ok' : proposal.verdict === 'rejected' ? 'err' : 'neutral'}>{outdated ? 'Changed · needs refresh' : proposal.verdict === 'none' ? 'Pending' : proposal.verdict}</Tag>
     </div>
     <span className="text-xs text-ink-muted">{anchorLabel(finding.anchor)} · {finding.sources.join(' → ')}</span>
-    {outdated && <Notice tone="warn">The report or anchor differs from this diff. Refresh the report before approving this comment.</Notice>}
+    {outdated && <Notice tone="warn">Report differs from this diff. Refresh before approving.</Notice>}
     <Textarea aria-label={`Recommended comment for ${finding.id}`} value={proposal.body} onChange={(e) => update({ body: e.target.value, verdict: 'none' })} />
     <div className="flex flex-wrap gap-2">
       <Button size="sm" aria-pressed={proposal.verdict === 'approved' && !outdated} variant={proposal.verdict === 'approved' && !outdated ? 'approve' : 'default'} disabled={outdated || !proposal.body.trim()} onClick={() => update({ verdict: proposal.verdict === 'approved' ? 'none' : 'approved' })}>Approve comment</Button>

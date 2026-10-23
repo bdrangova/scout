@@ -290,7 +290,6 @@ describe('FilesPage', () => {
       expect(screen.getAllByRole('link', { name: 'Evidence 2' })).toHaveLength(2)
       // The bar's Submit tab turns green (named ready) and the rail stays live and says the same thing.
       expect(within(screen.getByRole('banner')).getByRole('link', { name: /^Submit, ready/ })).toBeInTheDocument()
-      expect(within(screen.getByRole('complementary', { name: 'Session panel' })).getByText('Ready to submit')).toBeInTheDocument()
       // The deck is still there, out of reach.
       expect(screen.queryByRole('article')).not.toBeInTheDocument()
       expect(screen.getByRole('article', { hidden: true })).toHaveAttribute('data-verdict', 'approved')
@@ -459,7 +458,7 @@ describe('FilesPage', () => {
       expect(screen.getByRole('button', { name: `Commit ${short}: add shell breadcrumb/title helpers, wire up BasePage` })).toHaveAttribute('aria-pressed', 'true')
 
       const reverted = grid().querySelector(`[data-path="${REVERTED}"]`)
-      expect(reverted).toHaveTextContent('no net change in the full diff')
+      expect(reverted).toHaveTextContent('no net change')
       expect(screen.queryByRole('button', { name: `Approve ${REVERTED}` })).not.toBeInTheDocument()
 
       fireEvent.click(screen.getByRole('button', { name: `Approve ${P1}` }))

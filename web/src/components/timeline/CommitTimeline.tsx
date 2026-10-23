@@ -110,7 +110,7 @@ export function CommitTimeline({ list, loading, error, totals, selected, onSelec
                       <span className="opacity-80 tabular-nums">
                         {formatFileCount(item.stats.files)} {formatStats(item.stats.additions, item.stats.deletions)}
                       </span>
-                      <span className="opacity-80">The index and the working tree against HEAD</span>
+                      <span className="opacity-80">Index and working tree vs HEAD</span>
                     </>
                   }
                 />
@@ -138,7 +138,7 @@ export function CommitTimeline({ list, loading, error, totals, selected, onSelec
                   <>
                     <span className="font-bold">Full diff</span>
                     <span className="opacity-80 tabular-nums">{stats}</span>
-                    <span className="opacity-80">The working tree against the base</span>
+                    <span className="opacity-80">Working tree vs base</span>
                   </>
                 }
               />

@@ -134,12 +134,12 @@ interface ShowFlags {
 }
 
 export function registerRunIndex(program: Command): void {
-  const command = program.command('run-index').description('Check or show the test-run index (<run>/test-run.json) the publish skills write')
+  const command = program.command('run-index').description('Check or show the test-run index')
 
   command
     .command('validate')
     .argument('<runPath>', 'the run folder')
-    .description('Validate <runPath>/test-run.json: zod issues with paths (exit 1), then aliases and referenced files (missing files are warnings)')
+    .description('Validate <runPath>/test-run.json (exit 1 on schema issues; missing files warn)')
     .action(async (runPath: string) => {
       const report = await checkRunIndex(path.resolve(runPath))
       for (const warning of report.warnings) console.error(`warning: ${warning}`)
@@ -154,7 +154,7 @@ export function registerRunIndex(program: Command): void {
   command
     .command('show')
     .argument('<runPath>', 'the run folder')
-    .description('Print the validated index as json, or a scenario table as brief')
+    .description('Print the validated index as json, or brief scenario table')
     .option('--format <format>', 'json | brief', 'brief')
     .action(async (runPath: string, flags: ShowFlags) => {
       if (flags.format !== 'json' && flags.format !== 'brief') throw new Error(`--format must be json or brief, got "${flags.format}"`)

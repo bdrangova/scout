@@ -22,7 +22,7 @@ export interface FileTileProps {
   updated: boolean
   /** GitHub threads on the file (absent when none). */
   prComments?: PrFileCounts
-  /** False for a scope file with no net change in the full diff: no verdict controls. */
+  /** False for a scope file with no net change: no verdict controls. */
   reviewable?: boolean
   onOpen: () => void
   onApprove: () => void

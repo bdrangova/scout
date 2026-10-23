@@ -58,7 +58,7 @@ export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
     section4: section(3),
     section5: section(4),
     section6: section(5),
-    help: onToggleHelp,
+    altHelp: onToggleHelp,
   };
   if (config.hotkeys.modes) {
     // A test run has no scroll mode: `S` is swipe.

@@ -51,6 +51,6 @@ describe('generated proposal review', () => {
     expect(screen.getByRole('button', { name: 'Approve comment' })).toBeDisabled()
     view.unmount(); renderProposal(true)
     expect(screen.getByRole('button', { name: 'Approve comment' })).toBeDisabled()
-    expect(screen.getByText(/Refresh the report before approving/)).toBeInTheDocument()
+    expect(screen.getByText(/Refresh before approving/)).toBeInTheDocument()
   })
 })

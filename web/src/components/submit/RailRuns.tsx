@@ -20,8 +20,8 @@ export function RailRuns({ runs, selectedId, onSelect }: RailRunsProps) {
       <RailHead title="Runs" />
       {rows.length === 0 ? (
         <p className="m-0 flex flex-col text-[12.5px] text-ink-muted">
-          <span className="font-semibold">Nothing sent yet</span>
-          <span className="text-xs">Runs appear here after Submit</span>
+          <span className="font-semibold">No runs</span>
+          <span className="text-xs">Runs appear after Submit</span>
         </p>
       ) : (
         <ul className="m-0 flex list-none flex-col p-0">

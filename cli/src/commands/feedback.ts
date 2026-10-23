@@ -79,7 +79,7 @@ export function registerFeedback(program: Command): void {
   program
     .command('feedback')
     .argument('<id>', 'session id')
-    .description('Print the latest feedback the reviewer sent (review/sent/<stem>.md, or the .json snapshot)')
+    .description('Print the latest feedback sent by the reviewer')
     .option('--format <format>', 'markdown | json', 'markdown')
     .action(async (id: string, flags: FeedbackFlags) => {
       if (flags.format !== 'markdown' && flags.format !== 'json') throw new Error(`--format must be markdown or json, got "${flags.format}"`)

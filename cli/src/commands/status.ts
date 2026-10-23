@@ -137,7 +137,7 @@ export function registerStatus(program: Command): void {
   program
     .command('status')
     .argument('[id]', 'session id (default: the open session for this branch)')
-    .description('Show a review session (the open one of a repository branch, or any by id; test runs show scenario counts): open comments, last send, URL')
+    .description('Show a session (current branch or by id): open comments, last send, URL')
     .option('--repo <path>', 'path inside the repository (default: cwd)')
     .option('--format <format>', 'brief | json', 'brief')
     .action(async (id: string | undefined, flags: StatusFlags) => {

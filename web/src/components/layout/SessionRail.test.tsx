@@ -72,10 +72,7 @@ describe('SessionRail', () => {
       const side = within(rail())
       expect(side.getByText('0/6')).toBeInTheDocument()
       expect(side.getByRole('img', { name: '0 approved · 0 rejected · 0 commented · 6 not reviewed' })).toBeInTheDocument()
-      expect(side.getByRole('status')).toHaveTextContent('Awaiting review')
-      expect(side.getByText('Suggested decision')).toBeInTheDocument()
-      expect(side.getByText('none yet')).toBeInTheDocument()
-      expect(side.getByText('6 not reviewed')).toBeInTheDocument()
+      expect(side.queryByText('Suggested')).not.toBeInTheDocument()
     })
 
     it('splits the bar by verdict, counts open comments as commented and suggests requesting changes after a rejection', () => {
@@ -84,33 +81,20 @@ describe('SessionRail', () => {
       const side = within(rail())
       expect(side.getByText('3/6')).toBeInTheDocument()
       expect(side.getByRole('img', { name: '1 approved · 1 rejected · 1 commented · 3 not reviewed' })).toBeInTheDocument()
-      expect(side.getByText('Request changes')).toBeInTheDocument()
-      expect(side.getByText('In progress · 3 of 6')).toBeInTheDocument()
     })
 
-    it('suggests approving once every file is approved and links the ready notice to Submit', () => {
-      renderShell(`/s/${SESSION_ID}/spec`, { review: reviewFixture({ files: Object.fromEntries(FILES.map((_, index) => verdict(index, 'approved'))) }) })
-      const side = within(rail())
-      expect(side.getByText('Decision')).toBeInTheDocument()
-      expect(side.getByText('Approve')).toBeInTheDocument()
-      expect(side.getByRole('link', { name: /Ready to submit.*go to Submit/ })).toHaveAttribute('href', `/s/${SESSION_ID}/submit`)
-    })
-
-    it('keeps the counts and the notice in compact, with the decision beside the notice', () => {
+    it('keeps the counts in compact', () => {
       renderShell(`/s/${SESSION_ID}/files`, { review: reviewFixture({ files: Object.fromEntries([verdict(0, 'rejected')]) }) })
       const side = within(rail())
       expect(side.getByText('1/6')).toBeInTheDocument()
       expect(side.getByText('1 rejected')).toBeInTheDocument()
       expect(side.queryByText('Suggested decision')).not.toBeInTheDocument()
       expect(side.queryByText('5 not reviewed')).not.toBeInTheDocument()
-      expect(side.getByText('Request changes')).toBeInTheDocument()
     })
 
     it('has no suggestion while Claude Code is working', () => {
       renderShell(`/s/${SESSION_ID}/spec`, { detail: { ...sessionDetailFixture, activeRunId: 'run-20260926180000-ab12' }, review: reviewFixture({ files: Object.fromEntries([verdict(0, 'rejected')]) }) })
       expect(within(rail()).queryByText('Suggested decision')).not.toBeInTheDocument()
-      expect(within(rail()).getByLabelText('Agent working')).toHaveAttribute('data-run', 'working')
-      expect(within(rail()).getByTitle(/In progress|Awaiting review|Changes sent/)).toBeInTheDocument()
     })
   })
 
@@ -131,7 +115,7 @@ describe('SessionRail', () => {
   })
 
   describe('section block', () => {
-    it('renders what the page puts in a RailSection, under the review state, and nothing for a page that puts nothing', () => {
+    it('renders what the page puts in a RailSection, above the review state, and nothing for a page that puts nothing', () => {
       renderShell(`/s/${SESSION_ID}/spec`, {
         page: (
           <RailSection>
@@ -140,7 +124,7 @@ describe('SessionRail', () => {
         ),
       })
       const block = within(rail()).getByText('Spec sources')
-      expect(within(rail()).getByRole('region', { name: 'Review state' }).compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(within(rail()).getByRole('region', { name: 'Review state' }).compareDocumentPosition(block) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
     })
 
     it('leaves the slot empty when the page has no block', () => {

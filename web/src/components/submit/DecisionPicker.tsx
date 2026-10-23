@@ -18,7 +18,7 @@ const OPTIONS: readonly Option[] = [
   {
     value: 'approve',
     label: 'Approve',
-    hint: 'Ready for a PR to be opened.',
+    hint: 'Ready for a PR.',
     icon: VERDICT_STYLE.approved.icon,
     titleClass: VERDICT_STYLE.approved.className,
     selectedClass: 'border-ok-bd bg-ok-bg',
@@ -26,7 +26,7 @@ const OPTIONS: readonly Option[] = [
   {
     value: 'request-changes',
     label: 'Request changes',
-    hint: 'Claude Code applies the open comments.',
+    hint: 'Claude applies comments.',
     icon: MessageSquareWarningIcon,
     titleClass: 'text-ink',
     selectedClass: 'border-warn-bd bg-warn-bg',
@@ -34,7 +34,7 @@ const OPTIONS: readonly Option[] = [
   {
     value: 'reject',
     label: 'Reject',
-    hint: 'Stop here; the approach needs rethinking.',
+    hint: 'Stop; rethink the approach.',
     icon: VERDICT_STYLE.rejected.icon,
     titleClass: VERDICT_STYLE.rejected.className,
     selectedClass: 'border-err-bd bg-err-bg',

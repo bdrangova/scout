@@ -28,7 +28,7 @@ export function LinkSafetyDialog({ isOpen, onClose, onConfirm, url }: LinkSafety
       <DialogContent role="alertdialog" initialFocus={cancelRef} showCloseButton={false} className="sm:max-w-md">
         <DialogHeader className="pr-0">
           <DialogTitle>Open external link?</DialogTitle>
-          <DialogDescription>This link comes from a GitHub comment. Check where it goes before you open it.</DialogDescription>
+          <DialogDescription>From a GitHub comment. Check the destination first.</DialogDescription>
         </DialogHeader>
         <p className="break-all rounded-lg border border-line bg-sunken px-3 py-2 font-mono text-[13px] text-ink">{url}</p>
         <DialogFooter>

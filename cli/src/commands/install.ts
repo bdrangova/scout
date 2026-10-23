@@ -267,7 +267,7 @@ interface InstallFlags {
 export function registerInstall(program: Command): void {
   program
     .command('install')
-    .description('Install the publish-review, apply-review, address-pr-comments and test-review (publish-test-plan, publish-data-setup, publish-test-run, apply-test-review) skills, the pending-feedback hook, settings and launcher for a repository')
+    .description('Install review skills, the pending-feedback hook, settings and launcher')
     .requiredOption('--repo <path>', 'path inside the repository')
     .option('--mirror', 'run .claude/hooks/sync_claude_folders.sh afterwards when present')
     .option('--shared', 'write .claude/settings.json instead of .claude/settings.local.json')

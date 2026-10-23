@@ -18,7 +18,7 @@ const ICON_CHIP = cn(HEADER_CHIP_CLASS, 'w-(--header-control-h) px-0')
  * The bar of the sessions list: the session bar's height (`--shell-h`) and colour with the
  * wordmark and the Development | Test runs toggle where Sessions and the tabs will be, then the Skills (`?`) and Shortcuts (Ctrl+?) icon buttons and the theme. No rail here.
  */
-/** `onHelp` toggles the shortcuts help (button and Ctrl+?); `?` toggles Skills here. */
+/** `onHelp` toggles the shortcuts help (button and Ctrl+?); `?` toggles Skills. */
 export function SessionsBar({ kind, onHelp }: { kind: SessionKind; onHelp: () => void }) {
   const [skillsOpen, setSkillsOpen] = useState(false)
   useHotkeys({ help: () => setSkillsOpen((open) => !open), altHelp: onHelp })

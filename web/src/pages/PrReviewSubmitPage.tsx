@@ -47,15 +47,15 @@ export function PrReviewSubmitPage() {
   return <main className="flex flex-1 flex-col">
     <div className="mx-auto flex w-full max-w-[1130px] flex-1 flex-col gap-[18px] px-6 pt-7 pb-14">
       <PageHeader title="Submit" />
-      {!report && <Notice tone="warn">Import a review report from your agent session before copying comments.</Notice>}
-      {report && !current && <Notice tone="warn">The report differs from this diff. All generated approvals are excluded until refreshed and reviewed again.</Notice>}
+      {!report && <Notice tone="warn">Import a review report before copying comments.</Notice>}
+      {report && !current && <Notice tone="warn">Report differs from this diff. Generated approvals are excluded until refreshed and re-reviewed.</Notice>}
       <UnsavedDraftsNotice />
       <Panel>
         <PanelHeader><PanelTitle>Review summary</PanelTitle>{report && <a className={`${buttonVariants({ variant: 'primary', size: 'sm' })} ml-auto`} href={report.pr.url} target="_blank" rel="noreferrer"><ExternalLink aria-hidden />Open PR #{report.pr.number}</a>}</PanelHeader>
         <PanelBody className="flex flex-col gap-4">
           <p className="m-0 text-xs text-ink-muted">{progress.reviewed} / {progress.total} files reviewed · {accepted} approved comments · {(report?.findings.length ?? 0) - accepted} proposals excluded</p>
-          <p className="m-0 text-sm text-ink-muted">Open the file and lines in the PR, then copy and paste each comment.</p>
-          {items.length === 0 && <p className="m-0 text-sm text-ink-muted">No comments ready to copy. Approve a suggested comment or add your own feedback in Review.</p>}
+          <p className="m-0 text-sm text-ink-muted">Paste each at its file and lines in the PR.</p>
+          {items.length === 0 && <p className="m-0 text-sm text-ink-muted">Nothing to copy. Approve a suggestion or add feedback in Review.</p>}
           {report && items.map((item) => {
             const humanComment = item.source === 'comment' ? comments.find((comment) => comment.id === item.id) : null
             const location = item.path ? `${item.path}${item.anchor ? ` · ${anchorLabel(item.anchor)} (${item.anchor.side} side)` : ''}` : 'Overall feedback'

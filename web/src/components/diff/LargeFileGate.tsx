@@ -112,7 +112,7 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
   }
 
   if (patch.trim() === '') {
-    return <BodyNotice title="No textual changes">The file's contents did not change.</BodyNotice>
+    return <BodyNotice title="No textual changes">Contents unchanged.</BodyNotice>
   }
 
   return <FileDiffView patch={patch} diffStyle={diffStyle} loadSides={loadSides} />

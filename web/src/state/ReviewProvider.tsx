@@ -57,7 +57,7 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
   if (error) {
     return (
       <main className="mx-auto flex max-w-md flex-col items-start gap-3 px-6 py-24">
-        <h1 className="m-0 text-lg font-bold text-ink">Couldn't load the review</h1>
+        <h1 className="m-0 text-lg font-bold text-ink">Couldn't load review</h1>
         <p className="m-0 text-sm text-ink-muted">{error.message}</p>
         <Button onClick={reload}>Retry</Button>
       </main>

@@ -69,7 +69,7 @@ function ArchivedSessionPanel({ id, onRestored }: { id: string; onRestored: () =
   }
   return (
     <ErrorPanel
-      title="This session is archived"
+      title="Archived"
       id={id}
       actions={
         <Button variant="primary" onClick={() => void unarchive()} disabled={busy} aria-busy={busy}>
@@ -78,7 +78,7 @@ function ArchivedSessionPanel({ id, onRestored }: { id: string; onRestored: () =
         </Button>
       }
     >
-      <p className="m-0 text-[13px] font-medium text-ink-muted">Archived sessions are not reviewable. Unarchive it to open the review again.</p>
+      <p className="m-0 text-[13px] font-medium text-ink-muted">Unarchive to review.</p>
     </ErrorPanel>
   )
 }
@@ -86,7 +86,7 @@ function ArchivedSessionPanel({ id, onRestored }: { id: string; onRestored: () =
 function NotFoundPanel({ id, error, onRetry }: { id: string; error: Error; onRetry: () => void }) {
   const { archived } = useArchivedSessions()
   if (archived?.some((session) => session.id === id)) return <ArchivedSessionPanel id={id} onRestored={onRetry} />
-  return <FailurePanel id={id} error={error} onRetry={onRetry} title="This session can't be opened" />
+  return <FailurePanel id={id} error={error} onRetry={onRetry} title="Can't open session" />
 }
 
 function FailurePanel({ id, error, onRetry, title }: { id: string; error: Error; onRetry: () => void; title?: string }) {

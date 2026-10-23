@@ -17,7 +17,7 @@ export interface FailedRunNoticeProps {
 /** First non-empty line of the run's error, so a stack trace does not fill the page. */
 function errorHeadline(run: AgentRun): string {
   const line = (run.error ?? run.resultText ?? '').split('\n').find((text) => text.trim() !== '')
-  return line?.trim() ?? 'No error message was recorded.'
+  return line?.trim() ?? 'No error recorded.'
 }
 
 /** The top of Submit when the latest Claude Code run failed: what happened and a way to try again. */
@@ -25,7 +25,7 @@ export function FailedRunNotice({ run, onRetry, onView, retrying, blocked }: Fai
   return (
     <section aria-label="Run failed" className="flex flex-wrap items-center gap-x-3 gap-y-2">
       <Notice tone="err" className="min-w-0 max-w-full">
-        <strong className="font-bold">The last Claude Code run failed.</strong>
+        <strong className="font-bold">Last run failed.</strong>
         <span className="min-w-0 truncate font-medium" title={errorHeadline(run)}>
           {errorHeadline(run)}
         </span>

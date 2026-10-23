@@ -8,7 +8,7 @@ import type { SessionKind } from '@/lib/paths'
 const KINDS: readonly { kind: SessionKind; label: string; to: string }[] = [
   { kind: 'code-review', label: 'Development', to: '/' },
   { kind: 'test-run', label: 'Test runs', to: '/t' },
-  { kind: 'pr-review', label: 'PR review', to: '/pr' },
+  { kind: 'pr-review', label: 'PR reviews', to: '/pr' },
 ]
 
 /**

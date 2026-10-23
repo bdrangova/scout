@@ -53,7 +53,7 @@ export function registerResolve(program: Command): void {
   program
     .command('resolve')
     .argument('<id>', 'session id')
-    .description('Record how a comment was addressed in resolutions.json')
+    .description('Record how a comment was addressed')
     .option('--comment <id>', 'comment id, e.g. c3')
     .option('--status <status>', 'resolved | open (open = reply without resolving)')
     .option('--note <text>', 'one line: what changed, where, how it was verified')

@@ -193,7 +193,7 @@ export function FileReviewCard({
 
       <section aria-label={`Comments on ${file.path}`} className="flex shrink-0 flex-col gap-3 border-t-fine border-line bg-surface px-4 pt-3.5 pb-4">
         {!reviewable && (
-          <p className="text-xs text-ink-muted">No net change in the full diff: a later change undid this one, so it cannot be reviewed here.</p>
+          <p className="text-xs text-ink-muted">No net change: a later change undid this one.</p>
         )}
         <PrFooterGroup threads={footerThreads} path={file.path} />
         <CommentList comments={fileComments} {...commentActions} />

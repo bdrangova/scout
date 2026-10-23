@@ -105,14 +105,12 @@ describe('SessionLayout', () => {
     renderLayout()
     const banner = await header()
     const side = await rail()
-    expect(within(side).getByText('Awaiting review')).toBeInTheDocument()
     expect(within(side).getByText('0/6')).toBeInTheDocument()
     expect(within(side).getByText('+2,556')).toBeInTheDocument()
     expect(within(side).getByLabelText('Repository qbdvision')).toBeInTheDocument()
     expect(within(side).getByTitle(/^Base branch\. The diff is against the merge-base bbbbbbb/)).toHaveTextContent('origin/main')
     expect(within(side).getByTitle('bojana-QI-15472-trial-bar')).toBeInTheDocument()
     expect(within(banner).getByRole('link', { name: /Evidence/ })).toHaveTextContent('2')
-    expect(within(banner).queryByText('Awaiting review')).not.toBeInTheDocument()
     expect(within(banner).queryByText('+2,556')).not.toBeInTheDocument()
   })
 
@@ -160,14 +158,14 @@ describe('SessionLayout', () => {
     expect(await screen.findByRole('menuitem', { name: 'Archive session' })).not.toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('opens the grouped shortcut help from the header link and with ?', async () => {
+  it('opens the grouped shortcut help from the header link and with Ctrl+?', async () => {
     renderLayout()
     fireEvent.click(await screen.findByRole('button', { name: 'Keyboard shortcuts' }))
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('Navigation')).toBeInTheDocument()
     expect(within(dialog).getByText('Video')).toBeInTheDocument()
     expect(within(dialog).getByText('Comment at the current time')).toBeInTheDocument()
-    fireEvent.keyDown(window, { key: '?' })
+    fireEvent.keyDown(window, { key: '?', ctrlKey: true, shiftKey: true })
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
@@ -178,8 +176,7 @@ describe('SessionLayout', () => {
 
     publish({ ...sessionDetailFixture, activeRunId: 'run-20260926180000-ab12' })
     events().emit('message', { type: 'run.updated', sessionId: SESSION_ID, runId: 'run-20260926180000-ab12' })
-    expect(await screen.findByLabelText('Agent working')).toHaveAttribute('data-run', 'working')
-    expect(detailGets()).toBe(before + 1)
+    await waitFor(() => expect(detailGets()).toBe(before + 1))
 
     publish({ ...sessionDetailFixture, extras: [...sessionDetailFixture.extras, { path: 'flow.mmd', type: 'mermaid', title: 'Flow' }] })
     events().emit('message', { type: 'session.updated', sessionId: SESSION_ID })
@@ -200,7 +197,6 @@ describe('SessionLayout', () => {
     const card = await screen.findByRole('article', { name: P0 })
     expect(card).toHaveAttribute('data-verdict', 'approved')
     expect(within(side).getByText('1/6')).toBeInTheDocument()
-    expect(within(side).getByText('In progress · 1 of 6')).toBeInTheDocument()
     await waitFor(() => expect(api.patchRequests).toHaveLength(1))
     const before = detailGets()
 
@@ -213,13 +209,12 @@ describe('SessionLayout', () => {
     publish(changed)
     events().emit('message', { type: 'tree.updated', sessionId: SESSION_ID, fingerprint: changed.tree.fingerprint, durationMs: 40 })
     await waitFor(() => expect(card).toHaveAttribute('data-verdict', 'none'))
-    expect(detailGets()).toBe(before + 1)
+    await waitFor(() => expect(detailGets()).toBe(before + 1))
     expect(within(card).getByText(/updated since sent/i)).toBeInTheDocument()
     expect(within(card).getByText('changed just now')).toBeInTheDocument()
     expect(within(card).getByRole('button', { name: 'Approve' })).toHaveAttribute('aria-pressed', 'false')
     expect(within(side).getByText('0/6')).toBeInTheDocument()
     // A judged file that changed on disk flips the session to Updated (plain label: no open comments).
-    expect(within(side).getByText('Updated since sent')).toBeInTheDocument()
     await waitFor(() => expect(api.patchRequests).toHaveLength(2))
     expect(toast.info).toHaveBeenCalledWith('1 file changed on disk', expect.objectContaining({ duration: expect.any(Number) }))
     // The review entry is kept (the stale verdict is simply not effective), nothing is written for it.
@@ -273,7 +268,7 @@ describe('SessionLayout', () => {
       if (init?.method === 'POST' && url.endsWith('/unarchive')) return json(200, { id: SESSION_ID })
       return base ? base(input, init) : json(404, {})
     })
-    expect(await screen.findByRole('heading', { level: 1, name: 'This session is archived' }, { timeout: 3000 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Archived' }, { timeout: 3000 })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Unarchive' }))
     await waitFor(() =>
       expect(api.fetchMock).toHaveBeenCalledWith(`/api/sessions/${SESSION_ID}/unarchive`, expect.objectContaining({ method: 'POST' })),

@@ -105,7 +105,7 @@ describe('SessionListPage kinds', () => {
     hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
     renderAt('/t')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Test runs')
-    expect(screen.getByText('No test runs yet')).toBeInTheDocument()
+    expect(screen.getByText('No test runs')).toBeInTheDocument()
     expect(screen.queryByText(/Couldn't load/)).not.toBeInTheDocument()
   })
 

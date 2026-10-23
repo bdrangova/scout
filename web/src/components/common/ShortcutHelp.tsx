@@ -19,7 +19,7 @@ export function ShortcutHelp({ open, onOpenChange }: ShortcutHelpProps) {
         <DialogHeader>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>
-            Off while you type, except <Kbd>⌘</Kbd> <Kbd>Enter</Kbd>.
+            Off while typing, except <Kbd>⌘</Kbd> <Kbd>Enter</Kbd>.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2">

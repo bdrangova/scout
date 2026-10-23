@@ -70,7 +70,7 @@ interface PendingFlags {
 export function registerPending(program: Command): void {
   program
     .command('pending')
-    .description('List sessions (code reviews and test runs) of a repository with sent review comments still open (for the UserPromptSubmit hook)')
+    .description('List sessions with open sent comments (for the UserPromptSubmit hook)')
     .option('--repo <path>', 'path inside the repository (default: cwd)')
     .option('--format <format>', 'json | brief', 'json')
     .action(async (flags: PendingFlags) => {

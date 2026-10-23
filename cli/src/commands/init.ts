@@ -120,7 +120,7 @@ function printTestRun(result: InitTestRunResult, format: string): void {
 export function registerInit(program: Command): void {
   program
     .command('init')
-    .description('Create a review session for a repository (or a test-run folder), or refresh the latest one for this branch (run folder); prints id, folder and URL')
+    .description('Create or refresh a review session; prints id, folder, URL')
     .option('--kind <kind>', 'code-review | test-run | pr-review', 'code-review')
     .option('--repo <path>', 'path inside the repository (test-run: the checkout containing the run folder; default: the run folder)')
     .option('--run <path>', 'test-run: the feature-test run folder (must be inside the repository)')

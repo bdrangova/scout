@@ -53,7 +53,7 @@ export function registerPrTrust(program: Command): void {
   program
     .command('pr-trust')
     .argument('[id]', 'session id (default: the open session for this branch)')
-    .description('Let the agent see a comment (or all comments of an author) from an untrusted GitHub author. Terminal only.')
+    .description('Let the agent see comments from an untrusted author. Terminal only.')
     .option('--repo <path>', 'path inside the repository (default: cwd)')
     .option('--comment <id>', 'PR comment id, e.g. rc123')
     .option('--author <login>', 'GitHub login')
@@ -61,7 +61,7 @@ export function registerPrTrust(program: Command): void {
       const { trust } = await prTrust({ home: resolveHome(), repo: path.resolve(flags.repo ?? process.cwd()), id: id ?? null, comment: flags.comment, author: flags.author })
       const ids = trust.comments.map((grant) => (typeof grant === 'string' ? grant : grant.id))
       console.log(`trusted comments: ${ids.join(', ') || '-'} · trusted authors: ${trust.authors.join(', ') || '-'}`)
-      if (flags.comment !== undefined) console.log('A trusted comment lapses if its text is edited on GitHub (the next pr-sync says so).')
-      if (flags.author !== undefined) console.log('An author grant is a standing decision about a person: their later edits and new comments stay trusted.')
+      if (flags.comment !== undefined) console.log('Trust lapses if the comment is edited on GitHub (pr-sync reports it).')
+      if (flags.author !== undefined) console.log('Author trust is standing: later edits and new comments stay trusted.')
     })
 }

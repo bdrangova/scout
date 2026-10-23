@@ -13,3 +13,22 @@ export function DensityButton({ density, onClick }: { density: RailDensity; onCl
     </Button>
   )
 }
+
+/** The compact identity: the chevron and the title are one button, so the whole row expands. */
+export function CompactIdentity({ title, onClick }: { title: string; onClick: () => void }) {
+  return (
+    <div data-density="compact" className="h-[41px] shrink-0 border-b-fine border-line">
+      <button
+        type="button"
+        aria-label="Expand session details"
+        aria-expanded={false}
+        title={title}
+        onClick={onClick}
+        className="flex size-full cursor-pointer items-center gap-1 bg-transparent px-2 text-left hover:bg-ink/5"
+      >
+        <ChevronRight aria-hidden className="size-3.5 shrink-0 mx-1.5" />
+        <span className="min-w-0 flex-1 truncate text-[13.5px] font-bold">{title}</span>
+      </button>
+    </div>
+  )
+}

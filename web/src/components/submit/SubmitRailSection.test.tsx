@@ -81,7 +81,7 @@ describe('SubmitRailSection', () => {
       page: <SubmitRailSection comments={[]} review={empty} detail={sessionDetailFixture} runs={[]} selectedRunId={null} onSelectRun={vi.fn()} />,
     })
     expect(screen.getByText(/No open comments/)).toBeInTheDocument()
-    expect(screen.getByText('Nothing sent yet')).toBeInTheDocument()
+    expect(screen.getByText('No runs')).toBeInTheDocument()
   })
 
   it('lists the runs newest first, numbered, with the failure reason, and selects one on click', () => {

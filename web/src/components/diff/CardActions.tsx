@@ -42,7 +42,7 @@ export function CardActions({ verdict, pendingReject, reviewable, hasDraft, onAp
   return (
     <div data-slot="card-actions" className="flex flex-wrap items-center gap-3">
       {hasDraft ? (
-        <span className="flex-1 text-xs font-semibold text-ink-muted">Your comment is sent with the verdict.</span>
+        <span className="flex-1 text-xs font-semibold text-ink-muted">Sent with the verdict.</span>
       ) : (
         <span className="hidden flex-1 items-center gap-3.5 text-xs font-semibold text-ink-muted sm:flex lg:hidden" aria-hidden>
           {HINTS.map(({ key, icon: Icon, label }) => (

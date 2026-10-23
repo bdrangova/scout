@@ -80,7 +80,7 @@ export function registerArchive(program: Command): void {
     .command('delete')
     .argument('<id>', 'archived session id')
     .option('--yes', 'actually delete; without it, print what would be deleted and exit 2')
-    .description('Delete an archived session permanently (review state, comments and run logs; the repository is not touched)')
+    .description('Permanently delete an archived session (repo untouched)')
     .action(async (id: string, options: { yes?: boolean }) => {
       const home = resolveHome()
       if (options.yes !== true) {
@@ -96,7 +96,7 @@ export function registerArchive(program: Command): void {
     .command('archive')
     .argument('<id>', 'session id')
     .option('--undo', 'move an archived session back to the live list')
-    .description('Archive a session (moves its folder to archive/; reversible with --undo)')
+    .description('Archive a session (--undo to restore)')
     .action(async (id: string, options: { undo?: boolean }) => {
       console.log(await archiveSession({ home: resolveHome(), id, undo: options.undo ?? false }))
     })

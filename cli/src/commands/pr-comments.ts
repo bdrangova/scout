@@ -21,7 +21,7 @@ export function registerPrComments(program: Command): void {
   program
     .command('pr-comments')
     .argument('[id]', 'session id (default: the open session for this branch)')
-    .description('Print the open GitHub PR comments from trusted authors, delimited as untrusted data (what an agent should read; never read pr-comments.json directly)')
+    .description('Print open PR comments from trusted authors as untrusted data (never read pr-comments.json directly)')
     .option('--repo <path>', 'path inside the repository (default: cwd)')
     .action(async (id: string | undefined, flags: { repo?: string }) => {
       console.log(await renderSessionPrComments({ home: resolveHome(), repo: path.resolve(flags.repo ?? process.cwd()), id: id ?? null }))

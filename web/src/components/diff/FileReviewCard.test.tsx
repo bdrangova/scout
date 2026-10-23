@@ -108,7 +108,7 @@ describe('FileReviewCard', () => {
 
   it('says a typed draft goes out with the verdict', () => {
     render(card(untouched, vi.fn(), 'Looks fine'))
-    expect(screen.getByText('Your comment is sent with the verdict.')).toBeInTheDocument()
+    expect(screen.getByText('Sent with the verdict.')).toBeInTheDocument()
     expect(screen.getByRole('textbox')).toHaveValue('Looks fine')
   })
 
@@ -269,7 +269,7 @@ describe('FileReviewCard', () => {
       expect(advanceFrom).not.toHaveBeenCalled()
     })
 
-    it('disables the verdict and comment controls for a file with no net change in the full diff', () => {
+    it('disables the verdict and comment controls for a file with no net change', () => {
       const dispatch = vi.fn()
       render(
         <ReviewStateContext.Provider value={contextValue(dispatch)}>
@@ -281,7 +281,7 @@ describe('FileReviewCard', () => {
       expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled()
       expect(screen.getByRole('button', { name: 'Comment' })).toBeDisabled()
       expect(screen.queryByRole('button', { name: /^Comment on/ })).not.toBeInTheDocument()
-      expect(screen.getByText(/No net change in the full diff/)).toBeInTheDocument()
+      expect(screen.getByText(/No net change/)).toBeInTheDocument()
       screen.getByRole('button', { name: 'Approve' }).click()
       expect(dispatch).not.toHaveBeenCalled()
     })

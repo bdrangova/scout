@@ -129,7 +129,7 @@ export function registerPrSync(program: Command): void {
   program
     .command('pr-sync')
     .argument('[id]', 'session id (default: the open session for this branch)')
-    .description('Fetch the GitHub PR of this branch (or --pr N) and its comments into review/pr-comments.json, via gh')
+    .description('Fetch the PR of this branch (or --pr N) and its comments, via gh')
     .option('--repo <path>', 'path inside the repository (default: cwd)')
     .option('--pr <number>', 'pull request number (default: the PR of the current branch)')
     .option('--json', 'print the result (or { ok: false, error: { code, message, exitCode } }) as JSON')
