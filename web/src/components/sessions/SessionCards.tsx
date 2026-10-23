@@ -30,8 +30,8 @@ function CardIdentity({ title, tickets, status, statusDetail }: { title: string;
   </div>
 }
 
-function Branches({ base, current }: { base?: string | null; current?: string | null }) {
-  return <CardLine label="Base and current branch" className="font-mono text-[11px] text-(--tk-t)"><GitBranch aria-hidden className="size-3.5 shrink-0" /><span>{base ?? 'Not recorded'}</span><ArrowLeft aria-label="from" className="size-3 shrink-0 text-ink-muted" /><span>{current ?? 'Detached HEAD'}</span></CardLine>
+function Branches({ base, current, children }: { base?: string | null; current?: string | null; children?: ReactNode }) {
+  return <CardLine label="Base and current branch" className="font-mono text-[11px] text-(--tk-t)"><GitBranch aria-hidden className="size-3.5 shrink-0" /><span>{base ?? 'Not recorded'}</span><ArrowLeft aria-label="from" className="size-3 shrink-0 text-ink-muted" /><span>{current ?? 'Detached HEAD'}</span>{children}</CardLine>
 }
 function CardTime({ at }: { at: string }) {
   return <time dateTime={at} title={new Date(at).toLocaleString()}>{formatRelativeTime(at)}</time>
@@ -53,14 +53,17 @@ export function LiveSessionCard({ session, onArchive, layout = 'grid' }: { sessi
       className="h-full cursor-pointer gap-3 p-4 transition-colors hover:bg-paper-2">
       <CardIdentity title={session.title} tickets={session.tickets} status={<SessionStatusLabel status={reviewStatusOf(source)} />} statusDetail={!isRun && <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />} />
       <div className={cn('flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:border-t-0 md:pt-0')}>
-        {!isRun && <Branches base={session.repo.baseRef} current={session.repo.branch} />}
-        <CardLine label={isRun ? 'Scenario counts' : 'File changes'} className="text-xs font-medium">
-          <span>{source.progress.total} {isRun ? 'scenarios' : 'files'}</span><span className="text-ink-muted">|</span>
-          {isRun ? SCENARIO_STATUSES.filter((status) => session.counts[status] > 0).map((status) => <span key={status} className={TONE_TEXT_CLASS[SCENARIO_STATUS_TONE[status]]}>{session.counts[status]} {SCENARIO_STATUS_LABEL[status]}</span>) : <><span className="font-mono text-green">{formatAdditions(session.stats.additions)}</span><span className="font-mono text-red">{formatDeletions(session.stats.deletions)}</span></>}
-        </CardLine>
+        {isRun ? <CardLine label="Scenario counts" className="text-xs font-medium">
+          <span>{source.progress.total} scenarios</span><span className="text-ink-muted">|</span>
+          {SCENARIO_STATUSES.filter((status) => session.counts[status] > 0).map((status) => <span key={status} className={TONE_TEXT_CLASS[SCENARIO_STATUS_TONE[status]]}>{session.counts[status]} {SCENARIO_STATUS_LABEL[status]}</span>)}
+        </CardLine> : <Branches base={session.repo.baseRef} current={session.repo.branch}>
+          <span aria-hidden className="mx-1 text-ink-muted">|</span>
+          <span aria-label="File changes" className="inline-flex shrink-0 items-center gap-2 font-sans text-xs font-medium text-ink"><span>{source.progress.total} files</span><span className="font-mono text-green">{formatAdditions(session.stats.additions)}</span><span className="font-mono text-red">{formatDeletions(session.stats.deletions)}</span></span>
+          {session.pr && <><span aria-hidden className="mx-1 text-ink-muted">|</span><a href={session.pr.url} target="_blank" rel="noreferrer" aria-label={`PR #${session.pr.number} · ${session.pr.state}`} title={`PR #${session.pr.number} · ${session.pr.state}`} onClick={(event) => event.stopPropagation()} className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-info-bd hover:bg-hover"><GitPullRequest aria-hidden className="size-3.5" /><span>#{session.pr.number}</span></a></>}
+        </Branches>}
       </div>
       <div className={cn('mt-auto flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:mt-0 md:border-t-0 md:pt-0')}>
-        {!isRun && <CardLine label="Pull request" className="text-xs text-info-bd">{session.pr ? <a href={session.pr.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="inline-flex items-center gap-1.5 hover:underline"><GitPullRequest aria-hidden className="size-3.5" />PR #{session.pr.number} · {session.pr.state}</a> : <span className="text-ink-muted">No pull request</span>}</CardLine>}
+
         {run && <SessionStatusLabel status={run === 'working' ? 'agent-working' : 'run-failed'} />}
         <div className="flex min-w-0 items-center gap-2 text-[11px] text-ink-muted">
           <CardLine label="Session metadata" className="flex-1"><RepoName path={isRun ? session.run.path : session.repo.path} /><span>·</span><CardTime at={session.updatedAt} /><span title={session.id} className="font-mono">· {session.id}</span></CardLine>
