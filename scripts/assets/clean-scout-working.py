@@ -51,6 +51,52 @@ def pocket_core(frame):
     return selected
 
 
+def pale_pocket(frame):
+    """Remove enclosed light matte fills below the right earpiece.
+
+    Paper and helmet components touch the region boundary and are excluded.
+    Only a small, enclosed component in the head/paper/scarf gap is eligible.
+    """
+    a = np.asarray(frame)
+    bright = (a[190:275, 430:530, :3].min(axis=2) > 150)
+    bright &= a[190:275, 430:530, 3] > 0
+    colours = a[190:275, 430:530, :3].astype(float)
+    neutral_white = (colours.min(axis=2) > 225) & (np.ptp(colours, axis=2) < 12)
+    seen = np.zeros(bright.shape, dtype=bool)
+    selected = np.zeros(a.shape[:2], dtype=bool)
+    for y, x in zip(*np.where(bright)):
+        if seen[y, x]:
+            continue
+        queue = deque([(y, x)])
+        seen[y, x] = True
+        component = []
+        while queue:
+            yy, xx = queue.popleft()
+            component.append((yy, xx))
+            for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0),
+                           (1, 1), (1, -1), (-1, 1), (-1, -1)):
+                ny, nx = yy + dy, xx + dx
+                if (0 <= ny < 85 and 0 <= nx < 100
+                        and bright[ny, nx] and not seen[ny, nx]):
+                    seen[ny, nx] = True
+                    queue.append((ny, nx))
+        points = np.asarray(component)
+        lo, hi = points.min(axis=0), points.max(axis=0)
+        cy, cx = points.mean(axis=0) + [190, 430]
+        white_count = np.count_nonzero(neutral_white[points[:, 0], points[:, 1]])
+        if (15 < len(component) < 1600 and lo[0] > 0 and lo[1] > 0
+                and hi[0] < 84 and hi[1] < 99
+                and 445 < cx < 495 and 215 < cy < 262
+                and white_count > 8 and white_count > len(component) / 2):
+            selected[points[:, 0] + 190, points[:, 1] + 430] = True
+    # Include the fill's pale antialiased fringe, keeping dark outlines intact.
+    expanded = np.asarray(Image.fromarray(selected.astype('uint8') * 255)
+                          .filter(ImageFilter.MaxFilter(3))) > 0
+    pale_edge = ((a[:, :, :3].min(axis=2) > 90)
+                 & (np.ptp(a[:, :, :3].astype(float), axis=2) < 80))
+    return selected | (expanded & pale_edge)
+
+
 def smooth_webp_edges(frame):
  a=np.array(frame)
  matte=frame.getchannel('A')
@@ -106,13 +152,15 @@ def main():
         a = np.array(frame)
         original_alpha = a[:, :, 3].copy()
         pocket = pocket_core(frame) if i in AFFECTED else np.zeros(a.shape[:2], bool)
-        a[pocket, 3] = 0
+        white_pocket = pale_pocket(frame)
+        removed = pocket | white_pocket
+        a[removed, 3] = 0
         # Restrict median cleanup to the exterior silhouette: pocket cores retain
         # their full two-pixel border instead of eroding legitimate dark artwork.
         matte = Image.fromarray(original_alpha)
         median = np.asarray(matte.filter(ImageFilter.MedianFilter(3)))
         alpha = np.minimum(original_alpha, median)
-        alpha[pocket] = 0
+        alpha[removed] = 0
         a[:, :, 3] = alpha
         cleaned = Image.fromarray(a)
         gif_frames.append(indexed(cleaned))
@@ -120,6 +168,7 @@ def main():
         webp_frames.append(smooth_webp_edges(cleaned))
         durations.append(source.info.get('duration', 100))
         report.append({'frame': i, 'pocket_pixels': int(pocket.sum()),
+                       'pale_pocket_pixels': int(white_pocket.sum()),
                        'silhouette_pixels': int(((alpha != original_alpha) & ~pocket).sum())})
     args.output.mkdir(parents=True, exist_ok=True)
     gif_tmp = args.output / '.scout-working.tmp.gif'
@@ -134,6 +183,7 @@ def main():
     webp_tmp.replace(args.output / 'scout-working.webp')
     print(json.dumps({'frames': len(durations), 'duration_ms': sum(durations),
                       'pocket_pixels': sum(r['pocket_pixels'] for r in report),
+                      'pale_pocket_pixels': sum(r['pale_pocket_pixels'] for r in report),
                       'details': report}, indent=2))
 
 

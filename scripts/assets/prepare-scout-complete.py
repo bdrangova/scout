@@ -50,6 +50,7 @@ def cutout(rgb):
     fraction = np.clip(np.max((background - pixels) / (background - [30, 18, 10]), axis=2), .05, 1)
     pixels[edge] = np.clip((pixels[edge] - (1 - fraction[edge, None]) * background) / fraction[edge, None], 0, 255)
     alpha[edge] = np.rint(fraction[edge] * 255).astype('uint8')
+    pixels[alpha == 0] = 0
     return Image.fromarray(np.dstack([pixels.astype('uint8'), alpha]))
 
 
@@ -57,13 +58,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('video', type=Path)
     parser.add_argument('--output', type=Path, default=Path('web/public/brand'))
-    parser.add_argument('--start', type=float, default=1.5,
-                        help='Opening seconds to trim (default: 1.5)')
-    parser.add_argument('--end', type=float, default=8.5,
-                        help='End timestamp in the source video (default: 8.5)')
+    parser.add_argument('--start', type=float, default=0,
+                        help='Opening seconds to trim (default: 0)')
+    parser.add_argument('--end', type=float, default=10,
+                        help='End timestamp in the source video (default: 10)')
+    parser.add_argument('--speed', type=float, default=1.4,
+                        help='Playback speed multiplier (default: 1.4)')
     args = parser.parse_args()
-    if args.start < 0 or args.end <= args.start:
-        parser.error('--start must be nonnegative and --end must be after --start')
+    if args.start < 0 or args.end <= args.start or args.speed <= 0:
+        parser.error('--start must be nonnegative, --end must be after --start, and --speed must be positive')
     width, height, fps = 800, 450, 24
     decoder = subprocess.Popen(['ffmpeg', '-v', 'error', '-ss', str(args.start), '-i', str(args.video),
                                 '-t', str(args.end - args.start),
@@ -80,19 +83,40 @@ def main():
     if decoder.wait() != 0 or not frames:
         raise RuntimeError('Video decoding failed')
     args.output.mkdir(parents=True, exist_ok=True)
-    # Alternating integer frame lengths retain the exact 24fps clip duration.
-    durations = [round((i + 1) * 1000 / fps) - round(i * 1000 / fps) for i in range(len(frames))]
+    thumbs_up = min(len(frames) - 1, max(0, round((5 - args.start) * fps)))
+    still = frames[thumbs_up].copy()
+    # Retain every gesture/step frame. Sample redundant neutral poses more
+    # sparsely while keeping the actual first and last poses for the loop.
+    selected = [i for i in range(len(frames))
+                if 1.5 <= args.start + i / fps < 8.4
+                or i % 4 == 0 or i in (0, len(frames) - 1)]
+    frames = [frames[i] for i in selected]
+    # The source's neutral endpoints differ slightly. Blend the last four
+    # neutral poses toward the first, in premultiplied colour, to avoid a snap.
+    first = np.asarray(frames[0]).astype(float) / 255
+    blend_count = min(4, len(frames)) if args.start < 1.5 and args.end > 8.4 else 0
+    for offset in range(blend_count):
+        index = len(frames) - blend_count + offset
+        last = np.asarray(frames[index]).astype(float) / 255
+        weight = (offset + 1) / blend_count
+        alpha = (1 - weight) * last[:, :, 3:] + weight * first[:, :, 3:]
+        rgb = ((1 - weight) * last[:, :, :3] * last[:, :, 3:]
+               + weight * first[:, :, :3] * first[:, :, 3:])
+        rgba = np.concatenate([rgb / np.maximum(alpha, 1e-8), alpha], axis=2)
+        frames[index] = Image.fromarray(np.rint(rgba * 255).astype('uint8'))
+    # Keep frame durations above browser minimum-delay thresholds.
+    playback_fps = fps * args.speed
+    durations = [round((i + 1) * 1000 / playback_fps) - round(i * 1000 / playback_fps) for i in range(len(frames))]
     target = args.output / 'scout-ready.webp'
     temporary = target.with_suffix('.tmp.webp')
     frames[0].save(temporary, save_all=True, append_images=frames[1:],
                    duration=durations, loop=0, quality=90, method=4,
-                   lossless=False, exact=True)
+                   lossless=True, exact=True)
     temporary.replace(target)
-    thumbs_up = min(len(frames) - 1, max(0, round((5 - args.start) * fps)))
-    frames[thumbs_up].save(args.output / 'scout-ready-still.png')
+    still.save(args.output / 'scout-ready-still.png')
     # Side-by-side QA on light and dark app backgrounds.
     sheet = Image.new('RGB', (width * 2, height * 2))
-    for row, index in enumerate([min(fps, len(frames) - 1), thumbs_up]):
+    for row, index in enumerate([0, len(frames) - 1]):
         for col, colour in enumerate(['#f6f0e5', '#242535']):
             backdrop = Image.new('RGBA', (width, height), colour)
             backdrop.alpha_composite(frames[index])
