@@ -9,7 +9,6 @@ import { ShortcutHelp } from '@/components/common/ShortcutHelp'
 import { ArchivedList } from '@/components/sessions/ArchivedList'
 import { BrokenRow } from '@/components/sessions/BrokenRow'
 import { SessionFilters } from '@/components/sessions/SessionFilters'
-import { SessionListHead } from '@/components/sessions/SessionListHead'
 import { EmptyState, ErrorState, ListNote, LoadingState } from '@/components/sessions/SessionListStates'
 import { SessionRow } from '@/components/sessions/SessionRow'
 import { matchesSessionSearch } from '@/components/sessions/session-search'
@@ -49,6 +48,7 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
             <div className="flex flex-col gap-4">
               <p className="m-0 text-xs text-ink-muted">Archived sessions are kept here. Restore a session to open it again.</p>
               <ArchivedList
+                kind={kind}
                 layout={layout}
                 items={list.archived.filter((item) => matchesSessionSearch(item, query))}
                 emptyMessage={query.trim() ? 'No archived sessions match your search.' : undefined}
@@ -62,7 +62,6 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
             <EmptyState kind={kind} />
           ) : (
             <div className="flex flex-col gap-2">
-              {layout === 'list' && sessions.length > 0 && <SessionListHead />}
               <ul aria-label="Sessions" className={cn('m-0 list-none p-0', layout === 'grid' ? SESSION_CARD_GRID : 'flex flex-col gap-3.5')}>
                 {sessions.map((item) => layout === 'grid' ? <LiveSessionCard key={item.id} session={item} onArchive={list.archive} /> : isTestRunSummary(item) ? <TestRunRow key={item.id} session={item} onArchive={list.archive} /> : <SessionRow key={item.id} session={item} onArchive={list.archive} />)}
                 {visible.length === 0 && <ListNote>{kind === 'test-run' ? 'No test runs match this filter or search.' : 'No sessions match this filter or search.'}</ListNote>}

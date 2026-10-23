@@ -47,6 +47,7 @@ describe('SessionListPage kinds', () => {
   afterEach(() => {
     localStorage.removeItem(SESSION_LAYOUT_KEY)
     hooks.kinds.length = 0
+    hooks.archived = { archived: [], loading: false, error: null, reload: () => {} }
     vi.unstubAllGlobals()
   })
 
@@ -57,13 +58,26 @@ describe('SessionListPage kinds', () => {
     const card = screen.getByRole('link', { name: 'Run A' })
     expect(card).toHaveAttribute('data-layout', 'grid')
     expect(within(card).getByTitle(RUN_A.run.path)).toBeInTheDocument()
-    expect(within(card).getByLabelText('Feature and area')).toHaveTextContent(RUN_A.run.feature!)
+    expect(within(card).queryByLabelText('Feature and area')).not.toBeInTheDocument()
+    expect(within(card).queryByLabelText('Base and current branch')).not.toBeInTheDocument()
     for (const [status, label] of Object.entries(SCENARIO_STATUS_LABEL)) {
       const count = RUN_A.counts[status as keyof typeof SCENARIO_STATUS_LABEL]
       if (count > 0) expect(within(card).getByLabelText('Scenario counts')).toHaveTextContent(`${count} ${label}`)
     }
     await userEvent.setup().click(card)
     expect(screen.getByText('Run route')).toBeInTheDocument()
+  })
+
+  it.each(['list', 'grid'])('omits branches from archived test runs in %s layout', async (layout) => {
+    localStorage.setItem(SESSION_LAYOUT_KEY, layout)
+    hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
+    hooks.archived = { archived: [{ id: RUN_A.id, title: 'Archived run', tickets: [], repo: { path: '/runs/run-a', branch: null, baseRef: null }, createdAt: RUN_A.updatedAt, updatedAt: RUN_A.updatedAt, archivedAt: RUN_A.updatedAt }], loading: false, error: null, reload: () => {} }
+    renderAt('/t')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Archived · 1' }))
+    const row = screen.getByRole('listitem', { name: 'Archived session Archived run' })
+    expect(within(row).queryByLabelText('Base and current branch')).not.toBeInTheDocument()
+    expect(within(row).queryByText('Not recorded')).not.toBeInTheDocument()
+    expect(within(row).getByRole('button', { name: 'Restore Archived run' })).toBeInTheDocument()
   })
 
   it('asks for the code reviews on / and the test runs on /t', () => {

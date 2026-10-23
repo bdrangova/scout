@@ -23,14 +23,15 @@ function renderRow(overrides: Parameters<typeof testRunSummary>[0], onArchive = 
 const base = { id: '20261021-1100-demo-ab12', title: 'Demo feature test run' }
 
 describe('TestRunRow', () => {
-  it('shows the title, feature · area, the run folder name and the scenario counts', () => {
+  it('shows compact scenario totals and folder metadata, without branch or feature rows', () => {
     renderRow({ ...base, tickets: [{ key: 'QI-1', url: null }] })
     const row = screen.getByRole('link', { name: 'Demo feature test run' })
-    expect(within(row).getByText('f · a')).toBeInTheDocument()
+    expect(within(row).queryByLabelText('Feature and area')).not.toBeInTheDocument()
+    expect(within(row).queryByLabelText('Base and current branch')).not.toBeInTheDocument()
     expect(within(row).getByTitle('/Users/bojana/Projects/qbdvision/plans/f/a/test-runs/run-1')).toHaveTextContent('run-1')
-    expect(within(row).getByText('1 pass')).toHaveAttribute('data-tone', 'ok')
-    expect(within(row).getByText('1 fail')).toHaveAttribute('data-tone', 'err')
-    expect(within(row).getByText('1 gap')).toHaveAttribute('data-tone', 'warn')
+    expect(within(row).getByText('1 Pass')).toBeInTheDocument()
+    expect(within(row).getByText('1 Fail')).toBeInTheDocument()
+    expect(within(row).getByText('1 Gap')).toBeInTheDocument()
     expect(within(row).queryByText(/n\/a/)).not.toBeInTheDocument()
     expect(within(row).getByText('3 scenarios')).toBeInTheDocument()
     expect(within(row).queryByRole('progressbar')).not.toBeInTheDocument()
@@ -44,7 +45,7 @@ describe('TestRunRow', () => {
 
   it('shows the plain total when no scenario has a verdict-worthy status', () => {
     renderRow({ ...base, counts: { scenarios: 2, pass: 0, fail: 0, gap: 0, na: 0, blocked: 0, uncertain: 0, planned: 2 }, total: 2 })
-    expect(screen.getByText('2 planned')).toBeInTheDocument()
+    expect(screen.getByText('2 Planned')).toBeInTheDocument()
     expect(screen.getByText('2 scenarios')).toBeInTheDocument()
   })
 

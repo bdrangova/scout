@@ -1,5 +1,6 @@
 import type { ArchivedSession } from '@review-dash/shared'
 import { useState } from 'react'
+import type { SessionKind } from '@/lib/paths'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { useDeleteArchived } from '@/lib/useDeleteArchived'
 import { ArchivedSessionCard } from './SessionCards'
@@ -9,6 +10,7 @@ import { ArchivedRow } from './ArchivedRow'
 import { ErrorState, ListNote } from './SessionListStates'
 
 interface ArchivedListProps {
+  kind?: SessionKind
   layout?: SessionListLayout
   emptyMessage?: string
   items: readonly ArchivedSession[]
@@ -20,7 +22,7 @@ interface ArchivedListProps {
 }
 
 /** The Archived view: unarchive in place, or delete for good behind a confirmation. */
-export function ArchivedList({ layout = 'list', items, error, onUnarchive, onDeleted, reload, emptyMessage }: ArchivedListProps) {
+export function ArchivedList({ kind, layout = 'list', items, error, onUnarchive, onDeleted, reload, emptyMessage }: ArchivedListProps) {
   const [toDelete, setToDelete] = useState<ArchivedSession | null>(null)
   const deletion = useDeleteArchived((id) => {
     onDeleted(id)
@@ -40,7 +42,7 @@ export function ArchivedList({ layout = 'list', items, error, onUnarchive, onDel
   return (
     <ul aria-label="Archived sessions" className={cn('m-0 list-none p-0', layout === 'grid' ? SESSION_CARD_GRID : 'flex flex-col gap-3.5')}>
       {items.map((session) => (
-        layout === 'grid' ? <ArchivedSessionCard key={session.id} session={session} onRestore={onUnarchive} onDelete={openDelete} /> : <ArchivedRow key={session.id} session={session} onUnarchive={onUnarchive} onDelete={openDelete} />
+        layout === 'grid' ? <ArchivedSessionCard kind={kind} key={session.id} session={session} onRestore={onUnarchive} onDelete={openDelete} /> : <ArchivedRow kind={kind} key={session.id} session={session} onUnarchive={onUnarchive} onDelete={openDelete} />
       ))}
       {items.length === 0 && <ListNote>{emptyMessage ?? 'No archived sessions.'}</ListNote>}
       <ConfirmDialog
