@@ -98,9 +98,9 @@ describe('POST /api/sessions/:id/review/send', () => {
     expect(CodeReviewSentSnapshotSchema.parse(JSON.parse(fs.readFileSync(path.join(sentDir, `${stem}.json`), 'utf8')))).toEqual(sent)
     const markdown = fs.readFileSync(path.join(sentDir, `${stem}.md`), 'utf8')
     expect(markdown).toBe(
-      renderSentMarkdown(sent, { title: 'Fixture session', dashboardUrl: 'http://127.0.0.1:4546', evidence: detail.evidence, extras: detail.extras, spec: detail.spec }),
+      renderSentMarkdown(sent, { title: 'Fixture session', dashboardUrl: 'http://scout.localhost:4546', evidence: detail.evidence, extras: detail.extras, spec: detail.spec }),
     )
-    expect(markdown).toContain(`Dashboard: http://127.0.0.1:4546/s/${FIXTURE_SESSION_ID}`)
+    expect(markdown).toContain(`Dashboard: http://scout.localhost:4546/s/${FIXTURE_SESSION_ID}`)
     expect(markdown).toContain('### src/old.ts — REJECTED')
     expect(markdown).toContain('### flow.webm — Checkout flow')
     expect(markdown).toContain('### jira.md — QI-1 Fixture ticket')

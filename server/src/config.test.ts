@@ -9,7 +9,7 @@ describe('loadConfig', () => {
     expect(config.port).toBe(4545)
     expect(config.home).toBe(path.join(os.homedir(), '.ai-review'))
     expect(config.adapter).toBe('claude-code')
-    expect(config.dashboardUrl).toBe('http://127.0.0.1:4546')
+    expect(config.dashboardUrl).toBe('http://scout.localhost:4546')
   })
 
   it('reads AI_REVIEW_PORT, AI_REVIEW_HOME (with ~), AGENT_ADAPTER and DASHBOARD_URL', () => {

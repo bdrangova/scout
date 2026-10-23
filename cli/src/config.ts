@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
-import { DEFAULT_WEB_PORT, type ManifestKind } from '@review-dash/shared'
+import { DASHBOARD_HOST, DEFAULT_WEB_PORT, type ManifestKind } from '@review-dash/shared'
 
 export const CONFIG_FILE = 'config.json'
 
@@ -25,7 +25,7 @@ export async function readConfig(home: string): Promise<Config> {
 }
 
 export function dashboardOrigin(config: Config): string {
-  return `http://127.0.0.1:${config.port}`
+  return `http://${DASHBOARD_HOST}:${config.port}`
 }
 
 /** `/s/<id>` for a code review, `/t/<id>` for a test run. */

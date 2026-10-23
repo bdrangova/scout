@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { AgentAdapterNameSchema, DEFAULT_SERVER_PORT, DEFAULT_WEB_PORT } from '@review-dash/shared'
+import { AgentAdapterNameSchema, DASHBOARD_HOST, DEFAULT_SERVER_PORT, DEFAULT_WEB_PORT } from '@review-dash/shared'
 import type { AgentAdapterName } from '@review-dash/shared'
 
 export interface Config {
@@ -13,11 +13,11 @@ export interface Config {
   adapter: AgentAdapterName
   /** `AI_REVIEW_CLAUDE_BIN`, else `claude` on PATH, else `~/.local/bin/claude`, else null. */
   claudeBin: string | null
-  /** Origin of the web app, from `DASHBOARD_URL` (default `http://127.0.0.1:4546`), used in the sent markdown. */
+  /** Origin of the web app, from `DASHBOARD_URL` (default `http://scout.localhost:4546`), used in the sent markdown. */
   dashboardUrl: string
 }
 
-export const DEFAULT_DASHBOARD_URL = `http://127.0.0.1:${DEFAULT_WEB_PORT}`
+export const DEFAULT_DASHBOARD_URL = `http://${DASHBOARD_HOST}:${DEFAULT_WEB_PORT}`
 
 function expandHome(p: string): string {
   if (p === '~') return os.homedir()

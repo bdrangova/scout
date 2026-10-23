@@ -28,7 +28,7 @@ export const inputDir = path.join(fixturesDir, 'src')
 export const mediaDir = path.join(fixturesDir, 'media')
 
 /** Web origin written into sent markdown; `DASHBOARD_ORIGIN` overrides it. */
-export const DASHBOARD_ORIGIN = process.env.DASHBOARD_ORIGIN ?? 'http://127.0.0.1:4546'
+export const DASHBOARD_ORIGIN = process.env.DASHBOARD_ORIGIN ?? 'http://scout.localhost:4546'
 export const BASE_REF = 'origin/master'
 
 export const GIT_ENV: NodeJS.ProcessEnv = {

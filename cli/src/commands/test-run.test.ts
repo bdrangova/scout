@@ -44,7 +44,7 @@ describe('init --kind test-run', () => {
     const first = await initTestRunSession({ home, run: runPath, repo, agentSession: 'agent-1', now: NOW })
     expect(first.reused).toBe(false)
     expect(first.id).toMatch(/^20261022-\d{4}-run-1-[0-9a-f]{4}$/)
-    expect(first.url).toBe(`http://127.0.0.1:4546/t/${first.id}`)
+    expect(first.url).toBe(`http://scout.localhost:4546/t/${first.id}`)
     const manifest = ManifestSchema.parse(JSON.parse(await readFile(path.join(first.dir, 'manifest.json'), 'utf8')))
     expect(manifest).toEqual({
       schemaVersion: SCHEMA_VERSION,
@@ -120,7 +120,7 @@ describe('session commands on test runs', () => {
     const status = await sessionStatus({ home, repo, id })
     expect(status.session).toMatchObject({ kind: 'test-run', scenarios: { pass: 1, fail: 1, gap: 1 }, verdicts: { approved: 1, rejected: 0 } })
     expect(formatStatusBrief(status)).toBe(
-      `test run ${id} "run-1" · f/a · run ${runPath} · scenarios: 3 (1 pass, 1 fail, 1 gap) · verdicts: 1 approved, 0 rejected · open comments: 0 · not sent yet · http://127.0.0.1:4546/t/${id}`,
+      `test run ${id} "run-1" · f/a · run ${runPath} · scenarios: 3 (1 pass, 1 fail, 1 gap) · verdicts: 1 approved, 0 rejected · open comments: 0 · not sent yet · http://scout.localhost:4546/t/${id}`,
     )
   })
 
@@ -131,7 +131,7 @@ describe('session commands on test runs', () => {
     await writeJsonAtomic(path.join(dir, 'review', 'review.json'), { ...makeReview({ sent, comments: [comment] }), sessionId: id })
     const pending = await pendingForRepo({ home, repo })
     expect(pending.count).toBe(1)
-    expect(pending.sessions[0]).toMatchObject({ id, kind: 'test-run', url: `http://127.0.0.1:4546/t/${id}` })
+    expect(pending.sessions[0]).toMatchObject({ id, kind: 'test-run', url: `http://scout.localhost:4546/t/${id}` })
     expect(pending.message).toContain(`/apply-test-review ${id}`)
     expect((await pendingForRepo({ home, repo: path.join(home, 'other') })).count).toBe(0)
   })
@@ -156,7 +156,7 @@ describe('session commands on test runs', () => {
 
     const rendered = (await readLatestFeedback({ home, id, format: 'markdown' })).content
     expect(rendered).toContain(`# Test review feedback — run-1 (${id})`)
-    expect(rendered).toContain(`http://127.0.0.1:4546/t/${id}/review`)
+    expect(rendered).toContain(`http://scout.localhost:4546/t/${id}/review`)
     expect(rendered).toContain('### s2-fail')
     expect(rendered).toContain('**[not-clear]** Why does this fail?')
     expect(rendered).toContain('## Required response')

@@ -2,6 +2,8 @@ export const SCHEMA_VERSION = 2
 
 export const DEFAULT_SERVER_PORT = 4545
 export const DEFAULT_WEB_PORT = 4546
+/** Host of the dashboard links: a `.localhost` name always resolves to this machine, no hosts entry needed. */
+export const DASHBOARD_HOST = 'scout.localhost'
 
 /** `<yyyymmdd>-<hhmm>-<slug>-<4hex>` */
 export const SESSION_ID_RE = /^\d{8}-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{4}$/

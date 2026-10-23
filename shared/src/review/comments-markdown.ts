@@ -9,7 +9,7 @@ import { renderPrCommentsMarkdown, renderPrRepliesMarkdown, type PrCommentsMarkd
 /** What the renderer needs besides the snapshot: the session title, the dashboard origin and the artifacts for display names. */
 export interface SentMarkdownContext {
   title: string
-  /** e.g. `http://127.0.0.1:4546` */
+  /** e.g. `http://scout.localhost:4546` */
   dashboardUrl: string
   evidence?: readonly EvidenceItem[]
   extras?: readonly ExtraItem[]

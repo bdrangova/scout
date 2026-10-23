@@ -78,7 +78,7 @@ describe('init', () => {
     })
     expect(first.reused).toBe(false)
     expect(first.id).toMatch(/^20260927-\d{4}-qi-1-thing-[0-9a-f]{4}$/)
-    expect(first.url).toBe(`http://127.0.0.1:4546/s/${first.id}`)
+    expect(first.url).toBe(`http://scout.localhost:4546/s/${first.id}`)
     const manifest = ManifestSchema.parse(JSON.parse(await readFile(path.join(first.dir, 'manifest.json'), 'utf8')))
     expect(manifest).toEqual({
       schemaVersion: SCHEMA_VERSION,
@@ -258,11 +258,11 @@ describe('status', () => {
         baseRef: 'origin/master',
         openComments: 1,
         sent,
-        url: `http://127.0.0.1:4546/s/${m.id}`,
+        url: `http://scout.localhost:4546/s/${m.id}`,
       },
     })
     expect(formatStatusBrief(status)).toBe(
-      `session ${m.id} "${m.title}" · branch feature/x · base origin/master · open comments: 1 · sent ${sent.at} (request-changes) · http://127.0.0.1:4546/s/${m.id}`,
+      `session ${m.id} "${m.title}" · branch feature/x · base origin/master · open comments: 1 · sent ${sent.at} (request-changes) · http://scout.localhost:4546/s/${m.id}`,
     )
     expect((await sessionStatus({ home, repo, id: m.id })).session?.id).toBe(m.id)
     await expect(sessionStatus({ home, repo, id: '20260101-0000-nope-0000' })).rejects.toThrow(/manifest\.json/)
@@ -316,7 +316,7 @@ describe('pending', () => {
     expect(performance.now() - started).toBeLessThan(300)
     expect(first.count).toBe(2)
     expect(first.sessions.map((s) => [s.id, s.openComments])).toEqual([[a.id, 2]])
-    expect(first.sessions[0]?.url).toBe(`http://127.0.0.1:4546/s/${a.id}`)
+    expect(first.sessions[0]?.url).toBe(`http://scout.localhost:4546/s/${a.id}`)
     expect(first.message).toContain(`/apply-review ${a.id}`)
     expect(first.fingerprint).toMatch(/^[0-9a-f]{16}$/)
 

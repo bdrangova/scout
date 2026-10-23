@@ -7,7 +7,7 @@ import { decisionLabel, formatTimestamp, groupByRef, orderedRefs, requiredRespon
 /** What the renderer needs besides the snapshot: the run title, the dashboard origin and the index (bug and log names). */
 export interface TestRunMarkdownContext {
   title: string
-  /** e.g. `http://127.0.0.1:4546` */
+  /** e.g. `http://scout.localhost:4546` */
   dashboardUrl: string
   index: Pick<TestRunIndex, 'bugs' | 'logs'> & {
     /** Names the scenario a screenshot or data file belongs to; without it those comments are listed under `## Files`. */
