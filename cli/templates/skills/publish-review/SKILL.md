@@ -23,6 +23,7 @@ soon as they land and updates while you keep working.
 - Use absolute paths for every file you write. Never write into the repo's `.claude/` or `plans/`.
 - If a step's tool is unavailable (no Atlassian connector, no browser tool), skip it and list it under "Not captured" in the PR description.
 - **Running the app.** When a check needs the running app (reproducing what a comment describes, verifying a fix, capturing evidence), invoke `/run-app` first (Skill tool; pass what you need to check, `--record <mode>` when the arguments have one, and `--auto` when you have it). Record the reproduction as its `Record:` line says (Playwright video or screenshots) into `<evidence>/` as in the Evidence step, and cite the files. Never skip a reproduction or a check because the dev server was not running. If it reports `App: not running`, list the capture under "Not captured" with the reason.
+- **Reproducing.** To reproduce what a comment describes or verify a fix, use `/reproduce` (Skill tool; `--session <sessionId>`, `--verify-fix` for a fix, `--auto` when you have it) rather than reproducing by hand: it starts the app, restores or sets up the data with a database checkpoint, records the evidence and returns the status. Cite its evidence and limitation in the note; anything but `reproduced` (or a verified fix) is never reported as verified.
 - If `AI_REVIEW_HEADLESS=1` is set, never wait for user input: act as if `--auto` were given.
 - `rm` only files inside the session folder, never anything in the repository.
 

@@ -29,6 +29,10 @@ const TEMPLATE_FILES = [
   { from: 'skills/apply-test-review/SKILL.md', to: '.claude/skills/apply-test-review/SKILL.md', mode: 0o644 },
   { from: 'skills/run-app/SKILL.md', to: '.claude/skills/run-app/SKILL.md', mode: 0o644 },
   { from: 'skills/run-app/SKILL.md', to: '.agents/skills/run-app/SKILL.md', mode: 0o644 },
+  { from: 'skills/snapshot-db/SKILL.md', to: '.claude/skills/snapshot-db/SKILL.md', mode: 0o644 },
+  { from: 'skills/snapshot-db/SKILL.md', to: '.agents/skills/snapshot-db/SKILL.md', mode: 0o644 },
+  { from: 'skills/reproduce/SKILL.md', to: '.claude/skills/reproduce/SKILL.md', mode: 0o644 },
+  { from: 'skills/reproduce/SKILL.md', to: '.agents/skills/reproduce/SKILL.md', mode: 0o644 },
   { from: `hooks/${PENDING_HOOK}`, to: `.claude/hooks/${PENDING_HOOK}`, mode: 0o755 },
 ] as const
 
