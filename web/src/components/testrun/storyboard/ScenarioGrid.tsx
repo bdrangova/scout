@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Segmented, SegmentedItem } from "@/components/ui/segmented";
 import { useReview } from "@/state/review-context";
+import { useScenarioVerdict } from './useScenarioVerdict'
 import { ScenarioTile } from "./ScenarioTile";
 import type { Scenario } from "./scenario-types";
 
@@ -35,6 +36,7 @@ function escapeAttribute(value: string): string {
 /** Every scenario as a compact tile in a responsive grid, under a verdict filter with counts (the file grid's counterpart). */
 export function ScenarioGrid({ sessionId, scenarios, currentId, onOpen, onApprove }: ScenarioGridProps) {
   const { fileReview, comments } = useReview();
+  const verdicts = useScenarioVerdict();
   const [filter, setFilter] = useState<GridFilter>("all");
   const gridRef = useRef<HTMLUListElement>(null);
 
@@ -94,6 +96,11 @@ export function ScenarioGrid({ sessionId, scenarios, currentId, onOpen, onApprov
               openComments={openById.get(scenario.id) ?? 0}
               onOpen={() => onOpen(scenario.id)}
               onApprove={() => onApprove(scenario)}
+              onClearVerdict={() => {
+                const verdict = effectiveVerdict(fileReview(scenario.id), { path: scenario.id, fingerprint: scenario.fingerprint });
+                if (verdict === 'approved') verdicts.approve(scenario);
+                if (verdict === 'rejected') verdicts.reject(scenario);
+              }}
             />
           ))}
         </ul>

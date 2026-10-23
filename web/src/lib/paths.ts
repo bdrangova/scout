@@ -103,7 +103,7 @@ export function evidenceRoute(sessionId: string, path: string): string {
   return `/s/${encodeURIComponent(sessionId)}/evidence/${encodePath(path)}`
 }
 
-export type SessionKind = 'code-review' | 'test-run'
+export type SessionKind = 'code-review' | 'test-run' | 'pr-review'
 
 /** The route prefix of a session kind: `/s` for code reviews, `/t` for test runs. */
 export function basePathOf(kind: SessionKind): '/s' | '/t' {
@@ -171,6 +171,10 @@ export function shortRunPath(run: { path: string; repo: string }): string {
 }
 
 /** The other session list: `/` from the test runs, `/t` from the code reviews (what `T` opens). */
+export function sessionListRoute(kind: SessionKind): string {
+  return kind === 'pr-review' ? '/pr' : kind === 'test-run' ? '/t' : '/'
+}
+
 export function otherKindRoute(kind: SessionKind): string {
-  return kind === 'test-run' ? '/' : '/t'
+  return kind === 'code-review' ? '/t' : kind === 'test-run' ? '/pr' : '/'
 }

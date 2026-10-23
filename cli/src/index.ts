@@ -12,6 +12,7 @@ import { registerPrTrust } from './commands/pr-trust.ts'
 import { registerPrLink } from './commands/pr-link.ts'
 import { registerPrReply } from './commands/pr-reply.ts'
 import { registerPrResolve } from './commands/pr-resolve.ts'
+import { registerPrReport } from './commands/pr-report.ts'
 import { registerPrSync } from './commands/pr-sync.ts'
 import { PrSyncError } from './pr/gh.ts'
 import { registerPending } from './commands/pending.ts'
@@ -33,6 +34,7 @@ registerResolve(program)
 registerPending(program)
 registerStatus(program)
 registerPrSync(program)
+registerPrReport(program)
 registerPrResolve(program)
 registerPrReply(program)
 registerPrLink(program)

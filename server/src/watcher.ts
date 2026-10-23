@@ -162,7 +162,7 @@ export class StoreWatcher {
     if (parts.length === 1) return false
     if (parts.some((part) => part.startsWith('.'))) return true
     if (ARTIFACT_FOLDERS.has(second)) return false
-    if (parts.length === 2) return second !== 'manifest.json' && second !== SESSION_PR_DESCRIPTION_FILE && second !== 'review'
+    if (parts.length === 2) return second !== 'manifest.json' && second !== 'pr-review.json' && second !== SESSION_PR_DESCRIPTION_FILE && second !== 'review'
     if (second !== 'review') return true
     if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'runs'
     if (parts.length === 4) return third !== 'runs' || !fourth.endsWith('.json')
@@ -174,7 +174,7 @@ export class StoreWatcher {
     const [sessionId, second, third, fourth] = parts
     if (!sessionId || !SESSION_ID_RE.test(sessionId) || second === undefined) return null
     if (parts.length === 2 && second === 'manifest.json') return { kind: 'manifest', sessionId }
-    if (parts.length === 2 && second === SESSION_PR_DESCRIPTION_FILE) return { kind: 'artifact', sessionId }
+    if (parts.length === 2 && (second === SESSION_PR_DESCRIPTION_FILE || second === 'pr-review.json')) return { kind: 'artifact', sessionId }
     if (ARTIFACT_FOLDERS.has(second)) return { kind: 'artifact', sessionId }
     if (second !== 'review') return null
     if (parts.length === 3 && third === 'review.json') return { kind: 'review', sessionId }

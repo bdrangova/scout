@@ -31,7 +31,7 @@ const baseFields = {
  */
 export const CodeReviewManifestSchema = z.object({
   ...baseFields,
-  kind: z.literal('code-review').optional(),
+  kind: z.enum(['code-review', 'pr-review']).optional(),
   repo: z.object({
     /** Absolute path of the repository top level (posix separators). */
     path: z.string().min(1),
@@ -61,7 +61,7 @@ export type TestRunManifest = z.infer<typeof TestRunManifestSchema>
 export const ManifestSchema = z.union([CodeReviewManifestSchema, TestRunManifestSchema])
 export type Manifest = z.infer<typeof ManifestSchema>
 
-export type ManifestKind = 'code-review' | 'test-run'
+export type ManifestKind = 'code-review' | 'test-run' | 'pr-review'
 
 export function isTestRun(manifest: Manifest): manifest is TestRunManifest {
   return manifest.kind === 'test-run'

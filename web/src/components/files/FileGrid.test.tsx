@@ -147,6 +147,15 @@ describe('FileGrid', () => {
     expect(onApprove).toHaveBeenCalledTimes(2)
   })
 
+  it('clears approval and rejection by clicking the active grid verdict stamps', async () => {
+    renderGrid(); const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: `Clear approval ${P0}` }))
+    expect(await tile(P0)).toHaveAttribute('data-verdict', 'none')
+    await user.click(screen.getByRole('button', { name: `Clear rejection ${P1}` }))
+    expect(await tile(P1)).toHaveAttribute('data-verdict', 'none')
+    expect(screen.getByRole('button', { name: P1 })).toHaveTextContent('Commented')
+  })
+
   it('filters by file type from the dropdown, keeps the selection in the URL and recounts the verdict filters', async () => {
     const user = userEvent.setup()
     renderGrid()

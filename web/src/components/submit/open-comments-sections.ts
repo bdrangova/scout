@@ -6,7 +6,7 @@ import { fileChip, formatVerdictSummary, verdictSummary, type FileChip } from '.
 export type SectionKey = 'overall' | 'files' | 'evidence' | 'spec' | 'extras' | 'scenarios' | 'bugs' | 'logs'
 
 /** The live tree and the artifact lists, for labels, verdict chips and links. */
-export type CodeReviewSectionDetail = Pick<CodeReviewDetail, 'tree' | 'evidence' | 'extras' | 'spec'> & { kind?: 'code-review' }
+export type CodeReviewSectionDetail = Pick<CodeReviewDetail, 'tree' | 'evidence' | 'extras' | 'spec' | 'prReview'> & { kind?: 'code-review' | 'pr-review' }
 
 /** The live scenarios and the index's bugs and logs of a test run, for labels, verdict chips and links. */
 export type TestRunSectionDetail = Pick<TestRunDetail, 'kind' | 'scenarios'> & { index: Pick<TestRunDetail['index'], 'bugs' | 'logs'> }

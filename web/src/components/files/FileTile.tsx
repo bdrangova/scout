@@ -10,6 +10,7 @@ import type { PrFileCounts } from '@/lib/pr-threads'
 import { STATUS_TONE } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'
 import { ChangeBar } from './ChangeBar'
+import { useCurrentPrReport } from '@/components/prreview/pr-review-context'
 import { FileTileFooter } from './FileTileFooter'
 
 export interface FileTileProps {
@@ -25,6 +26,7 @@ export interface FileTileProps {
   reviewable?: boolean
   onOpen: () => void
   onApprove: () => void
+  onClearVerdict?: () => void
 }
 
 /**
@@ -40,7 +42,9 @@ const VERDICT_STAMP: Record<Exclude<Verdict, 'none'>, string> = {
  * A compact card for the grid: a band in the file type's colour, the path, the status with its dot,
  * the size of the change and the review state; no diff. `A` approves a focused tile.
  */
-export function FileTile({ file, current, verdict, viewed, openComments, updated, prComments, reviewable = true, onOpen, onApprove }: FileTileProps) {
+export function FileTile({ file, current, verdict, viewed, openComments, updated, prComments, reviewable = true, onOpen, onApprove, onClearVerdict }: FileTileProps) {
+  const { report } = useCurrentPrReport()
+  const proposals = report?.findings.filter((f) => f.path === file.path).length ?? 0
   const { dir, name } = splitPath(file.path)
   const status = STATUS_TONE.file(file.status)
   const renamedFrom = file.oldPath !== null && file.oldPath !== file.path ? file.oldPath : null
@@ -72,11 +76,9 @@ export function FileTile({ file, current, verdict, viewed, openComments, updated
       {/* The file-type band along the top edge. */}
       <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[7px] rounded-t-[10px] border-b-fine border-fill-line bg-ft" />
       {stamp && (
-        <span aria-hidden data-verdict-overlay={verdict} className="pointer-events-none absolute top-2.5 right-2 z-10">
-          <span className={cn('inline-flex size-[26px] items-center justify-center rounded-full border-[2px] bg-surface', stamp)}>
-            {verdict === 'approved' ? <CheckIcon className="size-[13px] stroke-[3]" /> : <XIcon className="size-[13px] stroke-[3]" />}
-          </span>
-        </span>
+        <Button size="icon-sm" data-verdict-overlay={verdict} aria-label={`Clear ${verdict === 'approved' ? 'approval' : 'rejection'} ${file.path}`} title={`Clear ${verdict === 'approved' ? 'approval' : 'rejection'}`} aria-pressed disabled={!reviewable || !onClearVerdict} onClick={onClearVerdict} className={cn('absolute top-2.5 right-2 z-20 size-[26px] rounded-full border-[2px] bg-surface shadow-none', stamp)}>
+          {verdict === 'approved' ? <CheckIcon aria-hidden className="size-[13px] stroke-[3]" /> : <XIcon aria-hidden className="size-[13px] stroke-[3]" />}
+        </Button>
       )}
       <button
         type="button"
@@ -104,9 +106,10 @@ export function FileTile({ file, current, verdict, viewed, openComments, updated
           </span>
           <ChangeBar additions={file.additions} deletions={file.deletions} />
         </span>
+        {proposals > 0 && <span className="text-xs font-semibold text-ink-muted">{proposals} proposed comments</span>}
         <FileTileFooter file={file} verdict={verdict} viewed={viewed} openComments={openComments} updated={updated} prComments={prComments} reviewable={reviewable} />
       </button>
-      {reviewable && verdict !== 'approved' && (
+      {reviewable && verdict === 'none' && (
         <Button
           size="icon-sm"
           aria-label={`Approve ${file.path}`}

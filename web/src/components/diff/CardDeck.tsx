@@ -49,7 +49,7 @@ export function CardDeck({ files, currentPath, sessionId, onNavigate, commentFoc
     if (!current) return
     const reviewFile = reviewFileOf(current.path)
     if (!reviewFile) return
-    const withComment = sendVerdict(current.path, direction === 'right' ? 'approved' : 'rejected', reviewFile.fingerprint)
+    const withComment = sendVerdict(current.path, direction === 'right' ? 'approved' : 'rejected', reviewFile.fingerprint, undefined, false)
     if (direction === 'right' || withComment) scope?.advanceFrom(current.path)
   }
 

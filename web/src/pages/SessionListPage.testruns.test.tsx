@@ -35,6 +35,7 @@ function renderAt(path: string) {
       <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/" element={<SessionListPage />} />
+          <Route path="/pr" element={<SessionListPage kind="pr-review" />} />
           <Route path="/t" element={<SessionListPage kind="test-run" />} />
           <Route path="/t/:id" element={<p>Run route</p>} />
         </Routes>
@@ -127,6 +128,8 @@ describe('SessionListPage kinds', () => {
     const user = userEvent.setup()
     await user.keyboard('t')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Test runs')
+    await user.keyboard('t')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('PR review')
     await user.keyboard('t')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Development')
   })

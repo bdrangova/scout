@@ -27,16 +27,16 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
   const visible = list.visible.filter((item) => matchesSessionSearch(item, query))
   const sessions = visible.filter(isLiveSummary)
   const unavailable = visible.filter((item) => !isLiveSummary(item))
-  useHotkeys({ help: () => setHelpOpen((open) => !open), toggleKind: () => navigate(otherKindRoute(kind)) })
+  useHotkeys({ toggleKind: () => navigate(otherKindRoute(kind)) })
 
   return (
     <div data-page="session-list" className="flex min-h-screen flex-col">
-      <SessionsBar kind={kind} onHelp={() => setHelpOpen(true)} />
+      <SessionsBar kind={kind} onHelp={() => setHelpOpen((open) => !open)} />
 
       <main className="flex flex-1 flex-col px-6 pt-7 pb-14">
         <div className="mx-auto flex w-full max-w-[1300px] flex-col gap-[18px]">
           <div className="flex flex-col gap-5">
-            <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : 'Development'}</h1>
+            <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : kind === 'pr-review' ? 'PR review' : 'Development'}</h1>
             <SessionFilters layout={layout} onLayout={setLayout} kind={kind} filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} />
           </div>
 

@@ -18,6 +18,8 @@ const MCP_RECORD = 'claude mcp (user)'
 export const MCP_ADD_ARGS = ['mcp', 'add', '--scope', 'user', 'playwright', '--', 'npx', '@playwright/mcp@latest', '--caps=devtools']
 
 const TEMPLATE_FILES = [
+  { from: 'skills/publish-pr-review/SKILL.md', to: '.claude/skills/publish-pr-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/publish-pr-review/SKILL.md', to: '.agents/skills/publish-pr-review/SKILL.md', mode: 0o644 },
   { from: 'skills/publish-review/SKILL.md', to: '.claude/skills/publish-review/SKILL.md', mode: 0o644 },
   { from: 'skills/apply-review/SKILL.md', to: '.claude/skills/apply-review/SKILL.md', mode: 0o644 },
   { from: 'skills/address-pr-comments/SKILL.md', to: '.claude/skills/address-pr-comments/SKILL.md', mode: 0o644 },

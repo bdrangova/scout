@@ -23,6 +23,7 @@ export interface InitOptions {
   base?: string | null
   agentSession?: string | null
   /** Always create a new session instead of reusing the latest one for this branch. */
+  kind?: 'code-review' | 'pr-review'
   fresh?: boolean
   now?: Date
 }
@@ -58,7 +59,7 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
   if (options.base !== undefined && options.base !== null && !(await refExists(repo, options.base))) {
     throw new Error(`base ref "${options.base}" does not exist in ${repo}`)
   }
-  const open = options.fresh ? null : await openSessionForBranch(options.home, repo, branch)
+  const open = options.fresh ? null : await openSessionForBranch(options.home, repo, branch, options.kind)
   const previous = open?.manifest ?? null
   const tickets = options.tickets !== undefined && options.tickets.length > 0 ? options.tickets : (previous?.tickets ?? [])
   const title = options.title ?? previous?.title ?? defaultTitle(tickets, branch)
@@ -68,6 +69,7 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
 
   const manifest: CodeReviewManifest = {
     schemaVersion: SCHEMA_VERSION,
+    ...(options.kind === 'pr-review' ? { kind: 'pr-review' as const } : {}),
     id,
     title,
     createdAt: previous?.createdAt ?? now,
@@ -119,7 +121,7 @@ export function registerInit(program: Command): void {
   program
     .command('init')
     .description('Create a review session for a repository (or a test-run folder), or refresh the latest one for this branch (run folder); prints id, folder and URL')
-    .option('--kind <kind>', 'code-review | test-run', 'code-review')
+    .option('--kind <kind>', 'code-review | test-run | pr-review', 'code-review')
     .option('--repo <path>', 'path inside the repository (test-run: the checkout containing the run folder; default: the run folder)')
     .option('--run <path>', 'test-run: the feature-test run folder (must be inside the repository)')
     .option('--base <ref>', 'code-review: base ref (default: origin/master, master, origin/main, main, then origin/HEAD)')
@@ -150,10 +152,11 @@ export function registerInit(program: Command): void {
         )
         return
       }
-      if (flags.kind !== 'code-review') throw new Error(`--kind must be code-review or test-run, got "${flags.kind}"`)
+      if (flags.kind !== 'code-review' && flags.kind !== 'pr-review') throw new Error(`--kind must be code-review, test-run or pr-review, got "${flags.kind}"`)
       if (flags.repo === undefined) throw new Error('--repo <path> is required')
       const result = await initSession({
         home: resolveHome(),
+        kind: flags.kind,
         repo: path.resolve(flags.repo),
         title: flags.title ?? null,
         tickets,
@@ -165,7 +168,7 @@ export function registerInit(program: Command): void {
         console.log(`${result.id}${result.reused ? ' (reused)' : ''}\n${result.dir}\n${result.url}`)
       } else {
         const { id, dir, url, reused, manifest } = result
-        console.log(JSON.stringify({ id, dir, url, reused, kind: 'code-review', branch: manifest.repo.branch, baseRef: manifest.repo.baseRef }))
+        console.log(JSON.stringify({ id, dir, url, reused, kind: manifest.kind ?? 'code-review', branch: manifest.repo.branch, baseRef: manifest.repo.baseRef }))
       }
     })
 }

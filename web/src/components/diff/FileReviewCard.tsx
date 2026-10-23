@@ -10,6 +10,10 @@ import { cn } from '@/lib/utils'
 import { useReview } from '@/state/review-context'
 import { usePrComments } from '@/state/pr-comments-context'
 import { useCommentActions } from '@/state/useCommentActions'
+import { ProposalAnnotationsContext } from '@/components/prreview/proposal-annotations'
+import { ReproductionEvidence } from '@/components/prreview/ReproductionEvidence'
+import { ProposalCard } from '@/components/prreview/ProposalCard'
+import { useCurrentPrReport } from '@/components/prreview/pr-review-context'
 import { CardActions } from './CardActions'
 import { CardHeader, type CardView } from './CardHeader'
 import { LargeFileGate } from './LargeFileGate'
@@ -59,10 +63,13 @@ export function FileReviewCard({
   bodyClassName,
   scope,
 }: FileReviewCardProps) {
+  const { report } = useCurrentPrReport()
+  const findings = useMemo(() => report?.findings.filter((f) => f.path === file.path) ?? [], [report, file.path])
   const { state, dispatch, fileReview, commentsFor, draftFor, setDraft } = useReview()
   const sendVerdict = useVerdictAction()
   const commentActions = useCommentActions()
   const [view, setView] = useState<CardView>('unified')
+  const inlineFindings = scope || view === 'preview' || file.binary || file.omitted ? [] : findings
   const [localFocus, bumpLocalFocus] = useReducer((count: number) => count + 1, 0)
   const { name } = splitPath(file.path)
   const target = useMemo<CommentTarget>(() => ({ kind: 'file', ref: file.path }), [file.path])
@@ -110,9 +117,10 @@ export function FileReviewCard({
 
   function setVerdict(next: 'approved' | 'rejected') {
     if (reviewFile === null) return
+    const clearing = next === verdict
     const withComment = sendVerdict(file.path, next, reviewFile.fingerprint)
     // A reject without a comment waits for one; with one it is final, like an approve.
-    if (next === 'approved' || withComment) scope?.advanceFrom(file.path)
+    if (!clearing && (next === 'approved' || withComment)) scope?.advanceFrom(file.path)
   }
 
   function addComment(body: string) {
@@ -167,6 +175,7 @@ export function FileReviewCard({
         ) : (
           <LineCommentsContext.Provider value={lineComments}>
             <PrAnnotationsContext.Provider value={prAnnotations}>
+              <ProposalAnnotationsContext.Provider value={inlineFindings}>
               <LargeFileGate
                 file={file}
                 sessionId={sessionId}
@@ -174,9 +183,12 @@ export function FileReviewCard({
                 diffStyle={view === 'preview' ? 'unified' : view}
                 onApprove={reviewable ? () => setVerdict('approved') : undefined}
               />
+              </ProposalAnnotationsContext.Provider>
             </PrAnnotationsContext.Provider>
           </LineCommentsContext.Provider>
         )}
+        {findings.length > 0 && inlineFindings.length === 0 && <div className="flex flex-col gap-3 bg-surface p-4">{findings.map((f) => <ProposalCard key={f.id} finding={f} changed={!!scope} />)}</div>}
+        {findings.length > 0 && <ReproductionEvidence findings={findings} />}
       </div>
 
       <section aria-label={`Comments on ${file.path}`} className="flex shrink-0 flex-col gap-3 border-t-fine border-line bg-surface px-4 pt-3.5 pb-4">

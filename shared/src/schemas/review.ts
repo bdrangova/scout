@@ -101,6 +101,15 @@ export const FileReviewSchema = z.object({
 })
 export type FileReview = z.infer<typeof FileReviewSchema>
 
+export const ProposalReviewSchema = z.object({
+  digest: z.string().regex(/^[a-f0-9]{64}$/),
+  body: z.string(),
+  verdict: VerdictSchema,
+  notes: z.array(z.object({ body: z.string().min(1), createdAt: isoDate })),
+  updatedAt: isoDate,
+})
+export type ProposalReview = z.infer<typeof ProposalReviewSchema>
+
 export const ReviewSchema = z
   .object({
     schemaVersion: z.literal(SCHEMA_VERSION),
@@ -110,7 +119,9 @@ export const ReviewSchema = z
     comments: z.array(CommentSchema),
     /** Next comment number; never decremented, ids are never reused. */
     nextCommentId: z.number().int().min(1),
-    overall: z.object({ decision: DecisionSchema }),
+    /** Human decisions on generated proposals, separate from file verdicts and source reports. */
+    prProposals: z.record(z.string(), ProposalReviewSchema).optional(),
+    overall: z.object({ decision: DecisionSchema, cleared: z.boolean().optional() }),
     /** Stamped by the send route. */
     sent: z.object({ at: isoDate, decision: DecisionSchema }).nullable(),
     ui: z.object({

@@ -1,6 +1,7 @@
-import type { FileReview } from '@review-dash/shared'
+import { effectiveVerdict, type FileReview } from '@review-dash/shared'
 import { useCallback, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
+import { draftKey } from '@/lib/comment-drafts'
 import { splitPath } from '@/lib/paths'
 import { useReview } from '@/state/review-context'
 
@@ -41,18 +42,33 @@ export function clearVerdictUndo(): void {
  * `useReview().setVerdict` plus a toast, "Approved ci.yml · Undo", for the key, the button, a swipe
  * and a grid tile alike. Undo restores the file's previous review entry and goes back to the file.
  * The toast names the item by `label` (default: the path's file name). A reject that still waits for its comment stores nothing, so it has nothing to announce or undo.
+ * Buttons/keys toggle an active verdict off without consuming drafts or advancing. Directional swipes pass `toggle=false`.
  * Returns what `setVerdict` does: true when a comment went with the verdict.
  */
-export function useVerdictAction(): (path: string, verdict: 'approved' | 'rejected', fingerprint: string | null, label?: string) => boolean {
-  const { state, dispatch, setVerdict } = useReview()
+export function useVerdictAction(): (path: string, verdict: 'approved' | 'rejected', fingerprint: string | null, label?: string, toggle?: boolean) => boolean {
+  const { state, dispatch, setVerdict, draftFor, itemKind } = useReview()
   const reviewRef = useRef(state.review)
   useEffect(() => {
     reviewRef.current = state.review
   })
 
   return useCallback(
-    (path, verdict, fingerprint, label = splitPath(path).name) => {
+    (path, verdict, fingerprint, label = splitPath(path).name, toggle = true) => {
       const before: FileReview | undefined = reviewRef.current.files[path]
+      if (toggle && effectiveVerdict(before, { path, fingerprint: fingerprint ?? '' }) === verdict) {
+        dispatch({ type: 'SET_VERDICT', path, verdict: 'none', fingerprint: null })
+        dispatch({ type: 'GO_TO', path })
+        announceVerdict(`Cleared verdict · ${label}`, () => {
+          const review = reviewRef.current
+          if (before) dispatch({ type: 'LOAD', review: { ...review, files: { ...review.files, [path]: before } } })
+          dispatch({ type: 'GO_TO', path })
+        })
+        return false
+      }
+      if (toggle && verdict === 'rejected' && state.pendingReject === path && draftFor(draftKey({ kind: itemKind, ref: path })).trim() === '') {
+        dispatch({ type: 'CANCEL_REJECT' })
+        return false
+      }
       const withComment = setVerdict(path, verdict, fingerprint)
       if (verdict === 'rejected' && !withComment) return withComment
       announceVerdict(`${verdict === 'approved' ? 'Approved' : 'Rejected'} ${label}`, () => {
@@ -63,6 +79,6 @@ export function useVerdictAction(): (path: string, verdict: 'approved' | 'reject
       })
       return withComment
     },
-    [setVerdict, dispatch],
+    [setVerdict, dispatch, state.pendingReject, draftFor, itemKind],
   )
 }

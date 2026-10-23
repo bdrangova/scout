@@ -1,0 +1,5 @@
+import type { PrReviewReport } from '../schemas/pr-review.ts'
+import { makeTree, T0 } from './fixtures.ts'
+export function makePrReport(tree = makeTree({ dirty: false })): PrReviewReport {
+  return { schemaVersion: 1, id: 'report-1', pr: { url: 'https://github.com/acme/app/pull/42', number: 42, repository: 'acme/app' }, baseSha: tree.baseSha, headSha: tree.headSha, createdAt: T0, reviewers: [{ name: 'default-code-review', version: '1' }], files: tree.files.map(({ path, fingerprint }) => ({ path, fingerprint })), findings: [{ id: 'f1', severity: 'high', title: 'A failed payment changes the plan', body: 'Return after a declined payment before changing the plan.', path: tree.files[0]!.path, anchor: { side: 'new', line: 1 }, sources: ['default-code-review'], reproduction: { status: 'blocked', revision: tree.headSha, environment: 'Local checkout', prerequisites: ['Test payment credentials'], steps: [{ id: 's1', instruction: 'Submit a declined payment.' }], expected: 'The plan remains unchanged.', actual: 'Reproduction could not run.', limitation: 'Payment credentials are unavailable.', evidence: [] } }] }
+}

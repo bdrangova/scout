@@ -58,7 +58,7 @@ export interface DecisionPickerProps {
 }
 
 /**
- * Approve / request changes / reject as radio cards; the chosen one stays chosen when clicked again.
+ * Approve / request changes / reject as radio cards; clicking the chosen one again returns to undecided.
  * Three columns only when the picker itself is wide enough (container query); otherwise full-width rows.
  */
 export function DecisionPicker({ value, choices, onChange, disabled = false, className }: DecisionPickerProps) {
@@ -77,7 +77,7 @@ export function DecisionPicker({ value, choices, onChange, disabled = false, cla
               aria-checked={selected}
               data-decision={option.value}
               disabled={disabled}
-              onClick={() => onChange(option.value)}
+              onClick={() => onChange(selected ? 'undecided' : option.value)}
               className={cn(
                 'flex min-w-0 items-start gap-2.5 rounded-xl border-fine bg-surface px-3.5 py-3 text-left text-ink transition-colors',
                 'disabled:cursor-not-allowed disabled:opacity-60',

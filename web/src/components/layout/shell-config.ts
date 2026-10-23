@@ -89,7 +89,12 @@ export const TEST_RUN_SHELL: ShellConfig = {
   hotkeys: { modes: true },
 }
 
-export const SHELL_CONFIGS: Record<SessionKind, ShellConfig> = { 'code-review': CODE_REVIEW_SHELL, 'test-run': TEST_RUN_SHELL }
+export const PR_REVIEW_SHELL: ShellConfig = {
+  ...CODE_REVIEW_SHELL, kind: 'pr-review', sections: ['files', 'submit'],
+  sectionLabel: (section) => section === 'files' ? 'Review' : CODE_REVIEW_SHELL.sectionLabel(section),
+}
+
+export const SHELL_CONFIGS: Record<SessionKind, ShellConfig> = { 'code-review': CODE_REVIEW_SHELL, 'test-run': TEST_RUN_SHELL, 'pr-review': PR_REVIEW_SHELL }
 
 /** Code review unless a `ShellConfigProvider` says otherwise (so widgets render standalone in tests). */
 export const ShellConfigContext = createContext<ShellConfig>(CODE_REVIEW_SHELL)

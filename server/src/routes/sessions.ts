@@ -7,7 +7,7 @@ import { queryString } from './params.ts'
 function kindFilter(value: unknown): ManifestKind | undefined | null {
   const kind = queryString(value)
   if (kind === undefined) return undefined
-  return kind === 'code-review' || kind === 'test-run' ? kind : null
+  return kind === 'code-review' || kind === 'test-run' || kind === 'pr-review' ? kind : null
 }
 
 export function sessionsRouter(store: Store): Router {
@@ -16,7 +16,7 @@ export function sessionsRouter(store: Store): Router {
   router.get('/sessions', async (req, res) => {
     const kind = kindFilter(req.query.kind)
     if (kind === null) {
-      const body: ApiError = { error: 'query parameter kind must be "code-review" or "test-run"' }
+      const body: ApiError = { error: 'query parameter kind must be "code-review", "test-run" or "pr-review"' }
       res.status(400).json(body)
       return
     }
@@ -27,7 +27,7 @@ export function sessionsRouter(store: Store): Router {
   router.get('/sessions/archived', async (req, res) => {
     const kind = kindFilter(req.query.kind)
     if (kind === null) {
-      res.status(400).json({ error: 'query parameter kind must be "code-review" or "test-run"' })
+      res.status(400).json({ error: 'query parameter kind must be "code-review", "test-run" or "pr-review"' })
       return
     }
     res.json(await store.listArchived(kind))

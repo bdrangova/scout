@@ -7,7 +7,7 @@ const K = Uint32Array.from(
 const rotr = (x: number, n: number): number => (x >>> n) | (x << (32 - n))
 
 /** SHA-256 of a UTF-8 string as 64 hex chars (pure, browser-safe: the trust pins must hash the same in the CLI, the server and the web). */
-function sha256Hex(text: string): string {
+export function sha256Hex(text: string): string {
   const bytes = new TextEncoder().encode(text)
   const padded = new Uint8Array(((bytes.length + 9 + 63) >> 6) << 6)
   padded.set(bytes)

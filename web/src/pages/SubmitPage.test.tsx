@@ -171,10 +171,18 @@ describe('SubmitPage', () => {
     expect(await submitButton()).toBeEnabled()
     expect(screen.queryByText('Pick a decision first')).not.toBeInTheDocument()
     expect(screen.getByTestId('send-summary')).toHaveTextContent(`Send no comments + Request changes to the current session · ${sessionDetailFixture.tree.files.length} files not reviewed`)
-    // Clicking the chosen decision again keeps it (radio semantics), so Submit stays on.
+    // Clicking the chosen decision again clears it and disables Submit.
     fireEvent.click(screen.getByRole('radio', { name: /Request changes/ }))
-    expect(screen.getByRole('radio', { name: /Request changes/ })).toHaveAttribute('aria-checked', 'true')
-    await waitFor(() => expect(api.puts.at(-1)?.review.overall.decision).toBe('request-changes'))
+    expect(screen.getByRole('radio', { name: /Request changes/ })).toHaveAttribute('aria-checked', 'false')
+    expect(await submitButton()).toBeDisabled()
+    await waitFor(() => expect(api.puts.at(-1)?.review.overall).toEqual({ decision: 'undecided', cleared: true }))
+  })
+
+  it('keeps an explicitly cleared decision unselected after loading Submit again', async () => {
+    const files = Object.fromEntries(sessionDetailFixture.tree.files.map((file) => [file.path, { verdict: 'approved' as const, fingerprint: file.fingerprint, viewed: true }]))
+    renderSubmit(reviewResponseFixture(reviewFixture({ files, overall: { decision: 'undecided', cleared: true } })))
+    expect(await submitButton()).toBeDisabled()
+    expect(screen.getByRole('radio', { name: /Approve/ })).toHaveAttribute('aria-checked', 'false')
   })
 
   it('pre-selects Request changes when a file is rejected and Approve when every file is approved', async () => {
@@ -249,7 +257,7 @@ describe('SubmitPage', () => {
   it('sends at once (no confirmation) with dispatch for a CLI session, then streams the run and cancels it', async () => {
     const started = run()
     const api = renderSubmit(withComment(), { detail: cliDetail, send: () => json(200, sendResponse({ run: started })) })
-    fireEvent.click(await screen.findByRole('radio', { name: /Request changes/ }))
+    expect(await screen.findByRole('radio', { name: /Request changes/ })).toHaveAttribute('aria-checked', 'true')
     fireEvent.click(await submitButton())
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 

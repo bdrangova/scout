@@ -28,6 +28,7 @@ export type Hotkey =
   | 'prevEvidence'
   | 'nextEvidence'
   | 'help'
+  | 'altHelp'
 
 export type HotkeyHandlers = Partial<Record<Hotkey, () => void>>
 
@@ -40,7 +41,7 @@ type KeyLike = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 't
 /**
  * The hotkey a key press maps to, or null. Ignored while typing in inputs, textareas and
  * contenteditable elements (also inside shadow roots), except ⌘/Ctrl+Enter. ⌘/Ctrl+Z is the undo
- * shortcut and, like the single keys, leaves a text field's own undo alone.
+ * shortcut and, like the single keys, leaves a text field's own undo alone. Ctrl+? is `altHelp` (the sessions list's shortcuts help).
  */
 export function hotkeyFor(event: KeyLike): Hotkey | null {
   if (event.defaultPrevented) return null
@@ -48,6 +49,8 @@ export function hotkeyFor(event: KeyLike): Hotkey | null {
   if (command && event.key === 'Enter') return 'submitComment'
   const typing = isTypingTarget(event.target, event.composedPath?.())
   if (command && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'z') return typing ? null : 'undo'
+  // Ctrl+? (Ctrl+Shift+/); some layouts report '/' with Shift held. Not ⌘?, the browser's Help menu.
+  if (event.ctrlKey && !event.metaKey && !event.altKey && (event.key === '?' || (event.shiftKey && event.key === '/'))) return typing ? null : 'altHelp'
   if (command || event.altKey) return null
   if (typing) return null
   switch (event.key) {

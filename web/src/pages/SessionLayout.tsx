@@ -8,6 +8,7 @@ import { StatusDot } from '@/components/ui/status-dot'
 import { isTestRunDetail } from '@/lib/detail-kind'
 import { useSessionDetail } from '@/lib/hooks'
 import { SessionContext, type SessionContextValue } from '@/lib/session-context'
+import { PrReviewProvider } from '@/components/prreview/PrReviewProvider'
 import { PrCommentsProvider } from '@/state/PrCommentsProvider'
 import { ReviewProvider } from '@/state/ReviewProvider'
 
@@ -44,10 +45,12 @@ export function SessionLayout() {
 
   return (
     <SessionContext.Provider value={value}>
-      <ShellConfigProvider kind="code-review">
+      <ShellConfigProvider kind={value.detail.manifest.kind === 'pr-review' ? 'pr-review' : 'code-review'}>
         <ReviewProvider>
           <PrCommentsProvider sessionId={id}>
-            <SessionShell />
+            <PrReviewProvider detail={value.detail}>
+              <SessionShell />
+            </PrReviewProvider>
           </PrCommentsProvider>
         </ReviewProvider>
       </ShellConfigProvider>

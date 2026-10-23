@@ -1,9 +1,10 @@
-import { effectiveVerdict, nextUnreviewedFile, type Scope, type TreeFile } from '@review-dash/shared'
+import { currentProposal, reportMatchesTree, effectiveVerdict, nextUnreviewedFile, type Scope, type TreeFile } from '@review-dash/shared'
 import { FileCheck } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/common/EmptyState'
+import { ReportNotice } from '@/components/prreview/ReportNotice'
 import { CardDeck } from '@/components/diff/CardDeck'
 import { clearVerdictUndo, undoLastVerdict, useVerdictAction } from '@/components/diff/useVerdictAction'
 import { ScrollList } from '@/components/diff/ScrollList'
@@ -98,7 +99,8 @@ export function FilesPage() {
   // Nothing left to review: the view gives way to the end panel, only in the full-diff view (a
   // scope's end is not the review's) and only while that holds (a file the agent changed since
   // comes back as unreviewed). Any `GO_TO` (a step, the tree, "Back to files") leaves it.
-  const ended = state.atEnd && scope === null && nextUnreviewedFile(state.review, fullFiles) === null
+  const proposalsPending = detail.manifest.kind === 'pr-review' && (!detail.prReview || detail.prReview.findings.some((f) => !reportMatchesTree(detail.prReview!, detail.tree) || currentProposal(detail.prReview!, f, state.review).verdict === 'none'))
+  const ended = !proposalsPending && state.atEnd && scope === null && nextUnreviewedFile(state.review, fullFiles) === null
 
   function goTo(path: string) {
     dispatch({ type: 'GO_TO', path })
@@ -135,8 +137,9 @@ export function FilesPage() {
   function setVerdict(file: TreeFile, verdict: 'approved' | 'rejected') {
     const reviewFile = fullByPath.get(file.path)
     if (!reviewFile) return
+    const clearing = effectiveVerdict(state.review.files[file.path], reviewFile) === verdict
     const withComment = sendVerdict(file.path, verdict, reviewFile.fingerprint)
-    if (verdict === 'approved' || withComment) scopeReview?.advanceFrom(file.path)
+    if (!clearing && (verdict === 'approved' || withComment)) scopeReview?.advanceFrom(file.path)
   }
 
   // At the end a step with no neighbour still leaves the end panel, on the current file.
@@ -240,6 +243,7 @@ export function FilesPage() {
     <main className="flex h-[calc(100dvh-var(--shell-h))] min-w-0 flex-1 flex-col" data-mode={mode} data-scope={scope ?? undefined}>
       <FilesRailSection files={files} reviewFiles={fullFiles} currentPath={urlPath} onSelect={goTo} />
       {timeline}
+      <ReportNotice />
       {ended && first ? (
         <ReviewComplete sessionId={sessionId} detail={detail} onBack={() => goTo(currentPath)}>
           {content}

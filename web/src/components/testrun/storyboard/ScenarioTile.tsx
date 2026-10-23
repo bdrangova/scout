@@ -20,6 +20,7 @@ export interface ScenarioTileProps {
   openComments: number;
   onOpen: () => void;
   onApprove: () => void;
+  onClearVerdict?: () => void;
 }
 
 /** The verdict is an outlined corner stamp on an otherwise neutral tile, like the file tile's. */
@@ -36,7 +37,7 @@ function count(n: number, noun: string): string | null {
  * A compact card for the grid, the counterpart of the file tile: a band in the status accent, the first screenshot,
  * the title, the status chip, the review state and the evidence counts. `A` approves a focused tile; Enter opens it.
  */
-export function ScenarioTile({ sessionId, scenario, current, openComments, onOpen, onApprove }: ScenarioTileProps) {
+export function ScenarioTile({ sessionId, scenario, current, openComments, onOpen, onApprove, onClearVerdict }: ScenarioTileProps) {
   const { fileReview } = useReview();
   const item = { path: scenario.id, fingerprint: scenario.fingerprint };
   const review = fileReview(scenario.id);
@@ -76,11 +77,9 @@ export function ScenarioTile({ sessionId, scenario, current, openComments, onOpe
     >
       <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[7px] rounded-t-[10px] border-b-fine border-fill-line bg-ft" />
       {stamp && (
-        <span aria-hidden data-verdict-overlay={verdict} className="pointer-events-none absolute top-2.5 right-2 z-10">
-          <span className={cn("inline-flex size-[26px] items-center justify-center rounded-full border-[2px] bg-surface", stamp)}>
-            {verdict === "approved" ? <CheckIcon className="size-[13px] stroke-[3]" /> : <XIcon className="size-[13px] stroke-[3]" />}
-          </span>
-        </span>
+        <Button size="icon-sm" data-verdict-overlay={verdict} aria-label={`Clear ${verdict === "approved" ? "approval" : "rejection"} ${scenario.title}`} title={`Clear ${verdict === "approved" ? "approval" : "rejection"}`} aria-pressed disabled={!onClearVerdict} onClick={onClearVerdict} className={cn("absolute top-2.5 right-2 z-20 size-[26px] rounded-full border-[2px] bg-surface shadow-none", stamp)}>
+          {verdict === "approved" ? <CheckIcon aria-hidden className="size-[13px] stroke-[3]" /> : <XIcon aria-hidden className="size-[13px] stroke-[3]" />}
+        </Button>
       )}
       <button
         type="button"
@@ -126,7 +125,7 @@ export function ScenarioTile({ sessionId, scenario, current, openComments, onOpe
           )}
         </span>
       </button>
-      {verdict !== "approved" && (
+      {verdict === "none" && (
         <Button
           size="icon-sm"
           aria-label={`Approve ${scenario.title}`}

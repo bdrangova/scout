@@ -1,4 +1,4 @@
-import type { Comment, CommentKind, CommentTarget, Decision, FileReview, Mode, Review, Verdict } from '../schemas/review.ts'
+import type { Comment, CommentKind, CommentTarget, Decision, FileReview, Mode, Review, Verdict, ProposalReview } from '../schemas/review.ts'
 import { effectiveVerdict, isItemComment } from './status.ts'
 import type { ReviewItem } from './status.ts'
 
@@ -29,6 +29,7 @@ export type ReviewAction =
   | { type: 'DELETE_COMMENT'; id: string; now: string }
   | { type: 'REOPEN_COMMENT'; id: string; now: string }
   | { type: 'RESOLVE_COMMENT'; id: string; now: string }
+  | { type: 'SET_PROPOSAL'; id: string; proposal: ProposalReview; now: string }
   | { type: 'SET_DECISION'; decision: Decision; now: string }
   | { type: 'SET_MODE'; mode: Mode; now: string }
   | { type: 'MARK_VIEWED'; path: string; now: string }
@@ -189,9 +190,12 @@ export function reviewReducer(state: ReviewState, action: ReviewAction, ctx: Rev
     case 'RESOLVE_COMMENT':
       return patchComment(state, action.id, action.now, (comment) => ({ ...comment, resolvedAt: action.now }))
 
+    case 'SET_PROPOSAL':
+      return { ...state, review: touch(review, action.now, { prProposals: { ...review.prProposals, [action.id]: action.proposal } }) }
+
     case 'SET_DECISION':
-      if (review.overall.decision === action.decision) return state
-      return { ...state, review: touch(review, action.now, { overall: { decision: action.decision } }) }
+      if (review.overall.decision === action.decision && (action.decision !== 'undecided' || review.overall.cleared)) return state
+      return { ...state, review: touch(review, action.now, { overall: { decision: action.decision, ...(action.decision === 'undecided' ? { cleared: true } : {}) } }) }
 
     case 'SET_MODE':
       if (review.ui.mode === action.mode) return state

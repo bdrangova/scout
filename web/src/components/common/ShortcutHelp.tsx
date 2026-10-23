@@ -12,7 +12,7 @@ interface ShortcutHelpProps {
 /** Every hotkey, grouped under eyebrow headings as key caps; opened by `?` and by the status bar's keyboard button. */
 export function ShortcutHelp({ open, onOpenChange }: ShortcutHelpProps) {
   const config = useShellConfig()
-  const groups = config.kind === 'code-review' ? HOTKEY_GROUPS : hotkeyGroupsFor(config.sections.map(config.sectionLabel), config.hotkeys.modes, true)
+  const groups = config.kind === 'code-review' ? HOTKEY_GROUPS : hotkeyGroupsFor(config.sections.map(config.sectionLabel), config.hotkeys.modes, config.kind === 'test-run')
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">

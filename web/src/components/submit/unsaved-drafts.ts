@@ -14,6 +14,12 @@ export function draftLinks(drafts: readonly UnsavedDraft[], detail: SectionDetai
   const code = isTestRunSection(detail) ? null : detail
   return drafts.map(({ kind, ref }) => {
     switch (kind) {
+      case 'overall':
+        return { key: 'overall', label: 'Overall feedback', to: '../submit' }
+      case 'proposal': {
+        const finding = code?.prReview?.findings.find((f) => f.id === ref)
+        return { key: `proposal:${ref}`, label: `Note: ${finding?.title ?? ref}`, to: finding ? `../files/${encodePath(finding.path)}` : '../files' }
+      }
       case 'file':
         return { key: `file:${ref}`, label: splitPath(ref).name, to: `../files/${encodePath(ref)}` }
       case 'evidence':

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { usePrComments } from '@/state/pr-comments-context'
 import { useReview } from '@/state/review-context'
+import { useVerdictAction } from '@/components/diff/useVerdictAction'
 import { FileTile } from './FileTile'
 import { FileTypeFilter } from './FileTypeFilter'
 import { fileTypeOptions, filterByTypes } from './fileTypeOptions'
@@ -43,6 +44,7 @@ function escapeAttribute(value: string): string {
  */
 export function FileGrid({ files, reviewFiles = files, currentPath, onOpen, onApprove }: FileGridProps) {
   const { fileReview } = useReview()
+  const sendVerdict = useVerdictAction()
   const { fileCounts } = usePrComments()
   const [filter, setFilter] = useState<GridFilter>('all')
   const types = useFileTypeFilter()
@@ -114,6 +116,10 @@ export function FileGrid({ files, reviewFiles = files, currentPath, onOpen, onAp
                 reviewable={reviewFile !== undefined}
                 onOpen={() => onOpen(file.path)}
                 onApprove={() => onApprove(file)}
+                onClearVerdict={() => {
+                  const verdict = verdictOf(file)
+                  if (reviewFile && verdict !== 'none') sendVerdict(file.path, verdict, reviewFile.fingerprint)
+                }}
               />
             )
           })}

@@ -23,6 +23,11 @@ describe('hotkeyFor', () => {
     expect(key({ key: 'h' })).toBe('toggleMerges')
     expect(key({ key: '3' })).toBe('section3')
     expect(key({ key: '?' })).toBe('help')
+    expect(key({ key: '?', ctrlKey: true, shiftKey: true })).toBe('altHelp')
+    expect(key({ key: '/', ctrlKey: true, shiftKey: true })).toBe('altHelp')
+    expect(key({ key: '?', ctrlKey: true })).toBe('altHelp')
+    expect(key({ key: '/', ctrlKey: true })).toBeNull()
+    expect(key({ key: '?', metaKey: true, shiftKey: true })).toBeNull()
     expect(key({ key: 'q' })).toBeNull()
   })
 

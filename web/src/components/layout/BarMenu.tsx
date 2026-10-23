@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Menu, MenuContent, MenuGroup, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { Kbd } from '@/components/ui/kbd'
 import { isTestRunDetail } from '@/lib/detail-kind'
+import { sessionListRoute } from '@/lib/paths'
 import { useSessionContext } from '@/lib/session-context'
 import { THEME_SETTINGS } from '@/theme/theme'
 import { useTheme } from '@/theme/useTheme'
@@ -26,7 +27,7 @@ export function BarMenu({ onHelp }: BarMenuProps) {
   const { detail } = useSessionContext()
   const { theme, setTheme } = useTheme()
   const config = useShellConfig()
-  const { archiving, archive } = useArchiveSession(detail.manifest.id, config.kind === 'test-run' ? '/t' : '/')
+  const { archiving, archive } = useArchiveSession(detail.manifest.id, sessionListRoute(config.kind))
   const pr = isTestRunDetail(detail) ? null : (detail.pr ?? null)
   const prHref = pr ? safePrUrl(pr.url) : null
   return (
@@ -35,9 +36,9 @@ export function BarMenu({ onHelp }: BarMenuProps) {
         <MoreHorizontal aria-hidden />
       </MenuTrigger>
       <MenuContent align="end">
-        <MenuItem className="min-[521px]:hidden" render={<Link to={config.kind === 'test-run' ? '/t' : '/'} />}>
+        <MenuItem className="min-[521px]:hidden" render={<Link to={sessionListRoute(config.kind)} />}>
           <ChevronLeft aria-hidden />
-          {config.kind === 'test-run' ? 'Test runs' : 'Sessions'}
+          {config.kind === 'test-run' ? 'Test runs' : config.kind === 'pr-review' ? 'PR review' : 'Sessions'}
         </MenuItem>
         {pr && prHref && (
           <MenuItem className="min-[521px]:hidden" render={<a href={prHref} target="_blank" rel="noopener noreferrer" />}>

@@ -1,5 +1,5 @@
 import type { Verdict } from '@review-dash/shared'
-import { Check, ChevronDown, Folder, FolderOpen, MessageSquare, X } from 'lucide-react'
+import { Check, ChevronDown, Folder, FolderOpen, MessageSquare, MessageSquareText, X } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { FileTypeDot } from '@/components/ui/file-type-dot'
 import { PrCount } from '@/components/prcomments/PrCount'
@@ -15,6 +15,7 @@ export interface FileRowState {
   openComments: number
   updated: boolean
   /** GitHub threads on the file (absent when none). */
+  proposals?: number
   prComments?: PrFileCounts
 }
 
@@ -89,6 +90,7 @@ export function FileTreeRow({ row, expanded, current, focused, count, state, onA
             {node.name}
           </span>
           <span className="flex shrink-0 items-center gap-1.5">
+            {!!state?.proposals && <span className="text-[11px] tabular-nums" aria-label={`${state.proposals} proposed comments`} title={`${state.proposals} proposed comments`}><MessageSquareText aria-hidden className="inline size-3!" /> {state.proposals}</span>}
             {state?.updated && (
               <StatusDot
                 tone="warn"

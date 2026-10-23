@@ -71,6 +71,7 @@ async function testRunBuilder(deps: SendDeps, session: LoadedSession, request: S
 export async function sendReview(deps: SendDeps, sessionId: string, request: SendRequest): Promise<SendResponse> {
   const { store, runs, adapter } = deps
   const session = await store.loadSession(sessionId)
+  if (session.manifest.kind === 'pr-review') throw badRequest('PR reviews use copy-only export, not send')
   const build = await (isTestRun(session.manifest) ? testRunBuilder(deps, session, request) : codeReviewBuilder(deps, session, request))
   const written: { sent?: AnySentSnapshot } = {}
 

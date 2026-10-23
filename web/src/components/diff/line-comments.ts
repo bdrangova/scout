@@ -1,6 +1,7 @@
 import { anchorInPatch, anchorKey, type CommentWithStatus, type LineAnchor, type LineSide, type PatchLine } from '@review-dash/shared'
 import type { DiffLineAnnotation, SelectedLineRange } from '@pierre/diffs/react'
 import { createContext, useContext } from 'react'
+import type { PrFinding } from '@review-dash/shared'
 import type { PrPlacement, PrThread } from '@/lib/pr-threads'
 
 /** What `FileDiffView` needs to show and edit the line comments of the file it renders. */
@@ -23,6 +24,7 @@ export function useLineComments(): LineCommentsValue | null {
 
 /** What one annotation slot of the diff shows. */
 export type LineAnnotationContent =
+  | { kind: 'proposal'; finding: PrFinding; changed: boolean }
   | { kind: 'comments'; anchor: LineAnchor; comments: CommentWithStatus[] }
   | { kind: 'draft'; anchor: LineAnchor }
   /** Comments whose line is no longer in the diff, listed above the first line. */

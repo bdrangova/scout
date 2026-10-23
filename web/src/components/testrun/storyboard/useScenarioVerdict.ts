@@ -45,7 +45,7 @@ export function useScenarioVerdict(): ScenarioVerdicts {
   );
 
   const set = (scenario: VerdictTarget, verdict: Exclude<Verdict, "none">) =>
-    sendVerdict(scenario.id, verdict, scenario.fingerprint, scenario.title);
+    sendVerdict(scenario.id, verdict, scenario.fingerprint, scenario.title, false);
 
   const choose = (scenario: VerdictTarget, verdict: Exclude<Verdict, "none">) => {
     const current = effectiveVerdict(fileReview(scenario.id), { path: scenario.id, fingerprint: scenario.fingerprint });

@@ -9,6 +9,7 @@ import { ResolutionSchema, ResolutionsSchema } from './resolutions.ts'
 import { CommentSchema, DecisionSchema, ReviewSchema } from './review.ts'
 import { SentSnapshotSchema } from './sent.ts'
 import { ScenarioSchema, TestRunIndexSchema } from './test-run.ts'
+import { PrReviewReportSchema } from './pr-review.ts'
 import { WorkingTreeSchema } from './tree.ts'
 
 const isoDate = z.iso.datetime({ offset: true })
@@ -34,7 +35,7 @@ export const HealthSchema = z.object({
 export type Health = z.infer<typeof HealthSchema>
 
 export const SessionSummarySchema = z.object({
-  kind: z.literal('code-review').optional(),
+  kind: z.enum(['code-review', 'pr-review']).optional(),
   id: z.string().regex(SESSION_ID_RE),
   title: z.string(),
   /**
@@ -119,8 +120,9 @@ export const ArchivedSessionSchema = z.object({
 export type ArchivedSession = z.infer<typeof ArchivedSessionSchema>
 
 export const CodeReviewDetailSchema = z.object({
-  kind: z.literal('code-review').optional(),
+  kind: z.enum(['code-review', 'pr-review']).optional(),
   manifest: CodeReviewManifestSchema,
+  prReview: PrReviewReportSchema.nullable().optional(),
   tree: WorkingTreeSchema,
   evidence: z.array(EvidenceItemSchema),
   extras: z.array(ExtraItemSchema),

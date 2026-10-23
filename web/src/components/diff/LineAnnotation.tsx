@@ -5,7 +5,7 @@ import { CommentList } from '@/components/common/CommentList'
 import type { LineAnnotationContent, LineCommentsValue } from './line-comments'
 
 interface LineAnnotationProps {
-  content: Exclude<LineAnnotationContent, { kind: 'pr' }>
+  content: Exclude<LineAnnotationContent, { kind: 'pr' | 'proposal' }>
   comments: LineCommentsValue
   onCancelDraft: () => void
 }

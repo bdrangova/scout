@@ -21,6 +21,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json && npm run typecheck --workspaces --if-present",
     "fixture": "tsx scripts/make-fixture.ts",
+    "fixture:pr-review": "tsx scripts/make-pr-review-fixture.ts",
     "e2e": "playwright test"
   },
   "devDependencies": {

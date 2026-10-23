@@ -128,9 +128,9 @@ describe('FileReviewCard', () => {
 
   it('pins a verdict to the file fingerprint', () => {
     const dispatch = vi.fn()
-    render(card(untouched, dispatch))
+    render(card(changed, dispatch))
     screen.getByRole('button', { name: 'Approve' }).click()
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERDICT', path: untouched.path, verdict: 'approved', fingerprint: untouched.fingerprint })
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERDICT', path: changed.path, verdict: 'approved', fingerprint: changed.fingerprint })
   })
 
   it('pulses "changed just now" and refetches the patch when the fingerprint moves while mounted', () => {
@@ -253,7 +253,7 @@ describe('FileReviewCard', () => {
     // The scope's own version of the file has its own fingerprint; the verdict must use the full diff's.
     const scoped = { ...untouched, fingerprint: fp('other:scope'), additions: 9 }
 
-    it('reads the patch from the scope route, keeps the full-diff verdict and pins a new one to the full fingerprint', () => {
+    it('reads the patch from the scope route, keeps the full-diff verdict and clears it without advancing', () => {
       const dispatch = vi.fn()
       const advanceFrom = vi.fn()
       render(
@@ -265,8 +265,8 @@ describe('FileReviewCard', () => {
       expect(screen.getByRole('article', { name: scoped.path })).toHaveAttribute('data-verdict', 'approved')
       expect(screen.getByText('+9')).toBeInTheDocument()
       screen.getByRole('button', { name: 'Approve' }).click()
-      expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERDICT', path: scoped.path, verdict: 'approved', fingerprint: untouched.fingerprint })
-      expect(advanceFrom).toHaveBeenCalledWith(scoped.path)
+      expect(dispatch).toHaveBeenCalledWith({ type: 'SET_VERDICT', path: scoped.path, verdict: 'none', fingerprint: null })
+      expect(advanceFrom).not.toHaveBeenCalled()
     })
 
     it('disables the verdict and comment controls for a file with no net change in the full diff', () => {

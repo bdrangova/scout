@@ -1,4 +1,6 @@
 import { constants as fsConstants } from 'node:fs'
+import { prReviewSessionStatus, type PrReviewReport } from '@review-dash/shared'
+import { readPrReviewReport } from './pr-review.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import readline from 'node:readline'
@@ -142,14 +144,16 @@ export function latestUpdatedAt(manifest: Manifest, state: ReviewState, contentA
   return best
 }
 
-export function sessionSummary(manifest: CodeReviewManifest, state: ReviewState, tree: WorkingTree): SessionSummary {
+export function sessionSummary(manifest: CodeReviewManifest, state: ReviewState, tree: WorkingTree, report?: PrReviewReport | null): SessionSummary {
   const openComments = state.review === null ? 0 : mergeComments(state.review, state.resolutions).filter((c) => c.status === 'open').length
+  const derivedStatus = sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null, latestRunStatus: state.latestRunStatus })
   return {
+    kind: manifest.kind,
     id: manifest.id,
     title: manifest.title,
     repo: { path: manifest.repo.path, branch: tree.branch ?? manifest.repo.branch, sessionBranch: manifest.repo.branch, baseRef: manifest.repo.baseRef },
     tickets: manifest.tickets,
-    status: sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null, latestRunStatus: state.latestRunStatus }),
+    status: manifest.kind === 'pr-review' ? prReviewSessionStatus(derivedStatus, report, tree, state.review) : derivedStatus,
     progress: progress(state.review, tree, state.resolutions),
     openComments,
     stats: { files: tree.stats.files, additions: tree.stats.additions, deletions: tree.stats.deletions },
@@ -351,7 +355,7 @@ export class Store {
         return testRunSummary(manifest, state, detail)
       }
       const [state, { tree }] = await Promise.all([this.reviewState(session), this.tree(session)])
-      return sessionSummary(manifest, state, tree)
+      return sessionSummary(manifest, state, tree, manifest.kind === 'pr-review' ? await readPrReviewReport(session.dir) : null)
     } catch (err) {
       return { id, error: errorMessage(err) }
     }
@@ -502,12 +506,15 @@ export class Store {
       this.artifacts(session),
       this.prDescription(session),
     ])
+    const report = session.manifest.kind === 'pr-review' ? await readPrReviewReport(session.dir) : null
     return {
+      kind: session.manifest.kind,
       manifest: session.manifest,
+      prReview: report,
       tree,
       ...artifacts,
       prDescription,
-      status: sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null, latestRunStatus: state.latestRunStatus }),
+      status: sessionSummary(session.manifest, state, tree, report).status,
       progress: progress(state.review, tree, state.resolutions),
       activeRunId: state.activeRunId,
       latestRunStatus: state.latestRunStatus ?? null,

@@ -34,7 +34,9 @@ describe('paths', () => {
     expect(testRunRoute('sid', 'review')).toBe('/t/sid/review')
     expect(testRunRoute('sid', 'review', 's1-pass')).toBe('/t/sid/review/s1-pass')
     expect(otherKindRoute('code-review')).toBe('/t')
-    expect(otherKindRoute('test-run')).toBe('/')
+    expect(otherKindRoute('test-run')).toBe('/pr')
+    expect(otherKindRoute('pr-review')).toBe('/')
+    expect(sessionRoute('pr-review', 'sid', 'files')).toBe('/s/sid/files')
   })
 
   it('turns an index ref into a run file url, escaping each segment', () => {

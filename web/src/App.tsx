@@ -25,6 +25,7 @@ import { TestRunSubmitPage } from './pages/testrun/TestRunSubmitPage'
 // `/__kit` is the dev-only primitives gallery (web/src/pages/KitPage.tsx).
 const router = createBrowserRouter([
   { path: '/', Component: SessionListPage },
+  { path: '/pr', element: <SessionListPage kind="pr-review" /> },
   { path: '/t', element: <SessionListPage kind="test-run" /> },
   ...(import.meta.env.DEV
     ? [{ path: '/__kit', HydrateFallback: () => null, lazy: async () => ({ Component: (await import('./pages/KitPage')).KitPage }) }]

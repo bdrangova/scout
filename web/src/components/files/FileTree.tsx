@@ -3,6 +3,7 @@ import { useMemo, useRef } from 'react'
 import { countReviewed } from '@/lib/file-tree'
 import { indexByPath } from '@/lib/scope'
 import { useReview } from '@/state/review-context'
+import { useCurrentPrReport } from '@/components/prreview/pr-review-context'
 import { usePrComments } from '@/state/pr-comments-context'
 import { FileTreeFilter } from './FileTreeFilter'
 import { FileTreeHeader } from './FileTreeHeader'
@@ -30,6 +31,7 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
   const { fileReview, comments } = useReview()
   const listRef = useRef<HTMLDivElement>(null)
   const { fileCounts } = usePrComments()
+  const { report } = useCurrentPrReport()
   const prFilter = usePrFileFilter(files)
   const state = useFileTreeState(prFilter.files, currentPath, onSelect, listRef)
   const reviewByPath = useMemo(() => indexByPath(reviewFiles), [reviewFiles])
@@ -56,6 +58,7 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
       openComments: openCommentsByPath.get(file.path) ?? 0,
       updated: reviewFile !== undefined && fileIsUpdated(review, reviewFile),
       prComments: fileCounts.get(file.path),
+      proposals: report?.findings.filter((f) => f.path === file.path).length,
     }
   }
 

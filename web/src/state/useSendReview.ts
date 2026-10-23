@@ -172,10 +172,10 @@ export function useSendReview(): SendReviewState {
   useEffect(() => {
     if (preselected.current) return
     preselected.current = true
-    if (decision !== 'undecided') return
+    if (decision !== 'undecided' || state.review.overall.cleared) return
     const suggestion = testRun ? suggestTestRunDecision(files, openComments) : suggestDecision(files)
     if (suggestion !== 'undecided') dispatch({ type: 'SET_DECISION', decision: suggestion })
-  }, [decision, files, dispatch, testRun, openComments])
+  }, [decision, state.review.overall.cleared, files, dispatch, testRun, openComments])
 
   const patchParams = useCallback(
     (patch: ParamsPatch) => {

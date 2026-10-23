@@ -194,13 +194,13 @@ function newestFirst<M extends Manifest>(matches: SessionMatch<M>[]): SessionMat
 }
 
 /** Code-review sessions of one repository (and branch when given) with a valid manifest, newest first by `updatedAt`. */
-export async function sessionsForRepo(home: string, repoPath: string, branch: string | null = null): Promise<SessionMatch<CodeReviewManifest>[]> {
+export async function sessionsForRepo(home: string, repoPath: string, branch: string | null = null, kind: 'code-review' | 'pr-review' = 'code-review'): Promise<SessionMatch<CodeReviewManifest>[]> {
   const matches: SessionMatch<CodeReviewManifest>[] = []
   for (const id of await listSessionIds(home)) {
     const peek = await peekManifest(home, id)
     if (peek === null || peek.repoPath !== repoPath || (branch !== null && peek.branch !== branch)) continue
     const parsed = ManifestSchema.safeParse(peek.raw)
-    if (!parsed.success || isTestRun(parsed.data)) continue
+    if (!parsed.success || isTestRun(parsed.data) || (parsed.data.kind ?? 'code-review') !== kind) continue
     matches.push({ id, dir: peek.dir, manifest: parsed.data })
   }
   return newestFirst(matches)
@@ -211,8 +211,8 @@ export async function sessionsForRepo(home: string, repoPath: string, branch: st
  * fingerprints, so after an approval only the files changed since come back for review. Archived
  * sessions live under `archive/` and are never found here.
  */
-export async function openSessionForBranch(home: string, repoPath: string, branch: string | null): Promise<SessionMatch<CodeReviewManifest> | null> {
-  return (await sessionsForRepo(home, repoPath, branch))[0] ?? null
+export async function openSessionForBranch(home: string, repoPath: string, branch: string | null, kind: 'code-review' | 'pr-review' = 'code-review'): Promise<SessionMatch<CodeReviewManifest> | null> {
+  return (await sessionsForRepo(home, repoPath, branch, kind))[0] ?? null
 }
 
 /** The latest live test-run session of a run folder (`manifest.run.path`), newest first by `updatedAt`. Archived sessions are never found here. */

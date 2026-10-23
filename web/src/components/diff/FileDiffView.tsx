@@ -1,10 +1,13 @@
-import { parsePatchLines, type LineAnchor } from '@review-dash/shared'
+import { anchorInPatch, parsePatchLines, type LineAnchor } from '@review-dash/shared'
 import { PatchDiff, type PatchDiffProps } from '@pierre/diffs/react'
 import { useCallback, useContext, useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { placePrThreads } from '@/lib/pr-threads'
 import { cn } from '@/lib/utils'
 import { ThemeContext } from '@/theme/ThemeContext'
 import { contentsLoader, fullFileRows, type FileSides } from './expand-context'
+import { ProposalCard } from '@/components/prreview/ProposalCard'
+import { useProposalAnnotations } from '@/components/prreview/proposal-annotations'
+import { PANEL_CLASS } from './LineAnnotation'
 import { LineAnnotation } from './LineAnnotation'
 import { PrAnnotation } from './PrAnnotation'
 import { usePrAnnotations } from './pr-annotations'
@@ -108,7 +111,8 @@ export function FileDiffView({ patch, diffStyle, loadSides }: FileDiffViewProps)
     setSeenPatch(patch)
     setSides(undefined)
   }
-  const rows = useMemo(() => (lineComments || prAnnotations ? parsePatchLines(patch) : []), [lineComments, prAnnotations, patch])
+  const proposals = useProposalAnnotations()
+  const rows = useMemo(() => (lineComments || prAnnotations || proposals.length ? parsePatchLines(patch) : []), [lineComments, prAnnotations, proposals, patch])
   // Anchors on revealed lines count as in the diff; the keyboard cursor keeps to the patch's own rows.
   const anchorRows = useMemo(() => (sides ? fullFileRows(rows, sides) : rows), [rows, sides])
 
@@ -160,8 +164,11 @@ export function FileDiffView({ patch, diffStyle, loadSides }: FileDiffViewProps)
     return () => onPlaced?.([])
   }, [onPlaced, placedKey])
   const annotations = useMemo<DiffAnnotation[]>(
-    () => [...(lineComments ? buildAnnotations(anchorRows, lineComments.comments, draft) : []), ...buildPrAnnotations(prPlacement.placed)],
-    [lineComments, anchorRows, draft, prPlacement],
+    () => [...(lineComments ? buildAnnotations(anchorRows, lineComments.comments, draft) : []), ...buildPrAnnotations(prPlacement.placed), ...proposals.map((finding): DiffAnnotation => {
+      const changed = !anchorInPatch(anchorRows, finding.anchor)
+      return { side: finding.anchor.side === 'new' ? 'additions' : 'deletions', lineNumber: changed ? 0 : finding.anchor.endLine ?? finding.anchor.line, metadata: { kind: 'proposal', finding, changed } }
+    })],
+    [lineComments, anchorRows, draft, prPlacement, proposals],
   )
   const cursorAnchor = cursor ? anchorFromCursor(rows, cursor) : null
   const selected = draft ?? cursorAnchor
@@ -189,6 +196,7 @@ export function FileDiffView({ patch, diffStyle, loadSides }: FileDiffViewProps)
   const renderAnnotation = useCallback(
     (annotation: DiffAnnotation) => {
       const { metadata } = annotation
+      if (metadata.kind === 'proposal') return <div className={PANEL_CLASS}><ProposalCard finding={metadata.finding} changed={metadata.changed} /></div>
       if (metadata.kind === 'pr') return <PrAnnotation anchor={metadata.anchor} threads={metadata.threads} />
       return lineComments ? (
         <LineAnnotation

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Kbd } from '@/components/ui/kbd'
+import { sessionListRoute } from '@/lib/paths'
 import { useSessionContext } from '@/lib/session-context'
 import { cn } from '@/lib/utils'
 import { useReview } from '@/state/review-context'
@@ -34,7 +35,7 @@ function submitState({ status, run }: Pick<ReturnType<typeof useSessionSummary>,
 export function SessionBar({ onHelp }: SessionBarProps) {
   const { detail } = useSessionContext()
   const { kind } = useShellConfig()
-  const listLabel = kind === 'test-run' ? 'Test runs' : 'Sessions'
+  const listLabel = kind === 'test-run' ? 'Test runs' : kind === 'pr-review' ? 'PR review' : 'Sessions'
   const { saveStatus } = useReview()
   const summary = useSessionSummary()
   const { pathname } = useLocation()
@@ -54,7 +55,7 @@ export function SessionBar({ onHelp }: SessionBarProps) {
         <SidebarToggle />
         <Tooltip>
           <TooltipTrigger
-            render={<Link to={kind === 'test-run' ? '/t' : '/'} title={listLabel} className={cn(buttonVariants({ size: 'sm' }), HEADER_CHIP_CLASS, 'max-xl:w-(--header-control-h) max-xl:px-0 max-[520px]:hidden')} />}
+            render={<Link to={sessionListRoute(kind)} title={listLabel} className={cn(buttonVariants({ size: 'sm' }), HEADER_CHIP_CLASS, 'max-xl:w-(--header-control-h) max-xl:px-0 max-[520px]:hidden')} />}
           >
             <ChevronLeft aria-hidden />
             <span className="max-xl:sr-only">{listLabel}</span>

@@ -1,4 +1,4 @@
-import { sessionStatus, type Decision } from '@review-dash/shared'
+import { prReviewSessionStatus, sessionStatus, type Decision } from '@review-dash/shared'
 import { useMemo } from 'react'
 import { verdictSummary, suggestDecision, type VerdictSummary } from '@/components/submit/verdict-summary'
 import { isTestRunDetail } from '@/lib/detail-kind'
@@ -37,8 +37,10 @@ export function useSessionSummary(): SessionSummaryView {
     const verdicts = reviewBreakdown(verdictSummary(state.review, { files: items }), progress)
     // The review state ignores the run; the run overlay is derived apart, with the same precedence as the server (working over failed).
     const lastSend = state.review?.sent ?? null
-    const status = reviewStatusOf({ status: sessionStatus({ review: state.review, tree: items, resolutions, activeRun: false }), progress, openComments, lastSend })
+    const fileStatus = sessionStatus({ review: state.review, tree: items, resolutions, activeRun: false })
+    const combinedStatus = !isTestRunDetail(detail) && detail.manifest.kind === 'pr-review' ? prReviewSessionStatus(fileStatus, detail.prReview, detail.tree, state.review) : fileStatus
+    const status = reviewStatusOf({ status: combinedStatus, progress, openComments, lastSend })
     const run = runChipFor(activeRunId !== null, latestRunStatus)
     return { status, run, progress, openComments, verdicts, suggestion: suggestDecision(verdicts), lastSend }
-  }, [state.review, items, resolutions, activeRunId, latestRunStatus, progress, openComments])
+  }, [detail, state.review, items, resolutions, activeRunId, latestRunStatus, progress, openComments])
 }
