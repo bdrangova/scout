@@ -1,15 +1,23 @@
-import { Search, X } from 'lucide-react'
+import { Search, TextSearch, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 interface FileTreeFilterProps {
   query: string
   onChange: (query: string) => void
   /** `n of total` while a filter is on. */
   matches?: { shown: number; total: number }
+  /** Searching file contents instead of filtering names. */
+  contents?: boolean
+  onToggleContents?: () => void
 }
 
-/** The tree's search box: Esc or the cross clears it; the match count is announced beside it. */
-export function FileTreeFilter({ query, onChange, matches }: FileTreeFilterProps) {
+/**
+ * The tree's search box: Esc or the cross clears it; the match count is announced beside it.
+ * The toggle beside it switches from filtering names to searching the changes' contents.
+ */
+export function FileTreeFilter({ query, onChange, matches, contents = false, onToggleContents }: FileTreeFilterProps) {
+  const label = contents ? 'Search in changes' : 'Filter files'
   return (
     <div className="flex shrink-0 items-center gap-2 pb-2">
       <div className="relative min-w-0 flex-1">
@@ -24,8 +32,8 @@ export function FileTreeFilter({ query, onChange, matches }: FileTreeFilterProps
               onChange('')
             }
           }}
-          placeholder="Filter files…"
-          aria-label="Filter files"
+          placeholder={`${label}…`}
+          aria-label={label}
           autoComplete="off"
           className="pr-8 pl-8 [&::-webkit-search-cancel-button]:hidden"
         />
@@ -41,6 +49,21 @@ export function FileTreeFilter({ query, onChange, matches }: FileTreeFilterProps
           </button>
         )}
       </div>
+      {onToggleContents && (
+        <button
+          type="button"
+          aria-pressed={contents}
+          aria-label="Search file contents"
+          title={contents ? 'Back to filtering file names' : 'Search file contents'}
+          onClick={onToggleContents}
+          className={cn(
+            'flex size-8 shrink-0 items-center justify-center rounded-md border-fine border-line text-ink-muted hover:bg-hover hover:text-ink',
+            contents && 'border-ink bg-ink text-paper hover:bg-ink hover:text-paper',
+          )}
+        >
+          <TextSearch aria-hidden className="size-4" />
+        </button>
+      )}
       {matches && (
         <span className="shrink-0 text-xs font-semibold text-ink-muted tabular-nums" aria-live="polite">
           {matches.shown} of {matches.total}

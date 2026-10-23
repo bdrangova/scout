@@ -98,6 +98,16 @@ export function fileRoute(sessionId: string, path: string): string {
   return `/s/${encodeURIComponent(sessionId)}/files/${encodePath(path)}`
 }
 
+/** Content search: the changed files' patches, or every file of the repository. */
+export function searchPath(sessionId: string, query: string, scope: 'diff' | 'repo'): string {
+  return `${sessionApiPath(sessionId)}/search?q=${encodeURIComponent(query)}${scope === 'repo' ? '&scope=repo' : ''}`
+}
+
+/** Any file of the session's repository as text (for search hits outside the diff). */
+export function repoFilePath(sessionId: string, path: string): string {
+  return `${sessionApiPath(sessionId)}/repo-files/${encodePath(path)}`
+}
+
 /** Web route of an evidence item inside a session. */
 export function evidenceRoute(sessionId: string, path: string): string {
   return `/s/${encodeURIComponent(sessionId)}/evidence/${encodePath(path)}`

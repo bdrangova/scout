@@ -52,5 +52,20 @@ export function filesRouter(store: Store): Router {
     sendContents(res, await store.fileContents(req.params.id, wildcardPath(req.params.path), side))
   })
 
+  /** `?q=` (2+ characters) through the changed files' patches, or with `&scope=repo` through every file. */
+  router.get('/sessions/:id/search', async (req, res) => {
+    const query = queryString(req.query.q)?.trim() ?? ''
+    if (query.length < 2) {
+      const body: ApiError = { error: 'query parameter q must be at least 2 characters' }
+      res.status(400).json(body)
+      return
+    }
+    res.json(queryString(req.query.scope) === 'repo' ? await store.searchRepo(req.params.id, query) : await store.searchDiff(req.params.id, query))
+  })
+
+  router.get('/sessions/:id/repo-files/*path', async (req, res) => {
+    sendContents(res, await store.repoFile(req.params.id, wildcardPath(req.params.path)))
+  })
+
   return router
 }

@@ -115,7 +115,7 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
     return <BodyNotice title="No textual changes">Contents unchanged.</BodyNotice>
   }
 
-  return <FileDiffView patch={patch} diffStyle={diffStyle} loadSides={loadSides} />
+  return <FileDiffView patch={patch} diffStyle={diffStyle} loadSides={loadSides} path={file.path} />
 }
 
 /** `+2,400 −1,800 · 4,200 changed lines` */

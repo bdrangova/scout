@@ -1,6 +1,7 @@
 import { anchorInPatch, parsePatchLines, type LineAnchor } from '@review-dash/shared'
 import { PatchDiff, type PatchDiffProps } from '@pierre/diffs/react'
-import { useCallback, useContext, useEffect, useMemo, useState, type KeyboardEvent } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { findDiffRow, useLineJump } from '@/lib/line-jump'
 import { placePrThreads } from '@/lib/pr-threads'
 import { cn } from '@/lib/utils'
 import { ThemeContext } from '@/theme/ThemeContext'
@@ -87,6 +88,8 @@ interface FileDiffViewProps {
    * hidden lines and this runs on the first reveal. Absent (or failing once), nothing is offered.
    */
   loadSides?: () => Promise<FileSides>
+  /** The file's path: a content-search jump to one of its lines scrolls there and highlights it. */
+  path?: string
 }
 
 /**
@@ -96,7 +99,7 @@ interface FileDiffViewProps {
  * The wrapper is focusable: ↑/↓ move a cursor over the lines (Shift extends it), Enter comments there.
  * The diff follows the app theme (never the OS scheme on its own).
  */
-export function FileDiffView({ patch, diffStyle, loadSides }: FileDiffViewProps) {
+export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffViewProps) {
   const lineComments = useLineComments()
   const prAnnotations = usePrAnnotations()
   // Read without `useTheme()` so a diff rendered outside the provider (tests) still works, as light.
@@ -171,7 +174,24 @@ export function FileDiffView({ patch, diffStyle, loadSides }: FileDiffViewProps)
     [lineComments, anchorRows, draft, prPlacement, proposals],
   )
   const cursorAnchor = cursor ? anchorFromCursor(rows, cursor) : null
-  const selected = draft ?? cursorAnchor
+  const jump = useLineJump(path)
+  const selected = draft ?? cursorAnchor ?? (jump ? { side: jump.side, line: jump.line } : null)
+
+  // The diff renders asynchronously: look for the jumped-to row for a few seconds, then centre it.
+  const hostRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!jump) return
+    let frame = 0
+    let id = 0
+    const tick = () => {
+      const root = hostRef.current?.querySelector('diffs-container')?.shadowRoot
+      const row = root ? findDiffRow(root, jump.side, jump.line) : null
+      if (row) row.scrollIntoView({ block: 'center' })
+      else if (++frame < 240) id = requestAnimationFrame(tick)
+    }
+    id = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(id)
+  }, [jump])
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!lineComments || event.target !== event.currentTarget || rows.length === 0) return
@@ -217,6 +237,7 @@ export function FileDiffView({ patch, diffStyle, loadSides }: FileDiffViewProps)
 
   return (
     <div
+      ref={hostRef}
       className={cn('bg-code text-[12.5px]', lineComments && 'outline-none focus-visible:outline-focus focus-visible:-outline-offset-[3px]')}
       style={{ overflowAnchor: 'none' }}
       data-diff-style={diffStyle}
@@ -231,7 +252,7 @@ export function FileDiffView({ patch, diffStyle, loadSides }: FileDiffViewProps)
         options={options}
         lineAnnotations={annotations}
         renderAnnotation={renderAnnotation}
-        selectedLines={lineComments ? (selected ? selectionFor(selected) : null) : undefined}
+        selectedLines={selected ? selectionFor(selected) : lineComments ? null : undefined}
       />
     </div>
   )

@@ -116,3 +116,31 @@ describe('GET /api/sessions/:id/files/*path/contents', () => {
     expect((await request(app).get(`${base}/files/..%2Fmanifest.json/contents?side=after`)).status).toBe(404)
   })
 })
+
+describe('GET /api/sessions/:id/search', () => {
+  it('finds patch lines of the changed files, numbered on their side', async () => {
+    const res = await request(app).get(`${base}/search?q=OLD = TRUE`)
+    expect(res.status).toBe(200)
+    expect(res.body.scope).toBe('diff')
+    expect(res.body.files).toEqual([{ path: 'src/old.ts', truncated: false, hits: [{ side: 'old', line: 1, kind: 'del', text: 'export const old = true' }] }])
+  })
+
+  it('searches every file with scope=repo, and refuses a one-character query', async () => {
+    const res = await request(app).get(`${base}/search?q=export&scope=repo`)
+    expect(res.status).toBe(200)
+    expect(res.body.scope).toBe('repo')
+    expect(res.body.files.length).toBeGreaterThan(0)
+    expect(res.body.files.every((f: { hits: { line: number }[] }) => f.hits.every((h) => h.line > 0))).toBe(true)
+    expect((await request(app).get(`${base}/search?q=e`)).status).toBe(400)
+  })
+})
+
+describe('GET /api/sessions/:id/repo-files/*path', () => {
+  it('serves a repository file as text and refuses paths outside it', async () => {
+    const ok = await request(app).get(`${base}/repo-files/src/app.ts`)
+    expect(ok.status).toBe(200)
+    expect(ok.headers['content-type']).toBe('text/plain; charset=utf-8')
+    expect((await request(app).get(`${base}/repo-files/..%2F..%2Fetc%2Fpasswd`)).status).toBe(404)
+    expect((await request(app).get(`${base}/repo-files/nope.ts`)).status).toBe(404)
+  })
+})

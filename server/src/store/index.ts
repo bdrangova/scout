@@ -1,5 +1,5 @@
 import { constants as fsConstants } from 'node:fs'
-import { prReviewSessionStatus, type PrReviewReport } from '@review-dash/shared'
+import { prReviewSessionStatus, searchPatch, SEARCH_MAX_PER_FILE, SEARCH_MAX_TOTAL, type PrReviewReport, type SearchFileHits, type SearchResponse } from '@review-dash/shared'
 import { readPrReviewReport } from './pr-review.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -40,6 +40,7 @@ import type {
 } from '@review-dash/shared'
 import { overlayDirFor, resolveBase } from '@review-dash/shared/git/base'
 import { showFile } from '@review-dash/shared/git/repo'
+import { git, gitTry } from '@review-dash/shared/git/run'
 import type { RunOptions } from '@review-dash/shared/git/run'
 import type { WorkingTreeResult } from '@review-dash/shared/git/working-tree'
 import { HttpError, badRequest, conflict, errorMessage, invalidStoreFile, notFound } from '../errors.ts'
@@ -556,6 +557,56 @@ export class Store {
     const session = await this.loadSession(id)
     const { tree } = await this.tree(session)
     return this.contentsOf(this.codeReview(session).repo.path, tree, this.treeFile(tree, filePath), side, null)
+  }
+
+  /** Case-insensitive substring search over the changed files' patches, in tree order (omitted files have none). */
+  async searchDiff(id: string, query: string): Promise<SearchResponse> {
+    const { tree, patches } = await this.tree(await this.loadSession(id))
+    const files: SearchFileHits[] = []
+    let total = 0
+    for (const file of tree.files) {
+      const patch = patches.get(file.path)
+      if (file.omitted || patch === undefined) continue
+      const hits = searchPatch(file.path, patch, query, Math.min(SEARCH_MAX_PER_FILE, SEARCH_MAX_TOTAL - total))
+      if (!hits) continue
+      files.push(hits)
+      total += hits.hits.length
+      if (total >= SEARCH_MAX_TOTAL) return { query, scope: 'diff', files, truncated: true }
+    }
+    return { query, scope: 'diff', files, truncated: false }
+  }
+
+  /** `git grep` (fixed string, case-insensitive, text files) over the working tree, untracked files included. */
+  async searchRepo(id: string, query: string): Promise<SearchResponse> {
+    const repo = this.codeReview(await this.loadSession(id)).repo.path
+    const out = await git(repo, ['grep', '--untracked', '-n', '-z', '-I', '-i', '-F', '--no-color', '-m', String(SEARCH_MAX_PER_FILE + 1), '-e', query], { okExitCodes: [1] })
+    const byPath = new Map<string, SearchFileHits>()
+    let total = 0
+    let truncated = false
+    for (const record of out.toString('utf8').split('\n')) {
+      const [path, line, ...rest] = record.split('\0')
+      if (!path || line === undefined) continue
+      let file = byPath.get(path)
+      if (!file) byPath.set(path, (file = { path, hits: [], truncated: false }))
+      if (file.hits.length === SEARCH_MAX_PER_FILE) { file.truncated = true; continue }
+      if (total === SEARCH_MAX_TOTAL) { truncated = true; break }
+      file.hits.push({ side: 'new', line: Number(line), kind: 'context', text: rest.join('\0').slice(0, 400) })
+      total += 1
+    }
+    return { query, scope: 'repo', files: [...byPath.values()], truncated }
+  }
+
+  /** A file of the working tree that git tracks or would track (not ignored), as plain text; for search results outside the diff. */
+  async repoFile(id: string, filePath: string): Promise<FileContents> {
+    const repo = this.codeReview(await this.loadSession(id)).repo.path
+    const listed = await gitTry(repo, ['ls-files', '-co', '--exclude-standard', '-z', '--', `:(literal)${filePath}`])
+    if (!listed?.split('\0').includes(filePath)) throw notFound(`${JSON.stringify(filePath)} is not a file of the repository`)
+    try {
+      return { body: await readWorkingFile(repo, filePath), contentType: 'text/plain; charset=utf-8' }
+    } catch (err) {
+      if (isMissing(err)) throw notFound(`${JSON.stringify(filePath)} is no longer on disk`)
+      throw err
+    }
   }
 
   /** The env that reads a virtual base tree (memoized in `resolveBase`); nothing for a commit base. */

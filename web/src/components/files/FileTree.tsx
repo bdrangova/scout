@@ -1,10 +1,12 @@
 import { effectiveVerdict, fileIsUpdated, type TreeFile } from '@review-dash/shared'
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { countReviewed } from '@/lib/file-tree'
 import { indexByPath } from '@/lib/scope'
 import { useReview } from '@/state/review-context'
 import { useCurrentPrReport } from '@/components/prreview/pr-review-context'
 import { usePrComments } from '@/state/pr-comments-context'
+import { useSessionContext } from '@/lib/session-context'
+import { ContentSearch } from './ContentSearch'
 import { FileTreeFilter } from './FileTreeFilter'
 import { FileTreeHeader } from './FileTreeHeader'
 import { FileTreeRow, type FileRowState } from './FileTreeRow'
@@ -35,6 +37,9 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
   const prFilter = usePrFileFilter(files)
   const state = useFileTreeState(prFilter.files, currentPath, onSelect, listRef)
   const reviewByPath = useMemo(() => indexByPath(reviewFiles), [reviewFiles])
+  const { sessionId } = useSessionContext()
+  const [contentMode, setContentMode] = useState(false)
+  const diffPaths = useMemo(() => new Set(files.map((f) => f.path)), [files])
   const openCommentsByPath = useMemo(() => {
     const counts = new Map<string, number>()
     for (const comment of comments) {
@@ -83,9 +88,11 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
           <FileTreeFilter
             query={state.query}
             onChange={state.setQuery}
-            matches={state.filtering ? { shown: state.matchCount, total: prFilter.files.length } : undefined}
+            matches={state.filtering && !contentMode ? { shown: state.matchCount, total: prFilter.files.length } : undefined}
+            contents={contentMode}
+            onToggleContents={() => setContentMode((on) => !on)}
           />
-          <div ref={listRef} role="tree" aria-label="Changed files" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-0.5">
+          {contentMode ? <ContentSearch sessionId={sessionId} query={state.query.trim()} diffPaths={diffPaths} onSelect={onSelect} /> : <div ref={listRef} role="tree" aria-label="Changed files" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-0.5">
             {files.length === 0 && <p className="m-0 px-2 py-3 text-xs font-medium text-ink-muted">No files changed.</p>}
             {files.length > 0 && state.rows.length === 0 && <p className="m-0 px-2 py-3 text-xs font-medium text-ink-muted">No files match.</p>}
             {state.rows.map((row, index) => (
@@ -109,7 +116,7 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
                 onKeyDown={(event) => state.onRowKeyDown(event, row, index)}
               />
             ))}
-          </div>
+          </div>}
         </>
       )}
     </div>
