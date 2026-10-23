@@ -56,12 +56,11 @@ describe('SessionListPage kinds', () => {
     renderAt('/t')
     const card = screen.getByRole('link', { name: 'Run A' })
     expect(card).toHaveAttribute('data-layout', 'grid')
-    expect(within(card).getByText(RUN_A.run.path)).toBeInTheDocument()
-    expect(within(card).getByText('Feature')).toBeInTheDocument()
-    expect(within(card).getByText('Area')).toBeInTheDocument()
+    expect(within(card).getByTitle(RUN_A.run.path)).toBeInTheDocument()
+    expect(within(card).getByLabelText('Feature and area')).toHaveTextContent(RUN_A.run.feature!)
     for (const [status, label] of Object.entries(SCENARIO_STATUS_LABEL)) {
-      const fact = within(card).getByText(label).parentElement!
-      expect(fact.querySelector('dd')).toHaveTextContent(String(RUN_A.counts[status as keyof typeof SCENARIO_STATUS_LABEL]))
+      const count = RUN_A.counts[status as keyof typeof SCENARIO_STATUS_LABEL]
+      if (count > 0) expect(within(card).getByLabelText('Scenario counts')).toHaveTextContent(`${count} ${label}`)
     }
     await userEvent.setup().click(card)
     expect(screen.getByText('Run route')).toBeInTheDocument()
@@ -100,9 +99,9 @@ describe('SessionListPage kinds', () => {
     renderAt('/t')
     const rows = screen.getAllByRole('link').filter((link) => link.hasAttribute('data-href'))
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual(['Run A', 'Run B'])
-    expect(screen.getByRole('option', { name: 'Approved (1)' })).toBeInTheDocument()
     const user = userEvent.setup()
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Review status' }), 'approved')
+    await user.click(screen.getByRole('combobox', { name: 'Review status' }))
+    await user.click(screen.getByRole('option', { name: 'Approved (1)' }))
     expect(screen.getAllByRole('link').filter((link) => link.hasAttribute('data-href'))).toHaveLength(1)
     await user.click(screen.getByRole('link', { name: 'Run B' }))
     expect(screen.getByText('Run route')).toBeInTheDocument()

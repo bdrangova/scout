@@ -1,129 +1,87 @@
-import type { ArchivedSession, Ticket } from '@review-dash/shared'
-import { Archive, ArchiveRestore, Folder, GitBranch, Trash2 } from 'lucide-react'
+import { SCENARIO_STATUSES, type ArchivedSession, type Ticket } from '@review-dash/shared'
+import { Archive, ArchiveRestore, ArrowLeft, Folder, GitBranch, GitPullRequest, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import { BranchChangedChip } from '@/components/session/BranchChangedChip'
 import { TicketStrip } from '@/components/session/TicketStrip'
 import { Button } from '@/components/ui/button'
 import { Panel } from '@/components/ui/panel'
 import { formatAdditions, formatDeletions, formatRelativeTime } from '@/lib/format'
 import { sessionRoute } from '@/lib/paths'
-import { type LiveSummary, statusSourceOf } from '@/lib/session-status'
+import { reviewStatusOf, runChipOf, type LiveSummary, statusSourceOf } from '@/lib/session-status'
 import { SCENARIO_STATUS_LABEL, SCENARIO_STATUS_TONE } from '@/lib/scenario-status'
-import { SCENARIO_STATUSES } from '@review-dash/shared'
 import { TONE_TEXT_CLASS } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'
-import { SessionReviewState } from './SessionReviewState'
+import { SessionStatusLabel } from './SessionStatusLabel'
 
-interface Fact { label: string; value: ReactNode; full?: boolean; className?: string }
-
-function CardFacts({ items }: { items: readonly Fact[] }) {
-  return (
-    <dl className="m-0 grid grid-cols-2 gap-x-5 gap-y-3">
-      {items.map(({ label, value, full, className }) => (
-        <div key={label} className={cn('min-w-0', full && 'col-span-2')}>
-          <dt className="mb-1 text-[11px] font-medium text-ink-muted">{label}</dt>
-          <dd className={cn('m-0 text-xs font-semibold break-words', className)}>{value}</dd>
-        </div>
-      ))}
-    </dl>
-  )
+/** Each card line stays one line, with keyboard/touch/trackpad access to clipped details. */
+function CardLine({ children, label, className }: { children: ReactNode; label: string; className?: string }) {
+  return <div tabIndex={0} aria-label={label} className={cn('min-w-0 overflow-x-auto overscroll-x-contain whitespace-nowrap [scrollbar-width:thin]', className)}><div className="flex w-max min-w-full items-center gap-2">{children}</div></div>
 }
 
-function CardIdentity({ title, tickets }: { title: string; tickets: readonly Ticket[] }) {
+function CardIdentity({ title, tickets, status }: { title: string; tickets: readonly Ticket[]; status?: ReactNode }) {
   const prefix = tickets.find((ticket) => title.startsWith(`${ticket.key}: `))
-  return (
-    <div className="flex min-w-0 flex-col gap-2.5">
-      <span className="text-base leading-snug font-bold break-words" title={title}>{prefix ? title.slice(prefix.key.length + 2) : title}</span>
-      <TicketStrip tickets={tickets} quiet className="flex-wrap overflow-x-visible py-0" />
+  return <div className="flex min-w-0 flex-col gap-2.5">
+    <div className="flex min-w-0 items-center gap-3">
+      <CardLine label="Session name" className="flex-1"><span className="text-sm font-bold" title={title}>{prefix ? title.slice(prefix.key.length + 2) : title}</span></CardLine>
+      {status}
     </div>
-  )
+    <TicketStrip tickets={tickets} quiet className="py-0" />
+  </div>
 }
 
-function CardPath({ children, branch = false }: { children: ReactNode; branch?: boolean }) {
-  const Icon = branch ? GitBranch : Folder
-  return <span className={cn('flex items-start gap-1.5', branch ? 'text-(--tk-t)' : 'text-(--tk-n)')}><Icon aria-hidden className="mt-px size-3.5 shrink-0" /><span className="min-w-0 font-mono text-[11px] leading-relaxed break-all">{children}</span></span>
+function Branches({ base, current }: { base?: string | null; current?: string | null }) {
+  return <CardLine label="Base and current branch" className="font-mono text-[11px] text-(--tk-t)"><GitBranch aria-hidden className="size-3.5 shrink-0" /><span>{base ?? 'Not recorded'}</span><ArrowLeft aria-label="from" className="size-3 shrink-0 text-ink-muted" /><span>{current ?? 'Detached HEAD'}</span></CardLine>
 }
-
 function CardTime({ at }: { at: string }) {
   return <time dateTime={at} title={new Date(at).toLocaleString()}>{formatRelativeTime(at)}</time>
 }
+function RepoName({ path }: { path: string }) {
+  return <span title={path} className="inline-flex items-center gap-1.5 text-(--tk-n)"><Folder aria-hidden className="size-3.5 shrink-0" />{path.split('/').filter(Boolean).at(-1)}</span>
+}
 
-/** Full summary details, laid out vertically; opening and archiving match the compact rows. */
 export function LiveSessionCard({ session, onArchive }: { session: LiveSummary; onArchive: (session: LiveSummary) => void }) {
   const navigate = useNavigate()
   const href = sessionRoute(session.kind ?? 'code-review', session.id)
   const source = statusSourceOf(session)
   const isRun = session.kind === 'test-run'
-  const stats: Fact[] = [
-    { label: isRun ? 'Scenarios' : 'Files', value: source.progress.total },
-    { label: 'Reviewed', value: `${source.progress.reviewed} / ${source.progress.total}` },
-    { label: 'Open comments', value: session.openComments },
-  ]
-  if (isRun) {
-    for (const status of SCENARIO_STATUSES) stats.push({ label: SCENARIO_STATUS_LABEL[status], value: session.counts[status], className: TONE_TEXT_CLASS[SCENARIO_STATUS_TONE[status]] })
-  } else {
-    stats.push({ label: 'Changes', value: <span className="inline-flex flex-wrap gap-2 font-mono tabular-nums"><span className="text-green">{formatAdditions(session.stats.additions)}</span><span className="text-red">{formatDeletions(session.stats.deletions)}</span></span> })
-  }
-  const location: Fact[] = isRun ? [
-    { label: 'Feature', value: session.run.feature || '—' },
-    { label: 'Area', value: session.run.area || '—' },
-    { label: 'Run folder', value: <CardPath>{session.run.path}</CardPath>, full: true },
-  ] : [
-    { label: 'Repository', value: <CardPath>{session.repo.path}</CardPath>, full: true },
-    { label: 'Current branch', value: <CardPath branch>{session.repo.branch ?? 'Detached HEAD'}</CardPath> },
-    { label: 'Base branch', value: <CardPath branch>{session.repo.baseRef}</CardPath> },
-  ]
-  return (
-    <li className="min-w-0">
-      <Panel role="link" tabIndex={0} aria-label={session.title} data-href={href} data-layout="grid" data-kind={session.kind ?? 'code-review'}
-        onClick={() => navigate(href)}
-        onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate(href) } }}
-        className="h-full cursor-pointer gap-5 overflow-visible p-5 transition-colors hover:bg-paper-2">
-        <CardIdentity title={session.title} tickets={session.tickets} />
-        <SessionReviewState session={session} showProgress={false} />
-        <div className="border-t-fine border-line pt-4"><CardFacts items={location} /></div>
-        {!isRun && <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />}
-        <div className="border-t-fine border-line pt-4"><CardFacts items={stats} /></div>
-        {!isRun && session.pr && (
-          <a href={session.pr.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} className="text-xs font-medium text-info-bd underline-offset-4 hover:underline">PR #{session.pr.number} · {session.pr.state} · {session.prComments?.open ?? 0} open threads</a>
-        )}
-        <div className="mt-auto flex flex-col gap-3 border-t-fine border-line pt-3">
-          <span className="font-mono text-[10px] leading-relaxed break-all text-ink-muted">{session.id}</span>
-          <div className="flex items-center justify-between gap-3 text-xs text-ink-muted">
-            <span>Updated <CardTime at={session.updatedAt} /></span>
-            <Button variant="ghost" size="sm" title={isRun ? 'Archive test run' : 'Archive session'} aria-label={`Archive ${session.title}`} onClick={(event) => { event.stopPropagation(); onArchive(session) }} className="shadow-none"><Archive aria-hidden />Archive</Button>
-          </div>
+  const run = runChipOf(session.status)
+  return <li className="min-w-0">
+    <Panel role="link" tabIndex={0} aria-label={session.title} data-href={href} data-layout="grid" data-kind={session.kind ?? 'code-review'}
+      onClick={() => navigate(href)}
+      onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate(href) } }}
+      className="h-full cursor-pointer gap-3 p-4 transition-colors hover:bg-paper-2">
+      <CardIdentity title={session.title} tickets={session.tickets} status={<SessionStatusLabel status={reviewStatusOf(source)} />} />
+      <div className="flex min-w-0 flex-col gap-3 border-t-fine border-line pt-3">
+        {isRun ? <CardLine label="Feature and area" className="text-xs text-(--tk-t)"><span>{session.run.feature || '—'}</span><span className="text-ink-muted">/</span><span>{session.run.area || '—'}</span></CardLine> : <Branches base={session.repo.baseRef} current={session.repo.branch} />}
+        <CardLine label={isRun ? 'Scenario counts' : 'File changes'} className="text-xs font-medium">
+          <span>{source.progress.total} {isRun ? 'scenarios' : 'files'}</span><span className="text-ink-muted">|</span>
+          {isRun ? SCENARIO_STATUSES.filter((status) => session.counts[status] > 0).map((status) => <span key={status} className={TONE_TEXT_CLASS[SCENARIO_STATUS_TONE[status]]}>{session.counts[status]} {SCENARIO_STATUS_LABEL[status]}</span>) : <><span className="font-mono text-green">{formatAdditions(session.stats.additions)}</span><span className="font-mono text-red">{formatDeletions(session.stats.deletions)}</span></>}
+        </CardLine>
+      </div>
+      <div className="mt-auto flex min-w-0 flex-col gap-3 border-t-fine border-line pt-3">
+        {!isRun && <CardLine label="Pull request" className="text-xs text-info-bd">{session.pr ? <a href={session.pr.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="inline-flex items-center gap-1.5 hover:underline"><GitPullRequest aria-hidden className="size-3.5" />PR #{session.pr.number} · {session.pr.state}</a> : <span className="text-ink-muted">No pull request</span>}</CardLine>}
+        {run && <SessionStatusLabel status={run === 'working' ? 'agent-working' : 'run-failed'} />}
+        <div className="flex min-w-0 items-center gap-2 text-[11px] text-ink-muted">
+          <CardLine label="Session metadata" className="flex-1"><RepoName path={isRun ? session.run.path : session.repo.path} /><span>·</span><CardTime at={session.updatedAt} /><span title={session.id} className="font-mono">· {session.id}</span></CardLine>
+          <Button variant="ghost" size="icon-sm" title={isRun ? 'Archive test run' : 'Archive session'} aria-label={`Archive ${session.title}`} onClick={(event) => { event.stopPropagation(); onArchive(session) }} className="shrink-0 shadow-none"><Archive aria-hidden /></Button>
         </div>
-      </Panel>
-    </li>
-  )
+      </div>
+    </Panel>
+  </li>
 }
 
-/** Archives have manifest metadata only; restoring remains the action that opens them for review. */
+/** Archive metadata stays compact; no review counts are available until restored. */
 export function ArchivedSessionCard({ session, onRestore, onDelete }: { session: ArchivedSession; onRestore: (session: ArchivedSession) => void; onDelete: (session: ArchivedSession) => void }) {
-  return (
-    <li aria-label={`Archived session ${session.title}`} className="min-w-0">
-      <Panel data-layout="grid" className="h-full gap-5 p-5">
-        <CardIdentity title={session.title} tickets={session.tickets} />
-        <CardFacts items={[
-          { label: 'Repository / working folder', value: <CardPath>{session.repo.path}</CardPath>, full: true },
-          { label: 'Branch', value: <CardPath branch>{session.repo.branch ?? 'Not recorded'}</CardPath> },
-          { label: 'Base branch', value: <CardPath branch>{session.repo.baseRef ?? 'Not recorded'}</CardPath> },
-        ]} />
-        <div className="border-t-fine border-line pt-4"><CardFacts items={[
-          { label: 'Created', value: <CardTime at={session.createdAt} /> },
-          { label: 'Last updated', value: <CardTime at={session.updatedAt} /> },
-          { label: 'Archived', value: <CardTime at={session.archivedAt} />, full: true },
-        ]} /></div>
-        <div className="mt-auto flex flex-col gap-3 border-t-fine border-line pt-3">
-          <span className="font-mono text-[10px] leading-relaxed break-all text-ink-muted">{session.id}</span>
-          <div className="flex items-center justify-between gap-3">
-            <Button size="sm" onClick={() => onRestore(session)} aria-label={`Restore ${session.title}`}><ArchiveRestore aria-hidden />Restore</Button>
-            <Button variant="ghost" size="icon-sm" onClick={() => onDelete(session)} title="Delete permanently" aria-label={`Delete ${session.title}`} className="text-ink-muted hover:bg-red-solid hover:text-on-red"><Trash2 aria-hidden /></Button>
-          </div>
-        </div>
-      </Panel>
-    </li>
-  )
+  return <li aria-label={`Archived session ${session.title}`} className="min-w-0">
+    <Panel data-layout="grid" className="h-full gap-3 p-4">
+      <CardIdentity title={session.title} tickets={session.tickets} status={<span className="inline-flex items-center gap-1.5 text-xs text-ink-muted"><Archive aria-hidden className="size-3.5" />Archived</span>} />
+      <div className="border-t-fine border-line pt-3"><Branches base={session.repo.baseRef} current={session.repo.branch} /></div>
+      <CardLine label="Archive dates" className="text-[11px] text-ink-muted"><span>Created <CardTime at={session.createdAt} /></span><span>· Updated <CardTime at={session.updatedAt} /></span><span>· Archived <CardTime at={session.archivedAt} /></span></CardLine>
+      <div className="mt-auto flex min-w-0 items-center gap-2 border-t-fine border-line pt-3">
+        <CardLine label="Session metadata" className="flex-1 text-[11px] text-ink-muted"><RepoName path={session.repo.path} /><span title={session.id} className="font-mono">· {session.id}</span></CardLine>
+        <Button size="sm" onClick={() => onRestore(session)} aria-label={`Restore ${session.title}`}><ArchiveRestore aria-hidden />Restore</Button>
+        <Button variant="ghost" size="icon-sm" onClick={() => onDelete(session)} title="Delete permanently" aria-label={`Delete ${session.title}`} className="shrink-0 text-ink-muted hover:bg-red-solid hover:text-on-red"><Trash2 aria-hidden /></Button>
+      </div>
+    </Panel>
+  </li>
 }
