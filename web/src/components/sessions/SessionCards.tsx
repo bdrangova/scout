@@ -20,14 +20,13 @@ function CardLine({ children, label, className }: { children: ReactNode; label: 
   return <div tabIndex={0} aria-label={label} className={cn('min-w-0 overflow-x-auto overscroll-x-contain whitespace-nowrap [scrollbar-width:thin]', className)}><div className="flex w-max min-w-full items-center gap-2">{children}</div></div>
 }
 
-function CardIdentity({ title, tickets, status }: { title: string; tickets: readonly Ticket[]; status?: ReactNode }) {
+function CardIdentity({ title, tickets, status, statusDetail }: { title: string; tickets: readonly Ticket[]; status?: ReactNode; statusDetail?: ReactNode }) {
   const prefix = tickets.find((ticket) => title.startsWith(`${ticket.key}: `))
-  return <div className="flex min-w-0 flex-col gap-2.5">
-    <div className="flex min-w-0 items-center gap-3">
-      <CardLine label="Session name" className="flex-1"><span className="text-sm font-bold" title={title}>{prefix ? title.slice(prefix.key.length + 2) : title}</span></CardLine>
-      {status}
-    </div>
-    <TicketStrip tickets={tickets} quiet className="py-0" />
+  return <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5">
+    <CardLine label="Session name"><span className="text-sm font-bold" title={title}>{prefix ? title.slice(prefix.key.length + 2) : title}</span></CardLine>
+    <div className="col-start-2 row-start-1 justify-self-end">{status}</div>
+    <TicketStrip tickets={tickets} quiet className="col-start-1 row-start-2 py-0" />
+    {statusDetail && <div className="col-start-2 row-start-2 justify-self-end">{statusDetail}</div>}
   </div>
 }
 
@@ -51,11 +50,10 @@ export function LiveSessionCard({ session, onArchive, layout = 'grid' }: { sessi
     <Panel role="link" tabIndex={0} aria-label={session.title} data-href={href} data-layout={layout} data-kind={session.kind ?? 'code-review'}
       onClick={() => navigate(href)}
       onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate(href) } }}
-      className={cn('h-full cursor-pointer gap-3 p-4 transition-colors hover:bg-paper-2', layout === 'list' && 'md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-x-6')}>
-      <CardIdentity title={session.title} tickets={session.tickets} status={<SessionStatusLabel status={reviewStatusOf(source)} />} />
+      className="h-full cursor-pointer gap-3 p-4 transition-colors hover:bg-paper-2">
+      <CardIdentity title={session.title} tickets={session.tickets} status={<SessionStatusLabel status={reviewStatusOf(source)} />} statusDetail={!isRun && <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />} />
       <div className={cn('flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:border-t-0 md:pt-0')}>
         {!isRun && <Branches base={session.repo.baseRef} current={session.repo.branch} />}
-        {!isRun && session.repo.sessionBranch && session.repo.sessionBranch !== session.repo.branch && <CardLine label="Branch warning"><BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} /></CardLine>}
         <CardLine label={isRun ? 'Scenario counts' : 'File changes'} className="text-xs font-medium">
           <span>{source.progress.total} {isRun ? 'scenarios' : 'files'}</span><span className="text-ink-muted">|</span>
           {isRun ? SCENARIO_STATUSES.filter((status) => session.counts[status] > 0).map((status) => <span key={status} className={TONE_TEXT_CLASS[SCENARIO_STATUS_TONE[status]]}>{session.counts[status]} {SCENARIO_STATUS_LABEL[status]}</span>) : <><span className="font-mono text-green">{formatAdditions(session.stats.additions)}</span><span className="font-mono text-red">{formatDeletions(session.stats.deletions)}</span></>}
@@ -76,7 +74,7 @@ export function LiveSessionCard({ session, onArchive, layout = 'grid' }: { sessi
 /** Archive metadata stays compact; no review counts are available until restored. */
 export function ArchivedSessionCard({ session, onRestore, onDelete, kind = 'code-review', layout = 'grid' }: { session: ArchivedSession; onRestore: (session: ArchivedSession) => void; onDelete: (session: ArchivedSession) => void; kind?: SessionKind; layout?: 'grid' | 'list' }) {
   return <li aria-label={`Archived session ${session.title}`} className="min-w-0">
-    <Panel data-layout={layout} className={cn('h-full gap-3 p-4', layout === 'list' && 'md:grid md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-x-6')}>
+    <Panel data-layout={layout} className="h-full gap-3 p-4">
       <CardIdentity title={session.title} tickets={session.tickets} status={<span className="inline-flex items-center gap-1.5 text-xs text-ink-muted"><Archive aria-hidden className="size-3.5" />Archived</span>} />
       <div className={cn('flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:border-t-0 md:pt-0')}>
         {kind !== 'test-run' && <Branches base={session.repo.baseRef} current={session.repo.branch} />}
