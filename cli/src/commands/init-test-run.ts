@@ -2,10 +2,10 @@
 // (through `<run>/test-run.json`); the session only holds the manifest and the review state.
 import { mkdir, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
-import { SCHEMA_VERSION, type TestRunManifest } from '@review-dash/shared'
+import { commentsSince, SCHEMA_VERSION, type TestRunManifest } from '@review-dash/shared'
 import { topLevel } from '@review-dash/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
-import { openSessionForRun, resetApprovedDecision } from '../sessions.ts'
+import { openSessionForRun, resetApprovedDecision, unapproveAfterRerun } from '../sessions.ts'
 import { newSessionId, sessionDir, writeManifest } from '../store.ts'
 
 export interface InitTestRunOptions {
@@ -91,7 +91,11 @@ export async function initTestRunSession(options: InitTestRunOptions): Promise<I
     tickets: options.tickets !== undefined && options.tickets.length > 0 ? options.tickets : (previous?.tickets ?? []),
   }
   const written = await writeManifest(dir, manifest)
-  if (open !== null) await resetApprovedDecision(open.dir, now)
+  if (open !== null) {
+    await resetApprovedDecision(open.dir, now)
+    // Published again: an approved item commented on since the previous publish needs another look.
+    await unapproveAfterRerun(open.dir, open.manifest, (review) => commentsSince(review, open.manifest.updatedAt), now)
+  }
   const url = dashboardUrl(await readConfig(options.home), id, 'test-run')
   return { id, dir, url, manifest: written, reused: previous !== null }
 }

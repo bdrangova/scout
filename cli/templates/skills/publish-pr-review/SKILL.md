@@ -32,6 +32,8 @@ For each finding, write a concise proposed PR comment explaining the trigger, co
 
 Attempt reproduction for critical, high and medium issues. Record environment, prerequisites, ordered step IDs, expected and actual behavior, and pinned head revision. Capture real screenshots using the session's browser tools and link each to its step with caption, capture timestamp and revision. Save PNG/JPEG/GIF/WebP files next to the report under relative paths. Never fabricate screenshots or label a sketch as reproduction evidence.
 
+A reproduction that needs the running app is attempted, never skipped because the dev server is not running: invoke `/run-app` first with what you need to reproduce (and `--record <mode>` when the user gave one), and record the reproduction as its `Record:` line says: a Playwright video for a flow, screenshots for a state. If it reports `App: not running`, mark the finding `blocked` with that reason.
+
 Use `reproduced` when steps demonstrate the failure. For non-visual defects use `non-visual`, explain why screenshots do not establish the issue, and attach real test/log output. For missing setup use `blocked`; for an attempted trigger that did not fail use `not-reproduced`. Every non-reproduced status needs a limitation. Critical/high/medium `reproduced` findings require screenshot evidence. Evidence and reproduction revision must equal the report head. Do not run destructive reproduction against live data without user authorization.
 
 ```sh

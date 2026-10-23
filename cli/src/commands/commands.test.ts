@@ -124,6 +124,22 @@ describe('init', () => {
     expect(fresh.id).not.toBe(m.id)
   })
 
+  it('unapproves a file commented on since the previous init when reusing', async () => {
+    const { repo } = await makeRepo(home)
+    const repoPath = (await gitText(repo, ['rev-parse', '--show-toplevel'])).trim()
+    const m = makeManifest({ id: '20260926-1000-a-aaaa', updatedAt: '2026-09-26T10:00:00.000Z', repo: { path: repoPath, remote: null, branch: 'feature/x', baseRef: 'origin/master' } })
+    const approved = { verdict: 'approved' as const, fingerprint: '0123456789abcdef', viewed: true }
+    const files = { 'a.txt': approved, 'b.txt': approved, 'c.txt': approved }
+    const comments = [
+      makeComment({ id: 'c1', target: { kind: 'file', ref: 'a.txt' }, createdAt: '2026-09-26T11:00:00.000Z' }),
+      makeComment({ id: 'c2', target: { kind: 'file', ref: 'b.txt' }, createdAt: '2026-09-26T09:00:00.000Z' }),
+    ]
+    await writeSession(home, m, makeReview({ files, comments }))
+    const reused = await initSession({ home, repo, now: new Date(T_NOW) })
+    const review = JSON.parse(await readFile(path.join(reused.dir, 'review', 'review.json'), 'utf8')) as Review
+    expect(review.files).toEqual({ 'a.txt': { verdict: 'none', fingerprint: null, viewed: true }, 'b.txt': approved, 'c.txt': approved })
+  })
+
   it('keeps a request-changes decision when reusing', async () => {
     const { repo } = await makeRepo(home)
     const repoPath = (await gitText(repo, ['rev-parse', '--show-toplevel'])).trim()
@@ -288,6 +304,17 @@ describe('resolve', () => {
     expect(JSON.parse(await readFile(path.join(dir, 'review', 'resolutions.json'), 'utf8'))).toEqual(merged)
   })
 
+  it('unapproves the files of the answered comments', async () => {
+    const m = makeManifest()
+    const approved = { verdict: 'approved' as const, fingerprint: '0123456789abcdef', viewed: true }
+    const comments = [makeComment({ id: 'c1' }), makeComment({ id: 'c2', target: { kind: 'file', ref: 'src/b.tsx' } })]
+    const dir = await writeSession(home, m, makeReview({ files: { 'src/a.tsx': approved, 'src/b.tsx': approved }, comments }))
+    await resolveComments({ home, id: m.id, items: [{ comment: 'c1', status: 'resolved', note: 'Renamed.' }], now: new Date(T_NOW) })
+    const review = JSON.parse(await readFile(path.join(dir, 'review', 'review.json'), 'utf8')) as Review
+    expect(review.files).toEqual({ 'src/a.tsx': { verdict: 'none', fingerprint: null, viewed: true }, 'src/b.tsx': approved })
+    expect(review.updatedAt).toBe(T_NOW)
+  })
+
   it('rejects unknown comment ids without writing', async () => {
     const m = makeManifest()
     const dir = await writeSession(home, m, makeReview({ comments: [makeComment({ id: 'c1' })] }))
@@ -373,6 +400,8 @@ describe('install', () => {
     expect(actions['.claude/skills/publish-review/SKILL.md']).toBe('created')
     expect(actions['.claude/skills/apply-review/SKILL.md']).toBe('created')
     expect(actions['.claude/skills/address-pr-comments/SKILL.md']).toBe('created')
+    expect(actions['.claude/skills/run-app/SKILL.md']).toBe('created')
+    expect(actions['.agents/skills/run-app/SKILL.md']).toBe('created')
     expect(actions['.claude/hooks/ai_review_pending_feedback.sh']).toBe('created')
     expect(actions['.claude/settings.local.json']).toBe('updated')
     expect(actions['.gitignore']).toBe('created')

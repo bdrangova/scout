@@ -1,8 +1,8 @@
 ---
 name: apply-review
 description: Apply reviewer feedback from the review-dash dashboard (rejected files, file, evidence, spec, extra and overall comments) by changing the working tree and recording a resolution for every comment. Use when the user says "apply the review", "address the review feedback", runs /apply-review, or when a hook reports open review comments for this repo.
-argument-hint: "<sessionId> [--auto]"
-allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr create *) Bash(gh pr view *) Bash(npm test*) Bash(npm run *) Bash(npx vitest *) Bash(npx prettier *) Bash(npx eslint *) Bash(npx oxlint *) Read Edit Write Grep Glob AskUserQuestion
+argument-hint: "<sessionId> [--record video|screenshots|none] [--auto]"
+allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr create *) Bash(gh pr view *) Bash(npm test*) Bash(npm run *) Bash(npx vitest *) Bash(npx prettier *) Bash(npx eslint *) Bash(npx oxlint *) Read Edit Write Grep Glob AskUserQuestion Skill Bash(npx playwright *) mcp__playwright__*
 ---
 # Apply review feedback: $0
 
@@ -20,6 +20,7 @@ Arguments: $ARGUMENTS
 - Never commit or stage, except in the PR step below. Do not touch files outside the reviewed change unless a comment requires it.
 - The dashboard reads the working tree live: a file you change shows as updated the moment you save it, and the reviewer sees your resolutions as you record them. There is nothing to publish or resend.
 - Keep notes concrete: what you changed, where, and how you verified it.
+- **Running the app.** When a check needs the running app (reproducing what a comment describes, verifying a fix, capturing evidence), invoke `/run-app` first (Skill tool; pass what you need to check, `--record <mode>` when the arguments have one, and `--auto` when you have it). Record the reproduction as its `Record:` line says (Playwright video or screenshots) into `ai-review path <sessionId> evidence` (with its `index.json` entry), and cite the files. Never skip a reproduction or a check because the dev server was not running. If it reports `App: not running`, say so in the note and leave the comment `--status open` instead of claiming it was verified.
 - With `--auto` in the arguments or `AI_REVIEW_HEADLESS=1` set, never wait for user input: skip step 0, take its recommended answers, and when a comment is ambiguous reply with `--status open` and a specific question instead of guessing. Without either, ask the user about an ambiguous comment (AskUserQuestion) before you change anything for it.
 - `<sessionId>` below means `$0`, the first argument.
 

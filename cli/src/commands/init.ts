@@ -3,10 +3,10 @@
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { SCHEMA_VERSION, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR, type CodeReviewManifest } from '@review-dash/shared'
+import { commentsSince, SCHEMA_VERSION, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR, type CodeReviewManifest } from '@review-dash/shared'
 import { currentBranch, defaultBase, refExists, remoteUrl, topLevel } from '@review-dash/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
-import { openSessionForBranch, resetApprovedDecision } from '../sessions.ts'
+import { openSessionForBranch, resetApprovedDecision, unapproveAfterRerun } from '../sessions.ts'
 import { initTestRunSession, type InitTestRunResult } from './init-test-run.ts'
 import { newSessionId, resolveHome, sessionDir, writeManifest } from '../store.ts'
 
@@ -89,7 +89,11 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
     tickets,
   }
   const written = await writeManifest(dir, manifest)
-  if (open !== null) await resetApprovedDecision(open.dir, now)
+  if (open !== null) {
+    await resetApprovedDecision(open.dir, now)
+    // Published again: an approved item commented on since the previous publish needs another look.
+    await unapproveAfterRerun(open.dir, open.manifest, (review) => commentsSince(review, open.manifest.updatedAt), now)
+  }
   const url = dashboardUrl(await readConfig(options.home), id)
   return { id, dir, url, manifest: written, reused: previous !== null }
 }

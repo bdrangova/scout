@@ -27,6 +27,8 @@ const TEMPLATE_FILES = [
   { from: 'skills/publish-data-setup/SKILL.md', to: '.claude/skills/publish-data-setup/SKILL.md', mode: 0o644 },
   { from: 'skills/publish-test-run/SKILL.md', to: '.claude/skills/publish-test-run/SKILL.md', mode: 0o644 },
   { from: 'skills/apply-test-review/SKILL.md', to: '.claude/skills/apply-test-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/run-app/SKILL.md', to: '.claude/skills/run-app/SKILL.md', mode: 0o644 },
+  { from: 'skills/run-app/SKILL.md', to: '.agents/skills/run-app/SKILL.md', mode: 0o644 },
   { from: `hooks/${PENDING_HOOK}`, to: `.claude/hooks/${PENDING_HOOK}`, mode: 0o755 },
 ] as const
 

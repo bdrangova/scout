@@ -1,8 +1,8 @@
 ---
 name: publish-review
 description: Open (or refresh) a review-dash session for the current implementation and fill it with evidence (screenshots, recordings), the Jira snapshot, plan docs, extra artifacts and a PR description so the developer can review the live working tree in the dashboard. Use when the user says "publish for review", "send this to review", runs /publish-review, or when a ticket implementation is complete.
-argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full] [--auto]"
-allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git merge-base *) Bash(git hash-object *) Bash(cp *) Bash(mkdir *) Bash(ls *) Bash(rm *) Bash(npx playwright *) Read Write Edit Glob AskUserQuestion mcp__atlassian__getJiraIssue mcp__atlassian__getAccessibleAtlassianResources mcp__atlassian__atlassianUserInfo mcp__playwright__*
+argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full] [--record video|screenshots|none] [--auto]"
+allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git merge-base *) Bash(git hash-object *) Bash(cp *) Bash(mkdir *) Bash(ls *) Bash(rm *) Bash(npx playwright *) Read Write Edit Glob AskUserQuestion mcp__atlassian__getJiraIssue mcp__atlassian__getAccessibleAtlassianResources mcp__atlassian__atlassianUserInfo mcp__playwright__* Skill
 ---
 # Publish the current work for review
 
@@ -22,6 +22,7 @@ soon as they land and updates while you keep working.
 - Never commit, stage, stash or modify repository files in this skill. Write only into the session folder returned by step 1.
 - Use absolute paths for every file you write. Never write into the repo's `.claude/` or `plans/`.
 - If a step's tool is unavailable (no Atlassian connector, no browser tool), skip it and list it under "Not captured" in the PR description.
+- **Running the app.** When a check needs the running app (reproducing what a comment describes, verifying a fix, capturing evidence), invoke `/run-app` first (Skill tool; pass what you need to check, `--record <mode>` when the arguments have one, and `--auto` when you have it). Record the reproduction as its `Record:` line says (Playwright video or screenshots) into `<evidence>/` as in the Evidence step, and cite the files. Never skip a reproduction or a check because the dev server was not running. If it reports `App: not running`, list the capture under "Not captured" with the reason.
 - If `AI_REVIEW_HEADLESS=1` is set, never wait for user input: act as if `--auto` were given.
 - `rm` only files inside the session folder, never anything in the repository.
 

@@ -12,9 +12,14 @@ import {
   SentSnapshotSchema,
   ResolutionsSchema,
   ReviewSchema,
+  TEST_RUN_INDEX_FILE,
+  TestRunIndexSchema,
   isTestRun,
   isTestRunSent,
   mergeComments,
+  runFileOwners,
+  unapproveCommented,
+  type Comment,
   type CodeReviewManifest,
   type Manifest,
   type TestRunManifest,
@@ -237,4 +242,19 @@ export async function resetApprovedDecision(dir: string, now: string): Promise<v
   const review = await readReview(dir)
   if (review === null || review.sent?.decision !== 'approve' || review.overall.decision === 'undecided') return
   await writeReview(dir, { ...review, overall: { decision: 'undecided' }, updatedAt: now })
+}
+
+/** The `run-file` owners of a test-run session's index; empty for a code review or when the index is missing or invalid. */
+async function runFileOwnersOf(manifest: Manifest): Promise<Map<string, string>> {
+  if (!isTestRun(manifest)) return new Map()
+  const parsed = TestRunIndexSchema.safeParse(await readJson(path.join(manifest.run.path, TEST_RUN_INDEX_FILE)))
+  return parsed.success ? runFileOwners(parsed.data) : new Map()
+}
+
+/** A rerun: approved items (files, scenarios) with one of the picked comments lose their verdict (see `unapproveCommented`). */
+export async function unapproveAfterRerun(dir: string, manifest: Manifest, pick: (review: Review) => readonly Comment[], now: string): Promise<void> {
+  const review = await readReview(dir)
+  if (review === null) return
+  const next = unapproveCommented(review, pick(review), now, await runFileOwnersOf(manifest))
+  if (next !== review) await writeReview(dir, next)
 }

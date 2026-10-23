@@ -4,8 +4,8 @@ import path from 'node:path'
 import { z } from 'zod'
 import type { Command } from 'commander'
 import { COMMENT_ID_RE, SCHEMA_VERSION, type Resolutions } from '@review-dash/shared'
-import { RESOLUTIONS_FILE, readResolutions, readReview, writeResolutions } from '../sessions.ts'
-import { manifestExists, resolveHome, sessionDir } from '../store.ts'
+import { RESOLUTIONS_FILE, readResolutions, readReview, unapproveAfterRerun, writeResolutions } from '../sessions.ts'
+import { manifestExists, readManifest, resolveHome, sessionDir } from '../store.ts'
 
 export const ResolveItemSchema = z.object({
   comment: z.string().regex(COMMENT_ID_RE),
@@ -38,6 +38,9 @@ export async function resolveComments(options: ResolveOptions): Promise<{ resolu
     comments[item.comment] = { status: item.status, note: item.note, at: nowIso, files: item.files ?? [] }
   }
   const resolutions = await writeResolutions(dir, { schemaVersion: SCHEMA_VERSION, sessionId: options.id, updatedAt: nowIso, comments })
+  // The agent answered these comments: an approved file or scenario they are on needs another look.
+  const answered = new Set(options.items.map((item) => item.comment))
+  await unapproveAfterRerun(dir, await readManifest(dir), (current) => current.comments.filter((comment) => answered.has(comment.id)), nowIso)
   return { resolutions, file: path.join(dir, RESOLUTIONS_FILE) }
 }
 
