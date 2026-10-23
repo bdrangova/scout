@@ -62,7 +62,7 @@ export function LiveSessionCard({ session, onArchive, layout = 'grid' }: { sessi
           {session.pr && <><span aria-hidden className="mx-1 text-ink-muted">|</span><a href={session.pr.url} target="_blank" rel="noreferrer" aria-label={`PR #${session.pr.number} · ${session.pr.state}`} title={`PR #${session.pr.number} · ${session.pr.state}`} onClick={(event) => event.stopPropagation()} className="inline-flex shrink-0 items-center gap-1.5 cursor-pointer rounded-md px-1 py-0.5 text-info-bd underline-offset-4 hover:bg-hover hover:underline focus-visible:bg-hover focus-visible:underline"><GitPullRequest aria-hidden className="size-3.5" /><span>#{session.pr.number}</span></a></>}
         </Branches>}
       </div>
-      <div className={cn('mt-auto flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:mt-0 md:border-t-0 md:pt-0')}>
+      <div className={cn('mt-auto flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && '-mt-2 border-t-0 pt-0')}>
 
         {run && <SessionStatusLabel status={run === 'working' ? 'agent-working' : 'run-failed'} />}
         <div className="flex min-w-0 items-center gap-2 text-[11px] text-ink-muted">
@@ -83,7 +83,7 @@ export function ArchivedSessionCard({ session, onRestore, onDelete, kind = 'code
         {kind !== 'test-run' && <Branches base={session.repo.baseRef} current={session.repo.branch} />}
         <CardLine label="Archive dates" className="text-[11px] text-ink-muted"><span>Created <CardTime at={session.createdAt} /></span><span>· Updated <CardTime at={session.updatedAt} /></span><span>· Archived <CardTime at={session.archivedAt} /></span></CardLine>
       </div>
-      <div className={cn('mt-auto flex min-w-0 items-center gap-2 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:mt-0 md:border-t-0 md:pt-0')}>
+      <div className={cn('mt-auto flex min-w-0 items-center gap-2 border-t-fine border-line/30 pt-3', layout === 'list' && '-mt-2 border-t-0 pt-0')}>
         <CardLine label="Session metadata" className="flex-1 text-[11px] text-ink-muted"><RepoName path={session.repo.path} /><span title={session.id} className="font-mono">· {session.id}</span></CardLine>
         <Button size="sm" onClick={() => onRestore(session)} aria-label={`Restore ${session.title}`}><ArchiveRestore aria-hidden />Restore</Button>
         <Button variant="ghost" size="icon-sm" onClick={() => onDelete(session)} title="Delete permanently" aria-label={`Delete ${session.title}`} className="shrink-0 text-ink-muted hover:bg-red-solid hover:text-on-red"><Trash2 aria-hidden /></Button>
