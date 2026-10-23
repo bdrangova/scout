@@ -1,4 +1,4 @@
-import { ScoutMark } from '@/components/brand/Scout';
+import { ScoutMascot } from '@/components/brand/Scout';
 import { ArrowLeftIcon, SendIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
@@ -34,7 +34,7 @@ export function ScenarioComplete({ sessionId, onBack, children }: ScenarioComple
             </PanelTitle>
           </PanelHeader>
           <PanelBody className="flex flex-col items-center gap-5 px-7 pt-[26px] pb-[22px]">
-            <ScoutMark className="size-24" />
+            <ScoutMascot mode="ready" />
             <Notice tone="ok" data-status="ready">
               Every scenario has a verdict
             </Notice>

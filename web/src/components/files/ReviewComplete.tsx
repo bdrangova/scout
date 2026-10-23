@@ -1,4 +1,4 @@
-import { ScoutMark } from '@/components/brand/Scout'
+import { ScoutMascot } from '@/components/brand/Scout'
 import type { CodeReviewDetail } from '@review-dash/shared'
 import { ArrowLeftIcon, FileTextIcon, ImageIcon, PackageIcon, SendIcon, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -45,7 +45,7 @@ export function ReviewComplete({ sessionId, detail, onBack, children }: ReviewCo
             </PanelTitle>
           </PanelHeader>
           <PanelBody className="flex flex-col items-center gap-5 px-7 pt-[26px] pb-[22px]">
-            <ScoutMark className="size-24" />
+            <ScoutMascot mode="ready" />
             <Notice tone="ok" data-status="ready">
               Ready to submit
             </Notice>

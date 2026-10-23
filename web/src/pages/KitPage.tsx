@@ -95,6 +95,10 @@ export function KitPage() {
               <ScoutMascot mode="working" className="w-64" />
               <figcaption>Working · active agent run</figcaption>
             </figure>
+            <figure className="m-0 flex flex-col items-center text-center text-xs font-medium text-ink-muted">
+              <ScoutMascot mode="ready" />
+              <figcaption>Ready · review complete</figcaption>
+            </figure>
           </Section>
           <Section title="Tokens">
             {SWATCHES.map((name) => (

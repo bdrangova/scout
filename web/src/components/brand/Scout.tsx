@@ -6,11 +6,12 @@ export function ScoutMark({ className }: { className?: string }) {
 }
 
 /** Select the still before downloading an animation when reduced motion is requested. */
-export function ScoutMascot({ mode = 'idle', className }: { mode?: 'idle' | 'working'; className?: string }) {
+export function ScoutMascot({ mode = 'idle', className }: { mode?: 'idle' | 'working' | 'ready'; className?: string }) {
   return (
-    <picture aria-hidden className={cn('block w-80 max-w-full shrink-0', className)}>
-      <source media="(prefers-reduced-motion: reduce)" srcSet="/brand/scout-head.png" />
-      <img src={`/brand/scout-${mode}.gif`} alt="" width={800} height={450} className="scout-art aspect-video w-full object-contain" />
+    <picture aria-hidden className={cn('block max-w-full shrink-0', mode === 'ready' ? 'w-64' : 'w-80', className)}>
+      <source media="(prefers-reduced-motion: reduce)" srcSet={mode === 'ready' ? '/brand/scout-ready-still.png' : '/brand/scout-head.png'} />
+      {mode !== 'ready' && <source type="image/webp" srcSet={`/brand/scout-${mode}.webp`} />}
+      <img src={`/brand/scout-${mode}.${mode === 'ready' ? 'webp' : 'gif'}`} alt="" width={800} height={450} className="scout-art aspect-video w-full object-contain" />
     </picture>
   )
 }
