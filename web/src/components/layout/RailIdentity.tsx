@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Folder } from 'lucide-react'
 import { BranchRef } from '@/components/common/BranchRef'
+import { PrReportSummary } from '@/components/prreview/ReportNotice'
 import { DiffStats } from '@/components/session/DiffStats'
 import { TicketStrip } from '@/components/session/TicketStrip'
 import { baseTooltip } from '@/lib/branch-tooltip'
@@ -67,6 +68,7 @@ export function RailIdentity({ density, onToggleDensity }: RailIdentityProps) {
           <BranchRef name={branch} className="max-w-full min-w-0" />
         </BranchLine>
       </div>
+      <PrReportSummary />
     </div>
   )
 }
