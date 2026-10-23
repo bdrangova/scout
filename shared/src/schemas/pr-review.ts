@@ -25,7 +25,7 @@ export const PrFindingSchema = z.object({
     limitation: z.string().nullable(),
     evidence: z.array(z.object({
       path: PrReviewPathSchema,
-      kind: z.enum(['screenshot', 'log', 'test']),
+      kind: z.enum(['screenshot', 'video', 'log', 'test']),
       caption: z.string().min(1),
       stepId: z.string().min(1),
       capturedAt: date,
@@ -66,9 +66,10 @@ export const PrReviewReportSchema = z.object({
     if (r.evidence.some((e) => !r.steps.some((s) => s.id === e.stepId))) issue('evidence references an unknown step')
     if (r.status !== 'reproduced' && !r.limitation?.trim()) issue('verification limitations must be explained')
     if (r.status === 'reproduced' && r.steps.length === 0) issue('reproduced findings require steps')
-    if (f.severity !== 'low' && r.status === 'reproduced' && !r.evidence.some((e) => e.kind === 'screenshot')) issue('reproduced critical/high/medium findings require screenshots; use non-visual with test/log evidence when appropriate')
-    if (r.status === 'non-visual' && !r.evidence.some((e) => e.kind !== 'screenshot')) issue('non-visual findings require test/log evidence')
+    if (f.severity !== 'low' && r.status === 'reproduced' && !r.evidence.some((e) => e.kind === 'screenshot' || e.kind === 'video')) issue('reproduced critical/high/medium findings require a screenshot or video; use non-visual with test/log evidence when appropriate')
+    if (r.status === 'non-visual' && !r.evidence.some((e) => e.kind === 'log' || e.kind === 'test')) issue('non-visual findings require test/log evidence')
     if (r.evidence.some((e) => e.kind === 'screenshot' && !/\.(png|jpe?g|gif|webp)$/i.test(e.path))) issue('screenshots must be PNG, JPEG, GIF or WebP')
+    if (r.evidence.some((e) => e.kind === 'video' && !/\.(webm|mp4)$/i.test(e.path))) issue('videos must be WebM or MP4')
   })
 })
 export type PrReviewReport = z.infer<typeof PrReviewReportSchema>

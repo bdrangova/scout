@@ -36,8 +36,9 @@ beforeAll(async () => {
   report.findings[0]!.anchor.line = parsePatchLines(result.patches.get('a.ts')!).find((r) => r.new !== null)!.new!
   const r = report.findings[0]!.reproduction
   r.status = 'reproduced'; r.limitation = null; r.actual = 'The plan changes despite the declined payment.'
-  r.evidence = [{ path: 'capture.png', caption: 'Fixture evidence', kind: 'screenshot', stepId: 's1', capturedAt: T0, revision: tree.headSha }]
+  r.evidence = [{ path: 'capture.png', caption: 'Fixture evidence', kind: 'screenshot', stepId: 's1', capturedAt: T0, revision: tree.headSha }, { path: 'flow.webm', caption: 'Fixture video', kind: 'video', stepId: 's1', capturedAt: T0, revision: tree.headSha }]
   await fs.writeFile(path.join(home, 'capture.png'), pngBytes(1))
+  await fs.writeFile(path.join(home, 'flow.webm'), Buffer.concat([Buffer.from([0x1a, 0x45, 0xdf, 0xa3]), Buffer.alloc(96, 7)]))
   await fs.writeFile(path.join(dir, 'manifest.json'), JSON.stringify(makeManifest({ id, kind: 'pr-review', repo: { path: repo, baseRef: 'main', branch: 'feature/review', remote: null } })))
   report = await publishReport(dir, report, home, tree, result.patches)
   review = emptyReview(id)
@@ -64,6 +65,14 @@ describe('PR review sessions', () => {
     expect((await request(app).get(url)).status).toBe(404)
     expect((await request(app).post(`/api/sessions/${id}/pr-review/export`).send(exportBody())).status).toBe(409)
     await fs.writeFile(path.join(reportMediaRoot(dir, report), 'capture.png'), pngBytes(1))
+  })
+  it('serves a video with its type and answers Range requests', async () => {
+    const url = `/api/sessions/${id}/pr-review/media/flow.webm?revision=${reportRevision(report)}`
+    const full = await request(app).get(url)
+    expect(full.status).toBe(200); expect(full.headers['content-type']).toBe('video/webm'); expect(full.headers['accept-ranges']).toBe('bytes')
+    const part = await request(app).get(url).set('Range', 'bytes=0-3').buffer(true).parse((res, done) => { const chunks: Buffer[] = []; res.on('data', (c: Buffer) => chunks.push(c)); res.on('end', () => done(null, Buffer.concat(chunks))) })
+    expect(part.status).toBe(206); expect(part.headers['content-range']).toBe('bytes 0-3/100'); expect(part.body).toEqual(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))
+    expect((await request(app).get(url).set('Range', 'bytes=500-')).status).toBe(416)
   })
   it('exports exact wording as an immutable snapshot without sending or dispatching', async () => {
     const before = await fs.readFile(path.join(dir, 'review', 'review.json'), 'utf8')

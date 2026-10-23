@@ -20,8 +20,21 @@ export function prReviewRouter(store: Store): Router {
     let bytes: Buffer
     try { bytes = await verifiedMedia(session.dir, report, rel) }
     catch (e) { throw notFound(e instanceof Error ? e.message : 'evidence unavailable') }
-    const type = /\.(png|jpe?g|gif|webp)$/i.test(rel) ? mimeFromPath(rel) : 'text/plain; charset=utf-8'
-    res.set('Content-Security-Policy', 'sandbox').set('X-Content-Type-Options', 'nosniff').type(type ?? 'application/octet-stream').send(bytes)
+    const type = /\.(png|jpe?g|gif|webp|webm|mp4)$/i.test(rel) ? mimeFromPath(rel) : 'text/plain; charset=utf-8'
+    res.set('Content-Security-Policy', 'sandbox').set('X-Content-Type-Options', 'nosniff').set('Accept-Ranges', 'bytes').type(type ?? 'application/octet-stream')
+    // Video seeks with Range requests; one `bytes=start-end` range is enough for a <video>.
+    const range = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range ?? ''))
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, bytes.length - Number(range[2]))
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), bytes.length - 1) : bytes.length - 1
+      if (start >= bytes.length || start > end) {
+        res.status(416).set('Content-Range', `bytes */${bytes.length}`).end()
+        return
+      }
+      res.status(206).set('Content-Range', `bytes ${start}-${end}/${bytes.length}`).send(bytes.subarray(start, end + 1))
+      return
+    }
+    res.send(bytes)
   })
   router.post('/sessions/:id/pr-review/export', async (req, res) => {
     const session = await store.loadSession(req.params.id)

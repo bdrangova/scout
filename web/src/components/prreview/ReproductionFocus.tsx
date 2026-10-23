@@ -1,8 +1,9 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 import type { PrFinding } from '@review-dash/shared'
 import { ChevronDown } from 'lucide-react'
 import { EvidenceNav } from '@/components/evidence/EvidenceNav'
 import { ImageViewer } from '@/components/evidence/ImageViewer'
+import { VideoPlayer } from '@/components/evidence/VideoPlayer'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Notice } from '@/components/ui/notice'
@@ -10,6 +11,12 @@ import { Tag } from '@/components/ui/tag'
 
 import { EvidenceLog } from './EvidenceLog'
 import { type EvidenceItem } from './reproduction-evidence'
+
+/** A reproduction video: the shared player without comment markers; it stops when you move to another item. */
+function FocusVideo({ src }: { src: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  return <VideoPlayer src={src} videoRef={videoRef} comments={[]} activeCommentId={null} active onTimeUpdate={() => {}} />
+}
 
 export interface ReproductionFocusProps {
   finding: PrFinding
@@ -38,6 +45,8 @@ export function ReproductionFocus({ finding, items, srcOf, index, onIndexChange 
   }
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.metaKey || event.ctrlKey || event.altKey) return
+    // Inside the video player the arrows seek.
+    if (event.target instanceof Element && event.target.closest('media-controller')) return
     const delta = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0
     if (delta === 0) return
     // Consumed here, so the page's own ←/→ (move between files) stays put behind the dialog.
@@ -74,7 +83,7 @@ export function ReproductionFocus({ finding, items, srcOf, index, onIndexChange 
           </div>}
         </header>
         <div className="flex min-h-0 flex-col p-3">
-          {item.kind === 'screenshot' ? <ImageViewer key={srcOf(item)} src={srcOf(item)} alt={item.caption} /> : <EvidenceLog src={srcOf(item)} />}
+          {item.kind === 'screenshot' ? <ImageViewer key={srcOf(item)} src={srcOf(item)} alt={item.caption} /> : item.kind === 'video' ? <FocusVideo key={srcOf(item)} src={srcOf(item)} /> : <EvidenceLog src={srcOf(item)} />}
         </div>
       </>}
     </DialogContent>

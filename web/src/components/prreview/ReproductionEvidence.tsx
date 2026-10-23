@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { PrFinding } from '@review-dash/shared'
 import { hashPrBody } from '@review-dash/shared'
-import { ChevronRight, Focus } from 'lucide-react'
+import { ChevronRight, Focus, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tag } from '@/components/ui/tag'
 import { Notice } from '@/components/ui/notice'
@@ -12,10 +12,17 @@ import { EvidenceLog } from './EvidenceLog'
 import { ReproductionFocus } from './ReproductionFocus'
 import { orderedEvidence, type EvidenceItem } from './reproduction-evidence'
 
-/** One evidence item per row: screenshots as a thumbnail beside the caption, logs as a full-width code box that collapses. */
+/** One evidence item per row: screenshots and videos as a thumbnail beside the caption, logs as a full-width code box that collapses. */
 function EvidenceRow({ src, item, onOpen }: { src: string; item: EvidenceItem; onOpen: () => void }) {
   const [failed, setFailed] = useState(false)
   const caption = <><span className="font-mono font-semibold">Step {item.stepId}</span> · {item.caption} · {new Date(item.capturedAt).toLocaleString()}</>
+  if (item.kind === 'video') return <li className="flex items-center gap-3">
+    <Button variant="ghost" className="relative h-auto shrink-0 p-1" aria-label={`Play ${item.caption}`} onClick={onOpen}>
+      <video src={`${src}#t=0.1`} preload="metadata" muted playsInline className="h-14 w-24 rounded-md bg-sunken object-cover object-top" />
+      <span className="absolute inset-0 flex items-center justify-center"><Play aria-hidden className="size-6 rounded-full bg-ink/70 p-1.5 text-paper" /></span>
+    </Button>
+    <span className="min-w-0 flex-1 text-xs text-ink-muted"><Tag>video</Tag> {caption}</span>
+  </li>
   if (item.kind !== 'screenshot') return <li><details open className="group flex flex-col gap-1.5">
     <summary className="flex cursor-pointer list-none items-center gap-2 text-xs text-ink-muted"><ChevronRight aria-hidden className="size-3.5 shrink-0 transition-transform group-open:rotate-90" /><Tag>{item.kind}</Tag><span className="min-w-0 flex-1">{caption}</span></summary>
     <EvidenceLog src={src} className="mt-1.5 max-h-72 w-full" />

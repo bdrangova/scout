@@ -18,20 +18,23 @@ export async function readReport(dir: string): Promise<PrReviewReport | null> {
   return PrReviewReportSchema.parse(JSON.parse(text))
 }
 /** A real file confined to its real root; symlink escapes and directories are rejected. */
-export async function mediaBytes(root: string, relative: string): Promise<Buffer> {
+/** Screenshots and logs stay small; a reproduction video gets more room. */
+export const MEDIA_MAX_BYTES = 20 * 1024 * 1024
+export const VIDEO_MAX_BYTES = 200 * 1024 * 1024
+export async function mediaBytes(root: string, relative: string, maxBytes = MEDIA_MAX_BYTES): Promise<Buffer> {
   if (!relative || path.isAbsolute(relative) || relative.includes('\\') || relative.split('/').some((s) => s === '..' || s === '.' || s === '')) throw new Error('invalid media path')
   const base = await realpath(root)
   const file = await realpath(path.join(base, relative))
   if (!file.startsWith(base + path.sep)) throw new Error(`media escapes its report folder: ${relative}`)
   const info = await stat(file)
-  if (!info.isFile() || info.size > 20 * 1024 * 1024) throw new Error(`media must be a file of at most 20 MB: ${relative}`)
+  if (!info.isFile() || info.size > maxBytes) throw new Error(`media must be a file of at most ${maxBytes / 1024 / 1024} MB: ${relative}`)
   return readFile(file)
 }
 const hashBytes = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex')
 export async function verifiedMedia(dir: string, report: PrReviewReport, relative: string): Promise<Buffer> {
   const ref = report.findings.flatMap((f) => f.reproduction.evidence).find((e) => e.path === relative)
   if (!ref?.sha256) throw new Error(`unpublished evidence: ${relative}`)
-  const bytes = await mediaBytes(reportMediaRoot(dir, report), relative)
+  const bytes = await mediaBytes(reportMediaRoot(dir, report), relative, ref.kind === 'video' ? VIDEO_MAX_BYTES : MEDIA_MAX_BYTES)
   if (hashBytes(bytes) !== ref.sha256) throw new Error(`evidence changed since import: ${relative}`)
   return bytes
 }
@@ -48,13 +51,18 @@ export async function publishReport(dir: string, input: unknown, sourceRoot: str
   validateReportTree(report, tree, patches)
   const media = new Map<string, Buffer>()
   for (const f of report.findings) for (const e of f.reproduction.evidence) {
-    const bytes = await mediaBytes(sourceRoot, e.path)
+    const bytes = await mediaBytes(sourceRoot, e.path, e.kind === 'video' ? VIDEO_MAX_BYTES : MEDIA_MAX_BYTES)
     if (e.kind === 'screenshot') {
       const png = bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]))
       const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
       const gif = /^GIF8[79]a/.test(bytes.subarray(0, 6).toString())
       const webp = bytes.subarray(0,4).toString() === 'RIFF' && bytes.subarray(8,12).toString() === 'WEBP'
       if (!png && !jpeg && !gif && !webp) throw new Error(`invalid screenshot bytes: ${e.path}`)
+    }
+    if (e.kind === 'video') {
+      const webm = bytes.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))
+      const mp4 = bytes.subarray(4, 8).toString() === 'ftyp'
+      if (!webm && !mp4) throw new Error(`invalid video bytes: ${e.path}`)
     }
     e.sha256 = hashBytes(bytes)
     media.set(e.path, bytes)

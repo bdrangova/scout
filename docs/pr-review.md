@@ -10,7 +10,7 @@ PR review is the third session tab, at `/pr`. It reuses the Development session 
 2. `ai-review init --kind pr-review --repo <checkout> --base <target-ref> --title <title>` creates/reuses a PR session independently of Development sessions on that branch. Archived sessions are never reused.
 3. `ai-review pr-report template <id> --pr <url> --number <number> --repository <owner/repo>` prints revisions and the complete changed-file/fingerprint list.
 4. `ai-review pr-report schema` prints the JSON schema. Any review skill can produce it; record its name/version and finding sources. Deduplication belongs to the session's review chain.
-5. Write a report and real evidence outside the checkout. Evidence paths are relative to the report JSON. Schema validation enforces step links, revision, verification limits and screenshot or non-visual evidence requirements.
+5. Write a report and real evidence outside the checkout. Evidence paths are relative to the report JSON. Schema validation enforces step links, revision, verification limits and screenshot/video or non-visual evidence requirements. Videos are WebM or MP4 up to 200 MB; other evidence up to 20 MB.
 6. `ai-review pr-report validate <id> <report.json>` checks against git. `ai-review pr-report import <id> <report.json>` validates, copies and hashes evidence, stores an immutable report version, then replaces the active report atomically. Invalid import leaves the last report intact.
 
 `ai-review pr-report show <id>` returns the current source report and human review state, including private reviewer notes, for a follow-up session-side pass.
@@ -19,7 +19,7 @@ The active report is `<session>/pr-review.json`. Immutable sources/media live un
 
 ## Human review
 
-All changed files remain reviewable, including those without suggestions. Approve/Reject/Comment in the file footer operate on the file. Proposed comments appear at old/new line ranges; their explicit actions affect only that proposal. Editing wording clears its approval. Comment on suggestion adds a private agent note, excluded from the PR summary. Reproduction and step-linked screenshots/test/log evidence appear below the diff; images use the existing zoom viewer in a dialog. A scope or preview that cannot place a suggestion shows it separately rather than on a guessed line.
+All changed files remain reviewable, including those without suggestions. Approve/Reject/Comment in the file footer operate on the file. Proposed comments appear at old/new line ranges; their explicit actions affect only that proposal. Editing wording clears its approval. Comment on suggestion adds a private agent note, excluded from the PR summary. Reproduction and step-linked screenshot/video/test/log evidence appear below the diff, one row per item in step order; Focus steps through it full screen (images in the zoom viewer, videos in the player, logs as text). A scope or preview that cannot place a suggestion shows it separately rather than on a guessed line.
 
 Refreshes preserve human state. Proposal approval is pinned to finding data, evidence hashes, reviewer versions, file fingerprint and base/head. Changed report contents require reapproval; a changed live diff makes the report stale and excludes all generated approvals until refreshed. Invalid/missing media cannot be exported as verified evidence. Existing file fingerprint rules invalidate file verdicts independently.
 

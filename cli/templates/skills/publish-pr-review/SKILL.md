@@ -30,7 +30,7 @@ For each finding, write a concise proposed PR comment explaining the trigger, co
 
 ## Verify and publish
 
-Reproduce every critical, high and medium finding with `/reproduce` (Skill tool): pass the finding's trigger, expected and actual behaviour and the code it points at, `--session <session-id>`, `--evidence <folder next to the report>`, and `--record`/`--auto` when you have them. Findings that need the same data get the same `--setup-key`, so the data is set up once and every later finding restores its database checkpoint instead. Put the `reproduction` object it returns into the finding as is; never upgrade its status or drop its limitation. Critical/high/medium `reproduced` findings require screenshot evidence, and every evidence item's revision must equal the report head. Do not run destructive reproduction against live data without user authorization.
+Reproduce every critical, high and medium finding with `/reproduce` (Skill tool): pass the finding's trigger, expected and actual behaviour and the code it points at, `--session <session-id>`, `--evidence <folder next to the report>`, and `--record`/`--auto` when you have them. Findings that need the same data get the same `--setup-key`, so the data is set up once and every later finding restores its database checkpoint instead. Put the `reproduction` object it returns into the finding as is; never upgrade its status or drop its limitation. Critical/high/medium `reproduced` findings require screenshot or video evidence (videos: WebM/MP4), and every evidence item's revision must equal the report head. Do not run destructive reproduction against live data without user authorization.
 
 ```sh
 ai-review pr-report validate <session-id> <report.json>

@@ -33,7 +33,7 @@ Arguments: $ARGUMENTS
 
 ## Evidence
 - Folder: `--evidence <dir>`, else `$(ai-review path <id> evidence)` with `--session`, else `.ai-review-evidence/` at the checkout root.
-- Files: PNG/JPEG/GIF/WebP screenshots, WebM/MP4 video, text logs; descriptive names (`s4-category-still-proposed.png`). Screenshots with `mcp__playwright__browser_take_screenshot` and an absolute `filename`; video as `/run-app` describes.
+- Files: PNG/JPEG/GIF/WebP screenshots (`screenshot`, up to 20 MB), WebM/MP4 video (`video`, up to 200 MB), text logs (`log`/`test`); descriptive names (`s4-category-still-proposed.png`). Screenshots with `mcp__playwright__browser_take_screenshot` and an absolute `filename`; video as `/run-app` describes.
 - Always include the checkpoint's `manifest.json` as a `log` on the first step that uses the data (caption: "DB checkpoint after setup: <db>, <time>, saved|restored"). Never the dump.
 
 ## Report
@@ -49,7 +49,7 @@ Return the record in this shape (the `reproduction` object of a PR review findin
   "expected": "<what should happen>",
   "actual": "<what happened>",
   "limitation": "<what a reviewer must know> | null",
-  "evidence": [{ "path": "<relative to the evidence folder>", "kind": "screenshot | log | test", "caption": "<what it shows>", "stepId": "s1", "capturedAt": "<ISO time>", "revision": "<head sha>" }]
+  "evidence": [{ "path": "<relative to the evidence folder>", "kind": "screenshot | video | log | test", "caption": "<what it shows>", "stepId": "s1", "capturedAt": "<ISO time>", "revision": "<head sha>" }]
 }
 ```
 
