@@ -22,7 +22,7 @@ export function TicketChip({ ticket, className, quiet = false }: TicketChipProps
         title={`Open ${ticket.key}`}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
-        className={cn(quiet ? 'inline-flex shrink-0 items-center gap-1.5 font-mono text-[11px] font-medium text-info-bd underline-offset-4 hover:underline' : cn(chipClass, 'press hover:bg-yellow hover:text-on-yellow'), className)}
+        className={cn(quiet ? 'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-1 py-0.5 font-mono text-[11px] font-medium text-info-bd underline-offset-4 hover:bg-hover hover:underline focus-visible:bg-hover focus-visible:underline' : cn(chipClass, 'press cursor-pointer underline-offset-4 hover:bg-yellow hover:text-on-yellow hover:underline focus-visible:underline'), className)}
       >
         {quiet && <TicketIcon aria-hidden className="size-3.5 shrink-0" />}
         {ticket.key}
