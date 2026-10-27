@@ -19,6 +19,7 @@ import { indexByPath, parseScope, resolveScope, SCOPE_PARAM, searchString, stepS
 import { useCodeReviewDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { useHotkeys, type HotkeyHandlers } from '@/lib/useHotkeys'
+import { toggleJournalInline } from '@/lib/journal-prefs'
 import { useMergesHidden } from '@/lib/useMergesHidden'
 import { useReview } from '@/state/review-context'
 
@@ -174,6 +175,7 @@ export function FilesPage() {
     nextScope: () => selectScope(stepScope(commitsState.commits, scope, 1, mergesHidden)),
     undo: undoLastVerdict,
     cancel: () => dispatch({ type: 'CANCEL_REJECT' }),
+    toggleNotes: () => toast.info(toggleJournalInline() ? "Scout's notes shown" : "Scout's notes hidden"),
     toggleMerges: () => toast.info(toggleMerges() ? 'Merge commits hidden' : 'Merge commits shown'),
   })
 

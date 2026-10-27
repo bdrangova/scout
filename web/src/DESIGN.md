@@ -143,3 +143,7 @@ Skills run in Claude/Codex sessions (default `publish-pr-review` or a composed c
 ## Clearing review choices
 
 Clicking the active Approve or Reject clears that verdict. This applies to Development and PR file review, generated suggestions, test-run scenarios, grid verdict stamps and overall Submit decisions. Keep comments and unadded drafts, stay on the item and offer the existing Undo for file/scenario verdicts. A verdict on changed content is stale and is set against the new fingerprint rather than toggled away. Directional swipes continue to set the indicated verdict. An explicitly cleared overall decision stays undecided across page loads instead of being preselected again.
+
+## Scout's journal
+
+`JournalProvider` (in `SessionLayout`) loads `GET /journal` once (`useJournal`, refetched on `journal.updated`). `FileReviewCard` shows `ScoutNotesStrip` under the header (live summary + "+N notes" for file-level and stale ones; collapsed state per session in localStorage) and provides `JournalAnnotationsContext`; `FileDiffView` relocates each anchor with `relocateJournalAnchor`, hangs `JournalAnnotation` (Scout glyph, kind `Tag`, yellow left edge; folded to titles when a file has more than 3) under the line and reports the placed ids, so the rest land in the strip. Reply opens the line comment box (draft with `reply`, "Replying to Scout · title" chip) or, for strip notes, the footer box; saving adds `about`. `N` toggles inline notes (`lib/journal-prefs.ts`; `J` is next scenario). The Journal tab (`pages/JournalPage`) appears when `journalCount > 0`.

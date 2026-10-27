@@ -1,4 +1,5 @@
 import type { EvidenceItem, ExtraItem, SpecItem } from '../schemas/artifacts.ts'
+import type { Journal } from '../schemas/journal.ts'
 import type { Comment, CommentTargetKind } from '../schemas/review.ts'
 import type { SentSnapshot } from '../schemas/sent.ts'
 import { formatLineAnchor } from './line-anchor.ts'
@@ -18,6 +19,8 @@ export interface SentMarkdownContext {
   patch?: string
   /** The synced GitHub PR comments; the open ones get their own section (never counted as the reviewer's comments). */
   prComments?: PrCommentsMarkdownInput
+  /** Scout's journal: a comment with `about` quotes the note's kind and title; without it only the id is printed. */
+  journal?: Journal | null
 }
 
 /**
@@ -25,17 +28,24 @@ export interface SentMarkdownContext {
  * A line comment reads `- [c3] path:12 > body` (`path:10-14` for a range, `(old)` for the before
  * side), followed by a fenced excerpt of the diff lines around the anchor when the patch is known.
  */
-function commentLines(comment: Comment, patchLines: readonly PatchLine[] | null = null): string[] {
+function commentLines(comment: Comment, patchLines: readonly PatchLine[] | null = null, journal: Journal | null = null): string[] {
   const at = comment.timestampSec === null ? '' : ` at ${formatTimestamp(comment.timestampSec)}`
   const anchor = comment.target.anchor
   const where = anchor === undefined ? '' : ` ${comment.target.ref}:${formatLineAnchor(anchor)}`
   const [first = '', ...rest] = comment.body.replaceAll('\r\n', '\n').trim().split('\n')
   const lines = [`- [${comment.id}]${at}${where} > ${first}`, ...rest.map((line) => (line === '' ? '  >' : `  > ${line}`))]
+  if (comment.about !== undefined) lines.unshift(`> Re Scout note ${comment.about}${noteLabel(comment.about, journal)}`)
   if (anchor !== undefined && patchLines !== null) {
     const excerpt = anchorExcerpt(patchLines, anchor)
     if (excerpt.length > 0) lines.push('  ```', ...excerpt.map((line) => `  ${line}`), '  ```')
   }
   return lines
+}
+
+/** ` (kind): title` of the journal note, empty when the journal is unavailable or lacks it. */
+function noteLabel(id: string, journal: Journal | null): string {
+  const entry = journal?.entries.find((candidate) => candidate.id === id)
+  return entry === undefined ? '' : ` (${entry.kind}): ${entry.title}`
 }
 
 /** The file's lines from the sent patch, parsed only when one of its comments is anchored. */
@@ -50,6 +60,7 @@ function artifactSection(
   comments: Comment[],
   kind: Exclude<CommentTargetKind, 'overall' | 'file'>,
   items: readonly { path: string; label: string }[],
+  journal: Journal | null,
 ): string | null {
   const groups = groupByRef(comments, kind)
   if (groups.size === 0) return null
@@ -57,7 +68,7 @@ function artifactSection(
   for (const ref of orderedRefs(groups, items.map((item) => item.path))) {
     const label = items.find((item) => item.path === ref)?.label
     lines.push(label === undefined || label === ref ? `### ${ref}` : `### ${ref} — ${label}`)
-    for (const comment of groups.get(ref) ?? []) lines.push(...commentLines(comment))
+    for (const comment of groups.get(ref) ?? []) lines.push(...commentLines(comment, null, journal))
   }
   return lines.join('\n')
 }
@@ -69,6 +80,7 @@ function artifactSection(
  */
 export function renderSentMarkdown(sent: SentSnapshot, ctx: SentMarkdownContext): string {
   const sections: string[] = []
+  const journal = ctx.journal ?? null
 
   sections.push(
     [
@@ -80,7 +92,7 @@ export function renderSentMarkdown(sent: SentSnapshot, ctx: SentMarkdownContext)
 
   const overall = sent.comments.filter((comment) => comment.target.kind === 'overall')
   if (overall.length > 0) {
-    sections.push(['## Overall', ...overall.flatMap((comment) => commentLines(comment))].join('\n'))
+    sections.push(['## Overall', ...overall.flatMap((comment) => commentLines(comment, null, journal))].join('\n'))
   }
 
   const fileComments = groupByRef(sent.comments, 'file')
@@ -104,16 +116,16 @@ export function renderSentMarkdown(sent: SentSnapshot, ctx: SentMarkdownContext)
       lines.push(`### ${path} — ${label}`)
       const comments = fileComments.get(path) ?? []
       const patchLines = patchLinesFor(ctx.patch, path, comments)
-      for (const comment of comments) lines.push(...commentLines(comment, patchLines))
+      for (const comment of comments) lines.push(...commentLines(comment, patchLines, journal))
     }
     sections.push(lines.join('\n'))
   }
 
-  const evidence = artifactSection('## Evidence', sent.comments, 'evidence', (ctx.evidence ?? []).map((item) => ({ path: item.path, label: item.caption })))
+  const evidence = artifactSection('## Evidence', sent.comments, 'evidence', (ctx.evidence ?? []).map((item) => ({ path: item.path, label: item.caption })), journal)
   if (evidence !== null) sections.push(evidence)
-  const spec = artifactSection('## Spec', sent.comments, 'spec', (ctx.spec ?? []).map((item) => ({ path: item.path, label: item.title })))
+  const spec = artifactSection('## Spec', sent.comments, 'spec', (ctx.spec ?? []).map((item) => ({ path: item.path, label: item.title })), journal)
   if (spec !== null) sections.push(spec)
-  const extras = artifactSection('## Extras', sent.comments, 'extra', (ctx.extras ?? []).map((item) => ({ path: item.path, label: item.title })))
+  const extras = artifactSection('## Extras', sent.comments, 'extra', (ctx.extras ?? []).map((item) => ({ path: item.path, label: item.title })), journal)
   if (extras !== null) sections.push(extras)
 
   const prSection = ctx.prComments === undefined ? null : renderPrCommentsMarkdown(ctx.prComments)

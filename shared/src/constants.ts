@@ -11,6 +11,8 @@ export const SESSION_ID_RE = /^\d{8}-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{4}$
 export const RUN_ID_RE = /^run-\d{14}-[0-9a-f]{4}$/
 /** `c<n>`, n >= 1 */
 export const COMMENT_ID_RE = /^c[1-9]\d*$/
+/** `j<n>`, n >= 1: a journal entry id, never reused. */
+export const JOURNAL_ID_RE = /^j[1-9]\d*$/
 /** 16 lowercase hex chars: the content-derived fingerprint of a file's change or of a whole tree. */
 export const FINGERPRINT_RE = /^[0-9a-f]{16}$/
 
@@ -31,7 +33,7 @@ export const COLLAPSE_GLOBS: readonly string[] = [
 ]
 
 /** The session sections in tab order; the single source for the tabs, the `1–5` hotkeys and the shortcut help. */
-export const SECTIONS = ['spec', 'extras', 'evidence', 'files', 'submit'] as const
+export const SECTIONS = ['spec', 'extras', 'journal', 'evidence', 'files', 'submit'] as const
 
 /** The test-run sections in tab order (`overview`, `review`, the optional pages, `submit`). */
 export const TEST_SECTIONS = ['overview', 'review', 'gaps', 'data-setup', 'logs', 'submit'] as const
@@ -55,6 +57,8 @@ export const ARTIFACT_INDEX_FILE = 'index.json'
 /** GitHub PR comments of a session (posix, relative to the session folder): written by `ai-review pr-sync` / `pr-resolve`. */
 export const PR_COMMENTS_FILE = 'review/pr-comments.json'
 export const PR_RESOLUTIONS_FILE = 'review/pr-resolutions.json'
+/** Scout's journal (agent-owned, written by `ai-review journal`; posix, relative to the session folder). */
+export const JOURNAL_FILE = 'review/journal.json'
 /** Dashboard-written drafts: the user's instruction for an open comment, or the reply to post for an answered one. */
 export const PR_REPLIES_FILE = 'review/pr-replies.json'
 /** GitHub's comment body limit is 65536 characters. */

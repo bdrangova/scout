@@ -139,6 +139,7 @@ describe('schemas accept a valid example of each shape', () => {
       tickets: m.tickets,
       status: 'in-progress',
       progress: { reviewed: 1, total: 3 },
+      journalCount: 0,
       openComments: 1,
       stats: { files: 3, additions: 20, deletions: 6 },
       updatedAt: m.updatedAt,
@@ -157,6 +158,7 @@ describe('schemas accept a valid example of each shape', () => {
       prDescription: '# PR',
       status: 'unreviewed',
       progress: { reviewed: 0, total: 3 },
+      journalCount: 0,
       activeRunId: RUN_ID,
     }
     expect(SessionDetailSchema.parse(detail)).toEqual(detail)

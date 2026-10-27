@@ -50,6 +50,8 @@ export const SessionSummarySchema = z.object({
   stats: z.object({ files: nonNegativeInt, additions: nonNegativeInt, deletions: nonNegativeInt }),
   /** The latest of manifest, review, resolutions and tree computation. */
   updatedAt: isoDate,
+  /** Live (non-superseded) journal entries; 0 when there is no journal. */
+  journalCount: nonNegativeInt.default(0),
   activeRunId: z.string().regex(RUN_ID_RE).nullable(),
   /** Status of the newest run (`failed` makes the session status `run-failed`); absent when there is none. */
   latestRunStatus: AgentRunStatusSchema.nullable().optional(),
@@ -130,6 +132,8 @@ export const CodeReviewDetailSchema = z.object({
   prDescription: z.string().nullable(),
   status: SessionStatusSchema,
   progress: ProgressSchema,
+  /** Live (non-superseded) journal entries; 0 when there is no journal. */
+  journalCount: nonNegativeInt.default(0),
   activeRunId: z.string().regex(RUN_ID_RE).nullable(),
   /** Status of the newest run (`failed` makes the session status `run-failed`); absent when there is none. */
   latestRunStatus: AgentRunStatusSchema.nullable().optional(),
@@ -201,7 +205,7 @@ export type StartRunRequest = z.infer<typeof StartRunRequestSchema>
 
 export const StoreEventSchema = z.discriminatedUnion('type', [
   z.object({
-    type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated', 'pr-comments.updated', 'testrun.updated']),
+    type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated', 'journal.updated', 'pr-comments.updated', 'testrun.updated']),
     sessionId: z.string(),
   }),
   z.object({ type: z.literal('run.updated'), sessionId: z.string(), runId: z.string() }),

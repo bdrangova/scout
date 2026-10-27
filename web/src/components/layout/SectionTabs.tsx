@@ -1,5 +1,5 @@
 import type { SessionDetail } from '@review-dash/shared'
-import { Bug, CircleAlert, Database, FileText, Files, Image, LayoutDashboard, ListChecks, Package, ScrollText, Send, Check, type LucideIcon } from 'lucide-react'
+import { BookOpen, Bug, CircleAlert, Database, FileText, Files, Image, LayoutDashboard, ListChecks, Package, ScrollText, Send, Check, type LucideIcon } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router'
 import { isTestRunDetail } from '@/lib/detail-kind'
 import { PrTab } from './PrTab'
@@ -29,6 +29,7 @@ export interface SubmitTab {
 const SECTION_ICONS: Record<string, LucideIcon> = {
   spec: FileText,
   extras: Package,
+  journal: BookOpen,
   evidence: Image,
   files: Files,
   submit: Send,

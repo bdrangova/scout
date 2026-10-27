@@ -40,7 +40,8 @@ DEFAULT_SERVER_PORT = 4545; DEFAULT_WEB_PORT = 4546
 SESSION_ID_RE, RUN_ID_RE, COMMENT_ID_RE, FINGERPRINT_RE (/^[0-9a-f]{16}$/)
 COLLAPSE_CHANGED_LINES = 1500; COLLAPSE_MAX_BYTES = 512 KiB; OMIT_MAX_BYTES = 5 MiB
 COLLAPSE_GLOBS = ['**/package-lock.json','**/yarn.lock','**/pnpm-lock.yaml','**/*.snap','**/*.min.*','**/dist/**']
-SECTIONS = ['spec','extras','evidence','files','submit'] as const
+SECTIONS = ['spec','extras','journal','evidence','files','submit'] as const
+JOURNAL_ID_RE = /^j[1-9]\d*$/; JOURNAL_FILE = 'review/journal.json'
 SESSIONS_DIR = 'sessions'; ARCHIVE_DIR = 'archive'; ARCHIVED_FILE = 'archived.json'
 SESSION_EVIDENCE_DIR = 'evidence'; SESSION_EXTRAS_DIR = 'extras'; SESSION_SPEC_DIR = 'spec'
 SESSION_PR_DESCRIPTION_FILE = 'pr-description.md'; ARTIFACT_INDEX_FILE = 'index.json'
@@ -126,7 +127,8 @@ Verdict = 'none'|'approved'|'rejected';  Decision = 'undecided'|'approve'|'reque
 Mode = 'swipe'|'scroll';  Section = 'files'|'evidence'|'spec'|'extras'|'submit'
 LineAnchor = { side: 'old'|'new', line: number /* ≥ 1 */, endLine?: number /* ≥ line, a short range */ }
 CommentTarget = { kind: 'overall'|'file'|'evidence'|'extra'|'spec', ref: string|null, anchor?: LineAnchor }   // ref: repo path / artifact path; null iff overall; anchor only on `file`
-Comment = { id /* c<n> */, target, body, timestampSec: number|null, createdAt, updatedAt: string|null, sentAt: string|null, resolvedAt: string|null, reopenedAt: string|null }
+Comment = { id /* c<n> */, target, body, timestampSec: number|null, createdAt, updatedAt: string|null, sentAt: string|null, resolvedAt: string|null, reopenedAt: string|null,
+  about?: string /* journal id j<n>: the Scout note this comment replies to */ }
 FileReview = { verdict, fingerprint: string|null /* TreeFile.fingerprint when judged */, viewed }
 Review = { schemaVersion: 2, sessionId, files: Record<path, FileReview>, comments: Comment[], nextCommentId,
   overall: { decision }, sent: { at, decision } | null, ui: { mode: 'swipe'|'scroll'|'grid', currentFile: string|null, section }, updatedAt }
@@ -141,6 +143,22 @@ A `file` comment with an `anchor` is a line comment (GitHub-style, on one side o
 Resolution = { status: 'resolved'|'open', note, at, files: string[] }
 Resolutions = { schemaVersion: 2, sessionId, updatedAt, comments: Record<c<n>, Resolution> }
 ```
+
+## schemas/journal.ts (agent-owned `review/journal.json`)
+
+Scout's journal of decisions and implementation choices; full spec in [docs/journal.md](../docs/journal.md). Written only by `ai-review journal`; the dashboard never writes it.
+
+```ts
+JournalKind = 'summary'|'decision'|'implementation'|'tradeoff'|'caveat'
+JournalAnchor = LineAnchor & { snippet: string /* 1..300 */ }
+JournalAlternative = { option, whyNot }
+JournalEntry = { id /* j<n> */, kind, title /* ≤120 */, body, file: string|null, anchor?: JournalAnchor /* needs a file, never on a summary */,
+  alternatives?, related?: string[], createdAt: string|null, updatedAt: string|null, supersededBy?: string }
+Journal = { schemaVersion: 2, sessionId, updatedAt, nextId, entries }
+JournalResponse = { journal: Journal|null }      // GET /sessions/:id/journal
+```
+
+`review/journal-anchor.ts` (browser-safe): `relocateJournalAnchor(anchor, filePatch)` → `{ anchor, stale: false } | { anchor: null, stale: true }`; `liveEntries`, `fileSummary`, `entriesForFile` (live only), `journalCount`, `nextJournalId` (all take `Journal | null`). `renderSentMarkdown` takes an optional `ctx.journal` and prints `> Re Scout note j3 (decision): <title>` above a comment with `about` (just `> Re Scout note j3` without the journal or the entry).
 
 ## schemas/pr-comments.ts: GitHub PR comments (external, read-only for the dashboard)
 
@@ -206,7 +224,7 @@ The server writes the `.json`, the `.md` (`renderSentMarkdown(sent, { title, das
 
 ```ts
 Health = { ok: true, home, adapter, claudeBin }
-SessionSummary = { id, title, repo: { path, branch, baseRef }, tickets, status, progress: { reviewed, total }, openComments,
+SessionSummary = { id, title, journalCount /* live journal entries, default 0 (also on CodeReviewDetail) */, repo: { path, branch, baseRef }, tickets, status, progress: { reviewed, total }, openComments,
   stats: { files, additions, deletions }, updatedAt, activeRunId: string|null,
   pr?: PrSummary|null, prComments?: PrCommentCounts|null /* optional: from review/pr-comments.json */ }
 SessionListItem = SessionSummary | { id, error }
@@ -215,7 +233,7 @@ ArchivedSession = { id, title, tickets, repo: { path, branch, baseRef: string|nu
 SessionDetail = { manifest, tree: WorkingTree, evidence: EvidenceItem[], extras: ExtraItem[], spec: SpecItem[], prDescription: string|null, status, progress, activeRunId, pr?: PrSummary|null, prComments?: PrCommentCounts|null }
 ReviewResponse, PutReviewRequest/Response/Conflict, SendRequest = { decision, dispatch }, SendResponse = { sent, run, pending }, StartRunRequest — as before
 StoreEvent =
-  | { type: 'session.added'|'session.updated'|'session.removed'|'review.updated'|'resolutions.updated'|'pr-comments.updated', sessionId }
+  | { type: 'session.added'|'session.updated'|'session.removed'|'review.updated'|'resolutions.updated'|'journal.updated'|'pr-comments.updated', sessionId }
   | { type: 'run.updated', sessionId, runId }
   | { type: 'tree.updated', sessionId, fingerprint /* WorkingTree.fingerprint */, durationMs }
 FileContentsSide = 'before'|'after'

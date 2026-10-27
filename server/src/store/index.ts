@@ -4,7 +4,7 @@ import { readPrReviewReport } from './pr-review.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import readline from 'node:readline'
-import { RUN_ID_RE, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@review-dash/shared'
+import { RUN_ID_RE, journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@review-dash/shared'
 import type {
   AgentRun,
   AnySentSnapshot,
@@ -15,6 +15,8 @@ import type {
   Manifest,
   ManifestKind,
   PrComments,
+  Journal,
+  JournalResponse,
   PrCommentsResponse,
   PrReplies,
   PrReplyKind,
@@ -54,7 +56,7 @@ import { ManifestReader } from './manifest.ts'
 import type { ManifestResult } from './manifest.ts'
 import { safeJoin, storePaths } from './paths.ts'
 import type { StorePaths } from './paths.ts'
-import { REVIEW_FILE, activeRunId, latestRunStatus, listRuns, readPrComments, readPrReplies, readPrResolutions, writePrReplies, readResolutions, readReview, readRun, runFile, runLogFile, sentFiles } from './review.ts'
+import { REVIEW_FILE, activeRunId, latestRunStatus, listRuns, readJournal, readPrComments, readPrReplies, readPrResolutions, writePrReplies, readResolutions, readReview, readRun, runFile, runLogFile, sentFiles } from './review.ts'
 import { ScopeCache } from './scopes.ts'
 import type { ScopeCacheOptions } from './scopes.ts'
 import { deriveRunDetail, indexFingerprint, loadRunIndex, normalizeRef, refToAbsolute, resolveRoots, servablePaths } from './test-run.ts'
@@ -62,7 +64,7 @@ import { TreeCache } from './tree.ts'
 import type { SessionTree, TreeCacheOptions } from './tree.ts'
 
 export { safeJoin, storePaths } from './paths.ts'
-export { activeRunId, listRuns, readPrComments, readPrReplies, readPrResolutions, readResolutions, readReview, readRun, runFile, runLogFile, writeReview } from './review.ts'
+export { activeRunId, listRuns, readJournal, readPrComments, readPrReplies, readPrResolutions, readResolutions, readReview, readRun, runFile, runLogFile, writeReview } from './review.ts'
 
 export interface LoadedSession {
   id: string
@@ -79,6 +81,8 @@ export interface ReviewState {
   /** The synced GitHub PR (`pr-comments.json`) and the agent's answers; null when absent or unreadable. */
   prComments?: PrComments | null
   prResolutions?: PrResolutions | null
+  /** Scout's journal (`journal.json`); null when absent or unreadable. */
+  journal?: Journal | null
 }
 
 /** `pr` and `prComments` of a summary or detail: counts are relative to the last send. */
@@ -162,6 +166,7 @@ export function sessionSummary(manifest: CodeReviewManifest, state: ReviewState,
     activeRunId: state.activeRunId,
     latestRunStatus: state.latestRunStatus ?? null,
     lastSend: state.review?.sent ?? null,
+    journalCount: journalCount(state.journal ?? null),
     ...prFields(state),
   }
 }
@@ -420,14 +425,15 @@ export class Store {
   /** `review.json`, `resolutions.json` and the active run, read together. */
   async reviewState(session: LoadedSession): Promise<ReviewState> {
     // The PR files are optional extras: an unreadable one must not break the session list.
-    const [review, resolutions, runs, prComments, prResolutions] = await Promise.all([
+    const [review, resolutions, runs, prComments, prResolutions, journal] = await Promise.all([
       readReview(session.dir, session.id),
       readResolutions(session.dir, session.id),
       listRuns(session.dir),
       readPrComments(session.dir, session.id).catch(() => null),
       readPrResolutions(session.dir, session.id).catch(() => null),
+      readJournal(session.dir, session.id),
     ])
-    return { review, resolutions, activeRunId: activeRunId(runs), latestRunStatus: latestRunStatus(runs), prComments, prResolutions }
+    return { review, resolutions, activeRunId: activeRunId(runs), latestRunStatus: latestRunStatus(runs), prComments, prResolutions, journal }
   }
 
   /** The live working tree, per-file patches and commit list (cached; 422 `repo-missing: <path>` when the repo is gone). */
@@ -519,6 +525,7 @@ export class Store {
       progress: progress(state.review, tree, state.resolutions),
       activeRunId: state.activeRunId,
       latestRunStatus: state.latestRunStatus ?? null,
+      journalCount: journalCount(state.journal ?? null),
       ...prFields(state),
     }
   }
@@ -715,6 +722,13 @@ export class Store {
       await handle.close()
     }
     return { path: normalizeRef(ref) ?? ref, from, to: lines.length === 0 ? from : from + lines.length - 1, total, lines }
+  }
+
+  /** Scout's journal; `{ journal: null }` when absent, unreadable or for a session that is not a code review. */
+  async getJournal(id: string): Promise<JournalResponse> {
+    const session = await this.loadSession(id)
+    if (manifestKind(session.manifest) !== 'code-review') return { journal: null }
+    return { journal: await readJournal(session.dir, id) }
   }
 
   /** `pr-comments.json` merged with `pr-resolutions.json` (an empty response when never synced); 422 when a file is invalid. */

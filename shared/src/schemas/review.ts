@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { COMMENT_ID_RE, FINGERPRINT_RE, SCHEMA_VERSION, SECTIONS, SESSION_ID_RE, TEST_SECTIONS } from '../constants.ts'
+import { COMMENT_ID_RE, FINGERPRINT_RE, JOURNAL_ID_RE, SCHEMA_VERSION, SECTIONS, SESSION_ID_RE, TEST_SECTIONS } from '../constants.ts'
 
 const isoDate = z.iso.datetime({ offset: true })
 
@@ -90,6 +90,8 @@ export const CommentSchema = z.object({
   /** The reviewer marked the comment resolved (the agent's resolutions live in resolutions.json). */
   resolvedAt: isoDate.nullable(),
   reopenedAt: isoDate.nullable(),
+  /** The journal note (`j<n>`) this comment replies to. */
+  about: z.string().regex(JOURNAL_ID_RE).optional(),
 })
 export type Comment = z.infer<typeof CommentSchema>
 

@@ -6,6 +6,7 @@ import { Toaster } from './components/ui/sonner'
 import { EvidencePage } from './pages/EvidencePage'
 import { ExtrasPage } from './pages/ExtrasPage'
 import { FilesPage } from './pages/FilesPage'
+import { JournalPage } from './pages/JournalPage'
 import { SessionLayout } from './pages/SessionLayout'
 import { SessionListPage } from './pages/SessionListPage'
 import { SpecPage } from './pages/SpecPage'
@@ -19,7 +20,7 @@ import { ReviewPage } from './pages/testrun/ReviewPage'
 import { TestRunSubmitPage } from './pages/testrun/TestRunSubmitPage'
 
 // Web routes from the contract: `/`, `/s/:id/files`, `/s/:id/files/*path`,
-// `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/submit`.
+// `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/journal`, `/s/:id/submit`.
 // `/s/:id` itself redirects to the step the review should open on (lib/landing-section.ts).
 // Test runs: `/t` (list), `/t/:id/{overview,review,review/:scenarioId,gaps,data-setup,logs,submit}`; `/t/:id` redirects like `/s/:id`.
 // `/__kit` is the dev-only primitives gallery (web/src/pages/KitPage.tsx).
@@ -41,6 +42,7 @@ const router = createBrowserRouter([
       { path: 'evidence/*', Component: EvidencePage },
       { path: 'spec', Component: SpecPage },
       { path: 'extras', Component: ExtrasPage },
+      { path: 'journal', Component: JournalPage },
       { path: 'submit', Component: SubmitPage },
     ],
   },

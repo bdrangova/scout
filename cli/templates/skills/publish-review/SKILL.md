@@ -33,13 +33,13 @@ A first publish writes everything. When step 1 reuses a session (`"reused": true
 last publish touched; this includes the fixes `/apply-review` made. Everything else stays as it is.
 - **Changed set.** Read `publish-log.json`. List the session's files now: `git diff --name-only $(git merge-base <baseRef> HEAD)` plus the untracked files from `git status --porcelain`. Hash each one with `git hash-object <path>`. The changed set holds the paths whose hash differs from the log, paths new since the log, and paths the log has that dropped out of the diff.
 - **Already refreshed.** Evidence that `/apply-review` re-captured after an evidence comment is newer than `publishedAt` (`ls -lT <evidence>`). Keep it as it is and update only its caption and description if they no longer match.
-- If the changed set is empty and nothing in the arguments asks for more, change nothing. Say so in step 7.
-- Each step below says what it does in refresh mode. Step 8 always rewrites the log.
+- If the changed set is empty and nothing in the arguments asks for more, change nothing. Say so in step 8.
+- Each step below says what it does in refresh mode. Step 9 always rewrites the log.
 
 ## Steps
 0. **Choices.** Skip this step when the arguments contain `--auto` or `AI_REVIEW_HEADLESS=1` is set; then decide everything yourself as the steps below describe.
-   Otherwise, before running anything else, work out your proposal for each choice. Base: the session's base, or the default base. Ticket: from the arguments, the branch name or the conversation. Mode: refresh when a session for this branch exists, else new. Spec documents: the plan or spec files you worked from. Evidence: the user-visible changes you would capture. Extras: what you would add. Then ask with AskUserQuestion.
-   - **Accept or choose.** Ask one question first: "Use these recommendations?" Its options are "Accept all (Recommended)" and "Let me choose". Give both the same `preview`, listing every proposal on its own line: base, session mode, Jira, spec files, evidence, extras and PR description. On "Accept all", use the proposals and go to step 1. On "Let me choose", ask the questions below.
+   Otherwise, before running anything else, work out your proposal for each choice. Base: the session's base, or the default base. Ticket: from the arguments, the branch name or the conversation. Mode: refresh when a session for this branch exists, else new. Spec documents: the plan or spec files you worked from. Evidence: the user-visible changes you would capture. Extras: what you would add. Journal: the files you would summarise and the decisions you would log. Then ask with AskUserQuestion.
+   - **Accept or choose.** Ask one question first: "Use these recommendations?" Its options are "Accept all (Recommended)" and "Let me choose". Give both the same `preview`, listing every proposal on its own line: base, session mode, Jira, spec files, evidence, extras, journal and PR description. On "Accept all", use the proposals and go to step 1. On "Let me choose", ask the questions below.
    - At most 4 questions fit in one call, so use two calls. In every question the first option is your proposal, marked "(Recommended)", so accepting it takes one pick. The user can always type their own answer under Other.
    - Call 1:
      - **Base branch:** your proposal, plus one likely alternative.
@@ -49,9 +49,10 @@ last publish touched; this includes the fixes `/apply-review` made. Everything e
    - Call 2:
      - **Evidence:** capture or refresh what you proposed (named briefly), screenshots only, or none.
      - **Extras** (multiSelect): one option per explainer or diagram you would add (for example "Component graph (components.mmd)"), plus any existing `.md` or `.html` in the repo or conversation that would help the reviewer, described the same way as the spec candidates, again led by a "Recommended set" option. Picking none means no extras.
+     - **Journal:** fill the gaps (summaries for files without one, decisions not yet logged), summaries only, or leave it alone.
      - **PR description:** write or update it, or leave it alone.
    - Leave out a question the arguments already answer (`--base`, `--ticket`, `--full`, `--new`).
-   - Follow the answers in every step below. A part the user turned off is skipped without a placeholder and is not listed under "Not captured". Step 7 says what was skipped by choice.
+   - Follow the answers in every step below. A part the user turned off is skipped without a placeholder and is not listed under "Not captured". Step 8 says what was skipped by choice.
 1. **Session.** Run
    `ai-review init --repo "$PWD" --title "<KEY>: <short title>" --ticket <KEY>=<ticket url> --agent-session "${CLAUDE_SESSION_ID}" [--base <REF>] [--new]`
    where KEY comes from the arguments, the branch name or the conversation. It reuses the latest session for this branch, even after an approved review, unless `--new` is given: approved files stay approved and only the files changed since come back for review, the overall decision resets, comments and resolutions stay. An archived session is never reused. Pass `--base <REF>` only when the branch is not based on master. Note the printed `id`, `dir` and `url`.
@@ -70,14 +71,19 @@ last publish touched; this includes the fixes `/apply-review` made. Everything e
    ```json
    { "items": [ { "file": "trial-bar-admin.png", "caption": "…", "description": "…", "order": 0 } ] }
    ```
-   Note which repository files each capture covers (the components, pages, styles and data behind what it shows) for the log in step 8.
+   Note which repository files each capture covers (the components, pages, styles and data behind what it shows) for the log in step 9.
    Refresh mode: re-capture only the evidence whose covered files are in the changed set, keeping the file name, and skip what is already refreshed. Capture new evidence for user-visible changes no existing file covers. Delete evidence (file and index entry) whose covered files all dropped out of the diff. Leave every other file and index entry untouched.
 5. **Extras.** Save Markdown explainers (`*.md`), artifact HTML (`*.html`) and Mermaid diagrams (`*.mmd`) that help the reviewer (for example a component or data-flow graph) into `<extras>/`, and write `<extras>/index.json` with a `title` per file: `{ "items": [ { "file": "components.mmd", "title": "Component graph" } ] }`. Note the files each extra describes, as for evidence.
    Refresh mode: regenerate only the extras whose covered files are in the changed set, and add new ones only for areas none of them cover.
-6. **PR description.** Look for the repo's PR template with Glob/Read: `.github/pull_request_template.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `docs/pull_request_template.md`, `pull_request_template.md`, or a `.github/PULL_REQUEST_TEMPLATE/` folder (several templates: pick the default or most general one and say which in step 7). When one exists, write `<dir>/pr-description.md` following it as closely as possible: same headings, order, wording and checkbox style, each section filled from the change; a section you cannot fill keeps the template's own placeholder wording or a short "N/A"; add the review-dash sections the template has no place for (Not captured, test notes) only as extra sections at the end. Without a template write: Summary, What changed (by area), How to test, Risks/follow-ups, Not captured. `/apply-review` opens the PR from this same file.
+6. **Journal.** Scout's journal is the notes the reviewer reads next to the diff (see `/journal` for how to write them; you may already have added entries while working). Run `ai-review journal list <id> --json`, then:
+   - Add a `summary` for every changed file without a live one: title = the file's job in this change, body = 2 to 4 sentences on why it changed and what to look at. Skip lockfiles, generated and collapsed files.
+   - Add entries (`decision`, `implementation`, `tradeoff`, `caveat`) for choices made in this conversation that are not logged yet, anchored to the line where each is visible, with rejected alternatives. Do not repeat an existing entry.
+   - Write many entries at once with `ai-review journal add <id> --from <file.json>`. A new `summary` replaces the file's old one; replace any other entry with `--supersedes jN`.
+   Refresh mode: only files in the changed set. Re-summarise a file whose live summary no longer matches its code (the new `summary` supersedes it), and add entries only for decisions since the last publish.
+7. **PR description.** Look for the repo's PR template with Glob/Read: `.github/pull_request_template.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `docs/pull_request_template.md`, `pull_request_template.md`, or a `.github/PULL_REQUEST_TEMPLATE/` folder (several templates: pick the default or most general one and say which in step 8). When one exists, write `<dir>/pr-description.md` following it as closely as possible: same headings, order, wording and checkbox style, each section filled from the change; a section you cannot fill keeps the template's own placeholder wording or a short "N/A"; add the review-dash sections the template has no place for (Not captured, test notes) only as extra sections at the end. Without a template write: Summary, What changed (by area), How to test, Risks/follow-ups, Not captured. `/apply-review` opens the PR from this same file.
    Refresh mode: edit `pr-description.md` in place with Edit and touch only the sections the changed set affects (what changed, how to test, risks, not captured). Keep the other sections word for word, including any edits the user made.
-7. Report the dashboard URL printed by step 1, the number of evidence files and anything you could not capture. In refresh mode, list what you refreshed, added and deleted, and say that the rest was kept. Remind the user that the dashboard updates live as files change; there is nothing to publish.
-8. **Publish log.** Write `<dir>/publish-log.json` with the hashes from this run (in refresh mode, the ones from the changed-set step) and the coverage you noted:
+8. Report the dashboard URL printed by step 1, the number of evidence files and anything you could not capture. In refresh mode, list what you refreshed, added and deleted, and say that the rest was kept. Remind the user that the dashboard updates live as files change; there is nothing to publish.
+9. **Publish log.** Write `<dir>/publish-log.json` with the hashes from this run (in refresh mode, the ones from the changed-set step) and the coverage you noted:
    ```json
    { "publishedAt": "<ISO now>", "head": "<git rev-parse HEAD>",
      "files": { "<repo path>": "<git hash-object>" },

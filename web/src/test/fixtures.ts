@@ -90,6 +90,7 @@ export const sessionDetailFixture: CodeReviewDetail = {
   status: 'unreviewed',
   progress: { reviewed: 0, total: filesFixture.length },
   activeRunId: null,
+  journalCount: 0,
 }
 
 /** The same detail with `path` recomputed on disk (a new fingerprint) and the tree fingerprint moved along. */
@@ -109,6 +110,7 @@ export function sessionSummary(overrides: Partial<SessionSummary> & Pick<Session
     progress: { reviewed: 0, total: 1 },
     openComments: 0,
     activeRunId: null,
+    journalCount: 0,
     ...overrides,
   }
 }

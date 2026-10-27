@@ -23,7 +23,7 @@ export interface ShellConfig {
   }
 }
 
-const CODE_REVIEW_LABELS: Record<(typeof SECTIONS)[number], string> = { spec: 'Spec', extras: 'Extras', evidence: 'Evidence', files: 'Files', submit: 'Submit' }
+const CODE_REVIEW_LABELS: Record<(typeof SECTIONS)[number], string> = { spec: 'Spec', extras: 'Extras', journal: 'Journal', evidence: 'Evidence', files: 'Files', submit: 'Submit' }
 
 export const CODE_REVIEW_SHELL: ShellConfig = {
   kind: 'code-review',
@@ -39,12 +39,16 @@ export const CODE_REVIEW_SHELL: ShellConfig = {
         return detail.extras.length
       case 'evidence':
         return detail.evidence.length
+      case 'journal':
+        return detail.journalCount
       case 'files':
         return detail.tree.files.length
       default:
         return undefined
     }
   },
+  // Scout's journal is a tab only once it has a live note.
+  visibleSections: (detail) => SECTIONS.filter((section) => section !== 'journal' || (!isTestRunDetail(detail) && detail.journalCount > 0)),
   hotkeys: { modes: true },
 }
 
@@ -90,7 +94,7 @@ export const TEST_RUN_SHELL: ShellConfig = {
 }
 
 export const PR_REVIEW_SHELL: ShellConfig = {
-  ...CODE_REVIEW_SHELL, kind: 'pr-review', sections: ['files', 'submit'],
+  ...CODE_REVIEW_SHELL, kind: 'pr-review', sections: ['files', 'submit'], visibleSections: () => ['files', 'submit'],
   sectionLabel: (section) => section === 'files' ? 'Review' : CODE_REVIEW_SHELL.sectionLabel(section),
 }
 

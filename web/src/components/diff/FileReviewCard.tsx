@@ -1,12 +1,16 @@
-import { effectiveVerdict, fileIsUpdated, type CommentTarget, type LineAnchor, type TreeFile } from '@review-dash/shared'
+import { effectiveVerdict, entriesForFile, fileIsUpdated, fileSummary, type CommentTarget, type LineAnchor, type TreeFile } from '@review-dash/shared'
 import { useCallback, useEffect, useMemo, useReducer, useState, type PointerEvent } from 'react'
 import { CommentBox } from '@/components/common/CommentBox'
 import { CommentList } from '@/components/common/CommentList'
+import { ReplyChip } from '@/components/journal/JournalParts'
+import { ScoutNotesStrip } from '@/components/journal/ScoutNotesStrip'
 import { PrFooterGroup } from '@/components/prcomments/PrFooterGroup'
+import type { JournalReply } from '@/lib/journal-view'
 import { fileTypeClass, fileTypeOf } from '@/lib/file-type'
 import { isMarkdownPath, splitPath } from '@/lib/paths'
 import type { ScopeReview } from '@/lib/scope'
 import { cn } from '@/lib/utils'
+import { useJournalState } from '@/state/journal-context'
 import { useReview } from '@/state/review-context'
 import { usePrComments } from '@/state/pr-comments-context'
 import { useCommentActions } from '@/state/useCommentActions'
@@ -16,6 +20,7 @@ import { ProposalCard } from '@/components/prreview/ProposalCard'
 import { useCurrentPrReport } from '@/components/prreview/pr-review-context'
 import { CardActions } from './CardActions'
 import { CardHeader, type CardView } from './CardHeader'
+import { JournalAnnotationsContext, type JournalAnnotationsValue } from './journal-annotations'
 import { LargeFileGate } from './LargeFileGate'
 import { LineCommentsContext, type LineCommentsValue } from './line-comments'
 import { MarkdownPreview } from './MarkdownPreview'
@@ -88,6 +93,24 @@ export function FileReviewCard({
   const prAnnotations = useMemo<PrAnnotationsValue | null>(() => (prThreads.length > 0 ? { threads: prThreads, onPlaced } : null), [prThreads, onPlaced])
   const footerThreads = useMemo(() => prThreads.filter((thread) => !placedIds.includes(thread.root.id)), [prThreads, placedIds])
   const pendingReject = state.pendingReject === file.path
+  // Scout's notes: the summary and the file-level/stale ones in the strip, the anchored ones in the diff (it reports which it placed).
+  const { journal } = useJournalState()
+  const journalEntries = useMemo(() => entriesForFile(journal, file.path), [journal, file.path])
+  const summary = useMemo(() => fileSummary(journal, file.path), [journal, file.path])
+  const anchoredEntries = useMemo(() => journalEntries.filter((entry) => entry.anchor !== undefined), [journalEntries])
+  const [placedJournal, setPlacedJournal] = useState<readonly string[] | null>(null)
+  const onJournalPlaced = useCallback(
+    (ids: readonly string[]) => setPlacedJournal((previous) => (previous !== null && previous.length === ids.length && previous.every((id, index) => id === ids[index]) ? previous : ids)),
+    [],
+  )
+  const journalAnnotations = useMemo<JournalAnnotationsValue | null>(() => (anchoredEntries.length > 0 ? { entries: anchoredEntries, onPlaced: onJournalPlaced } : null), [anchoredEntries, onJournalPlaced])
+  const diffExpected = view !== 'preview' && !file.binary && !file.omitted && !file.collapsed
+  const stripOthers = useMemo(
+    () => journalEntries.filter((entry) => entry.kind !== 'summary' && (entry.anchor === undefined || (placedJournal === null ? !diffExpected : !placedJournal.includes(entry.id)))),
+    [journalEntries, placedJournal, diffExpected],
+  )
+  // Replying to a file-level or stale note: a file comment with the chip above the box.
+  const [fileReply, setFileReply] = useState<JournalReply | null>(null)
   // Kept in the review state (not the comment box) so Approve and Reject send what is typed instead of dropping it.
   const draft = draftFor(file.path)
   const draftBody = draft.trim()
@@ -124,7 +147,8 @@ export function FileReviewCard({
   }
 
   function addComment(body: string) {
-    dispatch({ type: 'ADD_COMMENT', target, body })
+    dispatch({ type: 'ADD_COMMENT', target, body, ...(fileReply && { about: fileReply.id }) })
+    setFileReply(null)
     if (body.trim() !== '') scope?.advanceFrom(file.path)
   }
 
@@ -133,7 +157,7 @@ export function FileReviewCard({
       reviewable
         ? {
             comments: comments.filter((comment) => comment.target.anchor !== undefined),
-            onAdd: (anchor: LineAnchor, body: string) => dispatch({ type: 'ADD_COMMENT', target: { ...target, anchor }, body }),
+            onAdd: (anchor: LineAnchor, body: string, about?: string) => dispatch({ type: 'ADD_COMMENT', target: { ...target, anchor }, body, ...(about !== undefined && { about }) }),
             ...commentActions,
           }
         : null,
@@ -169,12 +193,20 @@ export function FileReviewCard({
         onPointerDown={onHeaderPointerDown}
       />
 
+      <ScoutNotesStrip
+        sessionId={sessionId}
+        summary={summary}
+        others={stripOthers}
+        onReply={reviewable ? (reply) => { setFileReply(reply); bumpLocalFocus() } : undefined}
+      />
+
       <div className={cn('min-h-0 flex-1 overflow-auto bg-code', bodyClassName)}>
         {view === 'preview' && previewable ? (
           <MarkdownPreview file={file} sessionId={sessionId} scope={scope?.scope ?? null} />
         ) : (
           <LineCommentsContext.Provider value={lineComments}>
             <PrAnnotationsContext.Provider value={prAnnotations}>
+              <JournalAnnotationsContext.Provider value={journalAnnotations}>
               <ProposalAnnotationsContext.Provider value={inlineFindings}>
               <LargeFileGate
                 file={file}
@@ -184,6 +216,7 @@ export function FileReviewCard({
                 onApprove={reviewable ? () => setVerdict('approved') : undefined}
               />
               </ProposalAnnotationsContext.Provider>
+              </JournalAnnotationsContext.Provider>
             </PrAnnotationsContext.Provider>
           </LineCommentsContext.Provider>
         )}
@@ -197,6 +230,7 @@ export function FileReviewCard({
         )}
         <PrFooterGroup threads={footerThreads} path={file.path} />
         <CommentList comments={fileComments} {...commentActions} />
+        {reviewable && fileReply && <ReplyChip reply={fileReply} onCancel={() => setFileReply(null)} />}
         {reviewable && (
           <CommentBox
             label={pendingReject ? `Why reject ${name}?` : `Comment on ${name}`}

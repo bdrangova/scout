@@ -3,7 +3,7 @@ import type { AgentRun, AnySentSnapshot, Resolutions, Review, SendRequest, SendR
 import type { AgentAdapter } from './agent/adapter.ts'
 import type { RunManager } from './agent/runs.ts'
 import { badRequest } from './errors.ts'
-import { concatPatches, readPrComments, readPrReplies, readPrResolutions } from './store/index.ts'
+import { concatPatches, readJournal, readPrComments, readPrReplies, readPrResolutions } from './store/index.ts'
 import type { LoadedSession, Store } from './store/index.ts'
 
 export interface SendDeps {
@@ -33,10 +33,11 @@ async function codeReviewBuilder(deps: SendDeps, session: LoadedSession, request
   const { store } = deps
   const sessionId = session.id
   const [{ tree, patches }, artifacts] = await Promise.all([store.tree(session), store.artifacts(session)])
-  const [prComments, prResolutions, prReplies] = await Promise.all([
+  const [prComments, prResolutions, prReplies, journal] = await Promise.all([
     readPrComments(session.dir, sessionId).catch(() => null),
     readPrResolutions(session.dir, sessionId).catch(() => null),
     readPrReplies(session.dir, sessionId).catch(() => null),
+    readJournal(session.dir, sessionId),
   ])
   return (review, resolutions, now) => {
     // The user's unposted PR-comment drafts travel with this Submit (instructions for open comments, replies approved to post).
@@ -45,7 +46,7 @@ async function codeReviewBuilder(deps: SendDeps, session: LoadedSession, request
     nothingToSend(sent, request, (sent.prReplies ?? []).length)
     const patch = concatPatches(tree, patches)
     const prContext = prComments === null ? {} : { prComments: { sessionId, pr: prComments.pr, views: prViews } }
-    const markdown = renderSentMarkdown(sent, { title: session.manifest.title, dashboardUrl: deps.dashboardUrl, patch, ...artifacts, ...prContext })
+    const markdown = renderSentMarkdown(sent, { title: session.manifest.title, dashboardUrl: deps.dashboardUrl, patch, journal, ...artifacts, ...prContext })
     return { sent, markdown, patch }
   }
 }

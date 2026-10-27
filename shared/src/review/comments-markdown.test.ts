@@ -178,4 +178,22 @@ index 1111111..2222222 100644
     expect(first.endsWith('\n\n')).toBe(false)
     expect(first).not.toContain('\r')
   })
+  it('quotes the journal note a comment replies to', () => {
+    const r = makeReview({
+      comments: [makeComment({ id: 'c1', target: { kind: 'file', ref: 'src/a.tsx' }, body: 'Why not a map?', about: 'j3' })],
+    })
+    const sent = buildSentSnapshot({ review: r, tree: makeTree({ files: [makeTreeFile({ path: 'src/a.tsx' })] }), decision: 'request-changes', resolutions: null, now: T2 })
+    const journal = {
+      schemaVersion: 2 as const,
+      sessionId: sent.sessionId,
+      updatedAt: T2,
+      nextId: 4,
+      entries: [{ id: 'j3', kind: 'decision' as const, title: 'Use a list', body: 'b', file: 'src/a.tsx', createdAt: T2, updatedAt: null }],
+    }
+    const withJournal = renderSentMarkdown(sent, { title: 'T', dashboardUrl: DASHBOARD, journal })
+    expect(withJournal).toContain('> Re Scout note j3 (decision): Use a list\n- [c1] > Why not a map?')
+    const without = renderSentMarkdown(sent, { title: 'T', dashboardUrl: DASHBOARD })
+    expect(without).toContain('> Re Scout note j3\n- [c1]')
+    expect(without).not.toContain('(decision)')
+  })
 })

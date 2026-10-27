@@ -43,6 +43,11 @@ export function prCommentsPath(sessionId: string): string {
   return `${sessionApiPath(sessionId)}/pr-comments`
 }
 
+/** `GET /sessions/:id/journal`: Scout's journal (`JournalResponse`). */
+export function journalPath(sessionId: string): string {
+  return `${sessionApiPath(sessionId)}/journal`
+}
+
 /** `PUT /sessions/:id/pr-replies/:commentId`: saves the user's instruction or reply text for a PR comment thread (`PutPrReplyRequest`). */
 export function prReplyPath(sessionId: string, commentId: string): string {
   return `${sessionApiPath(sessionId)}/pr-replies/${encodeURIComponent(commentId)}`

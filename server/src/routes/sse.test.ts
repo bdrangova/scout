@@ -99,6 +99,14 @@ describe('GET /api/events', () => {
     fs.writeFileSync(path.join(store.dir, 'review', 'resolutions.json'), JSON.stringify(resolutions))
     await reader.waitFor(isStoreEvent('resolutions.updated'), { timeoutMs: 8_000 })
 
+    // Scout's journal (written by the CLI) → journal.updated plus a session.updated for the nav badge.
+    before = reader.messages.length
+    const journal = { schemaVersion: 2, sessionId: FIXTURE_SESSION_ID, updatedAt: '2026-01-01T14:30:00.000Z', nextId: 1, entries: [] }
+    fs.writeFileSync(path.join(store.dir, 'review', 'journal.json'), JSON.stringify(journal))
+    await reader.waitFor(isStoreEvent('journal.updated'), { timeoutMs: 8_000, from: before })
+    await reader.waitFor(isStoreEvent('session.updated'), { timeoutMs: 8_000, from: before })
+    expect(storeEvents().filter((e) => e.type === 'journal.updated')).toContainEqual({ type: 'journal.updated', sessionId: FIXTURE_SESSION_ID })
+
     // Artifacts: a burst of writes under evidence/ and the PR description → one debounced session.updated.
     before = reader.messages.length
     fs.writeFileSync(path.join(store.dir, 'evidence', 'extra.png'), 'png')

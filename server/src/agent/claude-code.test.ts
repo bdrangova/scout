@@ -24,6 +24,7 @@ function detail(agentSessionId: string | null = 'agent-session-1'): SessionDetai
     status: 'sent',
     progress: { reviewed: 0, total: tree.files.length },
     activeRunId: null,
+    journalCount: 0,
   }
 }
 

@@ -106,6 +106,7 @@ const BASE_GROUPS: readonly HotkeyGroup[] = [
     entries: [
       { keys: ['S'], description: 'Swipe / scroll' },
       { keys: ['G'], description: 'Grid of all files' },
+      { keys: ['N'], description: "Show / hide Scout's notes in the diff" },
     ],
   },
   {

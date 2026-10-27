@@ -13,6 +13,7 @@ import { eventsRouter } from './routes/events.ts'
 import { filesRouter } from './routes/files.ts'
 import { healthRouter } from './routes/health.ts'
 import { prReviewRouter } from './routes/pr-review.ts'
+import { journalRouter } from './routes/journal.ts'
 import { prCommentsRouter } from './routes/pr-comments.ts'
 import { reviewRouter } from './routes/review.ts'
 import { runFilesRouter } from './routes/run-files.ts'
@@ -111,6 +112,7 @@ export function createApp(config: Config, overrides: AppOverrides = {}): Express
   api.use(runFilesRouter(store))
   api.use(reviewRouter(store))
   api.use(prCommentsRouter(store))
+  api.use(journalRouter(store))
   api.use(prReviewRouter(store))
   api.use(sendRouter({ store, runs, adapter, dashboardUrl: config.dashboardUrl }))
   api.use(runsRouter({ store, runs, adapter, sse }))

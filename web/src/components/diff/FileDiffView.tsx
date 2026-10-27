@@ -1,8 +1,10 @@
-import { anchorInPatch, parsePatchLines, type LineAnchor } from '@review-dash/shared'
+import { anchorInPatch, parsePatchLines, relocateJournalAnchor, type JournalEntry, type LineAnchor } from '@review-dash/shared'
 import { PatchDiff, type PatchDiffProps } from '@pierre/diffs/react'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useJournalInlineVisible } from '@/lib/journal-prefs'
 import { findDiffRow, useLineJump } from '@/lib/line-jump'
 import { placePrThreads } from '@/lib/pr-threads'
+import type { JournalReply } from '@/lib/journal-view'
 import { cn } from '@/lib/utils'
 import { ThemeContext } from '@/theme/ThemeContext'
 import { contentsLoader, fullFileRows, type FileSides } from './expand-context'
@@ -10,17 +12,21 @@ import { ProposalCard } from '@/components/prreview/ProposalCard'
 import { useProposalAnnotations } from '@/components/prreview/proposal-annotations'
 import { PANEL_CLASS } from './LineAnnotation'
 import { LineAnnotation } from './LineAnnotation'
+import { JournalAnnotation } from './JournalAnnotation'
+import { useJournalAnnotations } from './journal-annotations'
 import { PrAnnotation } from './PrAnnotation'
 import { usePrAnnotations } from './pr-annotations'
 import {
   anchorFromCursor,
   anchorFromRange,
   buildAnnotations,
+  buildJournalAnnotations,
   buildPrAnnotations,
   selectionFor,
   useLineComments,
   type DiffAnnotation,
   type LineAnnotationContent,
+  type LineDraft,
   type RowCursor,
 } from './line-comments'
 
@@ -102,9 +108,11 @@ interface FileDiffViewProps {
 export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffViewProps) {
   const lineComments = useLineComments()
   const prAnnotations = usePrAnnotations()
+  const journal = useJournalAnnotations()
+  const journalVisible = useJournalInlineVisible()
   // Read without `useTheme()` so a diff rendered outside the provider (tests) still works, as light.
   const themeType = useContext(ThemeContext)?.resolved ?? 'light'
-  const [draft, setDraft] = useState<LineAnchor | null>(null)
+  const [draft, setDraft] = useState<LineDraft | null>(null)
   const [cursor, setCursor] = useState<RowCursor | null>(null)
   // The loaded sides (once revealed), or `null` after a failed load: the offer is withdrawn.
   const [sides, setSides] = useState<FileSides | null | undefined>(undefined)
@@ -115,7 +123,7 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
     setSides(undefined)
   }
   const proposals = useProposalAnnotations()
-  const rows = useMemo(() => (lineComments || prAnnotations || proposals.length ? parsePatchLines(patch) : []), [lineComments, prAnnotations, proposals, patch])
+  const rows = useMemo(() => (lineComments || prAnnotations || journal || proposals.length ? parsePatchLines(patch) : []), [lineComments, prAnnotations, journal, proposals, patch])
   // Anchors on revealed lines count as in the diff; the keyboard cursor keeps to the patch's own rows.
   const anchorRows = useMemo(() => (sides ? fullFileRows(rows, sides) : rows), [rows, sides])
 
@@ -141,13 +149,13 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
 
   const onGutterUtilityClick = useCallback((range: Parameters<NonNullable<DiffOptions['onGutterUtilityClick']>>[0]) => {
     setCursor(null)
-    setDraft(anchorFromRange(range))
+    setDraft({ anchor: anchorFromRange(range) })
   }, [])
 
   /** The line number is a second way to open the composer, for that one line. */
   const onLineNumberClick = useCallback((props: Parameters<NonNullable<DiffOptions['onLineNumberClick']>>[0]) => {
     setCursor(null)
-    setDraft(anchorFromRange({ start: props.lineNumber, end: props.lineNumber, side: props.annotationSide }))
+    setDraft({ anchor: anchorFromRange({ start: props.lineNumber, end: props.lineNumber, side: props.annotationSide }) })
   }, [])
 
   const options = useMemo<DiffOptions>(
@@ -166,16 +174,33 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
     onPlaced?.(placedKey === '' ? [] : placedKey.split(','))
     return () => onPlaced?.([])
   }, [onPlaced, placedKey])
+  // Scout's notes whose line is still in the patch (relocated by its text); the card's strip lists the stale ones.
+  const journalEntries = journal?.entries
+  const journalPlaced = useMemo(() => {
+    const placed: { entry: JournalEntry; anchor: LineAnchor }[] = []
+    for (const entry of journalEntries ?? []) {
+      if (!entry.anchor) continue
+      const relocated = relocateJournalAnchor(entry.anchor, patch)
+      if (!relocated.stale) placed.push({ entry, anchor: relocated.anchor })
+    }
+    return placed
+  }, [journalEntries, patch])
+  const journalKey = journalPlaced.map(({ entry }) => entry.id).join(',')
+  const onJournalPlaced = journal?.onPlaced
+  useEffect(() => {
+    onJournalPlaced?.(journalKey === '' ? [] : journalKey.split(','))
+    return () => onJournalPlaced?.([])
+  }, [onJournalPlaced, journalKey])
   const annotations = useMemo<DiffAnnotation[]>(
-    () => [...(lineComments ? buildAnnotations(anchorRows, lineComments.comments, draft) : []), ...buildPrAnnotations(prPlacement.placed), ...proposals.map((finding): DiffAnnotation => {
+    () => [...(lineComments ? buildAnnotations(anchorRows, lineComments.comments, draft) : []), ...buildPrAnnotations(prPlacement.placed), ...(journalVisible ? buildJournalAnnotations(journalPlaced) : []), ...proposals.map((finding): DiffAnnotation => {
       const changed = !anchorInPatch(anchorRows, finding.anchor)
       return { side: finding.anchor.side === 'new' ? 'additions' : 'deletions', lineNumber: changed ? 0 : finding.anchor.endLine ?? finding.anchor.line, metadata: { kind: 'proposal', finding, changed } }
     })],
-    [lineComments, anchorRows, draft, prPlacement, proposals],
+    [lineComments, anchorRows, draft, prPlacement, journalPlaced, journalVisible, proposals],
   )
   const cursorAnchor = cursor ? anchorFromCursor(rows, cursor) : null
   const jump = useLineJump(path)
-  const selected = draft ?? cursorAnchor ?? (jump ? { side: jump.side, line: jump.line } : null)
+  const selected = draft?.anchor ?? cursorAnchor ?? (jump ? { side: jump.side, line: jump.line } : null)
 
   // The diff renders asynchronously: look for the jumped-to row for a few seconds, then centre it.
   const hostRef = useRef<HTMLDivElement>(null)
@@ -202,7 +227,7 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
         return { from: event.shiftKey && current ? current.from : to, to }
       })
     } else if (event.key === 'Enter' && cursorAnchor) {
-      setDraft(cursorAnchor)
+      setDraft({ anchor: cursorAnchor })
       setCursor(null)
     } else if (event.key === 'Escape' && cursor) {
       setCursor(null)
@@ -218,13 +243,23 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
       const { metadata } = annotation
       if (metadata.kind === 'proposal') return <div className={PANEL_CLASS}><ProposalCard finding={metadata.finding} changed={metadata.changed} /></div>
       if (metadata.kind === 'pr') return <PrAnnotation anchor={metadata.anchor} threads={metadata.threads} />
+      if (metadata.kind === 'journal') {
+        const onReply = lineComments
+          ? (anchor: LineAnchor, reply: JournalReply) => {
+              setCursor(null)
+              setDraft({ anchor, reply })
+            }
+          : undefined
+        return <JournalAnnotation anchor={metadata.anchor} entries={metadata.entries} collapsed={metadata.collapsed} onReply={onReply} />
+      }
       return lineComments ? (
         <LineAnnotation
           content={metadata}
           comments={{
             ...lineComments,
-            onAdd: (anchor, body) => {
-              lineComments.onAdd(anchor, body)
+            onAdd: (anchor, body, about) => {
+              if (about === undefined) lineComments.onAdd(anchor, body)
+              else lineComments.onAdd(anchor, body, about)
               setDraft(null)
             },
           }}

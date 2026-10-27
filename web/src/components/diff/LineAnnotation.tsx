@@ -1,11 +1,12 @@
 import { anchorKey, anchorLabel, type CommentWithStatus } from '@review-dash/shared'
 import { Eyebrow } from '@/components/common/Eyebrow'
 import { CommentBox } from '@/components/common/CommentBox'
+import { ReplyChip } from '@/components/journal/JournalParts'
 import { CommentList } from '@/components/common/CommentList'
 import type { LineAnnotationContent, LineCommentsValue } from './line-comments'
 
 interface LineAnnotationProps {
-  content: Exclude<LineAnnotationContent, { kind: 'pr' | 'proposal' }>
+  content: Exclude<LineAnnotationContent, { kind: 'pr' | 'proposal' | 'journal' }>
   comments: LineCommentsValue
   onCancelDraft: () => void
 }
@@ -22,11 +23,12 @@ export function LineAnnotation({ content, comments, onCancelDraft }: LineAnnotat
     case 'draft':
       return (
         <div className={PANEL_CLASS} data-line-draft>
+          {content.reply && <ReplyChip reply={content.reply} onCancel={onCancelDraft} />}
           <CommentBox
             label={`Comment on ${anchorLabel(content.anchor)}`}
             pendingReject={false}
             focusToken={1}
-            onSubmit={(body) => comments.onAdd(content.anchor, body)}
+            onSubmit={(body) => (content.reply ? comments.onAdd(content.anchor, body, content.reply.id) : comments.onAdd(content.anchor, body))}
             onCancelReject={() => {}}
             onCancel={onCancelDraft}
           />

@@ -1,14 +1,16 @@
 import { anchorInPatch, anchorKey, type CommentWithStatus, type LineAnchor, type LineSide, type PatchLine } from '@review-dash/shared'
 import type { DiffLineAnnotation, SelectedLineRange } from '@pierre/diffs/react'
 import { createContext, useContext } from 'react'
-import type { PrFinding } from '@review-dash/shared'
+import type { JournalEntry, PrFinding } from '@review-dash/shared'
+import type { JournalReply } from '@/lib/journal-view'
 import type { PrPlacement, PrThread } from '@/lib/pr-threads'
 
 /** What `FileDiffView` needs to show and edit the line comments of the file it renders. */
 export interface LineCommentsValue {
   /** The file's anchored comments (merged with their status). */
   comments: CommentWithStatus[]
-  onAdd: (anchor: LineAnchor, body: string) => void
+  /** `about` is the id of the Scout note the comment replies to. */
+  onAdd: (anchor: LineAnchor, body: string, about?: string) => void
   onEdit: (id: string, body: string) => void
   onDelete: (id: string) => void
   onResolve: (id: string) => void
@@ -26,11 +28,19 @@ export function useLineComments(): LineCommentsValue | null {
 export type LineAnnotationContent =
   | { kind: 'proposal'; finding: PrFinding; changed: boolean }
   | { kind: 'comments'; anchor: LineAnchor; comments: CommentWithStatus[] }
-  | { kind: 'draft'; anchor: LineAnchor }
+  | { kind: 'draft'; anchor: LineAnchor; reply?: JournalReply }
   /** Comments whose line is no longer in the diff, listed above the first line. */
   | { kind: 'orphans'; comments: CommentWithStatus[] }
   /** GitHub PR threads on one line (read-only, under the last line of a range). */
   | { kind: 'pr'; anchor: LineAnchor; threads: PrThread[] }
+  /** Scout's notes on one line; `collapsed` folds them to their titles (a file with many). */
+  | { kind: 'journal'; anchor: LineAnchor; entries: JournalEntry[]; collapsed: boolean }
+
+/** The open comment box: the lines it is on and, when it answers a Scout note, which. */
+export interface LineDraft {
+  anchor: LineAnchor
+  reply?: JournalReply
+}
 
 export type DiffAnnotation = DiffLineAnnotation<LineAnnotationContent>
 
@@ -81,7 +91,7 @@ export function selectionFor(anchor: LineAnchor): SelectedLineRange {
  * One annotation per anchored line (under the last line of a range), the draft box, and the
  * comments whose line left the diff gathered above the first line.
  */
-export function buildAnnotations(rows: readonly PatchLine[], comments: readonly CommentWithStatus[], draft: LineAnchor | null): DiffAnnotation[] {
+export function buildAnnotations(rows: readonly PatchLine[], comments: readonly CommentWithStatus[], draft: LineDraft | null): DiffAnnotation[] {
   const groups = new Map<string, { anchor: LineAnchor; comments: CommentWithStatus[] }>()
   const orphans: CommentWithStatus[] = []
   for (const comment of comments) {
@@ -104,7 +114,10 @@ export function buildAnnotations(rows: readonly PatchLine[], comments: readonly 
   for (const group of groups.values()) {
     annotations.push({ side: LIBRARY_SIDE[group.anchor.side], lineNumber: group.anchor.endLine ?? group.anchor.line, metadata: { kind: 'comments', ...group } })
   }
-  if (draft) annotations.push({ side: LIBRARY_SIDE[draft.side], lineNumber: draft.endLine ?? draft.line, metadata: { kind: 'draft', anchor: draft } })
+  if (draft) {
+    const { anchor, reply } = draft
+    annotations.push({ side: LIBRARY_SIDE[anchor.side], lineNumber: anchor.endLine ?? anchor.line, metadata: { kind: 'draft', anchor, ...(reply && { reply }) } })
+  }
   return annotations
 }
 
@@ -121,5 +134,25 @@ export function buildPrAnnotations(placed: PrPlacement['placed']): DiffAnnotatio
     side: LIBRARY_SIDE[group.anchor.side],
     lineNumber: group.anchor.endLine ?? group.anchor.line,
     metadata: { kind: 'pr', ...group },
+  }))
+}
+
+/** More than this many notes on a file and each folds to its title until opened. */
+export const JOURNAL_COLLAPSE_ABOVE = 3
+
+/** One annotation per anchored line for Scout's notes that sit on it (relocated anchors). */
+export function buildJournalAnnotations(placed: readonly { entry: JournalEntry; anchor: LineAnchor }[]): DiffAnnotation[] {
+  const collapsed = placed.length > JOURNAL_COLLAPSE_ABOVE
+  const groups = new Map<string, { anchor: LineAnchor; entries: JournalEntry[] }>()
+  for (const { entry, anchor } of placed) {
+    const key = anchorKey(anchor)
+    const group = groups.get(key)
+    if (group) group.entries.push(entry)
+    else groups.set(key, { anchor, entries: [entry] })
+  }
+  return [...groups.values()].map((group) => ({
+    side: LIBRARY_SIDE[group.anchor.side],
+    lineNumber: group.anchor.endLine ?? group.anchor.line,
+    metadata: { kind: 'journal', ...group, collapsed },
   }))
 }

@@ -29,6 +29,7 @@ type Target =
   | { kind: 'manifest'; sessionId: string }
   | { kind: 'review'; sessionId: string }
   | { kind: 'resolutions'; sessionId: string }
+  | { kind: 'journal'; sessionId: string }
   | { kind: 'pr-comments'; sessionId: string; file: 'pr-comments.json' | 'pr-resolutions.json' | 'pr-replies.json' }
   | { kind: 'run'; sessionId: string; runId: string }
   | { kind: 'artifact'; sessionId: string }
@@ -37,7 +38,7 @@ type Target =
  * Watches `<home>/sessions` with chokidar and every session's repo with a `RepoWatcher`, turning
  * file events into `StoreEvent`s and tree-cache invalidations. Session folder: `manifest.json`
  * (session.added/updated/removed, and the repo watch follows the manifest), `review/review.json`,
- * `review/resolutions.json`, `review/pr-comments.json` and `review/pr-resolutions.json` and `review/pr-replies.json` (`pr-comments.updated`, plus `session.updated` for the first: the session's PR changed), `review/runs/*.json` (own writes are not reported), and the
+ * `review/resolutions.json`, `review/journal.json` (`journal.updated` + `session.updated`), `review/pr-comments.json` and `review/pr-resolutions.json` and `review/pr-replies.json` (`pr-comments.updated`, plus `session.updated` for the first: the session's PR changed), `review/runs/*.json` (own writes are not reported), and the
  * artifacts (`evidence/`, `extras/`, `spec/`, `pr-description.md` → one debounced `session.updated`).
  */
 export class StoreWatcher {
@@ -164,7 +165,7 @@ export class StoreWatcher {
     if (ARTIFACT_FOLDERS.has(second)) return false
     if (parts.length === 2) return second !== 'manifest.json' && second !== 'pr-review.json' && second !== SESSION_PR_DESCRIPTION_FILE && second !== 'review'
     if (second !== 'review') return true
-    if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'runs'
+    if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'journal.json' && third !== 'runs'
     if (parts.length === 4) return third !== 'runs' || !fourth.endsWith('.json')
     return true
   }
@@ -179,6 +180,7 @@ export class StoreWatcher {
     if (second !== 'review') return null
     if (parts.length === 3 && third === 'review.json') return { kind: 'review', sessionId }
     if (parts.length === 3 && third === 'resolutions.json') return { kind: 'resolutions', sessionId }
+    if (parts.length === 3 && third === 'journal.json') return { kind: 'journal', sessionId }
     if (parts.length === 3 && (third === 'pr-comments.json' || third === 'pr-resolutions.json' || third === 'pr-replies.json')) return { kind: 'pr-comments', sessionId, file: third }
     if (parts.length === 4 && third === 'runs' && fourth?.endsWith('.json')) {
       const runId = fourth.slice(0, -'.json'.length)
@@ -251,6 +253,12 @@ export class StoreWatcher {
       // The PR identity (tab, list row) comes from pr-comments.json; a removal also changes it.
       this.bus.emit({ type: 'pr-comments.updated', sessionId })
       if (target.file === 'pr-comments.json') this.bus.emit({ type: 'session.updated', sessionId })
+      return
+    }
+    if (target.kind === 'journal') {
+      // The nav badge (journalCount) comes from journal.json; a removal changes it too. The dashboard never writes the file.
+      this.bus.emit({ type: 'journal.updated', sessionId })
+      this.bus.emit({ type: 'session.updated', sessionId })
       return
     }
     if (change === 'unlink') return

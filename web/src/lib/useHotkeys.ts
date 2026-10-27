@@ -16,6 +16,7 @@ export type Hotkey =
   | 'toggleGrid'
   | 'toggleSidebar'
   | 'toggleMerges'
+  | 'toggleNotes'
   | 'section1'
   | 'section2'
   | 'section3'
@@ -90,6 +91,9 @@ export function hotkeyFor(event: KeyLike): Hotkey | null {
     case 'h':
     case 'H':
       return 'toggleMerges'
+    case 'n':
+    case 'N':
+      return 'toggleNotes'
     case '1':
       return 'section1'
     case '2':

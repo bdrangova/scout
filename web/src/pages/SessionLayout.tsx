@@ -9,6 +9,7 @@ import { isTestRunDetail } from '@/lib/detail-kind'
 import { useSessionDetail } from '@/lib/hooks'
 import { SessionContext, type SessionContextValue } from '@/lib/session-context'
 import { PrReviewProvider } from '@/components/prreview/PrReviewProvider'
+import { JournalProvider } from '@/state/JournalProvider'
 import { PrCommentsProvider } from '@/state/PrCommentsProvider'
 import { ReviewProvider } from '@/state/ReviewProvider'
 
@@ -48,9 +49,11 @@ export function SessionLayout() {
       <ShellConfigProvider kind={value.detail.manifest.kind === 'pr-review' ? 'pr-review' : 'code-review'}>
         <ReviewProvider>
           <PrCommentsProvider sessionId={id}>
-            <PrReviewProvider detail={value.detail}>
-              <SessionShell />
-            </PrReviewProvider>
+            <JournalProvider sessionId={id}>
+              <PrReviewProvider detail={value.detail}>
+                <SessionShell />
+              </PrReviewProvider>
+            </JournalProvider>
           </PrCommentsProvider>
         </ReviewProvider>
       </ShellConfigProvider>

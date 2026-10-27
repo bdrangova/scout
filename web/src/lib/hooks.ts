@@ -2,6 +2,8 @@ import {
   UNCOMMITTED_SCOPE,
   type ArchivedSession,
   type CommitList,
+  type Journal,
+  type JournalResponse,
   type Scope,
   type SessionDetail,
   type SessionListItem,
@@ -9,7 +11,7 @@ import {
 } from '@review-dash/shared'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiRequestError, apiGet } from './api'
-import { commitsPath, fileContentsPath, filePatchPath, scopeTreePath, type DiffSide, type SessionKind } from './paths'
+import { commitsPath, fileContentsPath, journalPath, filePatchPath, scopeTreePath, type DiffSide, type SessionKind } from './paths'
 import { useStoreEvents } from './useStoreEvents'
 
 type Settled<T> = { ok: true; value: T } | { ok: false; error: Error }
@@ -226,4 +228,24 @@ export function useFileContents(
   const key = enabled ? `contents:${sessionId}:${scope ?? ''}:${path}:${side}:${fingerprint}` : null
   const state = useAsync(key, () => apiGet<string>(fileContentsPath(sessionId, path, side, scope)))
   return { content: state.data, loading: state.loading, error: state.error, reload: state.reload }
+}
+
+export interface JournalState {
+  /** Null until loaded, and for a session without a journal. */
+  journal: Journal | null
+  loading: boolean
+  error: Error | null
+  reload: () => void
+}
+
+/** `GET /api/sessions/:id/journal`, refetched on the session's `journal.updated` (the stale journal stays meanwhile). */
+export function useJournal(sessionId: string): JournalState {
+  const state = useAsync(`journal:${sessionId}`, () => apiGet<JournalResponse>(journalPath(sessionId)))
+  const { reload } = state
+  useStoreEvents({
+    'journal.updated': (event) => {
+      if (event.sessionId === sessionId) reload()
+    },
+  })
+  return { journal: state.data?.journal ?? null, loading: state.loading, error: state.error, reload }
 }

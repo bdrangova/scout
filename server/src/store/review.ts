@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { z } from 'zod'
-import { AgentRunSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@review-dash/shared'
-import type { AgentRun, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@review-dash/shared'
+import { AgentRunSchema, JOURNAL_FILE, JournalSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@review-dash/shared'
+import type { AgentRun, Journal, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@review-dash/shared'
 import { errorMessage, formatZodError, invalidStoreFile } from '../errors.ts'
 import { isMissing, readTextIfExists, writeFileAtomic } from './fs.ts'
 
@@ -52,6 +52,16 @@ export async function readResolutions(sessionDir: string, sessionId: string): Pr
     throw invalidStoreFile(`review/resolutions.json belongs to session ${resolutions.sessionId}, not ${sessionId}`)
   }
   return resolutions
+}
+
+/** `review/journal.json` (Scout's journal, written by `ai-review journal`); `null` when absent, invalid or another session's. */
+export async function readJournal(sessionDir: string, sessionId: string): Promise<Journal | null> {
+  try {
+    const journal = await readValidated(path.join(sessionDir, ...JOURNAL_FILE.split('/')), JOURNAL_FILE, JournalSchema)
+    return journal !== null && journal.sessionId === sessionId ? journal : null
+  } catch {
+    return null
+  }
 }
 
 /** `review/pr-comments.json` (written by `ai-review pr-sync`), validated; `null` when the session was never synced. */

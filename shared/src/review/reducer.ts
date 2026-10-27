@@ -24,7 +24,7 @@ export type ReviewAction =
   /** `comment` rides along with the verdict (the draft typed before approving or rejecting): one file comment, and a reject is stored at once instead of waiting for one. */
   | { type: 'SET_VERDICT'; path: string; verdict: Verdict; fingerprint: string | null; comment?: string; now: string }
   /** A `file` target with an `anchor` adds a line comment: stored like a file comment, but it neither resolves a pending reject nor advances. */
-  | { type: 'ADD_COMMENT'; target: CommentTarget; body: string; timestampSec?: number | null; kind?: CommentKind; now: string }
+  | { type: 'ADD_COMMENT'; target: CommentTarget; body: string; timestampSec?: number | null; kind?: CommentKind; about?: string; now: string }
   | { type: 'EDIT_COMMENT'; id: string; body: string; now: string }
   | { type: 'DELETE_COMMENT'; id: string; now: string }
   | { type: 'REOPEN_COMMENT'; id: string; now: string }
@@ -70,12 +70,13 @@ function patchComment(
   return { ...state, review: touch(state.review, now, { comments }) }
 }
 
-function withComment(review: Review, target: CommentTarget, body: string, timestampSec: number | null, now: string, kind?: CommentKind): Partial<Review> {
+function withComment(review: Review, target: CommentTarget, body: string, timestampSec: number | null, now: string, kind?: CommentKind, about?: string): Partial<Review> {
   const comment: Comment = {
     id: `c${review.nextCommentId}`,
     target,
     body,
     ...(kind !== undefined && { kind }),
+    ...(about !== undefined && { about }),
     timestampSec,
     createdAt: now,
     updatedAt: null,
@@ -156,7 +157,7 @@ export function reviewReducer(state: ReviewState, action: ReviewAction, ctx: Rev
       const body = action.body.trim()
       if (body === '') return state
       const { target, now } = action
-      const patch = withComment(review, target, body, action.timestampSec ?? null, now, action.kind)
+      const patch = withComment(review, target, body, action.timestampSec ?? null, now, action.kind, action.about)
       // A line comment never stands in for the reject's reason and never moves the deck:
       // the reviewer is still reading the file.
       if (!isItemComment(target.kind) || target.ref === null || target.anchor !== undefined) {
