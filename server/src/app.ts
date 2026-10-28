@@ -24,6 +24,7 @@ import { sessionsRouter } from './routes/sessions.ts'
 import { settingsRouter } from './routes/settings.ts'
 import { worktreesRouter } from './routes/worktrees.ts'
 import { localOnly } from './security.ts'
+import { webAppRouter } from './web-app.ts'
 import { SseRegistry } from './sse.ts'
 import { Store } from './store/index.ts'
 import type { StoreOptions } from './store/index.ts'
@@ -127,6 +128,7 @@ export function createApp(config: Config, overrides: AppOverrides = {}): Express
     const body: ApiError = { error: `no route for ${req.method} ${req.originalUrl}` }
     res.status(404).json(body)
   })
+  if (config.webDir !== null) app.use(localOnly(config.dashboardUrl), webAppRouter(config.webDir))
   app.use(errorHandler)
   return app
 }

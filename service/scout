@@ -1,0 +1,239 @@
+#!/usr/bin/env bash
+# Runs Scout in the background as a login service (launchd) and controls it.
+# The service runs a built copy in $AI_REVIEW_HOME/app, so edits to this repo reach it only on `scout rebuild`.
+set -euo pipefail
+
+self="$0"
+while [ -L "$self" ]; do
+  link="$(readlink "$self")"
+  case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac
+done
+REPO="$(cd "$(dirname "$self")/.." && pwd -P)"
+
+HOME_DIR="${AI_REVIEW_HOME:-$HOME/.ai-review}"
+APP="$HOME_DIR/app"
+LOG_DIR="$HOME_DIR/logs"
+LOG="$LOG_DIR/scout.log"
+ENV_FILE="$HOME_DIR/service.env"
+PORT=4546
+URL="http://scout.localhost:$PORT"
+AGENTS="$HOME/Library/LaunchAgents"
+LABEL=dev.scout.server
+MENU_LABEL=dev.scout.menubar
+PLIST="$AGENTS/$LABEL.plist"
+MENU_PLIST="$AGENTS/$MENU_LABEL.plist"
+MENU_APP="$HOME/Applications/Scout.app"
+BIN_LINK="$HOME/.local/bin/scout"
+DOMAIN="gui/$(id -u)"
+
+say() { printf '[scout] %s\n' "$*"; }
+die() { printf '[scout] %s\n' "$*" >&2; exit 1; }
+
+# Started from the menu bar or launchd the PATH is bare; use the one saved at install.
+if [ -f "$ENV_FILE" ]; then
+  # shellcheck source=/dev/null
+  . "$ENV_FILE"
+  export PATH="$SCOUT_PATH"
+fi
+
+loaded() { launchctl print "$DOMAIN/$1" >/dev/null 2>&1; }
+healthy() { curl -fsS -m 2 "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1; }
+port_owner() { { lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -Fpc 2>/dev/null || true; } | awk '/^p/{p=substr($0,2)} /^c/{print substr($0,2) " (pid " p ")"; exit}'; }
+
+xml() { sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' <<<"$1"; }
+
+save_env() {
+  local node
+  node="$(command -v node)" || die "node is not on PATH"
+  mkdir -p "$HOME_DIR"
+  {
+    printf 'SCOUT_NODE=%q\n' "$node"
+    printf 'SCOUT_PATH=%q\n' "$PATH"
+  } >"$ENV_FILE"
+  SCOUT_NODE="$node"
+  SCOUT_PATH="$PATH"
+}
+
+write_server_plist() {
+  mkdir -p "$AGENTS" "$LOG_DIR"
+  cat >"$PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$(xml "$SCOUT_NODE")</string>
+    <string>$(xml "$APP/server.mjs")</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>AI_REVIEW_HOME</key><string>$(xml "$HOME_DIR")</string>
+    <key>AI_REVIEW_PORT</key><string>$PORT</string>
+    <key>AI_REVIEW_WEB_DIR</key><string>$(xml "$APP/web")</string>
+    <key>PATH</key><string>$(xml "$SCOUT_PATH")</string>
+  </dict>
+  <key>WorkingDirectory</key><string>$(xml "$HOME_DIR")</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>$(xml "$LOG")</string>
+  <key>StandardErrorPath</key><string>$(xml "$LOG")</string>
+</dict>
+</plist>
+EOF
+}
+
+write_menu_plist() {
+  cat >"$MENU_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$MENU_LABEL</string>
+  <key>ProgramArguments</key>
+  <array><string>$(xml "$MENU_APP/Contents/MacOS/Scout")</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>LimitLoadToSessionType</key><string>Aqua</string>
+</dict>
+</plist>
+EOF
+}
+
+build_app() {
+  if [ ! -d "$REPO/node_modules" ] || [ "$REPO/package-lock.json" -nt "$REPO/node_modules/.package-lock.json" ]; then
+    say "installing dependencies"
+    (cd "$REPO" && npm install --no-audit --no-fund --loglevel=error)
+  fi
+  say "building from $REPO"
+  (cd "$REPO" && node scripts/build-app.mjs "$APP")
+}
+
+build_menu() {
+  command -v swiftc >/dev/null || die "swiftc not found; install the Xcode command line tools (xcode-select --install)"
+  say "building the menu bar app"
+  local tmp contents
+  tmp="$(mktemp -d)"
+  contents="$tmp/Scout.app/Contents"
+  mkdir -p "$contents/MacOS" "$contents/Resources"
+  swiftc -O -o "$contents/MacOS/Scout" "$REPO/service/menubar/ScoutMenu.swift"
+  sed "s#__SCOUT_CONTROL__#$(xml "$BIN_LINK")#" "$REPO/service/menubar/Info.plist" >"$contents/Info.plist"
+  cp "$REPO/service/menubar/scout-menubar.png" "$REPO/service/menubar/scout-menubar@2x.png" "$REPO/service/menubar/Scout.icns" "$contents/Resources/"
+  codesign --force --sign - "$tmp/Scout.app" >/dev/null 2>&1 || true
+  mkdir -p "$(dirname "$MENU_APP")"
+  rm -rf "$MENU_APP"
+  mv "$tmp/Scout.app" "$MENU_APP"
+  rm -rf "$tmp"
+}
+
+wait_healthy() {
+  for _ in $(seq 1 40); do
+    healthy && return 0
+    sleep 0.5
+  done
+  return 1
+}
+
+cmd_start() {
+  [ -f "$PLIST" ] || die "not installed; run: scout install"
+  if loaded "$LABEL"; then
+    healthy && { say "running at $URL"; return; }
+    launchctl kickstart "$DOMAIN/$LABEL"
+  else
+    local owner
+    owner="$(port_owner)"
+    [ -z "$owner" ] || die "port $PORT is taken by $owner (npm run dev?); stop it first"
+    launchctl bootstrap "$DOMAIN" "$PLIST"
+  fi
+  wait_healthy && say "running at $URL" || die "did not come up; see: scout logs"
+}
+
+cmd_stop() {
+  if loaded "$LABEL"; then
+    launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+    say "stopped (starts again at login, or: scout start)"
+  else
+    say "not running"
+  fi
+}
+
+cmd_restart() {
+  if loaded "$LABEL"; then
+    launchctl kickstart -k "$DOMAIN/$LABEL"
+    wait_healthy && say "running at $URL" || die "did not come up; see: scout logs"
+  else
+    cmd_start
+  fi
+}
+
+cmd_status() {
+  local build=""
+  [ -f "$APP/build.json" ] && build="$(node -e 'const b=require(process.argv[1]); console.log(`${b.commit}${b.dirty ? "+changes" : ""}, built ${b.builtAt}`)' "$APP/build.json")"
+  if healthy; then
+    say "running at $URL${build:+ ($build)}"
+  elif loaded "$LABEL"; then
+    say "starting or failing; see: scout logs"
+    return 1
+  else
+    say "stopped${build:+ ($build)}"
+    return 3
+  fi
+}
+
+cmd_install() {
+  [ "$(uname)" = Darwin ] || die "the background service is macOS only"
+  save_env
+  build_app
+  build_menu
+  write_server_plist
+  write_menu_plist
+  mkdir -p "$(dirname "$BIN_LINK")"
+  ln -sfn "$REPO/service/scout" "$BIN_LINK"
+  if loaded "$LABEL"; then launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true; fi
+  cmd_start
+  if loaded "$MENU_LABEL"; then launchctl bootout "$DOMAIN/$MENU_LABEL" 2>/dev/null || true; fi
+  launchctl bootstrap "$DOMAIN" "$MENU_PLIST"
+  say "menu bar app: $MENU_APP (starts at login)"
+  say "command: $BIN_LINK"
+}
+
+cmd_rebuild() {
+  build_app
+  cmd_restart
+}
+
+cmd_uninstall() {
+  for label in "$MENU_LABEL" "$LABEL"; do
+    if loaded "$label"; then launchctl bootout "$DOMAIN/$label" 2>/dev/null || true; fi
+  done
+  rm -f "$PLIST" "$MENU_PLIST" "$ENV_FILE"
+  rm -rf "$MENU_APP" "$APP" "$APP.prev"
+  [ -L "$BIN_LINK" ] && rm -f "$BIN_LINK"
+  say "removed the service, the menu bar app and the built copy; sessions in $HOME_DIR are untouched"
+}
+
+usage() {
+  cat <<EOF
+scout install      build, install the login service and the menu bar app, start them
+scout start|stop|restart|status
+scout open         open the dashboard
+scout logs         follow the server log
+scout rebuild      rebuild from $REPO and restart
+scout uninstall    remove the service, the menu bar app and the built copy
+EOF
+}
+
+case "${1:-}" in
+  install) cmd_install ;;
+  start) cmd_start ;;
+  stop) cmd_stop ;;
+  restart) cmd_restart ;;
+  status) cmd_status ;;
+  open) open "$URL" ;;
+  logs) mkdir -p "$LOG_DIR"; touch "$LOG"; tail -n 200 -F "$LOG" ;;
+  rebuild) cmd_rebuild ;;
+  uninstall) cmd_uninstall ;;
+  -h | --help | help | "") usage ;;
+  *) usage >&2; exit 2 ;;
+esac

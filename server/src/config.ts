@@ -15,6 +15,8 @@ export interface Config {
   claudeBin: string | null
   /** Origin of the web app, from `DASHBOARD_URL` (default `http://scout.localhost:4546`), used in the sent markdown. */
   dashboardUrl: string
+  /** Built web app to serve next to the API, from `AI_REVIEW_WEB_DIR` (absolute), else null (Vite serves it). */
+  webDir: string | null
 }
 
 export const DEFAULT_DASHBOARD_URL = `http://${DASHBOARD_HOST}:${DEFAULT_WEB_PORT}`
@@ -68,5 +70,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     adapter: adapter.data,
     claudeBin: resolveClaudeBin(env),
     dashboardUrl: (env.DASHBOARD_URL ?? DEFAULT_DASHBOARD_URL).replace(/\/+$/, ''),
+    webDir: env.AI_REVIEW_WEB_DIR ? path.resolve(expandHome(env.AI_REVIEW_WEB_DIR)) : null,
   }
 }

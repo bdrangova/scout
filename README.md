@@ -33,6 +33,17 @@ npm run dev
 Skills only one repository needs go in `cli/templates/repos/<repo name>/`; `install` copies them only into a
 repository whose `origin` has that name.
 
+## Run it in the background (macOS)
+
+```
+service/scout install
+```
+
+Builds a fixed copy into `~/.ai-review/app`, runs it on 4546 at login (restarted if it crashes), adds a Scout
+icon to the menu bar (Open, Start/Stop, Restart, Rebuild & Restart, Logs) and a `scout` command:
+`scout start|stop|restart|status|open|logs|rebuild|uninstall`. Code edits reach it only through `scout rebuild`.
+Stop it before `npm run dev`, which needs the same port.
+
 ## Skills
 
 | Skill | Does |
