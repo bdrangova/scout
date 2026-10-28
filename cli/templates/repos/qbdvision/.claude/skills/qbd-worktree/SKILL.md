@@ -27,6 +27,7 @@ Never use the Claude desktop app's own worktree feature or `EnterWorktree` to cr
    - Existing branch (local or `origin/`): `bash "$QWT" checkout <branch>`.
    Done when it prints `WORKTREE=<path>`.
 2. `bash "$QWT" onestack <path>` — waits for the background bootstrap, repoints to my dev stack, reruns install/db/cognito/build on the right Node. Stops on the first failing step with its log.
+   It also writes the worktree's Playwright `.env` (`playwright-env`), so `npx playwright test` in `src/test/playwright` hits this worktree. Gradle's `testPlaywright` doesn't need it.
 3. `bash "$QWT" up <path>` — starts the dev servers; show me the `QbDVision runs in` block.
 4. Data: unless I named it, ask golden (Rockets R US, recommended, ~3 min) / one feature's seed scenario / none. Then `bash "$QWT" seed <path> golden` or `seed <path> feature <feature> [scenario]`. Never seed any other way (MySQL and cognito-local users must match).
 5. Scout: only if I ask, or I'm about to review here. `bash "$QWT" scout <path>`. `/publish-review` opens it by itself anyway.

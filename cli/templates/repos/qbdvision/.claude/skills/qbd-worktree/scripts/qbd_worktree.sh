@@ -6,7 +6,8 @@
 #   qbd_worktree.sh new <ticket | words>     create (or reuse) a worktree for new work
 #   qbd_worktree.sh checkout <branch>        worktree for an existing local or origin branch
 #   qbd_worktree.sh onestack <worktree>      point the worktree at my one dev stack, finish bootstrap
-#   qbd_worktree.sh link <worktree>          link plans/ and devtools/ from the main checkout
+#   qbd_worktree.sh link <worktree>          link plans/ and devtools/, copy local seed scripts, from the main checkout
+#   qbd_worktree.sh playwright-env <checkout> write src/test/playwright/.env for running Playwright directly
 #   qbd_worktree.sh up <worktree>            start the app (run_qbd.sh up)
 #   qbd_worktree.sh seed <worktree> <args>   seed data (run_qbd.sh seed)
 #   qbd_worktree.sh scout <worktree>         open the Scout session for the branch now
@@ -94,13 +95,33 @@ link_local_state() {
   done
 }
 
-cmd_link() { local p; p="$(resolve_worktree "${1:-$PWD}")"; link_local_state "$p"; say "✓ linked: $LOCAL_LINKS"; }
+# Gitignored scripts that import repo code by relative path. A link would make Node load the
+# main checkout's code (and database) from a worktree, so these are copied, and refreshed only
+# when the main checkout's copy is newer. Edit them in the main checkout.
+LOCAL_COPIES="src/test/utilities/seedTestCompanies/seed_companies.js src/test/utilities/seedTestCompanies/company_registry.js"
+copy_local_scripts() {
+  local wt_path="$1" rel
+  for rel in $LOCAL_COPIES; do
+    [ -f "$MAIN/$rel" ] || continue
+    if [ ! -e "$wt_path/$rel" ] || [ "$MAIN/$rel" -nt "$wt_path/$rel" ]; then
+      mkdir -p "$(dirname "$wt_path/$rel")"
+      cp -p "$MAIN/$rel" "$wt_path/$rel"
+    fi
+  done
+}
+
+cmd_link() {
+  local p; p="$(resolve_worktree "${1:-$PWD}")"
+  link_local_state "$p"; copy_local_scripts "$p"
+  say "✓ linked: $LOCAL_LINKS; copied: $(echo "$LOCAL_COPIES" | wc -w | tr -d ' ') local scripts"
+}
 
 # The repo hook points each worktree at dev<slot>, but only dev<envprefix> exists for me.
 cmd_onestack() {
   local wt_path base stack log_dir current pid cwd
   wt_path="$(resolve_worktree "${1:-$PWD}")"
   link_local_state "$wt_path"
+  copy_local_scripts "$wt_path"
   base="$(git -C "$MAIN" config --local qbdvision.envprefix || true)"
   [ -n "$base" ] || fail "qbdvision.envprefix is not set. Run: npm run worktrunk:setup" 3
   stack="dev$base"
@@ -135,7 +156,27 @@ cmd_onestack() {
     wt hook post-start "project:$step" --foreground --yes </dev/null >"$log_dir/$step.log" 2>&1 \
       || { tail -20 "$log_dir/$step.log" >&2; fail "step $step failed (log: $log_dir/$step.log). Fix it, then run onestack again"; }
   done
+  cmd_playwright_env "$wt_path"
   say "✓ bootstrap done on $stack"
+}
+
+# Gradle's testPlaywright passes these itself; a direct `npx playwright test` reads them from .env.
+# The client .env is generated from the checkout's gradle.properties, so it already has its ports.
+cmd_playwright_env() {
+  local top client out key
+  top="$(cd "${1:-$PWD}" && git rev-parse --show-toplevel)"
+  client="$top/src/main/client/.env"
+  out="$top/src/test/playwright/.env"
+  [ -f "$client" ] || fail "no $client yet: run the bootstrap (onestack) first"
+  val() { sed -n "s/^$1=//p" "$client" | tail -1 | sed 's/^"\(.*\)"$/\1/'; }
+  [ -n "$(val FRONT_END_URL)" ] || fail "FRONT_END_URL missing from $client"
+  {
+    echo "# Written by qbd-worktree playwright-env from src/main/client/.env; rerun after the ports change."
+    echo "BASE_URL=$(val FRONT_END_URL)/"
+    echo "QBD_API_URL=$(val API_URL)"
+    for key in AWS_REGION COGNITO_CLIENT_ID COGNITO_POOL_ID COGNITO_ENDPOINT; do echo "$key=$(val $key)"; done
+  } >"$out"
+  say "✓ wrote $out (BASE_URL $(val FRONT_END_URL)/)"
 }
 
 cmd_up()   { local p; p="$(resolve_worktree "${1:-$PWD}")"; use_project_node; bash "$RUN_QBD" up "$p"; }
@@ -179,6 +220,6 @@ cmd_remove() {
 }
 
 case "${1:-}" in
-  new|checkout|link|onestack|up|seed|scout|list|remove) c="$1"; shift; "cmd_$c" "$@" ;;
+  new|checkout|link|playwright-env|onestack|up|seed|scout|list|remove) c="${1//-/_}"; shift; "cmd_$c" "$@" ;;
   *) sed -n '/^# Usage:/,/^# Exit codes/p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac
