@@ -1,15 +1,26 @@
 // NODE ONLY (see run.ts). Repository queries: refs, branches, blobs and the working tree.
+import path from 'node:path'
 import { git, gitText, gitTry, type RunOptions } from './run.ts'
 
 export async function topLevel(cwd: string): Promise<string> {
   return (await gitText(cwd, ['rev-parse', '--show-toplevel'])).trim()
 }
 
-/** The main worktree of the repository `cwd` is in: `git worktree list` always lists it first. Itself outside a linked worktree. */
+/**
+ * The main worktree of the repository `cwd` is in, or `cwd`'s own top level when that cannot be told. It is the
+ * parent of the shared `.git` directory; parsing `git worktree list` output is avoided because paths can hold
+ * newlines or edge whitespace, and the result keys a stored command and a containment check.
+ */
 export async function mainWorktree(cwd: string): Promise<string> {
-  const out = await gitText(cwd, ['worktree', 'list', '--porcelain'])
-  const first = out.split('\n').find((line) => line.startsWith('worktree '))
-  return first === undefined ? topLevel(cwd) : first.slice('worktree '.length).trim()
+  const top = await topLevel(cwd)
+  const out = await gitTry(cwd, ['rev-parse', '--path-format=absolute', '--git-common-dir'])
+  const commonDir = out?.replace(/\n$/, '')
+  if (commonDir === undefined || commonDir === '' || path.basename(commonDir) !== '.git') return top
+  const main = path.dirname(commonDir)
+  if (main === top) return top
+  // A linked worktree's own git dir must sit under the common dir's `worktrees/`, or this is not a worktree of `main`.
+  const gitDir = (await gitTry(cwd, ['rev-parse', '--path-format=absolute', '--git-dir']))?.replace(/\n$/, '')
+  return gitDir !== undefined && path.dirname(gitDir) === path.join(commonDir, 'worktrees') ? main : top
 }
 
 export async function headSha(repo: string, options: RunOptions = {}): Promise<string> {
