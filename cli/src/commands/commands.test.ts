@@ -10,7 +10,7 @@ import { archivedSessionDir, sessionDir, writeJsonAtomic } from '../store.ts'
 import { archiveSession, deleteArchivedSession } from './archive.ts'
 import { readLatestFeedback } from './feedback.ts'
 import { initSession, parseTicket } from './init.ts'
-import { installIntoRepo, MCP_ADD_ARGS, PERMISSION } from './install.ts'
+import { installIntoRepo, MCP_ADD_ARGS, originRepoName, PERMISSION } from './install.ts'
 import { sessionPath } from './path.ts'
 import { pendingForRepo } from './pending.ts'
 import { resolveComments } from './resolve.ts'
@@ -455,6 +455,34 @@ describe('install', () => {
     expect(second.changes.every((c) => c.action === 'unchanged' || c.action === 'skipped')).toBe(true)
     expect(await readFile(settingsFile, 'utf8')).toBe(before)
     expect(await readFile(path.join(repo, '.gitignore'), 'utf8')).toBe('.claude/settings.local.json\n')
+  })
+
+  it('installs repo-specific templates only into the repository whose origin they are named after', async () => {
+    const opts = { home, claudeBin: null, pathDir: null, cliBundle: '/opt/x/index.js', nodeBin: '/opt/node' }
+    const qbd = path.join(home, 'qbd')
+    await gitText(home, ['init', '-q', '-b', 'main', qbd])
+    await gitText(qbd, ['remote', 'add', 'origin', 'git@github.com:Some-Org/qbdvision.git'])
+    const other = path.join(home, 'other')
+    await gitText(home, ['init', '-q', '-b', 'main', other])
+    await gitText(other, ['remote', 'add', 'origin', 'https://github.com/Some-Org/elsewhere.git'])
+
+    const script = '.claude/skills/qbd-worktree/scripts/qbd_worktree.sh'
+    const first = await installIntoRepo({ ...opts, repo: qbd })
+    expect(first.changes.find((c) => c.path === script)?.action).toBe('created')
+    expect((await lstat(path.join(qbd, ...script.split('/')))).mode & 0o111).not.toBe(0)
+    expect((await installIntoRepo({ ...opts, repo: qbd })).changes.find((c) => c.path === script)?.action).toBe('unchanged')
+
+    const elsewhere = await installIntoRepo({ ...opts, repo: other })
+    expect(elsewhere.changes.some((c) => c.path.includes('qbd-worktree'))).toBe(false)
+    await expect(access(path.join(other, '.claude', 'skills', 'qbd-worktree'))).rejects.toThrow()
+  })
+
+  it('reads the repository name from ssh and https origins', () => {
+    expect(originRepoName('git@github.com:Org/qbdvision.git')).toBe('qbdvision')
+    expect(originRepoName('https://github.com/Org/qbdvision/')).toBe('qbdvision')
+    expect(originRepoName('/srv/git/repo')).toBe('repo')
+    expect(originRepoName(null)).toBeNull()
+    expect(originRepoName('git@host:..')).toBeNull()
   })
 
   it('registers the Playwright MCP at user scope once, and skips it when claude already knows it', async () => {

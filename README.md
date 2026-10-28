@@ -51,6 +51,10 @@ server watches the folder and the repo, so there is nothing to publish.
 - The dashboard updates live: changed files get an `updated` chip (their verdict is pinned to the content
   it was given on), resolutions appear as they land, and the session status follows along.
 
+Skills that only make sense in one repository live in `cli/templates/repos/<name>/`, laid out as paths inside
+that repository. `install` copies them only when the repository's `origin` is named `<name>` (for example
+`repos/qbdvision/` for `…/qbdvision.git`), keeping executable bits; other repositories never get them.
+
 Session status, in order: `agent-working` while a run is active; `updated` when a judged file changed since
 its verdict or the agent answered after the send; `approved` when the last send approved and every file is
 still effectively approved; `sent` (a decision was sent, shown as "Changes sent"); `ready` (every file reviewed, nothing sent); `in-progress`; `unreviewed`. Approved is only ever the result of sending Approve; the list summary carries the optional `lastSend` (`{ at, decision }`).

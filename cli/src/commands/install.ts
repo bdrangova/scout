@@ -1,12 +1,12 @@
 // `ai-review install --repo <path>`: skills, the pending-feedback hook, settings merge, Playwright MCP, launcher, config.
 import { execFile } from 'node:child_process'
-import { access, chmod, constants, lstat, mkdir, readFile, readlink, stat, symlink, writeFile } from 'node:fs/promises'
+import { access, chmod, constants, lstat, mkdir, readdir, readFile, readlink, stat, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Command } from 'commander'
 import { CONFIG_FILE, DEFAULT_CONFIG, readConfig } from '../config.ts'
-import { mainWorktree, topLevel } from '@review-dash/shared/git/repo'
+import { mainWorktree, remoteUrl, topLevel } from '@review-dash/shared/git/repo'
 import { gitText } from '@review-dash/shared/git/run'
 import { mergeSettings, type HookSpec } from '../settings-merge.ts'
 import { resolveHome, writeJsonAtomic } from '../store.ts'
@@ -124,6 +124,22 @@ async function writeIfChanged(file: string, content: string, mode: number): Prom
   return current === null ? 'created' : 'updated'
 }
 
+/** Repository name of origin (`git@host:org/name.git` -> `name`), or null without an origin. */
+export function originRepoName(url: string | null): string | null {
+  if (url === null) return null
+  const name = path.posix.basename(url.trim().replace(/\/+$/, '').replace(/^.*:/, '/'), '.git')
+  return name === '' || name === '.' || name === '..' ? null : name
+}
+
+/** Files under `dir` as repo-relative posix paths, macOS litter skipped. */
+async function filesUnder(dir: string): Promise<string[]> {
+  const entries = await readdir(dir, { recursive: true, withFileTypes: true })
+  return entries
+    .filter((e) => e.isFile() && e.name !== '.DS_Store')
+    .map((e) => path.relative(dir, path.join(e.parentPath, e.name)).split(path.sep).join('/'))
+    .sort()
+}
+
 function hookCommand(script: string): string {
   return `"$CLAUDE_PROJECT_DIR/.claude/hooks/${script}"`
 }
@@ -156,6 +172,17 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
   for (const file of TEMPLATE_FILES) {
     const content = await readFile(path.join(templates, ...file.from.split('/')), 'utf8')
     record(file.to, await writeIfChanged(path.join(repo, ...file.to.split('/')), content, file.mode))
+  }
+
+  // Repo-specific skills and scripts: `templates/repos/<origin repo name>/` mirrors paths inside that one repo,
+  // so a skill that only makes sense there (its start scripts, its ports) never reaches other repos.
+  const repoTemplates = path.join(templates, 'repos', originRepoName(await remoteUrl(repo)) ?? '')
+  if (path.dirname(repoTemplates) === path.join(templates, 'repos') && (await exists(repoTemplates))) {
+    for (const rel of await filesUnder(repoTemplates)) {
+      const source = path.join(repoTemplates, ...rel.split('/'))
+      const mode = (await stat(source)).mode & 0o111 ? 0o755 : 0o644
+      record(rel, await writeIfChanged(path.join(repo, ...rel.split('/')), await readFile(source, 'utf8'), mode))
+    }
   }
 
   // Settings: hooks keyed by script name, plus the Bash(ai-review *) permission.
