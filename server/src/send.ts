@@ -1,5 +1,5 @@
-import { buildSentPrReplies, buildSentSnapshot, buildTestRunSentSnapshot, derivePrComments, emptyReview, isTestRun, renderSentMarkdown, renderTestRunSentMarkdown, stampSent } from '@review-dash/shared'
-import type { AgentRun, AnySentSnapshot, Resolutions, Review, SendRequest, SendResponse } from '@review-dash/shared'
+import { buildSentPrReplies, buildSentSnapshot, buildTestRunSentSnapshot, derivePrComments, emptyReview, isTestRun, renderSentMarkdown, renderTestRunSentMarkdown, stampSent } from '@scout/shared'
+import type { AgentRun, AnySentSnapshot, Resolutions, Review, SendRequest, SendResponse } from '@scout/shared'
 import type { AgentAdapter } from './agent/adapter.ts'
 import type { RunManager } from './agent/runs.ts'
 import { badRequest } from './errors.ts'

@@ -1,4 +1,4 @@
-import type { Panel } from "@review-dash/shared";
+import type { Panel } from "@scout/shared";
 import { GalleryPanel, LogPanel, VideoPanel } from "./media-panels";
 import { PanelFrame } from "./PanelFrame";
 import { ScenarioListPanel } from "./ScenarioListPanel";

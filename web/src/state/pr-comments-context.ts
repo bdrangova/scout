@@ -1,4 +1,4 @@
-import type { PrCommentCounts, PrCommentsResponse, PrCommentView, PrIdentity, PrReplyKind, PutPrReplyResponse } from '@review-dash/shared'
+import type { PrCommentCounts, PrCommentsResponse, PrCommentView, PrIdentity, PrReplyKind, PutPrReplyResponse } from '@scout/shared'
 import { createContext, useContext } from 'react'
 import { queuedReplyCounts, type QueuedReplyCounts } from '@/lib/pr-replies'
 import { groupPrThreads, prCountsByPath, threadsForPath, type PrFileCounts, type PrThread } from '@/lib/pr-threads'

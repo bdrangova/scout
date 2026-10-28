@@ -1,4 +1,4 @@
-import { effectiveVerdict, fileIsUpdated, type TestRunDetail } from "@review-dash/shared";
+import { effectiveVerdict, fileIsUpdated, type TestRunDetail } from "@scout/shared";
 import { useEffect, useReducer, useState, type PointerEvent } from "react";
 import { Markdown } from "@/components/common/Markdown";
 import { CardActions } from "@/components/diff/CardActions";

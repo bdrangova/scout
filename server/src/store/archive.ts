@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { ARCHIVED_FILE, ArchivedMarkerSchema, agentCwd, isTestRun } from '@review-dash/shared'
-import type { ArchivedSession, Manifest } from '@review-dash/shared'
+import { ARCHIVED_FILE, ArchivedMarkerSchema, agentCwd, isTestRun } from '@scout/shared'
+import type { ArchivedSession, Manifest } from '@scout/shared'
 import { isMissing, readTextIfExists, writeFileAtomic } from './fs.ts'
 
 function errorCode(err: unknown): string | undefined {

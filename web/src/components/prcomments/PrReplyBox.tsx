@@ -1,4 +1,4 @@
-import type { PrCommentView } from '@review-dash/shared'
+import type { PrCommentView } from '@scout/shared'
 import { Check, ListChecks, MessageSquareText } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'

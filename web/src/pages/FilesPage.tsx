@@ -1,4 +1,4 @@
-import { currentProposal, reportMatchesTree, effectiveVerdict, nextUnreviewedFile, type Scope, type TreeFile } from '@review-dash/shared'
+import { currentProposal, reportMatchesTree, effectiveVerdict, nextUnreviewedFile, type Scope, type TreeFile } from '@scout/shared'
 import { FileCheck } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'

@@ -1,4 +1,4 @@
-import type { ArchivedSession, SessionListItem } from '@review-dash/shared'
+import type { ArchivedSession, SessionListItem } from '@scout/shared'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { archiveErrorMessage, archiveSession, unarchiveSession } from '@/lib/archive'

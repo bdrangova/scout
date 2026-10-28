@@ -1,4 +1,4 @@
-import type { CommentKind, CommentTarget } from "@review-dash/shared";
+import type { CommentKind, CommentTarget } from "@scout/shared";
 import { useState } from "react";
 import { CommentBox } from "@/components/common/CommentBox";
 import { CommentList } from "@/components/common/CommentList";

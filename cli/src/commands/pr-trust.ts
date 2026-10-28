@@ -3,7 +3,7 @@
 // so a comment cannot talk the agent into trusting itself.
 import path from 'node:path'
 import type { Command } from 'commander'
-import { PR_COMMENT_ID_RE, SCHEMA_VERSION, hashPrBody, type PrResolutions } from '@review-dash/shared'
+import { PR_COMMENT_ID_RE, SCHEMA_VERSION, hashPrBody, type PrResolutions } from '@scout/shared'
 import { findPrSession } from '../pr/session.ts'
 import { readPrComments, readPrResolutions, writePrResolutions } from '../sessions.ts'
 import { resolveHome } from '../store.ts'

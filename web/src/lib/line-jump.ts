@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { LineSide } from '@review-dash/shared'
+import type { LineSide } from '@scout/shared'
 
 /** A request to bring one diff line into view and highlight it (from content search). */
 export interface LineJump {

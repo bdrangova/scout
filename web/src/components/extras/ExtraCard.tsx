@@ -1,4 +1,4 @@
-import type { CommentTarget, ExtraItem } from '@review-dash/shared'
+import type { CommentTarget, ExtraItem } from '@scout/shared'
 import { Code, FileText, Workflow, type LucideIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { ContentCard } from '@/components/common/ContentCard'

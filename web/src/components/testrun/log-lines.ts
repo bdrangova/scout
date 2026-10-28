@@ -1,4 +1,4 @@
-import type { Scenario } from "@review-dash/shared";
+import type { Scenario } from "@scout/shared";
 
 export const ROW_HEIGHT = 20;
 export const VIEWPORT_HEIGHT = 480;

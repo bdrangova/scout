@@ -22,7 +22,7 @@ import {
 import { mockReviewApi, type ReviewApiMockOptions } from '@/test/mock-api'
 import { stubEventSource } from '@/test/mock-event-source'
 import { ThemeProvider } from '@/theme/ThemeProvider'
-import { makeTree } from '@review-dash/shared/testing/fixtures'
+import { makeTree } from '@scout/shared/testing/fixtures'
 import { FilesPage } from './FilesPage'
 
 vi.mock('@pierre/diffs/react', () => ({
@@ -372,13 +372,13 @@ describe('FilesPage', () => {
     expect(within(bar).queryByTitle(/^Reviewed \d+ of \d+$/)).not.toBeInTheDocument()
     fireEvent.keyDown(window, { key: 'b' })
     expect(screen.queryByRole('complementary', { name: 'Session panel' })).not.toBeInTheDocument()
-    expect(window.localStorage.getItem('review-dash:rail')).toBe('closed')
+    expect(window.localStorage.getItem('scout:rail')).toBe('closed')
     const show = within(bar).getByRole('button', { name: 'Show sidebar' })
     expect(show).toHaveAttribute('aria-expanded', 'false')
     expect(within(show).getByText('0/6')).toBeInTheDocument()
     fireEvent.click(show)
     expect(screen.getByRole('complementary', { name: 'Session panel' })).toBeInTheDocument()
-    expect(window.localStorage.getItem('review-dash:rail')).toBe('open')
+    expect(window.localStorage.getItem('scout:rail')).toBe('open')
   })
 
   it('has the timeline in the page column on the page background, with no hide button on the tree header', async () => {
@@ -410,7 +410,7 @@ describe('FilesPage', () => {
     await waitFor(() => expect(api.puts.some((put) => put.review.files[P1]?.verdict === 'approved')).toBe(true))
     expect(grid.querySelector(`[data-path="${P1}"]`)).toHaveAttribute('data-verdict', 'approved')
 
-    window.localStorage.setItem('review-dash:last-card-mode', 'scroll')
+    window.localStorage.setItem('scout:last-card-mode', 'scroll')
     fireEvent.click(screen.getByRole('button', { name: files[2]?.path ?? '' }))
     const cards = await screen.findAllByRole('article')
     expect(cards).toHaveLength(files.length)
@@ -521,7 +521,7 @@ describe('FilesPage', () => {
       fireEvent.keyDown(window, { key: 'h' })
       await waitFor(() => expect(screen.queryByRole('button', { name: /^Merge commit/ })).not.toBeInTheDocument())
       expect(toast.info).toHaveBeenLastCalledWith('Merge commits hidden')
-      expect(window.localStorage.getItem('review-dash:hide-merges')).toBe('hidden')
+      expect(window.localStorage.getItem('scout:hide-merges')).toBe('hidden')
       fireEvent.keyDown(window, { key: ']' })
       await waitFor(() => expect(screen.getByRole('main')).toHaveAttribute('data-scope', COMMIT_SHAS.last))
       fireEvent.keyDown(window, { key: 'H' })

@@ -1,4 +1,4 @@
-import type { ArchivedSession } from '@review-dash/shared'
+import type { ArchivedSession } from '@scout/shared'
 import type { SessionKind } from '@/lib/paths'
 import { ArchivedSessionCard } from './SessionCards'
 

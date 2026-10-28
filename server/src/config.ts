@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { AgentAdapterNameSchema, DASHBOARD_HOST, DEFAULT_SERVER_PORT, DEFAULT_WEB_PORT } from '@review-dash/shared'
-import type { AgentAdapterName } from '@review-dash/shared'
+import { AgentAdapterNameSchema, DASHBOARD_HOST, DEFAULT_SERVER_PORT, DEFAULT_WEB_PORT } from '@scout/shared'
+import type { AgentAdapterName } from '@scout/shared'
 
 export interface Config {
   /** TCP port, from `AI_REVIEW_PORT` (default 4545). The generic `PORT` is ignored on purpose: the desktop browser-preview harness injects the web port there. */

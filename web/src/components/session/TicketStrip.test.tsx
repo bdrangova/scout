@@ -1,4 +1,4 @@
-import type { Ticket } from '@review-dash/shared'
+import type { Ticket } from '@scout/shared'
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { TicketStrip } from './TicketStrip'

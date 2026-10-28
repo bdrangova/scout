@@ -2,7 +2,7 @@ export type ThemeSetting = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
 /** localStorage key; the no-flash script in index.html reads the same key. */
-export const THEME_STORAGE_KEY = 'review-dash:theme'
+export const THEME_STORAGE_KEY = 'scout:theme'
 
 export const THEME_SETTINGS: readonly ThemeSetting[] = ['light', 'dark', 'system']
 

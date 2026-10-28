@@ -1,4 +1,4 @@
-import type { Verdict } from '@review-dash/shared'
+import type { Verdict } from '@scout/shared'
 import { Check, MessageSquare, X, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'

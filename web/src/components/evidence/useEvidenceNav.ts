@@ -1,4 +1,4 @@
-import type { EvidenceItem } from '@review-dash/shared'
+import type { EvidenceItem } from '@scout/shared'
 import { useHotkeys } from '@/lib/useHotkeys'
 
 /** Position in the evidence list and `←/→` movement; the URL (via `onChange`) holds the current item. */

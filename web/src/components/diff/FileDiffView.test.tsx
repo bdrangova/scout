@@ -1,4 +1,4 @@
-import { mergeComments, type Comment } from '@review-dash/shared'
+import { mergeComments, type Comment } from '@scout/shared'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -7,8 +7,8 @@ import { ThemeContext } from '@/theme/ThemeContext'
 import { FileDiffView } from './FileDiffView'
 import { LineCommentsContext, type LineCommentsValue } from './line-comments'
 import { PrAnnotationsContext } from './pr-annotations'
-import { buildPrCommentsResponse } from '@review-dash/shared'
-import { makePrComment, makePrComments } from '@review-dash/shared/testing/fixtures'
+import { buildPrCommentsResponse } from '@scout/shared'
+import { makePrComment, makePrComments } from '@scout/shared/testing/fixtures'
 import { groupPrThreads } from '@/lib/pr-threads'
 
 interface MockProps {

@@ -1,3 +1,3 @@
-import type { TestRunDetail } from "@review-dash/shared";
+import type { TestRunDetail } from "@scout/shared";
 
 export type Scenario = TestRunDetail["scenarios"][number];

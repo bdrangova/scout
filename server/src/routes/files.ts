@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import type { Request, Response } from 'express'
-import type { ApiError, FileContentsSide, TreeFile } from '@review-dash/shared'
+import type { ApiError, FileContentsSide, TreeFile } from '@scout/shared'
 import type { FileContents, Store } from '../store/index.ts'
 import { contentSecurityPolicy } from '../security.ts'
 import { queryString, wildcardPath } from './params.ts'

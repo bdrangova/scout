@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-const STORAGE_KEY = 'review-dash:hide-merges'
+const STORAGE_KEY = 'scout:hide-merges'
 
 function readStored(): boolean {
   try {

@@ -2,7 +2,7 @@
 
 Authoritative; supersedes Contract v1, research/05 §2 and research/06 §1/§4 where they differ. Decision D8 (research/07): the dashboard reads everything live. The server computes code diffs from the repo working tree on demand; evidence, spec, extras and the PR description are plain files the agent writes into the session folder, which the server watches. There are no revisions, snapshot refs, inbox or publish step. Reviews happen on the machine that has the repo.
 
-All timestamps are ISO-8601 strings. Schemas live in `shared/src/schemas/*.ts` as zod v4 objects with inferred TS types; each exports the schema (`ManifestSchema`) and the type (`Manifest`). `shared/src/index.ts` re-exports everything **except `shared/src/git/**`, which is Node-only** (spawns git, reads the filesystem). The server and the CLI import it as `@review-dash/shared/git/<file>`; the web must never import it.
+All timestamps are ISO-8601 strings. Schemas live in `shared/src/schemas/*.ts` as zod v4 objects with inferred TS types; each exports the schema (`ManifestSchema`) and the type (`Manifest`). `shared/src/index.ts` re-exports everything **except `shared/src/git/**`, which is Node-only** (spawns git, reads the filesystem). The server and the CLI import it as `@scout/shared/git/<file>`; the web must never import it.
 
 ## Store
 
@@ -380,7 +380,7 @@ Fixture run folder: `fixtures/test-runs/demo/plans/f/a/test-runs/run-1/` (see `f
 ## Migration notes
 
 ### server
-- Delete: everything revision-related in `store/` (manifest revisions, `rev/:n` params, `files/{before,after}` snapshot reads, `delta.patch`, inbox handling), `store/patch.ts` and its test (moved to `@review-dash/shared/git/split-patch`), `store/mime.ts` if it only mapped evidence/extras types (use `mimeFromPath`).
+- Delete: everything revision-related in `store/` (manifest revisions, `rev/:n` params, `files/{before,after}` snapshot reads, `delta.patch`, inbox handling), `store/patch.ts` and its test (moved to `@scout/shared/git/split-patch`), `store/mime.ts` if it only mapped evidence/extras types (use `mimeFromPath`).
 - Add a tree cache: per session, `computeWorkingTree({ repo: manifest.repo.path, baseRef: manifest.repo.baseRef })` → `{ tree, patches }`; invalidate from a repo watcher (chokidar on `repo.path`, ignoring `.git/` except `HEAD`/`index`/`refs`, honouring `.gitignore` as far as practical, 300 ms debounce); after each recompute emit `tree.updated { sessionId, fingerprint, durationMs }` and log the timing. See research/07 for the performance plan.
 - Watch the session folder too: `evidence/`, `extras/`, `spec/`, `pr-description.md` changes → `session.updated`.
 - `GET /sessions/:id` builds `SessionDetail` from the manifest, the cached tree, `deriveEvidence/deriveExtras/deriveSpec` over directory listings (recursive, posix-relative paths; parse `index.json` with the `*IndexSchema`, ignore it when invalid and log), and `pr-description.md`.
@@ -388,7 +388,7 @@ Fixture run folder: `fixtures/test-runs/demo/plans/f/a/test-runs/run-1/` (see `f
 - Send: `buildSentSnapshot({ review, tree, decision, resolutions, now })`, then write `<stem>.json`, `<stem>.md` (`renderSentMarkdown(sent, { title: manifest.title, dashboardUrl, evidence, extras, spec })`) and `<stem>.patch` (`sent.patchPath`).
 - `sessionStatus` now takes `{ review, tree, resolutions, activeRun }`; `progress(review, tree)`.
 - `SessionSummary` lost `createdAt`/`currentRevision`; `updatedAt` = max(manifest.updatedAt, review.updatedAt, resolutions.updatedAt, tree.computedAt).
-- Fixtures: `@review-dash/shared/testing/fixtures` exports are now `makeManifest`, `makeTree`, `makeTreeFile`, `makeEvidence`, `makeExtra`, `makeSpec`, `makeComment`, `makeReview`, `makeResolution`, `makeResolutions`, `fp`, `BASE_SHA`, `HEAD_SHA` (plus `SESSION_ID`, `T0..T3`). `manifest()`, `revision()`, `fileEntry()`, `comment()`, `review()`, `resolution()`, `resolutions()` are gone.
+- Fixtures: `@scout/shared/testing/fixtures` exports are now `makeManifest`, `makeTree`, `makeTreeFile`, `makeEvidence`, `makeExtra`, `makeSpec`, `makeComment`, `makeReview`, `makeResolution`, `makeResolutions`, `fp`, `BASE_SHA`, `HEAD_SHA` (plus `SESSION_ID`, `T0..T3`). `manifest()`, `revision()`, `fileEntry()`, `comment()`, `review()`, `resolution()`, `resolutions()` are gone.
 
 ### web
 - Replace `Revision`/`FileEntry` with `WorkingTree`/`TreeFile` from `SessionDetail.tree`; evidence/extras/spec come from `SessionDetail.evidence|extras|spec` (no ids: key lists and comment refs by `item.path`).
@@ -397,10 +397,10 @@ Fixture run folder: `fixtures/test-runs/demo/plans/f/a/test-runs/run-1/` (see `f
 - Listen for `tree.updated` on `/api/events`: refetch the detail (or skip when `fingerprint` matches the loaded tree); the "updated" chip is `fileIsUpdated(review.files[path], file)`.
 - Status/progress helpers take the tree; "updated" also means the agent answered after the send.
 - `SessionSummary` has no `createdAt`/`currentRevision`; sort by `updatedAt`.
-- Never import `@review-dash/shared/git/*`.
+- Never import `@scout/shared/git/*`.
 
 ### cli
 - Delete `publish.ts`, the snapshot-ref code, `last-publish.ts`, the inbox/publish commands and the `/publish-review` skill text that says to republish. Replace with `ai-review init --repo <path> [--base <ref>] --title … [--ticket KEY[=url]]` that writes the manifest (`repo.path = topLevel`, `baseRef = --base ?? defaultBase(repo)` — i.e. `origin/master` → `master` → `origin/main` → `main` → `origin/HEAD` target; the stored name is what the server passes to `computeWorkingTree`, which diffs against its merge-base with HEAD, `remote`, `branch`) and prints the session folder, plus `ai-review path <id> [evidence|extras|spec]` so the agent knows where to drop files. Evidence/extras/spec are written straight into the session folder (optionally with `index.json`).
-- `git.ts`, `rules.ts` and their tests move to `@review-dash/shared/git/{run,repo,parse,rules}`; delete the CLI copies. `ai-review feedback` renders with `renderSentMarkdown(sent, { title, dashboardUrl, evidence?, extras?, spec? })` or just prints `review/sent/<stem>.md`.
+- `git.ts`, `rules.ts` and their tests move to `@scout/shared/git/{run,repo,parse,rules}`; delete the CLI copies. `ai-review feedback` renders with `renderSentMarkdown(sent, { title, dashboardUrl, evidence?, extras?, spec? })` or just prints `review/sent/<stem>.md`.
 - `ai-review resolve` is unchanged apart from `schemaVersion: 2` in `resolutions.json`.
 - Fixtures (`scripts/make-fixture.ts`, `fixtures/`): a fixture session is now a manifest pointing at a real (temp) git repo plus `evidence/`, `extras/`, `spec/`, `pr-description.md`; there is no `revisions/` folder.

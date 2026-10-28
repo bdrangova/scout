@@ -1,4 +1,4 @@
-import type { EvidenceItem } from '@review-dash/shared'
+import type { EvidenceItem } from '@scout/shared'
 import { Film, MessageSquare } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { pluralize } from '@/lib/format'

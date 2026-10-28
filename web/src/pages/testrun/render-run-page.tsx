@@ -1,4 +1,4 @@
-import type { TestRunDetail } from "@review-dash/shared";
+import type { TestRunDetail } from "@scout/shared";
 import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { expect } from "vitest";

@@ -29,7 +29,7 @@ import {
   type SentSnapshot,
   type Resolutions,
   type Review,
-} from '@review-dash/shared'
+} from '@scout/shared'
 import { MANIFEST_FILE, sessionDir, writeJsonAtomic } from './store.ts'
 
 export const REVIEW_FILE = path.join('review', 'review.json')

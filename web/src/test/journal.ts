@@ -1,4 +1,4 @@
-import type { Journal, JournalEntry } from '@review-dash/shared'
+import type { Journal, JournalEntry } from '@scout/shared'
 import { SESSION_ID } from './fixtures'
 
 /** A journal entry with defaults (a file-level decision on `src/other.ts`); override what the test is about. */

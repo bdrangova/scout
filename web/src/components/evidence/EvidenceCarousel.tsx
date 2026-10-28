@@ -1,4 +1,4 @@
-import type { EvidenceItem } from '@review-dash/shared'
+import type { EvidenceItem } from '@scout/shared'
 import useEmblaCarousel from 'embla-carousel-react'
 import { useEffect } from 'react'
 import { cn } from '@/lib/utils'

@@ -17,7 +17,7 @@ import {
   type TreeFile,
   type WorkingTree,
   type WorktreeSummary,
-} from '@review-dash/shared'
+} from '@scout/shared'
 import {
   BASE_SHA,
   SESSION_ID as SHARED_SESSION_ID,
@@ -29,7 +29,7 @@ import {
   makeTestRunManifest,
   makeTree,
   makeTreeFile,
-} from '@review-dash/shared/testing/fixtures'
+} from '@scout/shared/testing/fixtures'
 
 export { fp, makeTreeFile }
 

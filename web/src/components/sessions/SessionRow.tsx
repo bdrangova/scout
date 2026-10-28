@@ -1,4 +1,4 @@
-import type { SessionSummary } from '@review-dash/shared'
+import type { SessionSummary } from '@scout/shared'
 import { LiveSessionCard } from './SessionCards'
 
 /** Compact list layout shares the same information and interactions as the grid. */

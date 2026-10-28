@@ -1,7 +1,7 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import type { WorktreeSummary } from '@review-dash/shared'
+import type { WorktreeSummary } from '@scout/shared'
 import { ShortcutHelp } from '@/components/common/ShortcutHelp'
 import { ErrorState, ListNote, LoadingState } from '@/components/sessions/SessionListStates'
 import { SessionLayoutToggle } from '@/components/sessions/SessionLayoutToggle'

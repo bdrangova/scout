@@ -1,4 +1,4 @@
-import type { AgentAdapterName, AgentRunEvent, Decision, SessionDetail } from '@review-dash/shared'
+import type { AgentAdapterName, AgentRunEvent, Decision, SessionDetail } from '@scout/shared'
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
 

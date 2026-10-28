@@ -3,7 +3,7 @@
 // realpath'd), not a git repository.
 import { cp, mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { emptyReview, ReviewSchema, SCHEMA_VERSION, type Review, type TestRunManifest } from '@review-dash/shared'
+import { emptyReview, ReviewSchema, SCHEMA_VERSION, type Review, type TestRunManifest } from '@scout/shared'
 import { writeJsonAtomic } from '../../cli/src/store.ts'
 import { deriveRunDetail } from '../../server/src/store/test-run.ts'
 import { fixturesDir, writeSessionFolder } from './common.ts'

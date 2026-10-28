@@ -1,4 +1,4 @@
-import type { CommentWithStatus } from "@review-dash/shared";
+import type { CommentWithStatus } from "@scout/shared";
 import { ExternalLink, FileJson, Film, Image } from "lucide-react";
 import { IconLink } from "@/components/common/IconLink";
 import { KindTag } from "@/components/common/KindTag";

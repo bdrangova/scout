@@ -1,4 +1,4 @@
-import type { CommentTarget } from '@review-dash/shared'
+import type { CommentTarget } from '@scout/shared'
 
 /** Where a composer's text is typed: a file card, a spec, extra or evidence card, or a test run's scenario, screenshot or data file (`run-file`), bug or log. */
 export type DraftKind = 'overall' | 'proposal' | 'file' | 'spec' | 'extra' | 'evidence' | 'scenario' | 'run-file' | 'bug' | 'log'

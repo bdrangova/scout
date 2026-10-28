@@ -1,4 +1,4 @@
-import { effectiveVerdict, fileIsUpdated } from "@review-dash/shared";
+import { effectiveVerdict, fileIsUpdated } from "@scout/shared";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Tag } from "@/components/ui/tag";
 import {

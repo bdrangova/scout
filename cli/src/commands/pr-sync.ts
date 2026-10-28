@@ -2,10 +2,10 @@
 // into review/pr-comments.json (identity + external comments), keeping what is already there.
 import path from 'node:path'
 import type { Command } from 'commander'
-import { SCHEMA_VERSION, derivePrComments, hashPrBody, lapsedCommentGrants, prCommentCounts, type PrCommentCounts, type PrIdentity } from '@review-dash/shared'
+import { SCHEMA_VERSION, derivePrComments, hashPrBody, lapsedCommentGrants, prCommentCounts, type PrCommentCounts, type PrIdentity } from '@scout/shared'
 import { readConfig } from '../config.ts'
-import { topLevel } from '@review-dash/shared/git/repo'
-import type { PrComment } from '@review-dash/shared'
+import { topLevel } from '@scout/shared/git/repo'
+import type { PrComment } from '@scout/shared'
 import { fetchPr } from '../pr/fetch.ts'
 import { defaultGhRunner, PrSyncError, type GhRunner } from '../pr/gh.ts'
 import { mergeFetched } from '../pr/normalize.ts'

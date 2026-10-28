@@ -1,4 +1,4 @@
-import { effectiveVerdict, type Verdict } from "@review-dash/shared";
+import { effectiveVerdict, type Verdict } from "@scout/shared";
 import { useCallback, useEffect, useRef } from "react";
 import { announceVerdict, useVerdictAction } from "@/components/diff/useVerdictAction";
 import { draftKey } from "@/lib/comment-drafts";

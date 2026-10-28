@@ -33,7 +33,7 @@ const LINK_SAFETY = { enabled: false }
  * design's syntax tokens, so highlighted code follows the light/dark switch without re-rendering.
  * Streamdown wants a [light, dark] pair; both are this theme.
  */
-const CSS_VARIABLES_THEME = createCssVariablesTheme({ name: 'review-dash', variablePrefix: '--shiki-', fontStyle: true })
+const CSS_VARIABLES_THEME = createCssVariablesTheme({ name: 'scout', variablePrefix: '--shiki-', fontStyle: true })
 const SHIKI_THEMES: [ThemeInput, ThemeInput] = [CSS_VARIABLES_THEME, CSS_VARIABLES_THEME]
 
 /**

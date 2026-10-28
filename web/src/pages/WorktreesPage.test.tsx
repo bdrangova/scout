@@ -1,4 +1,4 @@
-import type { WorktreeListResponse } from '@review-dash/shared'
+import type { WorktreeListResponse } from '@scout/shared'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'

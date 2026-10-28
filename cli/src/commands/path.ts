@@ -1,7 +1,7 @@
 // `ai-review path <id> [evidence|extras|spec|run]`: the absolute folder the agent writes into (`run`: the run folder of a test-run session).
 import path from 'node:path'
 import type { Command } from 'commander'
-import { isTestRun, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR } from '@review-dash/shared'
+import { isTestRun, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR } from '@scout/shared'
 import { manifestExists, readManifest, resolveHome, sessionDir } from '../store.ts'
 
 export const PATH_KINDS = [SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR] as const

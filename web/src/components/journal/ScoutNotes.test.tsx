@@ -1,4 +1,4 @@
-import { mergeComments } from '@review-dash/shared'
+import { mergeComments } from '@scout/shared'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ReactNode } from 'react'
@@ -105,7 +105,7 @@ describe("Scout's notes on a file card", () => {
     const first = renderCard([makeEntry('j1', { kind: 'summary', title: 'Summary', body: 'Summary text.' })])
     await userEvent.click(screen.getByRole('button', { name: "Scout's notes" }))
     expect(screen.queryByText('Summary text.')).not.toBeInTheDocument()
-    expect(window.localStorage.getItem(`review-dash:journal-strip:${SESSION_ID}`)).toBe('collapsed')
+    expect(window.localStorage.getItem(`scout:journal-strip:${SESSION_ID}`)).toBe('collapsed')
     first.unmount()
     renderCard([makeEntry('j1', { kind: 'summary', title: 'Summary', body: 'Summary text.' })])
     expect(screen.queryByText('Summary text.')).not.toBeInTheDocument()

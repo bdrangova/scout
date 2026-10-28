@@ -1,5 +1,5 @@
-import { buildPrCommentsResponse } from '@review-dash/shared'
-import { makePrComment, makePrComments, makePrResolution } from '@review-dash/shared/testing/fixtures'
+import { buildPrCommentsResponse } from '@scout/shared'
+import { makePrComment, makePrComments, makePrResolution } from '@scout/shared/testing/fixtures'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'

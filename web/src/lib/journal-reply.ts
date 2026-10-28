@@ -1,4 +1,4 @@
-import { relocateJournalAnchor, type CommentTarget, type JournalEntry } from '@review-dash/shared'
+import { relocateJournalAnchor, type CommentTarget, type JournalEntry } from '@scout/shared'
 import { apiGet } from './api'
 import { filePatchPath } from './paths'
 

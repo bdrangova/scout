@@ -1,4 +1,4 @@
-import type { TreeFile } from '@review-dash/shared'
+import type { TreeFile } from '@scout/shared'
 import { FILE_TYPES, fileTypeOf, type FileTypeId } from '@/lib/file-type'
 import type { FileTypeOption } from './FileTypeFilter'
 

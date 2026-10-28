@@ -1,4 +1,4 @@
-import type { AgentRun, AgentRunEvent } from '@review-dash/shared'
+import type { AgentRun, AgentRunEvent } from '@scout/shared'
 import { useEffect, useReducer } from 'react'
 import { EMPTY_TRANSCRIPT, applyRunEvent, runEventsUrl, type Transcript } from './runs'
 

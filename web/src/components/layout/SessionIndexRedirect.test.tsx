@@ -1,4 +1,4 @@
-import type { SessionDetail } from '@review-dash/shared'
+import type { SessionDetail } from '@scout/shared'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'

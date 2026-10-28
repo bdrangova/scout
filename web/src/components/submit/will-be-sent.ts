@@ -1,4 +1,4 @@
-import type { AgentRun, CommentWithStatus } from '@review-dash/shared'
+import type { AgentRun, CommentWithStatus } from '@scout/shared'
 import { pluralize } from '@/lib/format'
 import type { QueuedReplyCounts } from '@/lib/pr-replies'
 import { formatCost } from '@/lib/runs'

@@ -24,8 +24,8 @@ import {
   type PrResolution,
   type Review,
   type WorkingTree,
-} from '@review-dash/shared'
-import { computeWorkingTree } from '@review-dash/shared/git/working-tree'
+} from '@scout/shared'
+import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { writeJsonAtomic } from '../../cli/src/store.ts'
 import { BASE_REF, DASHBOARD_ORIGIN, judged, makeComment, makeManifest, writeSessionFolder } from './common.ts'
 import { PR_FRESH_SESSION_ID, PR_MERGED_SESSION_ID, PR_MIXED_SESSION_ID, PR_NO_COMMENTS_SESSION_ID } from './ids.ts'

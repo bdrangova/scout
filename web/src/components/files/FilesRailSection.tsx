@@ -1,4 +1,4 @@
-import type { TreeFile } from '@review-dash/shared'
+import type { TreeFile } from '@scout/shared'
 import { RailSection } from '@/components/layout/RailSlot'
 import { FileTree } from './FileTree'
 import { useTreeCollapsed } from './useTreeCollapsed'

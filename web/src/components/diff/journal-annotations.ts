@@ -1,4 +1,4 @@
-import type { JournalEntry } from '@review-dash/shared'
+import type { JournalEntry } from '@scout/shared'
 import { createContext, useContext } from 'react'
 
 /** Scout's anchored notes of the file a card shows, and where the diff reports which of them it placed. */

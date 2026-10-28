@@ -1,4 +1,4 @@
-import type { AgentRun, Decision } from '@review-dash/shared'
+import type { AgentRun, Decision } from '@scout/shared'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { suggestDecision, suggestTestRunDecision, verdictSummary } from '@/components/submit/verdict-summary'

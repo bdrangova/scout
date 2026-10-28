@@ -1,4 +1,4 @@
-import type { PrSummary } from '@review-dash/shared'
+import type { PrSummary } from '@scout/shared'
 import { ExternalLink, GitMerge, GitPullRequest, GitPullRequestClosed, GitPullRequestDraft, type LucideIcon } from 'lucide-react'
 import { safePrUrl } from './pr-url'
 

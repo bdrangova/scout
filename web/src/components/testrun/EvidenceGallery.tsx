@@ -1,4 +1,4 @@
-import type { EvidenceRef } from "@review-dash/shared";
+import type { EvidenceRef } from "@scout/shared";
 import { useState } from "react";
 import { ImageViewer } from "@/components/evidence/ImageViewer";
 import { runFileUrl } from "@/lib/paths";

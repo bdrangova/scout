@@ -1,6 +1,6 @@
 ---
 name: publish-test-run
-description: Publish the results of a feature-test run to the review-dash dashboard (/t/<id>) by writing the run's part of test-run.json (per-scenario status, layers, steps, video and screenshot evidence, log excerpts, gaps, bugs, run-level overview panels). Rerunning refreshes only the scenarios whose sources changed and reports which verdicts are now stale. Use when the user runs /publish-test-run, or after /feature-test finished, to review the run in the dashboard.
+description: Publish the results of a feature-test run to the Scout dashboard (/t/<id>) by writing the run's part of test-run.json (per-scenario status, layers, steps, video and screenshot evidence, log excerpts, gaps, bugs, run-level overview panels). Rerunning refreshes only the scenarios whose sources changed and reports which verdicts are now stale. Use when the user runs /publish-test-run, or after /feature-test finished, to review the run in the dashboard.
 argument-hint: "<run-folder> [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Bash(wc *) Bash(shasum *) Bash(mv *) Read Glob Grep Write AskUserQuestion
 ---

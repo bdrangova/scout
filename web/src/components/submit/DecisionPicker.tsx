@@ -1,4 +1,4 @@
-import type { Decision } from '@review-dash/shared'
+import type { Decision } from '@scout/shared'
 import { MessageSquareWarningIcon, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { VERDICT_STYLE } from '@/lib/verdict'

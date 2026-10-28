@@ -1459,7 +1459,7 @@ function optionHTML(opt) {
 }
 function buildPage() {
   const opt = (location.hash.match(/^#([ABCD])/) || [])[1] || 'A';
-  document.getElementById('app').innerHTML = `<h1>GitHub PR comments in review-dash: four options</h1>
+  document.getElementById('app').innerHTML = `<h1>GitHub PR comments in scout: four options</h1>
     <p class="lede">A PR already exists on GitHub with comments from Copilot and developers; the agent addresses them; you want to see what each said, what the agent did, and how far along it is. Fixture: PR #482 on variety-app, 10 threads (4 addressed, 1 declined, 1 outdated, 4 open) plus a Copilot summary. Same shell as header-b-pages (52px bar, 296px rail). Fetching and replying use <code>gh</code> outside the dashboard; every reply stays a draft until you push it. Status is always an icon plus a word, never colour alone. Write-up: <code>docs/gh-comments-options.md</code>.</p>
     <nav class="opt-nav">${['A', 'B', 'C', 'D'].map((k) => `<a class="${k === opt ? 'on' : ''}" href="#${k}" onclick="setTimeout(()=>location.reload(),0)">${OPT[k].title}</a>`).join('')}</nav>${optionHTML(opt)}`;
 }

@@ -5,8 +5,8 @@
 // the output (the e2e run builds a throwaway copy).
 import { mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
-import type { WorkingTree } from '@review-dash/shared'
-import { computeWorkingTree } from '@review-dash/shared/git/working-tree'
+import type { WorkingTree } from '@scout/shared'
+import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { BASE_REF, copyRepo, printSummary, reposDir, storeDir, type SessionReport } from './fixtures/common.ts'
 import {
   writeArchivedSession,

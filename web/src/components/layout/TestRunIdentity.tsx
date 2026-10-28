@@ -1,4 +1,4 @@
-import type { TestRunDetail } from '@review-dash/shared'
+import type { TestRunDetail } from '@scout/shared'
 import { Folder } from 'lucide-react'
 import { TicketStrip } from '@/components/session/TicketStrip'
 import { Tag } from '@/components/ui/tag'

@@ -1,5 +1,5 @@
 import type { RequestHandler, Response } from 'express'
-import type { ApiError } from '@review-dash/shared'
+import type { ApiError } from '@scout/shared'
 
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]'])
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])

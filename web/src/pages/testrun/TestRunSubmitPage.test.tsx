@@ -2,7 +2,7 @@ import type {
   AgentRun,
   SendResponse,
   TestRunDetail,
-} from "@review-dash/shared";
+} from "@scout/shared";
 import {
   cleanup,
   fireEvent,

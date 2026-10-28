@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { isTestRunSent, renderTestRunSentMarkdown, SentSnapshotSchema, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type TestRunIndex, type TestRunSentSnapshot } from '@review-dash/shared'
+import { isTestRunSent, renderTestRunSentMarkdown, SentSnapshotSchema, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type TestRunIndex, type TestRunSentSnapshot } from '@scout/shared'
 import { dashboardOrigin, readConfig } from '../config.ts'
 import { listSentStems, SENT_DIR } from '../sessions.ts'
 import { manifestExists, readManifest, resolveHome, sessionDir } from '../store.ts'

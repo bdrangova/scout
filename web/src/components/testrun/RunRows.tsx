@@ -2,7 +2,7 @@ import type {
   Bug,
   Gap,
   LogExcerpt as LogExcerptRef,
-} from "@review-dash/shared";
+} from "@scout/shared";
 import { Link } from "react-router";
 import { Markdown } from "@/components/common/Markdown";
 import { Tag } from "@/components/ui/tag";

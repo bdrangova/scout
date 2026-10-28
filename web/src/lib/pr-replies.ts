@@ -1,4 +1,4 @@
-import type { PrCommentView, PrReplyKind, PutPrReplyResponse } from '@review-dash/shared'
+import type { PrCommentView, PrReplyKind, PutPrReplyResponse } from '@scout/shared'
 import type { PrThread } from '@/lib/pr-threads'
 import { ApiRequestError, apiPut } from './api'
 import { prReplyPath } from './paths'

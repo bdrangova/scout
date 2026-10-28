@@ -2,11 +2,11 @@
 import { mkdir, writeFile, readFile, access } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { computeWorkingTree } from '@review-dash/shared/git/working-tree'
-import { publishReport } from '@review-dash/shared/pr-review/report'
-import { makeManifest, T0 } from '@review-dash/shared/testing/fixtures'
-import { makePrReport } from '@review-dash/shared/testing/pr-review'
-import { gitText } from '@review-dash/shared/git/run'
+import { computeWorkingTree } from '@scout/shared/git/working-tree'
+import { publishReport } from '@scout/shared/pr-review/report'
+import { makeManifest, T0 } from '@scout/shared/testing/fixtures'
+import { makePrReport } from '@scout/shared/testing/pr-review'
+import { gitText } from '@scout/shared/git/run'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const home = process.env.FIXTURE_OUT ? path.resolve(process.env.FIXTURE_OUT) : path.join(root, 'fixtures/store')
 const repo = path.join(home, 'repos/pr-review-demo')

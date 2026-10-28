@@ -76,7 +76,7 @@ Unverified (do not build on without a spike): whether Desktop sessions bind the 
 
 All keep the rule "local only, no credentials, never `bypassPermissions`".
 
-**A. `ai-review mcp` server registered for Desktop.** A stdio MCP server (`ai-review mcp`) in `~/.claude.json` user scope exposing `review_pending`, `review_feedback`, `review_claim`, `review_progress`, `review_resolve`, `review_finish`, and an MCP prompt `apply_review` (`/mcp__review-dash__apply_review`). Dashboard -> agent: pull only; still needs a trigger (hook or the user). Agent -> dashboard: structured tool calls, no Bash permission prompt, one place for schema validation.
+**A. `ai-review mcp` server registered for Desktop.** A stdio MCP server (`ai-review mcp`) in `~/.claude.json` user scope exposing `review_pending`, `review_feedback`, `review_claim`, `review_progress`, `review_resolve`, `review_finish`, and an MCP prompt `apply_review` (`/mcp__scout__apply_review`). Dashboard -> agent: pull only; still needs a trigger (hook or the user). Agent -> dashboard: structured tool calls, no Bash permission prompt, one place for schema validation.
 
 **B. Hook-first with presence.** Keep files as the contract. Add: `SessionStart` + `UserPromptSubmit` (claim: "this Claude session saw feedback X at T"), `Stop` (posts `last_assistant_message` and "turn finished"), `Notification` (permission prompt / idle), optional async `PostToolUse` heartbeat. Plus server-side presence from `claude agents --json` (busy / waiting) for the review's session. Skill additions: `ai-review claim`, `ai-review progress --comment cN`, `ai-review finish`.
 

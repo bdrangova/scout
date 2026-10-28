@@ -1,7 +1,7 @@
-import { anchorInPatch, anchorKey, type CommentWithStatus, type LineAnchor, type LineSide, type PatchLine } from '@review-dash/shared'
+import { anchorInPatch, anchorKey, type CommentWithStatus, type LineAnchor, type LineSide, type PatchLine } from '@scout/shared'
 import type { DiffLineAnnotation, SelectedLineRange } from '@pierre/diffs/react'
 import { createContext, useContext } from 'react'
-import type { JournalEntry, PrFinding } from '@review-dash/shared'
+import type { JournalEntry, PrFinding } from '@scout/shared'
 import type { JournalReply } from '@/lib/journal-view'
 import type { PrPlacement, PrThread } from '@/lib/pr-threads'
 

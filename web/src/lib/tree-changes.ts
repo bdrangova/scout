@@ -1,4 +1,4 @@
-import type { WorkingTree } from '@review-dash/shared'
+import type { WorkingTree } from '@scout/shared'
 
 /**
  * How many files differ between two computations of the tree: files whose fingerprint moved,

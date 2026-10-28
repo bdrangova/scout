@@ -2,9 +2,9 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
 import type { Command } from 'commander'
-import { SESSION_ID_RE, PrReviewReportSchema } from '@review-dash/shared'
-import { computeWorkingTree } from '@review-dash/shared/git/working-tree'
-import { readReport, publishReport, validateReportTree } from '@review-dash/shared/pr-review/report'
+import { SESSION_ID_RE, PrReviewReportSchema } from '@scout/shared'
+import { computeWorkingTree } from '@scout/shared/git/working-tree'
+import { readReport, publishReport, validateReportTree } from '@scout/shared/pr-review/report'
 import { readReview } from '../sessions.ts'
 import { readManifest, resolveHome, sessionDir } from '../store.ts'
 
@@ -35,7 +35,7 @@ export function registerPrReport(program: Command): void {
       if (action === 'import') await publishReport(sessionDir(resolveHome(), id), report, path.dirname(file), tree, patches)
       else {
         validateReportTree(report, tree, patches)
-        const { mediaBytes, MEDIA_MAX_BYTES, VIDEO_MAX_BYTES } = await import('@review-dash/shared/pr-review/report')
+        const { mediaBytes, MEDIA_MAX_BYTES, VIDEO_MAX_BYTES } = await import('@scout/shared/pr-review/report')
         for (const f of report.findings) for (const e of f.reproduction.evidence) await mediaBytes(path.dirname(file), e.path, e.kind === 'video' ? VIDEO_MAX_BYTES : MEDIA_MAX_BYTES)
       }
       console.log(`${report.files.length} files, ${report.findings.length} findings${action === 'import' ? ' imported' : ' valid'}`)

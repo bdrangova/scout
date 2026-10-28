@@ -1,4 +1,4 @@
-import type { PrCommentsResponse, PrReplyKind } from '@review-dash/shared'
+import type { PrCommentsResponse, PrReplyKind } from '@scout/shared'
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { apiGet } from '@/lib/api'
 import { useAsync } from '@/lib/hooks'

@@ -1,9 +1,9 @@
 {
-  "name": "@review-dash/web",
+  "name": "@scout/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "The review-dash web app (Vite + React 19 + Tailwind v4 + shadcn)",
+  "description": "The Scout web app (Vite + React 19 + Tailwind v4 + shadcn)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -16,7 +16,7 @@
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@fontsource-variable/space-grotesk": "^5.3.0",
     "@pierre/diffs": "1.5.1",
-    "@review-dash/shared": "0.1.0",
+    "@scout/shared": "0.1.0",
     "@streamdown/code": "1.1.1",
     "@streamdown/mermaid": "1.0.2",
     "@tanstack/react-virtual": "3.14.13",

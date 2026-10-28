@@ -71,7 +71,7 @@ Package manager everywhere: **npm** (only `package-lock.json` files found).
 - `.mcp.json` (CircleCI server, token value present) and `mcp.json` (Google Chat server, client secret present). Note: user-level MCP servers are normally read from `~/.claude.json`, so these two files may not be loaded; check with `/mcp` in an interactive session.
 - `skills/`: `dailybot` (symlink to `~/.agents/skills/dailybot`), `gh-stack`. No `commands/`, `agents/`, or global `CLAUDE.md`.
 
-## Implications for code-review-dash
+## Implications for code-scout
 
 - Matching stack: Vite + React 19 + TypeScript strict + Tailwind v4 frontend, Express 5 (or similar) TypeScript backend, npm, Node 22, Vitest, ESLint 9 flat config. Mirrors qbdash.
 - Pick ports that don't collide with qbdvision (8080, 3000, 6006) or qbdash (5173, 3001).

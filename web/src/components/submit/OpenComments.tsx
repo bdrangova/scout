@@ -1,4 +1,4 @@
-import type { CommentWithStatus, Review } from '@review-dash/shared'
+import type { CommentWithStatus, Review } from '@scout/shared'
 import {
   ChevronDownIcon,
   ChevronRightIcon,

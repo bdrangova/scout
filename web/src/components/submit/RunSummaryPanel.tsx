@@ -1,4 +1,4 @@
-import type { TestRunDetail } from '@review-dash/shared'
+import type { TestRunDetail } from '@scout/shared'
 import { Markdown } from '@/components/common/Markdown'
 import { Panel, PanelBody, PanelHeader, PanelTitle } from '@/components/ui/panel'
 import { runSummaryMarkdown } from './run-summary'

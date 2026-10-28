@@ -1,6 +1,6 @@
 // GitHub REST payloads → the shared `PrComment` shape, and the merge with what is already on disk.
 import { z } from 'zod'
-import { PrCommentSchema, isCopilotAccount, type PrAuthor, type PrComment, type PrReviewState } from '@review-dash/shared'
+import { PrCommentSchema, isCopilotAccount, type PrAuthor, type PrComment, type PrReviewState } from '@scout/shared'
 
 const nullableString = z.string().nullish().transform((value) => value ?? null)
 const nullableInt = z.number().int().positive().nullish().transform((value) => value ?? null)

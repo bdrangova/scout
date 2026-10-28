@@ -1,4 +1,4 @@
-import { SECTIONS } from '@review-dash/shared'
+import { SECTIONS } from '@scout/shared'
 
 function isEditable(element: EventTarget | null): boolean {
   if (!(element instanceof HTMLElement)) return false

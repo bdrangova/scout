@@ -4,7 +4,7 @@ import {
   OMIT_MAX_BYTES,
   type FileStatus,
   type TreeFile,
-} from '@review-dash/shared'
+} from '@scout/shared'
 import { ArrowRight, Binary, Copy, FileQuestionMark, Minus, Pencil, Plus, RefreshCw, Shuffle, type LucideIcon } from 'lucide-react'
 import { formatBytes, formatNumber } from './format'
 

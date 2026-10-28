@@ -1,6 +1,6 @@
 import { useCallback, useState, useSyncExternalStore } from 'react'
 
-const STORAGE_KEY = 'review-dash:rail'
+const STORAGE_KEY = 'scout:rail'
 /** Tailwind's `lg`: wide enough for the rail to share the row with the content. */
 const DESKTOP_QUERY = '(min-width: 1024px)'
 

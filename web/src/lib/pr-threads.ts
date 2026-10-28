@@ -1,4 +1,4 @@
-import { anchorInPatch, type LineAnchor, type PatchLine, type PrCommentView } from '@review-dash/shared'
+import { anchorInPatch, type LineAnchor, type PatchLine, type PrCommentView } from '@scout/shared'
 
 /** A GitHub review thread: the root comment and the replies under it (display order). */
 export interface PrThread {

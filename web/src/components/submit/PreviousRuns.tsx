@@ -1,4 +1,4 @@
-import type { AgentRun } from '@review-dash/shared'
+import type { AgentRun } from '@scout/shared'
 import { HistoryIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Panel, PanelHeader, PanelTitle } from '@/components/ui/panel'

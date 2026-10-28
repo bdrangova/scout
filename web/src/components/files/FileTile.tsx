@@ -1,4 +1,4 @@
-import type { TreeFile, Verdict } from '@review-dash/shared'
+import type { TreeFile, Verdict } from '@scout/shared'
 import { CheckIcon, XIcon } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'

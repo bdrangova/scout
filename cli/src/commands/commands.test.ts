@@ -1,9 +1,9 @@
 import { access, lstat, mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { ManifestSchema, SCHEMA_VERSION, type Manifest, type Resolutions, type Review } from '@review-dash/shared'
-import { gitText } from '@review-dash/shared/git/run'
-import { makeComment, makeManifest, makeResolution, makeResolutions, makeReview } from '@review-dash/shared/testing/fixtures'
+import { ManifestSchema, SCHEMA_VERSION, type Manifest, type Resolutions, type Review } from '@scout/shared'
+import { gitText } from '@scout/shared/git/run'
+import { makeComment, makeManifest, makeResolution, makeResolutions, makeReview } from '@scout/shared/testing/fixtures'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mergeSettings } from '../settings-merge.ts'
 import { archivedSessionDir, sessionDir, writeJsonAtomic } from '../store.ts'
@@ -394,7 +394,7 @@ describe('install', () => {
     const settingsFile = path.join(repo, '.claude', 'settings.local.json')
     await writeFile(settingsFile, JSON.stringify(existing, null, 2))
 
-    const first = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/opt/review-dash/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
+    const first = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/opt/scout/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
     expect(first.changed).toBe(true)
     const actions = Object.fromEntries(first.changes.map((c) => [c.path, c.action]))
     expect(actions['.claude/skills/publish-review/SKILL.md']).toBe('created')
@@ -444,13 +444,13 @@ describe('install', () => {
     expect(addressPr).toContain('--reply "<one or two sentences for the reviewer, written as the author>"')
     expect(addressPr).not.toMatch(/Bash\(gh /)
     const launcher = await readFile(path.join(home, 'bin', 'ai-review'), 'utf8')
-    expect(launcher).toContain('exec "/opt/node/bin/node" "/opt/review-dash/cli/dist/index.js" "$@"')
+    expect(launcher).toContain('exec "/opt/node/bin/node" "/opt/scout/cli/dist/index.js" "$@"')
     expect(JSON.parse(await readFile(path.join(home, 'config.json'), 'utf8'))).toEqual({ port: 4546 })
     expect(await readFile(path.join(repo, '.gitignore'), 'utf8')).toBe('.claude/settings.local.json\n')
     expect(await exists(path.join(repo, '.git', 'ai-review'))).toBe(true)
 
     const before = await readFile(settingsFile, 'utf8')
-    const second = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/opt/review-dash/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
+    const second = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/opt/scout/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
     expect(second.changed).toBe(false)
     expect(second.changes.every((c) => c.action === 'unchanged' || c.action === 'skipped')).toBe(true)
     expect(await readFile(settingsFile, 'utf8')).toBe(before)

@@ -1,4 +1,4 @@
-import { effectiveVerdict, type TreeFile, type Verdict } from '@review-dash/shared'
+import { effectiveVerdict, type TreeFile, type Verdict } from '@scout/shared'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { fileTypeClass, fileTypeOf } from '@/lib/file-type'

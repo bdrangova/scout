@@ -1,4 +1,4 @@
-import type { Ticket } from '@review-dash/shared'
+import type { Ticket } from '@scout/shared'
 import { ExternalLink, Ticket as TicketIcon } from 'lucide-react'
 import { tagVariants } from '@/components/ui/tag'
 import { cn } from '@/lib/utils'

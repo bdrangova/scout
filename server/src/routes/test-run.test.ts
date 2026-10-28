@@ -1,9 +1,9 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { FINGERPRINT_RE, ReviewResponseSchema, SendResponseSchema, SessionListItemSchema, TestRunDetailSchema, TestRunSentSnapshotSchema, TestRunSummarySchema, emptyReview } from '@review-dash/shared'
-import type { Review, TestRunDetail } from '@review-dash/shared'
-import { makeComment } from '@review-dash/shared/testing/fixtures'
+import { FINGERPRINT_RE, ReviewResponseSchema, SendResponseSchema, SessionListItemSchema, TestRunDetailSchema, TestRunSentSnapshotSchema, TestRunSummarySchema, emptyReview } from '@scout/shared'
+import type { Review, TestRunDetail } from '@scout/shared'
+import { makeComment } from '@scout/shared/testing/fixtures'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Express } from 'express'
@@ -237,7 +237,7 @@ describe('test-run sessions on a changing run folder', () => {
   const runPath = () => store.testRun?.runPath ?? ''
   beforeAll(async () => {
     store = await createFixtureStore({ testRun: true })
-    outside = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'review-dash-secret-')))
+    outside = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'scout-secret-')))
     fs.writeFileSync(path.join(outside, 'secret.txt'), 'TOP SECRET\n')
     fs.writeFileSync(path.join(outside, 'out.json'), '{"secret":true}\n')
     app = appFor(store.home, { watcher: { stabilityThreshold: 100, pollInterval: 20, debounceMs: 100, runDebounceMs: 100 } })

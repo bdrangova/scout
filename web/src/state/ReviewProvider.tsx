@@ -10,7 +10,7 @@ import {
   type ReviewResponse,
   type ReviewState,
   type SessionDetail,
-} from '@review-dash/shared'
+} from '@scout/shared'
 import { useCallback, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { apiGet } from '@/lib/api'

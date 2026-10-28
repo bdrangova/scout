@@ -1,4 +1,4 @@
-import { SCENARIO_STATUSES, type ScenarioStatus } from "@review-dash/shared";
+import { SCENARIO_STATUSES, type ScenarioStatus } from "@scout/shared";
 import { Panel } from "@/components/ui/panel";
 import {
   scenarioCounts,

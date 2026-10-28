@@ -15,8 +15,8 @@ import {
   type SpecIndex,
   type Verdict,
   type WorkingTree,
-} from '@review-dash/shared'
-import { gitText } from '@review-dash/shared/git/run'
+} from '@scout/shared'
+import { gitText } from '@scout/shared/git/run'
 import { writeJsonAtomic, writeManifest } from '../../cli/src/store.ts'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')

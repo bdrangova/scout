@@ -1,4 +1,4 @@
-import type { AgentRun } from '@review-dash/shared'
+import type { AgentRun } from '@scout/shared'
 import { StatusDot } from '@/components/ui/status-dot'
 import { STATUS_TONE } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'

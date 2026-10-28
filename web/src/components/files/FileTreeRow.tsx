@@ -1,4 +1,4 @@
-import type { Verdict } from '@review-dash/shared'
+import type { Verdict } from '@scout/shared'
 import { Check, ChevronDown, Folder, FolderOpen, MessageSquare, MessageSquareText, X } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { FileTypeDot } from '@/components/ui/file-type-dot'

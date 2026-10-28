@@ -1,4 +1,4 @@
-import type { PrCommentView, PrReplyKind } from '@review-dash/shared'
+import type { PrCommentView, PrReplyKind } from '@scout/shared'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { isKindMismatch } from '@/lib/pr-replies'

@@ -1,4 +1,4 @@
-import type { ArchivedSession, SessionListItem } from '@review-dash/shared'
+import type { ArchivedSession, SessionListItem } from '@scout/shared'
 
 /** Match every search word across identity fields; no extra network request is needed. */
 export function matchesSessionSearch(item: SessionListItem | ArchivedSession, query: string): boolean {

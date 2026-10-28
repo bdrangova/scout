@@ -1,4 +1,4 @@
-import { SCENARIO_STATUSES, type ScenarioStatus } from '@review-dash/shared'
+import { SCENARIO_STATUSES, type ScenarioStatus } from '@scout/shared'
 import type { Tone } from './status-tone'
 
 export const SCENARIO_STATUS_LABEL: Record<ScenarioStatus, string> = {

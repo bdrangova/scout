@@ -1,5 +1,5 @@
 // Browser-safe exports. `shared/src/git/**` is Node-only and deliberately NOT re-exported here:
-// the server and the CLI import it as `@review-dash/shared/git/<file>`.
+// the server and the CLI import it as `@scout/shared/git/<file>`.
 export * from './constants.ts'
 export * from './schemas/manifest.ts'
 export * from './schemas/pr-review.ts'

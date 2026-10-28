@@ -1,4 +1,4 @@
-import type { CommentWithStatus, Review } from '@review-dash/shared'
+import type { CommentWithStatus, Review } from '@scout/shared'
 import { MessageSquareIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router'

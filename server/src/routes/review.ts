@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { PutReviewRequestSchema } from '@review-dash/shared'
-import type { ApiError, PutReviewResponse } from '@review-dash/shared'
+import { PutReviewRequestSchema } from '@scout/shared'
+import type { ApiError, PutReviewResponse } from '@scout/shared'
 import { formatZodError } from '../errors.ts'
 import type { Store } from '../store/index.ts'
 

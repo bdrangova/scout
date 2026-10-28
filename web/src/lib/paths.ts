@@ -1,5 +1,5 @@
 /** URL helpers for the API's `*path` routes and the web's `/s/:id/files/*path` route. */
-import type { Scope } from '@review-dash/shared'
+import type { Scope } from '@scout/shared'
 
 /** Encode a relative path segment by segment so `/` survives and everything else is escaped. */
 export function encodePath(path: string): string {

@@ -1,4 +1,4 @@
-import type { SpecItem } from '@review-dash/shared'
+import type { SpecItem } from '@scout/shared'
 import { ArtifactCard } from './ArtifactCard'
 import { JiraCard } from './JiraCard'
 import { MarkdownSpecCard } from './MarkdownSpecCard'

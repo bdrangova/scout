@@ -1,4 +1,4 @@
-import type { TestRunDetail } from "@review-dash/shared";
+import type { TestRunDetail } from "@scout/shared";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MotionGlobalConfig } from "motion/react";
@@ -788,7 +788,7 @@ describe("Test run review", () => {
         expect(grid.querySelector('[data-scenario="s2-fail"]')).toHaveAttribute("data-verdict", "approved");
         expect(api.puts.find((put) => put.review.files["s2-fail"]?.verdict === "approved")?.review.files["s2-fail"]?.fingerprint).toBe(S2.fingerprint);
 
-        window.localStorage.setItem("review-dash:last-card-mode", "scroll");
+        window.localStorage.setItem("scout:last-card-mode", "scroll");
         fireEvent.click(screen.getByRole("button", { name: "Export" }));
         expect(await screen.findByRole("article", { name: "Export" })).toBeInTheDocument();
         expect(screen.getByTestId("where")).toHaveTextContent(`${BASE}/s3-gap?mode=swipe`);

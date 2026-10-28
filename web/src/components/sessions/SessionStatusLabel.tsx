@@ -1,4 +1,4 @@
-import type { SessionStatus } from '@review-dash/shared'
+import type { SessionStatus } from '@scout/shared'
 import { STATUS_TONE } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'
 

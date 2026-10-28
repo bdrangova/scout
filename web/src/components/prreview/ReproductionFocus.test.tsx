@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createElement, useState, type ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { makePrReport } from '@review-dash/shared/testing/pr-review'
+import { makePrReport } from '@scout/shared/testing/pr-review'
 import { orderedEvidence } from './reproduction-evidence'
 import { ReproductionFocus } from './ReproductionFocus'
 

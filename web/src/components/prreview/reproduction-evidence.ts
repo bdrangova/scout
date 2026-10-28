@@ -1,4 +1,4 @@
-import type { PrFinding } from '@review-dash/shared'
+import type { PrFinding } from '@scout/shared'
 
 export type Reproduction = PrFinding['reproduction']
 export type EvidenceItem = Reproduction['evidence'][number]

@@ -1,5 +1,5 @@
-import type { PrReplyDraft, PrResolutions } from '@review-dash/shared'
-import { makePrResolution } from '@review-dash/shared/testing/fixtures'
+import type { PrReplyDraft, PrResolutions } from '@scout/shared'
+import { makePrResolution } from '@scout/shared/testing/fixtures'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'

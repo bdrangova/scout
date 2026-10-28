@@ -1,4 +1,4 @@
-import type { CommentWithStatus } from '@review-dash/shared'
+import type { CommentWithStatus } from '@scout/shared'
 import { MessageSquarePlus } from 'lucide-react'
 import {
   MediaControlBar,

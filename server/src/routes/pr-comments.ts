@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { PR_COMMENT_ID_RE, PutPrReplyRequestSchema } from '@review-dash/shared'
+import { PR_COMMENT_ID_RE, PutPrReplyRequestSchema } from '@scout/shared'
 import { badRequest, formatZodError } from '../errors.ts'
 import type { Store } from '../store/index.ts'
 

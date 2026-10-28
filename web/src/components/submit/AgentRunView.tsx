@@ -1,4 +1,4 @@
-import type { AgentRun, AgentRunStatus, CommentWithStatus } from '@review-dash/shared'
+import type { AgentRun, AgentRunStatus, CommentWithStatus } from '@scout/shared'
 import { useEffect, useRef, useState } from 'react'
 import { cancelRun, describeApiError, formatRunFooter, isRunActive, runDurationMs } from '@/lib/runs'
 import { useRunEvents } from '@/lib/useRunEvents'

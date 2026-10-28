@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
 import type { Command } from 'commander'
-import { currentBranch, mainWorktree, topLevel } from '@review-dash/shared/git/repo'
+import { currentBranch, mainWorktree, topLevel } from '@scout/shared/git/repo'
 import { CONFIG_FILE, readConfig } from '../config.ts'
 import { resolveHome, writeJsonAtomic } from '../store.ts'
 

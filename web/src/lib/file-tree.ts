@@ -1,4 +1,4 @@
-import type { TreeFile } from '@review-dash/shared'
+import type { TreeFile } from '@scout/shared'
 
 /** A folder row; `id` is its full path, `name` what the row shows (`src/components/diff` once collapsed). */
 export interface FolderNode {

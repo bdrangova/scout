@@ -1,4 +1,4 @@
-import { anchorLabel, hashPrBody, prReviewCopyItems, type PrReviewCopyItem, type ReviewResponse } from '@review-dash/shared'
+import { anchorLabel, hashPrBody, prReviewCopyItems, type PrReviewCopyItem, type ReviewResponse } from '@scout/shared'
 import { Copy, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'

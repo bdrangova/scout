@@ -1,4 +1,4 @@
-import type { WorktreeSummary } from '@review-dash/shared'
+import type { WorktreeSummary } from '@scout/shared'
 import { Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { TicketStrip } from '@/components/session/TicketStrip'

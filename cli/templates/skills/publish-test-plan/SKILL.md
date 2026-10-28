@@ -1,6 +1,6 @@
 ---
 name: publish-test-plan
-description: Publish the test plan of a feature-test run to the review-dash dashboard (/t/<id>) by writing the plan's part of the run's test-run.json index (title, feature, area, scenario skeleton with steps, plan summary and test-split panels). Use when the user runs /publish-test-plan, or says "publish the test plan" for a folder under a plans/**/test-runs/ run.
+description: Publish the test plan of a feature-test run to the Scout dashboard (/t/<id>) by writing the plan's part of the run's test-run.json index (title, feature, area, scenario skeleton with steps, plan summary and test-split panels). Use when the user runs /publish-test-plan, or says "publish the test plan" for a folder under a plans/**/test-runs/ run.
 argument-hint: "<run-folder> [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Bash(wc *) Bash(shasum *) Bash(mv *) Read Glob Grep Write AskUserQuestion
 ---

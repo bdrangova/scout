@@ -1,4 +1,4 @@
-import type { TestRunDetail } from "@review-dash/shared";
+import type { TestRunDetail } from "@scout/shared";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, describe, expect, it, vi } from "vitest";

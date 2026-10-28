@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Packages Claude Code changes into review-dash sessions and reads the review back",
+  "description": "Packages Claude Code changes into Scout sessions and reads the review back",
   "bin": {
     "ai-review": "dist/index.js"
   },
@@ -20,7 +20,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@review-dash/shared": "0.1.0",
+    "@scout/shared": "0.1.0",
     "commander": "^15.0.0",
     "zod": "^4.6.5"
   },

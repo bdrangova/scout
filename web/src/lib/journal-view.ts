@@ -1,4 +1,4 @@
-import { anchorLabel, type JournalEntry, type JournalKind } from '@review-dash/shared'
+import { anchorLabel, type JournalEntry, type JournalKind } from '@scout/shared'
 import type { TagProps } from '@/components/ui/tag'
 
 /** A note a comment replies to: the id the comment's `about` carries and the title the chip quotes. */

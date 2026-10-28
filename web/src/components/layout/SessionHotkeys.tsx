@@ -1,4 +1,4 @@
-import { type Mode } from "@review-dash/shared";
+import { type Mode } from "@scout/shared";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import {
   MODE_PARAM,

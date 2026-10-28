@@ -1,4 +1,4 @@
-import type { Commit, Remote } from '@review-dash/shared'
+import type { Commit, Remote } from '@scout/shared'
 import { CloudCheck, CloudUpload, GitMerge } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'

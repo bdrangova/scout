@@ -1,4 +1,4 @@
-import type { WorktreeSummary } from '@review-dash/shared'
+import type { WorktreeSummary } from '@scout/shared'
 
 /** Every search word must appear in the name, branch, ticket, base, path or repository. */
 export function matchesWorktreeSearch(item: WorktreeSummary, query: string): boolean {

@@ -1,4 +1,4 @@
-import type { Panel } from "@review-dash/shared";
+import type { Panel } from "@scout/shared";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";

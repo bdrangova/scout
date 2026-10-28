@@ -1,6 +1,6 @@
 ---
 name: apply-review
-description: Apply reviewer feedback from the review-dash dashboard (rejected files, file, evidence, spec, extra and overall comments) by changing the working tree and recording a resolution for every comment. Use when the user says "apply the review", "address the review feedback", runs /apply-review, or when a hook reports open review comments for this repo.
+description: Apply reviewer feedback from the Scout dashboard (rejected files, file, evidence, spec, extra and overall comments) by changing the working tree and recording a resolution for every comment. Use when the user says "apply the review", "address the review feedback", runs /apply-review, or when a hook reports open review comments for this repo.
 argument-hint: "<sessionId> [--record video|screenshots|none] [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr create *) Bash(gh pr view *) Bash(npm test*) Bash(npm run *) Bash(npx vitest *) Bash(npx prettier *) Bash(npx eslint *) Bash(npx oxlint *) Read Edit Write Grep Glob AskUserQuestion Skill Bash(npx playwright *) mcp__playwright__*
 ---

@@ -12,7 +12,7 @@ Designed under the confirmed decisions in `04-design-decisions.md`. Verified fac
 ## 1. Directory tree
 
 ```
-code-review-dash/
+code-scout/
 ├─ package.json                 # dev, dev:fixtures, test, lint, typecheck, e2e (concurrently)
 ├─ playwright.config.ts         # webServer: server 4545 + web 4546, AI_REVIEW_HOME=fixtures
 ├─ .claude/launch.json          # "dashboard" entry for the Desktop browser pane (port 4546)

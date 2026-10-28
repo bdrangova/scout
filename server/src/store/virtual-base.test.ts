@@ -1,10 +1,10 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { SCHEMA_VERSION } from '@review-dash/shared'
-import type { Manifest } from '@review-dash/shared'
-import { createCrissCrossRepo } from '@review-dash/shared/git/criss-cross-repo'
-import type { CrissCrossRepo } from '@review-dash/shared/git/criss-cross-repo'
+import { SCHEMA_VERSION } from '@scout/shared'
+import type { Manifest } from '@scout/shared'
+import { createCrissCrossRepo } from '@scout/shared/git/criss-cross-repo'
+import type { CrissCrossRepo } from '@scout/shared/git/criss-cross-repo'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Store } from './index.ts'
 
@@ -15,7 +15,7 @@ let fixture: CrissCrossRepo
 let store: Store
 
 beforeAll(async () => {
-  home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-virtual-')))
+  home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'scout-virtual-')))
   fixture = await createCrissCrossRepo({ conflict: true })
   const manifest: Manifest = {
     schemaVersion: SCHEMA_VERSION,

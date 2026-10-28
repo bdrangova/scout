@@ -6,7 +6,7 @@ import type {
   ReviewAction,
   ReviewItem,
   ReviewState,
-} from '@review-dash/shared'
+} from '@scout/shared'
 import { createContext, useContext } from 'react'
 import type { UnsavedDraft } from '@/lib/comment-drafts'
 

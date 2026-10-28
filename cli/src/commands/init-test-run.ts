@@ -2,8 +2,8 @@
 // (through `<run>/test-run.json`); the session only holds the manifest and the review state.
 import { mkdir, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
-import { commentsSince, SCHEMA_VERSION, type TestRunManifest } from '@review-dash/shared'
-import { mainWorktree, topLevel } from '@review-dash/shared/git/repo'
+import { commentsSince, SCHEMA_VERSION, type TestRunManifest } from '@scout/shared'
+import { mainWorktree, topLevel } from '@scout/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
 import { openSessionForRun, resetApprovedDecision, unapproveAfterRerun } from '../sessions.ts'
 import { newSessionId, sessionDir, writeManifest } from '../store.ts'

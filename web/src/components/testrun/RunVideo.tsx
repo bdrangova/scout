@@ -1,4 +1,4 @@
-import type { CommentWithStatus } from "@review-dash/shared";
+import type { CommentWithStatus } from "@scout/shared";
 import { useRef } from "react";
 import { VideoPlayer } from "@/components/evidence/VideoPlayer";
 import { formatDuration } from "@/lib/format";

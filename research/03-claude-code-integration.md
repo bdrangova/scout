@@ -115,16 +115,16 @@ for await (const m of q) sse.write(m);
 Yes, this works. A project-scoped stdio server goes in `.mcp.json`. Interactive sessions ask once for approval; `-p` and SDK sessions load it automatically.
 
 ```json
-{"mcpServers":{"review-dash":{"command":"node",
+{"mcpServers":{"scout":{"command":"node",
   "args":["${CLAUDE_PROJECT_DIR:-.}/.ai-review/mcp/server.js"],
   "env":{"REVIEW_DASH_URL":"http://127.0.0.1:4545"}}}}
 ```
 
-- **Add from the CLI:** `claude mcp add --scope project review-dash -- node .ai-review/mcp/server.js`.
-- **HTTP variant hosted by the dashboard:** `claude mcp add --transport http --scope project review-dash http://127.0.0.1:4545/mcp`. In JSON, a `url` entry needs `"type":"http"`.
-- **Pre-approve its tools:** `"permissions":{"allow":["mcp__review-dash__*"]}`.
-- **Resources are supported:** prompts can mention `@review-dash:review://feedback/latest`, and Claude gets built-in tools to list and read resources.
-- **Prompts are supported:** they become commands, e.g. `/mcp__review-dash__apply_feedback r-42` ([MCP](https://code.claude.com/docs/en/mcp)).
+- **Add from the CLI:** `claude mcp add --scope project Scout -- node .ai-review/mcp/server.js`.
+- **HTTP variant hosted by the dashboard:** `claude mcp add --transport http --scope project Scout http://127.0.0.1:4545/mcp`. In JSON, a `url` entry needs `"type":"http"`.
+- **Pre-approve its tools:** `"permissions":{"allow":["mcp__scout__*"]}`.
+- **Resources are supported:** prompts can mention `@scout:review://feedback/latest`, and Claude gets built-in tools to list and read resources.
+- **Prompts are supported:** they become commands, e.g. `/mcp__scout__apply_feedback r-42` ([MCP](https://code.claude.com/docs/en/mcp)).
 
 ### d. File handoff with a skill
 
@@ -139,11 +139,11 @@ Custom commands have been merged into skills. `.claude/commands/apply-review.md`
 description: Apply reviewer feedback from the review dashboard
 disable-model-invocation: true
 argument-hint: [review-id]
-allowed-tools: Read Edit Bash(cat *) Bash(git diff *) mcp__review-dash__*
+allowed-tools: Read Edit Bash(cat *) Bash(git diff *) mcp__scout__*
 ---
 Apply review $ARGUMENTS. Current feedback:
 !`cat "${CLAUDE_PROJECT_DIR}/.ai-review/feedback/latest.md"`
-Resolve each item via mcp__review-dash__resolve_feedback_item, then republish.
+Resolve each item via mcp__scout__resolve_feedback_item, then republish.
 ```
 
 This runs interactively, as `claude -p --resume <id> "/apply-review r-42"`, or as SDK `prompt: "/apply-review r-42"`.
@@ -152,8 +152,8 @@ This runs interactively, as `claude -p --resume <id> "/apply-review r-42"`, or a
 
 - **Channels (research preview): built for exactly this.**
   - An MCP server declares `capabilities.experimental['claude/channel']` and emits `notifications/claude/channel` with `{content, meta}`.
-  - The message appears in the open session as `<channel source="review-dash" …>`. If Claude is busy, it waits for the next turn.
-  - A custom channel needs `claude --dangerously-load-development-channels server:review-dash`, which shows a warning dialog on every launch.
+  - The message appears in the open session as `<channel source="scout" …>`. If Claude is busy, it waits for the next turn.
+  - A custom channel needs `claude --dangerously-load-development-channels server:scout`, which shows a warning dialog on every launch.
   - It requires claude.ai or Console auth. On Team/Enterprise plans an admin must set `channelsEnabled`.
   - Claude Code sends no delivery confirmation ([channels](https://code.claude.com/docs/en/channels), [channels reference](https://code.claude.com/docs/en/channels-reference)).
 - **Cross-session messaging (v2.1.224+):** built for session-to-session messages via `SendMessage`/`ListAgents`, not for outside apps.
@@ -247,7 +247,7 @@ Show the saved source in a sandboxed `<iframe srcdoc>` and link out to the claud
 ```
 Claude Code session (terminal / Desktop)       Dashboard server (Node, 127.0.0.1:4545)
   Stop, SessionEnd hooks  --HTTP POST-->          packager: diff, notes, media -> .ai-review/sessions/<sid>/
-  review-dash MCP (stdio)  <--HTTP-->             API: sessions, feedback items, Jira proxy, SSE -> React UI
+  Scout MCP (stdio)  <--HTTP-->             API: sessions, feedback items, Jira proxy, SSE -> React UI
   UserPromptSubmit/SessionStart hooks  <-- read .ai-review/feedback (pending -> additionalContext)
   /publish-review, /apply-review skills           "Send to Claude": check claude agents --json
   Playwright MCP / Playwright Test -> media/        idle/closed -> claude -p --resume <sid> "/apply-review <rid>"

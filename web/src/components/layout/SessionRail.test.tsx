@@ -48,14 +48,14 @@ describe('SessionRail', () => {
     })
 
     it('remembers the density per group and starts from each group’s own', () => {
-      window.localStorage.setItem('review-dash:rail-density:other', 'compact')
+      window.localStorage.setItem('scout:rail-density:other', 'compact')
       renderShell(`/s/${SESSION_ID}/spec`)
       const side = within(rail())
       expect(side.queryByRole('group', { name: 'Tickets' })).not.toBeInTheDocument()
       fireEvent.click(side.getByRole('button', { name: 'Expand session details' }))
       expect(side.getByRole('group', { name: 'Tickets' })).toBeInTheDocument()
-      expect(window.localStorage.getItem('review-dash:rail-density:other')).toBe('roomy')
-      expect(window.localStorage.getItem('review-dash:rail-density:files')).toBeNull()
+      expect(window.localStorage.getItem('scout:rail-density:other')).toBe('roomy')
+      expect(window.localStorage.getItem('scout:rail-density:files')).toBeNull()
       fireEvent.click(side.getByRole('button', { name: 'Collapse session details' }))
       expect(side.queryByRole('group', { name: 'Tickets' })).not.toBeInTheDocument()
     })
@@ -103,12 +103,12 @@ describe('SessionRail', () => {
       const { bar } = renderShell(`/s/${SESSION_ID}/spec`)
       fireEvent.click(within(bar).getByRole('button', { name: 'Hide sidebar' }))
       expect(screen.queryByRole('complementary', { name: 'Session panel' })).not.toBeInTheDocument()
-      expect(window.localStorage.getItem('review-dash:rail')).toBe('closed')
+      expect(window.localStorage.getItem('scout:rail')).toBe('closed')
       expect(within(bar).getByRole('button', { name: 'Show sidebar' })).toHaveTextContent('0/6')
     })
 
     it('starts closed when it was left closed', () => {
-      window.localStorage.setItem('review-dash:rail', 'closed')
+      window.localStorage.setItem('scout:rail', 'closed')
       renderShell(`/s/${SESSION_ID}/submit`)
       expect(screen.queryByRole('complementary', { name: 'Session panel' })).not.toBeInTheDocument()
     })
@@ -133,7 +133,7 @@ describe('SessionRail', () => {
     })
 
     it('renders nothing while the rail is closed', () => {
-      window.localStorage.setItem('review-dash:rail', 'closed')
+      window.localStorage.setItem('scout:rail', 'closed')
       renderShell(`/s/${SESSION_ID}/spec`, {
         page: (
           <RailSection>

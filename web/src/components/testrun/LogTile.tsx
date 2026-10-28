@@ -1,4 +1,4 @@
-import type { RunLog, Scenario } from "@review-dash/shared";
+import type { RunLog, Scenario } from "@scout/shared";
 import { ScrollText } from "lucide-react";
 import { useReview } from "@/state/review-context";
 import { RunTile } from "./RunTile";

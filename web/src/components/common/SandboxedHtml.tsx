@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 
 /** The permissions the agent's HTML runs with. `allow-same-origin` is deliberately absent. */
 export const SANDBOX = 'allow-scripts allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads'
-export const HEIGHT_MESSAGE = 'review-dash:height'
+export const HEIGHT_MESSAGE = 'scout:height'
 const MIN_HEIGHT = 160
 
 /** Tightens the inherited CSP: no fetch/XHR/WebSocket, no form posts. CDN scripts and styles still load. */

@@ -1,7 +1,7 @@
 import os from 'node:os'
-import type { StoreEvent } from '@review-dash/shared'
-import { makeTree } from '@review-dash/shared/testing/fixtures'
-import type { WorkingTreeResult } from '@review-dash/shared/git/working-tree'
+import type { StoreEvent } from '@scout/shared'
+import { makeTree } from '@scout/shared/testing/fixtures'
+import type { WorkingTreeResult } from '@scout/shared/git/working-tree'
 import { afterEach, describe, expect, it } from 'vitest'
 import { HttpError } from '../errors.ts'
 import { StoreEventBus } from '../events.ts'
@@ -147,7 +147,7 @@ describe('TreeCache', () => {
       calls += 1
       throw new Error('fatal: not a git repository')
     })
-    const missing = { ...source, repo: `${os.tmpdir()}/review-dash-no-such-repo-${process.pid}` }
+    const missing = { ...source, repo: `${os.tmpdir()}/scout-no-such-repo-${process.pid}` }
     await expect(cache.get(missing)).rejects.toMatchObject({ status: 422, message: `repo-missing: ${missing.repo}` })
     expect(calls).toBe(0)
     await expect(cache.get(source)).rejects.toBeInstanceOf(HttpError)

@@ -1,13 +1,13 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { EvidenceIndexSchema } from '@review-dash/shared'
+import { EvidenceIndexSchema } from '@scout/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { deriveArtifacts, listFilesRecursive, readIndex } from './artifacts.ts'
 
 let dir: string
 beforeAll(async () => {
-  dir = await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-artifacts-'))
+  dir = await fs.mkdtemp(path.join(os.tmpdir(), 'scout-artifacts-'))
 })
 afterAll(() => fs.rm(dir, { recursive: true, force: true }))
 

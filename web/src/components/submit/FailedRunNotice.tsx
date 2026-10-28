@@ -1,4 +1,4 @@
-import type { AgentRun } from '@review-dash/shared'
+import type { AgentRun } from '@scout/shared'
 import { RotateCwIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'

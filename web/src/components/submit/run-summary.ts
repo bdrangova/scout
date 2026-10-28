@@ -1,4 +1,4 @@
-import type { TestRunDetail } from '@review-dash/shared'
+import type { TestRunDetail } from '@scout/shared'
 
 /** The summary text of a run: the overview's markdown panel titled like a summary, else its first markdown panel. */
 export function runSummaryMarkdown(index: TestRunDetail['index']): { title: string; markdown: string } | null {

@@ -1,4 +1,4 @@
-# UX review: review-dash (retro-redesign)
+# UX review: Scout (retro-redesign)
 
 Method: Playwright on the fixture stack at 1440x900 and 800px, light and dark, first-time and keyboard-only, all twelve sessions. Screenshots (`ux-*.png`) are in the scratchpad `shots/` folder.
 

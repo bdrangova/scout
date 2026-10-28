@@ -1,5 +1,5 @@
 import { ScoutMascot } from '@/components/brand/Scout'
-import type { AgentRunStatus } from '@review-dash/shared'
+import type { AgentRunStatus } from '@scout/shared'
 import { SquareIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'

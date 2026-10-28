@@ -1,4 +1,4 @@
-import type { Bug, Gap, Scenario } from "@review-dash/shared";
+import type { Bug, Gap, Scenario } from "@scout/shared";
 import { useState } from "react";
 import { Link } from "react-router";
 import { AsyncBoundary } from "@/components/common/AsyncBoundary";

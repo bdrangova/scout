@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { PrFinding } from '@review-dash/shared'
-import { hashPrBody } from '@review-dash/shared'
+import type { PrFinding } from '@scout/shared'
+import { hashPrBody } from '@scout/shared'
 import { ChevronRight, Focus, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tag } from '@/components/ui/tag'

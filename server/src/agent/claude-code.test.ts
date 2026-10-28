@@ -1,14 +1,14 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import type { SessionDetail, TestRunManifest } from '@review-dash/shared'
-import { makeManifest, makeTree } from '@review-dash/shared/testing/fixtures'
+import type { SessionDetail, TestRunManifest } from '@scout/shared'
+import { makeManifest, makeTree } from '@scout/shared/testing/fixtures'
 import { afterAll, describe, expect, it } from 'vitest'
 import type { AdapterEvent } from './adapter.ts'
 import { APPLY_REVIEW_ALLOWED_TOOLS, ClaudeCodeAdapter, applyReviewArgv, applyTestReviewArgv, headlessEnv } from './claude-code.ts'
 import { DEFAULT_SAMPLE_PATH } from './fake.ts'
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'review-dash-claude-'))
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-claude-'))
 afterAll(() => fs.rmSync(tmp, { recursive: true, force: true }))
 
 function detail(agentSessionId: string | null = 'agent-session-1'): SessionDetail {
@@ -81,7 +81,7 @@ describe('applyReviewArgv and headlessEnv', () => {
     }
   })
 
-  it('strips the nested-session variables and adds the review-dash ones', () => {
+  it('strips the nested-session variables and adds the Scout ones', () => {
     const env = headlessEnv(
       { HOME: '/home/u', PATH: '/usr/bin', CLAUDECODE: '1', CLAUDE_CODE_ENTRYPOINT: 'cli', CLAUDE_AGENT_SDK_VERSION: '1', CLAUDE_CODE_SESSION_ID: 'x' },
       '/store',

@@ -1,4 +1,4 @@
-import { COLLAPSE_MAX_BYTES, type PatchLine, type Scope, type TreeFile } from '@review-dash/shared'
+import { COLLAPSE_MAX_BYTES, type PatchLine, type Scope, type TreeFile } from '@scout/shared'
 import type { FileDiffContentsLoader, FileDiffLoadedChangedFiles } from '@pierre/diffs/react'
 import { apiGet } from '@/lib/api'
 import { fileContentsPath } from '@/lib/paths'

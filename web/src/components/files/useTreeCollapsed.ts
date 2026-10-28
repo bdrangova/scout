@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-const STORAGE_KEY = 'review-dash:files-tree-collapsed'
+const STORAGE_KEY = 'scout:files-tree-collapsed'
 
 function read(): boolean {
   try {

@@ -35,7 +35,7 @@ async function repoState(of: CrissCrossRepo = fixture): Promise<{ objects: numbe
 beforeAll(async () => {
   ;[fixture, conflicting] = await Promise.all([createCrissCrossRepo(), createCrissCrossRepo({ conflict: true })])
   repo = fixture.repo
-  overlayRoot = await mkdtemp(path.join(os.tmpdir(), 'review-dash-overlay-'))
+  overlayRoot = await mkdtemp(path.join(os.tmpdir(), 'scout-overlay-'))
   overlayDir = overlayDirFor(overlayRoot, repo)
 })
 

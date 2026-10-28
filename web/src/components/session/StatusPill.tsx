@@ -1,4 +1,4 @@
-import type { SessionSummary } from '@review-dash/shared'
+import type { SessionSummary } from '@scout/shared'
 import { MessageSquareWarning } from 'lucide-react'
 import { Notice } from '@/components/ui/notice'
 import { reviewStatusOf, runChipOf, statusPill, statusWord } from '@/lib/session-status'

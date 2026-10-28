@@ -1,7 +1,7 @@
 // Sessions on the variety-app repo: `types-variety` (the file grid, type filter and sidebar tree) and
 // `rich-spec` (every spec, extras and evidence kind at once). Both read the same repo; neither edits it.
 import path from 'node:path'
-import type { EvidenceIndex, ExtrasIndex, SpecIndex } from '@review-dash/shared'
+import type { EvidenceIndex, ExtrasIndex, SpecIndex } from '@scout/shared'
 import { inputDir, makeManifest, writeSessionFolder } from './common.ts'
 import { RICH_SPEC_SESSION_ID, TYPES_VARIETY_SESSION_ID } from './ids.ts'
 import type { Media } from './media.ts'

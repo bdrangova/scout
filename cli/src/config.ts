@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
-import { DASHBOARD_HOST, DEFAULT_WEB_PORT, type ManifestKind } from '@review-dash/shared'
+import { DASHBOARD_HOST, DEFAULT_WEB_PORT, type ManifestKind } from '@scout/shared'
 
 export const CONFIG_FILE = 'config.json'
 

@@ -1,4 +1,4 @@
-import type { SessionDetail } from '@review-dash/shared'
+import type { SessionDetail } from '@scout/shared'
 import { BookOpen, Bug, CircleAlert, Database, FileText, Files, Image, LayoutDashboard, ListChecks, Package, ScrollText, Send, Check, type LucideIcon } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router'
 import { isTestRunDetail } from '@/lib/detail-kind'

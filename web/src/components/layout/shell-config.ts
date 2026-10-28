@@ -1,4 +1,4 @@
-import { SECTIONS, TEST_SECTIONS, type SessionDetail } from '@review-dash/shared'
+import { SECTIONS, TEST_SECTIONS, type SessionDetail } from '@scout/shared'
 import { createContext, useContext } from 'react'
 import { isTestRunDetail } from '@/lib/detail-kind'
 import { basePathOf, type SessionKind } from '@/lib/paths'

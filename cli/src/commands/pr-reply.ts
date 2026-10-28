@@ -3,7 +3,7 @@
 // of kind `reply`): never a proposed reply, never a draft that was not submitted.
 import path from 'node:path'
 import type { Command } from 'commander'
-import { SCHEMA_VERSION, type PrReplies, type SentPrReply } from '@review-dash/shared'
+import { SCHEMA_VERSION, type PrReplies, type SentPrReply } from '@scout/shared'
 import { classifyGhError, defaultGhRunner, PrSyncError, type GhRunner } from '../pr/gh.ts'
 import { findPrSession } from '../pr/session.ts'
 import { readLatestSent, readPrComments, readPrReplies, writePrReplies } from '../sessions.ts'

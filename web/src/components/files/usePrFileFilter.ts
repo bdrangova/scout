@@ -1,4 +1,4 @@
-import type { TreeFile } from '@review-dash/shared'
+import type { TreeFile } from '@scout/shared'
 import { useMemo, useState } from 'react'
 import { usePrComments } from '@/state/pr-comments-context'
 

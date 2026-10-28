@@ -1,4 +1,4 @@
-import type { WorktreeSummary } from '@review-dash/shared'
+import type { WorktreeSummary } from '@scout/shared'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'

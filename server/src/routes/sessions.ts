@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import type { ApiError, ManifestKind } from '@review-dash/shared'
+import type { ApiError, ManifestKind } from '@scout/shared'
 import type { Store } from '../store/index.ts'
 import { queryString } from './params.ts'
 

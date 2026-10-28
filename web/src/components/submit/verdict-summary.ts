@@ -1,4 +1,4 @@
-import { effectiveVerdict, type Comment, type Decision, isItemComment, type Review, type ReviewItem, type Verdict } from '@review-dash/shared'
+import { effectiveVerdict, type Comment, type Decision, isItemComment, type Review, type ReviewItem, type Verdict } from '@scout/shared'
 
 export interface VerdictSummary {
   approved: number

@@ -1,6 +1,6 @@
 import express from 'express'
 import type { ErrorRequestHandler, Express, Request, Response } from 'express'
-import type { ApiError } from '@review-dash/shared'
+import type { ApiError } from '@scout/shared'
 import type { AgentAdapter } from './agent/adapter.ts'
 import { ClaudeCodeAdapter } from './agent/claude-code.ts'
 import { FakeAdapter } from './agent/fake.ts'

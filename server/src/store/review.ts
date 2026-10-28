@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { z } from 'zod'
-import { AgentRunSchema, JOURNAL_FILE, JournalSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@review-dash/shared'
-import type { AgentRun, Journal, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@review-dash/shared'
+import { AgentRunSchema, JOURNAL_FILE, JournalSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@scout/shared'
+import type { AgentRun, Journal, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@scout/shared'
 import { errorMessage, formatZodError, invalidStoreFile } from '../errors.ts'
 import { isMissing, readTextIfExists, writeFileAtomic } from './fs.ts'
 

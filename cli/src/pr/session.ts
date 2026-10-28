@@ -1,5 +1,5 @@
 // Finds the session a PR command works on.
-import { currentBranch, topLevel } from '@review-dash/shared/git/repo'
+import { currentBranch, topLevel } from '@scout/shared/git/repo'
 import { openSessionForBranch } from '../sessions.ts'
 import { manifestExists, sessionDir } from '../store.ts'
 import { PrSyncError } from './gh.ts'

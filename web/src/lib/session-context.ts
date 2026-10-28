@@ -1,4 +1,4 @@
-import type { SessionDetail } from '@review-dash/shared'
+import type { SessionDetail } from '@scout/shared'
 import { createContext, useContext } from 'react'
 
 export interface SessionContextValue {

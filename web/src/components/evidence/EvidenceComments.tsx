@@ -1,4 +1,4 @@
-import type { CommentTarget, CommentWithStatus } from '@review-dash/shared'
+import type { CommentTarget, CommentWithStatus } from '@scout/shared'
 import { X } from 'lucide-react'
 import { useEffect, useRef, type MouseEvent } from 'react'
 import { CommentBox } from '@/components/common/CommentBox'

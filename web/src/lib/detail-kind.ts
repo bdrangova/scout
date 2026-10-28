@@ -1,4 +1,4 @@
-import type { CodeReviewDetail, SessionDetail, TestRunDetail } from '@review-dash/shared'
+import type { CodeReviewDetail, SessionDetail, TestRunDetail } from '@scout/shared'
 import { useSessionContext } from './session-context'
 
 /** True for a test run's detail; a code review's detail may lack `kind`. */

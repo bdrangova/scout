@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { gitText, gitTry } from '@review-dash/shared/git/run'
+import { gitText, gitTry } from '@scout/shared/git/run'
 import { errorMessage } from '../errors.ts'
 import { isMissing } from '../store/fs.ts'
 

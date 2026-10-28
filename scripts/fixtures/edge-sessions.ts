@@ -1,8 +1,8 @@
 // Edge cases: empty artifact folders, an archived session, a manifest whose branch the repo left,
 // a clean working tree, and overflow (160-char title, six tickets, a very long branch name).
 import path from 'node:path'
-import { ArchivedMarkerSchema, ReviewSchema, buildSentSnapshot, emptyReview, stampSent, type Review } from '@review-dash/shared'
-import { computeWorkingTree } from '@review-dash/shared/git/working-tree'
+import { ArchivedMarkerSchema, ReviewSchema, buildSentSnapshot, emptyReview, stampSent, type Review } from '@scout/shared'
+import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { writeJsonAtomic } from '../../cli/src/store.ts'
 import { BASE_REF, git, judged, makeComment, makeManifest, writeSessionFolder } from './common.ts'
 import { ARCHIVED_SESSION_ID, BRANCH_CHANGED_SESSION_ID, EMPTY_SPEC_EXTRAS_SESSION_ID, LONG_TITLE_SESSION_ID, NO_CHANGES_SESSION_ID } from './ids.ts'

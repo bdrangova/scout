@@ -1,4 +1,4 @@
-import { anchorLabel, type CommentWithStatus } from '@review-dash/shared'
+import { anchorLabel, type CommentWithStatus } from '@scout/shared'
 import { ChevronDown, ChevronRight, CircleCheck } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'

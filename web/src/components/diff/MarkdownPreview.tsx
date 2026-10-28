@@ -1,4 +1,4 @@
-import type { Scope, TreeFile } from '@review-dash/shared'
+import type { Scope, TreeFile } from '@scout/shared'
 import { TriangleAlert } from 'lucide-react'
 import { Markdown } from '@/components/common/Markdown'
 import { Button } from '@/components/ui/button'

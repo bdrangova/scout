@@ -1,4 +1,4 @@
-import type { Verdict } from '@review-dash/shared'
+import type { Verdict } from '@scout/shared'
 import { CheckIcon, CircleDashedIcon, MessageSquareIcon, XIcon, type LucideIcon } from 'lucide-react'
 
 /** `commented` is not a stored verdict: it is `none` with open comments, shown on the list and the tree. */

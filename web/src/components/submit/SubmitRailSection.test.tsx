@@ -1,5 +1,5 @@
-import type { AgentRun } from '@review-dash/shared'
-import { mergeComments } from '@review-dash/shared'
+import type { AgentRun } from '@scout/shared'
+import { mergeComments } from '@scout/shared'
 import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { UnsavedDraft } from '@/lib/comment-drafts'

@@ -21,7 +21,7 @@ export interface ResolveBaseOptions {
   /** Repository top level. */
   repo: string
   baseRef: string
-  /** Where virtual merge-base objects are written (default `overlayDirFor(os.tmpdir()/review-dash-objects, repo)`). */
+  /** Where virtual merge-base objects are written (default `overlayDirFor(os.tmpdir()/scout-objects, repo)`). */
   overlayDir?: string
   signal?: AbortSignal
 }
@@ -43,11 +43,11 @@ export function overlayDirFor(root: string, repo: string): string {
 
 /** Fixed identity and dates so the synthetic commits that wrap intermediate trees are deterministic. */
 const SYNTHETIC_COMMIT_ENV: NodeJS.ProcessEnv = {
-  GIT_AUTHOR_NAME: 'review-dash',
-  GIT_AUTHOR_EMAIL: 'review-dash@localhost',
+  GIT_AUTHOR_NAME: 'scout',
+  GIT_AUTHOR_EMAIL: 'scout@localhost',
   GIT_AUTHOR_DATE: '2000-01-01T00:00:00+0000',
-  GIT_COMMITTER_NAME: 'review-dash',
-  GIT_COMMITTER_EMAIL: 'review-dash@localhost',
+  GIT_COMMITTER_NAME: 'scout',
+  GIT_COMMITTER_EMAIL: 'scout@localhost',
   GIT_COMMITTER_DATE: '2000-01-01T00:00:00+0000',
 }
 
@@ -92,7 +92,7 @@ async function mergeTrees(repo: string, overlay: Overlay, a: string, b: string, 
 }
 
 async function wrapInCommit(repo: string, tree: string, parents: readonly string[], run: RunOptions): Promise<string> {
-  const args = ['commit-tree', tree, ...parents.flatMap((p) => ['-p', p]), '-m', 'review-dash virtual merge base']
+  const args = ['commit-tree', tree, ...parents.flatMap((p) => ['-p', p]), '-m', 'Scout virtual merge base']
   return (await gitText(repo, args, { ...run, env: { ...run.env, ...SYNTHETIC_COMMIT_ENV } })).trim()
 }
 
@@ -131,7 +131,7 @@ export async function resolveBase(options: ResolveBaseOptions): Promise<Resolved
   if (bases.length === 0 || single === undefined) throw new Error(`git merge-base ${baseRef} HEAD: no merge base`)
   if (bases.length === 1) return { sha: single, virtual: false, env: null, reason: null }
 
-  const overlayDir = options.overlayDir ?? overlayDirFor(path.join(os.tmpdir(), 'review-dash-objects'), repo)
+  const overlayDir = options.overlayDir ?? overlayDirFor(path.join(os.tmpdir(), 'scout-objects'), repo)
   const key = `${repo}\0${overlayDir}\0${bases.join(',')}`
   const hit = folded.get(key)
   if (hit) {

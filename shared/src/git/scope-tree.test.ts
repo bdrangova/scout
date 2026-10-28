@@ -36,7 +36,7 @@ async function commit(message: string): Promise<string> {
 }
 
 beforeAll(async () => {
-  repo = await mkdtemp(path.join(os.tmpdir(), 'review-dash-scope-'))
+  repo = await mkdtemp(path.join(os.tmpdir(), 'scout-scope-'))
   await run(['init', '-q', '-b', 'main'])
   await write('a.txt', 'one\ntwo\nthree\n')
   await write('orig.txt', 'same content\nacross the rename\n')

@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { AgentRunEventSchema } from '@review-dash/shared'
+import { AgentRunEventSchema } from '@scout/shared'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_SAMPLE_PATH } from './fake.ts'
 import { TOOL_RESULT_MAX_CHARS, flattenToolResultContent, parseStreamJsonLine } from './stream-json.ts'
@@ -20,12 +20,12 @@ describe('parseStreamJsonLine on fixtures/agent-run.sample.jsonl', () => {
   it('maps assistant tool_use blocks and user tool_result blocks in order', () => {
     const uses = ofType('tool_use')
     expect(uses.map((u) => u.name)).toEqual(['Bash', 'Edit', 'Edit', 'Bash', 'Bash'])
-    expect(uses[0]?.input).toMatchObject({ command: 'echo review-dash-sample' })
+    expect(uses[0]?.input).toMatchObject({ command: 'echo scout-sample' })
     expect(JSON.stringify(uses[3]?.input)).toContain('ai-review resolve 20260101-0900-fixture-abcd --comment c1 --status resolved')
 
     const results = ofType('tool_result')
     expect(results.map((r) => r.toolUseId)).toEqual(uses.map((u) => u.id))
-    expect(results[0]).toMatchObject({ text: 'review-dash-sample', isError: false })
+    expect(results[0]).toMatchObject({ text: 'scout-sample', isError: false })
     const denied = results.filter((r) => r.isError)
     expect(denied).toHaveLength(1)
     expect(denied[0]?.text).toMatch(/^Permission denied/)

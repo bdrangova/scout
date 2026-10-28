@@ -1,4 +1,4 @@
-import type { PickFolderResponse, PutSettingsRequest, Settings } from '@review-dash/shared'
+import type { PickFolderResponse, PutSettingsRequest, Settings } from '@scout/shared'
 import { useEffect, useState } from 'react'
 import { apiGet, apiPost, apiPut } from '@/lib/api'
 

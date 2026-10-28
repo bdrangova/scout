@@ -1,4 +1,4 @@
-import type { WorktreeSummary } from '@review-dash/shared'
+import type { WorktreeSummary } from '@scout/shared'
 import { GitPullRequest } from 'lucide-react'
 import { Tag } from '@/components/ui/tag'
 import { formatAdditions, formatDeletions, pluralize } from '@/lib/format'

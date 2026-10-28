@@ -1,4 +1,4 @@
-import type { Step } from "@review-dash/shared";
+import type { Step } from "@scout/shared";
 
 const COLUMNS = [
   { key: "label", title: "Step" },

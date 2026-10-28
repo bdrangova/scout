@@ -1,5 +1,5 @@
 {
-  "name": "@review-dash/server",
+  "name": "@scout/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@review-dash/shared": "0.1.0",
+    "@scout/shared": "0.1.0",
     "chokidar": "^4.0.3",
     "express": "^5.2.1",
     "zod": "^4.6.5"

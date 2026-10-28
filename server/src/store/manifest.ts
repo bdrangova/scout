@@ -1,6 +1,6 @@
 import path from 'node:path'
-import { ManifestSchema } from '@review-dash/shared'
-import type { Manifest } from '@review-dash/shared'
+import { ManifestSchema } from '@scout/shared'
+import type { Manifest } from '@scout/shared'
 import { errorMessage, formatZodError } from '../errors.ts'
 import { FileCache } from './cache.ts'
 

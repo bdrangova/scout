@@ -1,7 +1,7 @@
 import os from 'node:os'
 import path from 'node:path'
-import { CONFIG_FILE, PutSettingsRequestSchema, SettingsSchema } from '@review-dash/shared'
-import type { Settings } from '@review-dash/shared'
+import { CONFIG_FILE, PutSettingsRequestSchema, SettingsSchema } from '@scout/shared'
+import type { Settings } from '@scout/shared'
 import { badRequest, formatZodError, invalidStoreFile } from './errors.ts'
 import { readTextIfExists, writeFileAtomic } from './store/fs.ts'
 

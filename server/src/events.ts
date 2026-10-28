@@ -1,4 +1,4 @@
-import type { StoreEvent } from '@review-dash/shared'
+import type { StoreEvent } from '@scout/shared'
 
 export type StoreEventListener = (event: StoreEvent) => void
 

@@ -1,5 +1,5 @@
-import { buildPrCommentsResponse, parsePatchLines } from '@review-dash/shared'
-import { makePrComment, makePrComments, makePrResolution } from '@review-dash/shared/testing/fixtures'
+import { buildPrCommentsResponse, parsePatchLines } from '@scout/shared'
+import { makePrComment, makePrComments, makePrResolution } from '@scout/shared/testing/fixtures'
 import { describe, expect, it } from 'vitest'
 import { groupPrThreads, placePrThreads, prCountsByPath, threadsForPath } from './pr-threads'
 

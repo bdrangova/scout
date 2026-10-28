@@ -1,4 +1,4 @@
-import type { TreeFile } from '@review-dash/shared'
+import type { TreeFile } from '@scout/shared'
 import { useDeferredValue, useEffect, useMemo, useState, type KeyboardEvent, type RefObject } from 'react'
 import { allFolderIds, ancestorsOf, buildFileTree, filterTree, flattenTree, type FlatRow, type TreeNode } from '@/lib/file-tree'
 

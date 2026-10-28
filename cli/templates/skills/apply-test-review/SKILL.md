@@ -1,6 +1,6 @@
 ---
 name: apply-test-review
-description: Apply the reviewer's feedback on a feature-test run from the review-dash dashboard (/t/<id>), covering verdicts and comments on scenarios, bugs, logs and the run as a whole. Answers questions, clarifies step text, points to data-setup changes, or re-runs a scenario with /feature-test and republishes it, and records a resolution for every comment. Use when the user runs /apply-test-review, says "apply the test review", or when a hook reports open test-review comments for this repo.
+description: Apply the reviewer's feedback on a feature-test run from the Scout dashboard (/t/<id>), covering verdicts and comments on scenarios, bugs, logs and the run as a whole. Answers questions, clarifies step text, points to data-setup changes, or re-runs a scenario with /feature-test and republishes it, and records a resolution for every comment. Use when the user runs /apply-test-review, says "apply the test review", or when a hook reports open test-review comments for this repo.
 argument-hint: "<sessionId> [--record video|screenshots|none] [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(mv *) Read Glob Grep Write Edit Skill AskUserQuestion mcp__playwright__* Bash(npx playwright *)
 ---

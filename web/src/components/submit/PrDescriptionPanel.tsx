@@ -1,4 +1,4 @@
-import { SESSION_PR_DESCRIPTION_FILE } from '@review-dash/shared'
+import { SESSION_PR_DESCRIPTION_FILE } from '@scout/shared'
 import { FileTextIcon } from 'lucide-react'
 import { Markdown } from '@/components/common/Markdown'
 import { Panel, PanelBody, PanelHeader, PanelTitle } from '@/components/ui/panel'

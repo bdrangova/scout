@@ -1,4 +1,4 @@
-import { fileIsUpdated, type TreeFile } from '@review-dash/shared'
+import { fileIsUpdated, type TreeFile } from '@scout/shared'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'

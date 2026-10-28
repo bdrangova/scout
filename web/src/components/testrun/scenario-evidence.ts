@@ -1,4 +1,4 @@
-import type { EvidenceRef, Scenario } from "@review-dash/shared";
+import type { EvidenceRef, Scenario } from "@scout/shared";
 
 export type EvidenceKind = "video" | "image" | "data";
 

@@ -1,4 +1,4 @@
-import type { SpecItem } from '@review-dash/shared'
+import type { SpecItem } from '@scout/shared'
 import { Check, Copy, FileText, HardDrive } from 'lucide-react'
 import { useState } from 'react'
 import { KindTag } from '@/components/common/KindTag'

@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { CONFIG_FILE } from '@review-dash/shared'
-import type { ApiError, Settings, WorktreeDetail, WorktreeListResponse } from '@review-dash/shared'
+import { CONFIG_FILE } from '@scout/shared'
+import type { ApiError, Settings, WorktreeDetail, WorktreeListResponse } from '@scout/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Express } from 'express'
 import { closeApp } from '../app.ts'
@@ -11,7 +11,7 @@ import type { FixtureRepo } from '../testing/fixture-repo.ts'
 import { FIXTURE_SESSION_ID, appFor, createFixtureStore, fixtureSessionDir } from '../testing/fixture-store.ts'
 import type { FixtureStore } from '../testing/fixture-store.ts'
 import { listen } from '../testing/sse-client.ts'
-import { gitText } from '@review-dash/shared/git/run'
+import { gitText } from '@scout/shared/git/run'
 
 let store: FixtureStore
 let repo: FixtureRepo
@@ -25,7 +25,7 @@ const git = (cwd: string, args: string[]) => gitText(cwd, args, { env: GIT_TEST_
 beforeAll(async () => {
   store = await createFixtureStore()
   repo = await createFixtureRepo()
-  folder = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-worktrees-')))
+  folder = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'scout-worktrees-')))
   await git(repo.repo, ['worktree', 'add', '-q', '-b', 'qi-15500-clean', wt('clean'), 'origin/master'])
   await fs.writeFile(wt('clean/extra.txt'), 'one\ntwo\n')
   await git(wt('clean'), ['add', '-A'])

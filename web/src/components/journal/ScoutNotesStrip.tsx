@@ -1,4 +1,4 @@
-import type { JournalEntry } from '@review-dash/shared'
+import type { JournalEntry } from '@scout/shared'
 import { ChevronDown, ChevronRight, MessageSquareReply } from 'lucide-react'
 import { useState } from 'react'
 import { ScoutMark } from '@/components/brand/Scout'

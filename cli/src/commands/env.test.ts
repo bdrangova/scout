@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { gitText } from '@review-dash/shared/git/run'
+import { gitText } from '@scout/shared/git/run'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { readConfig } from '../config.ts'
 import { checkoutEnv, scratchDir, setRuntimeCommand } from './env.ts'

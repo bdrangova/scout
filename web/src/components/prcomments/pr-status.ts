@@ -1,4 +1,4 @@
-import type { PrCommentView } from '@review-dash/shared'
+import type { PrCommentView } from '@scout/shared'
 import { Ban, Check, CircleDot, History, type LucideIcon } from 'lucide-react'
 import type { TagProps } from '@/components/ui/tag'
 

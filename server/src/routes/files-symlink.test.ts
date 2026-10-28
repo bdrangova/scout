@@ -13,7 +13,7 @@ let app: Express
 let outside: string
 beforeAll(async () => {
   store = await createFixtureStore()
-  outside = await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-secret-'))
+  outside = await fs.mkdtemp(path.join(os.tmpdir(), 'scout-secret-'))
   await fs.writeFile(path.join(outside, 'secret.txt'), 'TOP SECRET\n')
   await fs.symlink(path.join(outside, 'secret.txt'), path.join(store.repo.repo, 'src', 'leak.txt'))
   await fs.symlink(outside, path.join(store.repo.repo, 'linked-dir'))

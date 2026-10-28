@@ -1,4 +1,4 @@
-import type { RunLog } from "@review-dash/shared";
+import type { RunLog } from "@scout/shared";
 import { ScrollText } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/common/EmptyState";

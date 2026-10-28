@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
-import { AgentRunEventSchema, mergeComments } from '@review-dash/shared'
-import type { AgentRun, AgentRunEvent, AgentRunStatus, Decision } from '@review-dash/shared'
+import { AgentRunEventSchema, mergeComments } from '@scout/shared'
+import type { AgentRun, AgentRunEvent, AgentRunStatus, Decision } from '@scout/shared'
 import { HttpError, errorMessage } from '../errors.ts'
 import type { StoreEventBus } from '../events.ts'
 import { readTextIfExists } from '../store/fs.ts'

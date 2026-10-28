@@ -1,4 +1,4 @@
-import type { CommitList, PutReviewRequest, Review, ReviewResponse, SessionListItem, WorkingTree } from '@review-dash/shared'
+import type { CommitList, PutReviewRequest, Review, ReviewResponse, SessionListItem, WorkingTree } from '@scout/shared'
 import { vi, type Mock } from 'vitest'
 import { PATCH_FIXTURE } from './fixtures'
 

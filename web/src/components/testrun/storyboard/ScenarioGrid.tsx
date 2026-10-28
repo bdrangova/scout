@@ -1,4 +1,4 @@
-import { effectiveVerdict, type Verdict } from "@review-dash/shared";
+import { effectiveVerdict, type Verdict } from "@scout/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Segmented, SegmentedItem } from "@/components/ui/segmented";

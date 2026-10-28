@@ -1,4 +1,4 @@
-import { ScopeSchema, UNCOMMITTED_SCOPE, type ChangeStats, type Commit, type CommitList, type Scope, type TreeFile } from '@review-dash/shared'
+import { ScopeSchema, UNCOMMITTED_SCOPE, type ChangeStats, type Commit, type CommitList, type Scope, type TreeFile } from '@scout/shared'
 
 /** `?commit=<sha>` or `?commit=uncommitted`; absent means the full diff. */
 export const SCOPE_PARAM = 'commit'

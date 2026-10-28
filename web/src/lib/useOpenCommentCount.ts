@@ -1,4 +1,4 @@
-import type { CommentTarget } from '@review-dash/shared'
+import type { CommentTarget } from '@scout/shared'
 import { useReview } from '@/state/review-context'
 
 /**

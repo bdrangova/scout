@@ -1,4 +1,4 @@
-import type { TreeFile, Verdict } from '@review-dash/shared'
+import type { TreeFile, Verdict } from '@scout/shared'
 import { MessageSquareIcon } from 'lucide-react'
 import { PrCount } from '@/components/prcomments/PrCount'
 import { Tag } from '@/components/ui/tag'

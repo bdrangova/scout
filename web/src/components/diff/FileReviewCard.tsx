@@ -1,4 +1,4 @@
-import { effectiveVerdict, entriesForFile, fileIsUpdated, fileSummary, type CommentTarget, type LineAnchor, type TreeFile } from '@review-dash/shared'
+import { effectiveVerdict, entriesForFile, fileIsUpdated, fileSummary, type CommentTarget, type LineAnchor, type TreeFile } from '@scout/shared'
 import { useCallback, useEffect, useMemo, useReducer, useState, type PointerEvent } from 'react'
 import { CommentBox } from '@/components/common/CommentBox'
 import { CommentList } from '@/components/common/CommentList'

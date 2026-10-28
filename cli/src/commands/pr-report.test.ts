@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, writeFile, rm, realpath } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { beforeEach, afterEach, it, expect } from 'vitest'
-import { gitText } from '@review-dash/shared/git/run'
+import { gitText } from '@scout/shared/git/run'
 import { initSession } from './init.ts'
 import { openSessionForBranch } from '../sessions.ts'
 let home: string, repo: string

@@ -1,4 +1,4 @@
-import type { Scope, TreeFile } from '@review-dash/shared'
+import type { Scope, TreeFile } from '@scout/shared'
 import { Check, FileX, Image as ImageIcon, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Eyebrow } from '@/components/common/Eyebrow'

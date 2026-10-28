@@ -1,4 +1,4 @@
-import type { TreeFile } from '@review-dash/shared'
+import type { TreeFile } from '@scout/shared'
 import { Tag } from '@/components/ui/tag'
 import { BINARY_BADGE, fileStatusBadge, UNTRACKED_BADGE, UPDATED_BADGE, type FileStatusBadgeSpec } from '@/lib/file-status'
 import { cn } from '@/lib/utils'

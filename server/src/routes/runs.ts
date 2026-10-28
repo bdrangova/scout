@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { RUN_ID_RE, StartRunRequestSchema } from '@review-dash/shared'
-import type { AgentRun, ApiError } from '@review-dash/shared'
+import { RUN_ID_RE, StartRunRequestSchema } from '@scout/shared'
+import type { AgentRun, ApiError } from '@scout/shared'
 import type { AgentAdapter } from '../agent/adapter.ts'
 import type { RunManager } from '../agent/runs.ts'
 import { formatZodError, notFound } from '../errors.ts'

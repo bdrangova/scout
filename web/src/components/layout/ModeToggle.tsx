@@ -1,4 +1,4 @@
-import type { Mode } from '@review-dash/shared'
+import type { Mode } from '@scout/shared'
 import { GalleryHorizontal, LayoutGrid, Rows3, type LucideIcon } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router'
 import { Kbd } from '@/components/ui/kbd'

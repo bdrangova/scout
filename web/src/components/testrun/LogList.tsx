@@ -1,4 +1,4 @@
-import type { RunLog, Scenario } from "@review-dash/shared";
+import type { RunLog, Scenario } from "@scout/shared";
 import { Link } from "react-router";
 import { testRunRoute } from "@/lib/paths";
 import { cn } from "@/lib/utils";

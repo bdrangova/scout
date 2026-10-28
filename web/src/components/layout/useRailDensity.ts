@@ -8,7 +8,7 @@ export type RailDensityGroup = 'files' | 'other'
 const DEFAULTS: Record<RailDensityGroup, RailDensity> = { files: 'compact', other: 'roomy' }
 
 function storageKey(group: RailDensityGroup): string {
-  return `review-dash:rail-density:${group}`
+  return `scout:rail-density:${group}`
 }
 
 function readDensity(group: RailDensityGroup): RailDensity {

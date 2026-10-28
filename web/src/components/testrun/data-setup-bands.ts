@@ -1,4 +1,4 @@
-import type { EvidenceRef, Step } from "@review-dash/shared";
+import type { EvidenceRef, Step } from "@scout/shared";
 import { basename } from "./scenario-evidence";
 
 /** True when the item belongs to the step: its caption or file name starts with the step's label (`D1`, `D1 seed.png`, `d1-before.png`). */

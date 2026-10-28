@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { CodeReviewDetailSchema, SessionListItemSchema, SessionSummarySchema } from '@review-dash/shared'
+import { CodeReviewDetailSchema, SessionListItemSchema, SessionSummarySchema } from '@scout/shared'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Express } from 'express'

@@ -1,5 +1,5 @@
 import { Bot, CircleAlert, CircleCheck, CircleDashed, ClipboardCheck, ListChecks, RefreshCw, Send, type LucideIcon } from 'lucide-react'
-import type { AgentRunStatus, FileStatus, SessionStatus, Verdict } from '@review-dash/shared'
+import type { AgentRunStatus, FileStatus, SessionStatus, Verdict } from '@scout/shared'
 
 /** The five status colours: ok=--st-a, warn=--st-m, info=--st-r, err=--st-d, neutral=muted ink. */
 export type Tone = 'ok' | 'warn' | 'info' | 'err' | 'neutral'

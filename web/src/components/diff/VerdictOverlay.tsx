@@ -1,4 +1,4 @@
-import type { Verdict } from '@review-dash/shared'
+import type { Verdict } from '@scout/shared'
 import { cn } from '@/lib/utils'
 
 interface VerdictOverlayProps {

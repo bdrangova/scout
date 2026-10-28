@@ -1,4 +1,4 @@
-# review-dash design contract — "fine border retro"
+# Scout design contract — "fine border retro"
 
 Source of truth: `design/retro/base-core.css` + `base-ext.css` (previews in `design/retro/previews`).
 Everything below is implemented in `web/src/index.css`, `web/src/components/ui/*`, `web/src/lib/*`, `web/src/theme/*`.

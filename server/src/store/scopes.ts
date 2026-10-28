@@ -1,7 +1,7 @@
-import type { Scope } from '@review-dash/shared'
-import { UNCOMMITTED_SCOPE } from '@review-dash/shared'
-import { computeScopeTree } from '@review-dash/shared/git/scope-tree'
-import type { WorkingTreeResult } from '@review-dash/shared/git/working-tree'
+import type { Scope } from '@scout/shared'
+import { UNCOMMITTED_SCOPE } from '@scout/shared'
+import { computeScopeTree } from '@scout/shared/git/scope-tree'
+import type { WorkingTreeResult } from '@scout/shared/git/working-tree'
 
 /** Commit scopes kept per server; a commit's diff never changes, so the oldest entry is simply evicted. */
 export const COMMIT_SCOPE_CACHE_SIZE = 24

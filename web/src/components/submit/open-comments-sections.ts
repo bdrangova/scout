@@ -1,4 +1,4 @@
-import { effectiveVerdict, type CommentWithStatus, type CodeReviewDetail, type Review, type TestRunDetail } from '@review-dash/shared'
+import { effectiveVerdict, type CommentWithStatus, type CodeReviewDetail, type Review, type TestRunDetail } from '@scout/shared'
 import { encodePath, splitPath } from '@/lib/paths'
 import type { PrThread } from '@/lib/pr-threads'
 import { fileChip, formatVerdictSummary, verdictSummary, type FileChip } from './verdict-summary'

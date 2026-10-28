@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
  * `mkdtemp`) because `playwright.config.ts` is evaluated before `globalSetup` can hand a path over;
  * the setup wipes and rebuilds it, the teardown removes it.
  */
-export const E2E_ROOT = path.join(os.tmpdir(), 'review-dash-e2e')
+export const E2E_ROOT = path.join(os.tmpdir(), 'scout-e2e')
 export const E2E_STORE = path.join(E2E_ROOT, 'store')
 export const E2E_API_PORT = 4745
 export const E2E_WEB_PORT = 4746

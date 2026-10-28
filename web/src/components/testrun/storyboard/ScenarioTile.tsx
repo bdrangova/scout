@@ -1,4 +1,4 @@
-import { fileIsUpdated, effectiveVerdict, type Verdict } from "@review-dash/shared";
+import { fileIsUpdated, effectiveVerdict, type Verdict } from "@scout/shared";
 import { CheckIcon, ListChecks, MessageSquareIcon, XIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";

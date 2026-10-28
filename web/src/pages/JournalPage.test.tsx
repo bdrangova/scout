@@ -1,4 +1,4 @@
-import { mergeComments } from '@review-dash/shared'
+import { mergeComments } from '@scout/shared'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router'

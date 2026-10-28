@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { StoreEvent } from '@review-dash/shared'
+import type { StoreEvent } from '@scout/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { StoreEventBus } from './events.ts'
 import { RunWatcher, outermostPaths, runPathMatters } from './run-watcher.ts'
@@ -30,7 +30,7 @@ describe('outermostPaths', () => {
 describe('RunWatcher', () => {
   let dir: string
   beforeAll(async () => {
-    dir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-runw-')))
+    dir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'scout-runw-')))
     await fs.mkdir(path.join(dir, 'run', 'scenarios', 's1', 'screenshots', 'raw'), { recursive: true })
     await fs.mkdir(path.join(dir, 'bugs'), { recursive: true })
     await fs.writeFile(path.join(dir, 'run', 'test-run.json'), '{}')

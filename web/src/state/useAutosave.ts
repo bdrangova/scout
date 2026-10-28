@@ -1,4 +1,4 @@
-import type { PutReviewConflict, PutReviewRequest, PutReviewResponse, Review, ReviewAction } from '@review-dash/shared'
+import type { PutReviewConflict, PutReviewRequest, PutReviewResponse, Review, ReviewAction } from '@scout/shared'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ApiRequestError, apiPut } from '@/lib/api'

@@ -1,4 +1,4 @@
-import { sha256Hex, type LineAnchor } from '@review-dash/shared'
+import { sha256Hex, type LineAnchor } from '@scout/shared'
 
 /** GitHub Files changed anchors use SHA-256 of the exact path; L/R identify old/new diff sides. */
 export function prReviewLocationUrl(prUrl: string, path: string | null, anchor?: LineAnchor): string {

@@ -36,7 +36,7 @@ describe('repoPathMatters', () => {
 describe('RepoWatcher', () => {
   let dir: string
   beforeAll(async () => {
-    dir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-rw-')))
+    dir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'scout-rw-')))
     await fs.mkdir(path.join(dir, 'node_modules', 'x'), { recursive: true })
     await fs.mkdir(path.join(dir, 'src'), { recursive: true })
   })

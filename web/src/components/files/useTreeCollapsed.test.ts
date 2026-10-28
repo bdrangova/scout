@@ -12,6 +12,6 @@ describe('useTreeCollapsed', () => {
     expect(first.result.current[0]).toBe(true)
     expect(renderHook(() => useTreeCollapsed()).result.current[0]).toBe(true)
     act(() => first.result.current[1]())
-    expect(window.localStorage.getItem('review-dash:files-tree-collapsed')).toBe('false')
+    expect(window.localStorage.getItem('scout:files-tree-collapsed')).toBe('false')
   })
 })

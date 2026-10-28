@@ -2,7 +2,7 @@
 import { cp, lstat, mkdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { ARCHIVED_FILE, ARCHIVE_DIR, SESSION_ID_RE } from '@review-dash/shared'
+import { ARCHIVED_FILE, ARCHIVE_DIR, SESSION_ID_RE } from '@scout/shared'
 import { archivedSessionDir, manifestExists, resolveHome, sessionDir } from '../store.ts'
 
 async function isDir(dir: string): Promise<boolean> {

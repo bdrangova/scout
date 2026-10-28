@@ -18,9 +18,9 @@ import {
   type JournalAlternative,
   type JournalAnchor,
   type JournalEntry,
-} from '@review-dash/shared'
-import { resolveBase } from '@review-dash/shared/git/base'
-import { currentBranch, showFile, topLevel } from '@review-dash/shared/git/repo'
+} from '@scout/shared'
+import { resolveBase } from '@scout/shared/git/base'
+import { currentBranch, showFile, topLevel } from '@scout/shared/git/repo'
 import { openSessionForBranch } from '../sessions.ts'
 import { manifestExists, readManifest, resolveHome, sessionDir, writeJsonAtomic } from '../store.ts'
 import { initSession } from './init.ts'

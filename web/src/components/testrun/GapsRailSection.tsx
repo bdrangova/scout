@@ -1,6 +1,6 @@
 import { GapsAndBugsLists, type GapBugSelection } from "./GapsAndBugsLists";
 import { RunRailSection } from "./RunRailSection";
-import type { Bug, Gap } from "@review-dash/shared";
+import type { Bug, Gap } from "@scout/shared";
 
 export interface GapsRailSectionProps {
   gaps: readonly Gap[];

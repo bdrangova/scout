@@ -13,8 +13,8 @@ import {
   deriveEvidence,
   deriveExtras,
   deriveSpec,
-} from '@review-dash/shared'
-import type { EvidenceItem, ExtraItem, SpecItem } from '@review-dash/shared'
+} from '@scout/shared'
+import type { EvidenceItem, ExtraItem, SpecItem } from '@scout/shared'
 import { errorMessage, formatZodError } from '../errors.ts'
 import { isMissing } from './fs.ts'
 

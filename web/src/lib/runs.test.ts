@@ -1,4 +1,4 @@
-import type { AgentRunEvent } from '@review-dash/shared'
+import type { AgentRunEvent } from '@scout/shared'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { runEventFactory } from '@/test/mock-event-source'
 import {

@@ -1,4 +1,4 @@
-import type { ArchivedSession } from '@review-dash/shared'
+import type { ArchivedSession } from '@scout/shared'
 import { useState } from 'react'
 import type { SessionKind } from '@/lib/paths'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'

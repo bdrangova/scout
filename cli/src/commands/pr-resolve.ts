@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
 import type { Command } from 'commander'
-import { PR_COMMENT_ID_RE, PR_REPLY_MAX_LENGTH, PR_RESOLUTION_STATUSES, SCHEMA_VERSION, type PrResolutions } from '@review-dash/shared'
+import { PR_COMMENT_ID_RE, PR_REPLY_MAX_LENGTH, PR_RESOLUTION_STATUSES, SCHEMA_VERSION, type PrResolutions } from '@scout/shared'
 import { prCommentsPath, readPrComments, readPrResolutions, readReview, writePrResolutions } from '../sessions.ts'
 import { manifestExists, resolveHome, sessionDir } from '../store.ts'
 

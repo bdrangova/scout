@@ -1,4 +1,4 @@
-import { SECTIONS } from '@review-dash/shared'
+import { SECTIONS } from '@scout/shared'
 import { useLocation } from 'react-router'
 import { useShellConfig } from './shell-config'
 

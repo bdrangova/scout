@@ -1,4 +1,4 @@
-import type { JournalEntry } from '@review-dash/shared'
+import type { JournalEntry } from '@scout/shared'
 import { MessageSquareReply } from 'lucide-react'
 import { CommentBox } from '@/components/common/CommentBox'
 import { Button } from '@/components/ui/button'

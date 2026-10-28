@@ -1,4 +1,4 @@
-import type { Panel } from "@review-dash/shared";
+import type { Panel } from "@scout/shared";
 import { EvidenceGallery } from "../EvidenceGallery";
 import { LogExcerpt } from "../LogExcerpt";
 import { RunVideo } from "../RunVideo";

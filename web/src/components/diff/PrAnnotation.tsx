@@ -1,4 +1,4 @@
-import { anchorKey, type LineAnchor } from '@review-dash/shared'
+import { anchorKey, type LineAnchor } from '@scout/shared'
 import { PrThreadList } from '@/components/prcomments/PrThreadList'
 import type { PrThread } from '@/lib/pr-threads'
 import { PANEL_CLASS } from './LineAnnotation'

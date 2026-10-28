@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { OMIT_MAX_BYTES } from '@review-dash/shared'
-import { gitText } from '@review-dash/shared/git/run'
+import { OMIT_MAX_BYTES } from '@scout/shared'
+import { gitText } from '@scout/shared/git/run'
 
 /** A hermetic git environment: no user or system config, fixed identity. */
 export const GIT_TEST_ENV: NodeJS.ProcessEnv = {
@@ -35,7 +35,7 @@ export function pngBytes(seed: number): Buffer {
  * omitted (too large) untracked file and an ignored file.
  */
 export async function createFixtureRepo(parentDir: string = os.tmpdir()): Promise<FixtureRepo> {
-  const root = await fs.realpath(await fs.mkdtemp(path.join(parentDir, 'review-dash-repo-')))
+  const root = await fs.realpath(await fs.mkdtemp(path.join(parentDir, 'scout-repo-')))
   const repo = path.join(root, 'repo')
   const remote = path.join(root, 'remote.git')
   await fs.mkdir(repo)

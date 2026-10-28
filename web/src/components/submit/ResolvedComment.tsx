@@ -1,4 +1,4 @@
-import type { CommentWithStatus } from '@review-dash/shared'
+import type { CommentWithStatus } from '@scout/shared'
 import { CircleCheckIcon, RotateCcwIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tag } from '@/components/ui/tag'

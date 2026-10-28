@@ -1,4 +1,4 @@
-import { readReport } from '@review-dash/shared/pr-review/report'
+import { readReport } from '@scout/shared/pr-review/report'
 import { invalidStoreFile } from '../errors.ts'
 export async function readPrReviewReport(dir: string) {
   try { return await readReport(dir) }

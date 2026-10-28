@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { ARCHIVE_DIR, SESSIONS_DIR, SESSION_ID_RE } from '@review-dash/shared'
+import { ARCHIVE_DIR, SESSIONS_DIR, SESSION_ID_RE } from '@scout/shared'
 import { notFound } from '../errors.ts'
 
 export interface StorePaths {

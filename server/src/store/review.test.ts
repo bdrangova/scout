@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type { AgentRun } from '@review-dash/shared'
+import type { AgentRun } from '@scout/shared'
 import { FIXTURE_SESSION_ID, codeReviewDetail, createFixtureStore, fixtureSessionDir } from '../testing/fixture-store.ts'
 import type { FixtureStore } from '../testing/fixture-store.ts'
 import { Store } from './index.ts'
@@ -119,7 +119,7 @@ describe('Store.listSessions', () => {
       trees: {
         compute: async (input) => {
           computes += 1
-          return await import('@review-dash/shared/git/working-tree').then((m) => m.computeWorkingTree(input))
+          return await import('@scout/shared/git/working-tree').then((m) => m.computeWorkingTree(input))
         },
       },
     })

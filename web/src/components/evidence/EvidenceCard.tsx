@@ -1,4 +1,4 @@
-import type { CommentTarget, EvidenceItem } from '@review-dash/shared'
+import type { CommentTarget, EvidenceItem } from '@scout/shared'
 import { Bot, ExternalLink, Film, Image } from 'lucide-react'
 import { useMemo, useReducer, useRef, useState } from 'react'
 import { IconLink } from '@/components/common/IconLink'

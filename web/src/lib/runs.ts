@@ -1,5 +1,5 @@
 /** API calls and pure helpers for Submit and the agent run view. */
-import type { AgentRun, AgentRunEvent, AgentRunStatus, Decision, SendResponse } from '@review-dash/shared'
+import type { AgentRun, AgentRunEvent, AgentRunStatus, Decision, SendResponse } from '@scout/shared'
 import { ApiRequestError, apiGet, apiPost } from './api'
 
 function sessionPath(sessionId: string): string {

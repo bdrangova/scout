@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# UserPromptSubmit hook: surfaces review-dash feedback that is still open for this repository,
+# UserPromptSubmit hook: surfaces Scout feedback that is still open for this repository,
 # once per (Claude session, pending set). The pending set is fingerprinted by the CLI, so the
 # reminder returns only when new comments arrive after everything was resolved.
 # Skipped when the prompt already runs /apply-review, /publish-review, /address-pr-comments or one of the test-review skills

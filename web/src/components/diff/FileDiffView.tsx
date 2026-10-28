@@ -1,4 +1,4 @@
-import { anchorInPatch, parsePatchLines, relocateJournalAnchor, type JournalEntry, type LineAnchor } from '@review-dash/shared'
+import { anchorInPatch, parsePatchLines, relocateJournalAnchor, type JournalEntry, type LineAnchor } from '@scout/shared'
 import { PatchDiff, type PatchDiffProps } from '@pierre/diffs/react'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useJournalInlineVisible } from '@/lib/journal-prefs'

@@ -7,10 +7,10 @@
     <title>scout</title>
     <meta name="description" content="Scout — a companion for reviewing AI code changes and sending clear feedback." />
     <script>
-      // No-flash theme: mirror of ThemeProvider's logic (key `review-dash:theme`, `.dark` on <html>).
+      // No-flash theme: mirror of ThemeProvider's logic (key `scout:theme`, `.dark` on <html>).
       ;(function () {
         try {
-          var t = localStorage.getItem('review-dash:theme')
+          var t = localStorage.getItem('scout:theme')
           var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
           if (dark) {
             document.documentElement.classList.add('dark')

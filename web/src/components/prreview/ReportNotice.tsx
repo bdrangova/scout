@@ -1,4 +1,4 @@
-import { currentProposal } from '@review-dash/shared'
+import { currentProposal } from '@scout/shared'
 import { Notice } from '@/components/ui/notice'
 import { useReview } from '@/state/review-context'
 import { useCurrentPrReport } from './pr-review-context'

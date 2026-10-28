@@ -1,4 +1,4 @@
-import type { ExtraItem } from '@review-dash/shared'
+import type { ExtraItem } from '@scout/shared'
 import { Code, FileText, Workflow, type LucideIcon } from 'lucide-react'
 import { RailSection } from '@/components/layout/RailSlot'
 import { RailBlock, RailItem } from '@/components/spec/RailItem'

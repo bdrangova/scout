@@ -1,4 +1,4 @@
-import type { Panel } from "@review-dash/shared";
+import type { Panel } from "@scout/shared";
 import { Link } from "react-router";
 import { Tag } from "@/components/ui/tag";
 import { testRunRoute } from "@/lib/paths";

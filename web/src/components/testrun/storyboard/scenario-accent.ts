@@ -1,4 +1,4 @@
-import type { ScenarioStatus } from "@review-dash/shared";
+import type { ScenarioStatus } from "@scout/shared";
 import { fileTypeClass, type FileTypeId } from "@/lib/file-type";
 
 /** The accent family a scenario's header, tile band and peek layer wear (the `ft-*` classes the files use for their type). */

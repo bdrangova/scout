@@ -1,4 +1,4 @@
-import type { Ticket } from '@review-dash/shared'
+import type { Ticket } from '@scout/shared'
 import { useFadeScroll } from '@/components/common/useFadeScroll'
 import { cn } from '@/lib/utils'
 import { TicketChip } from './TicketChip'

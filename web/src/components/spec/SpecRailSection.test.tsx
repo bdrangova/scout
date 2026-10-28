@@ -1,4 +1,4 @@
-import type { CodeReviewDetail } from '@review-dash/shared'
+import type { CodeReviewDetail } from '@scout/shared'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'

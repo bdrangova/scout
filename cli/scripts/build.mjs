@@ -1,5 +1,5 @@
 // Bundles the CLI into a single ESM file. Runtime dependencies stay external (they are
-// installed next to the bundle); the workspace package @review-dash/shared is inlined.
+// installed next to the bundle); the workspace package @scout/shared is inlined.
 // The skill and hook templates are copied next to the bundle so `install` finds them from any cwd.
 import { chmod, cp, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
@@ -18,7 +18,7 @@ await build({
   format: 'esm',
   target: 'node22',
   banner: { js: '#!/usr/bin/env node' },
-  external: Object.keys(pkg.dependencies ?? {}).filter((name) => !name.startsWith('@review-dash/')),
+  external: Object.keys(pkg.dependencies ?? {}).filter((name) => !name.startsWith('@scout/')),
   legalComments: 'none',
   logLevel: 'info',
 })

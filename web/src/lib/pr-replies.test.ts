@@ -1,5 +1,5 @@
-import { buildPrCommentsResponse, type PrReplies, type PrResolutions } from '@review-dash/shared'
-import { makePrComment, makePrComments, makePrResolution } from '@review-dash/shared/testing/fixtures'
+import { buildPrCommentsResponse, type PrReplies, type PrResolutions } from '@scout/shared'
+import { makePrComment, makePrComments, makePrResolution } from '@scout/shared/testing/fixtures'
 import { describe, expect, it } from 'vitest'
 import { hasReplyBox, needsReplyReview, queuedReplyCounts, replyKindFor } from './pr-replies'
 import { groupPrThreads } from './pr-threads'

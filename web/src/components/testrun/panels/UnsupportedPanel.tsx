@@ -1,4 +1,4 @@
-import type { Panel } from "@review-dash/shared";
+import type { Panel } from "@scout/shared";
 
 /** A panel this dashboard version cannot draw: its type and a muted line, so the gap is visible but harmless. */
 export function UnsupportedPanel({

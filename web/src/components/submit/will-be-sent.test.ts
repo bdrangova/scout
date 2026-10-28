@@ -1,4 +1,4 @@
-import { mergeComments } from '@review-dash/shared'
+import { mergeComments } from '@scout/shared'
 import { describe, expect, it } from 'vitest'
 import { commentFixture, resolutionsFixture, reviewFixture } from '@/test/fixtures'
 import { prReplyRows, sendCounts, summaryRows } from './will-be-sent'

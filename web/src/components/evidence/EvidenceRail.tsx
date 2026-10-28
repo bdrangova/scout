@@ -1,4 +1,4 @@
-import type { EvidenceItem } from '@review-dash/shared'
+import type { EvidenceItem } from '@scout/shared'
 import { RailSection } from '@/components/layout/RailSlot'
 import { evidenceCounts } from './evidence-counts'
 import { EvidenceThumb } from './EvidenceThumb'

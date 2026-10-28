@@ -1,4 +1,4 @@
-import { anchorKey, type JournalEntry, type LineAnchor } from '@review-dash/shared'
+import { anchorKey, type JournalEntry, type LineAnchor } from '@scout/shared'
 import { ChevronDown, ChevronRight, MessageSquareReply } from 'lucide-react'
 import { useState } from 'react'
 import { JournalBody, KindChip } from '@/components/journal/JournalParts'

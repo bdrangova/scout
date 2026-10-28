@@ -1,4 +1,4 @@
-import type { AgentRunStatus, SessionListItem, SessionStatus, SessionSummary, TestRunSummary } from '@review-dash/shared'
+import type { AgentRunStatus, SessionListItem, SessionStatus, SessionSummary, TestRunSummary } from '@scout/shared'
 import { pluralize } from './format'
 import { DECISION_LABELS } from './runs'
 import { STATUS_TONE, type Tone } from './status-tone'

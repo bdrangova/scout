@@ -1,4 +1,4 @@
-import { SCENARIO_STATUSES, type ArchivedSession, type Ticket } from '@review-dash/shared'
+import { SCENARIO_STATUSES, type ArchivedSession, type Ticket } from '@scout/shared'
 import { Archive, ArchiveRestore, ArrowLeft, Folder, GitBranch, GitPullRequest, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'

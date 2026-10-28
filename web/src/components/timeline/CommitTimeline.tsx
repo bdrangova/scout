@@ -1,4 +1,4 @@
-import { UNCOMMITTED_SCOPE, type ChangeStats, type CommitList, type Remote, type Scope } from '@review-dash/shared'
+import { UNCOMMITTED_SCOPE, type ChangeStats, type CommitList, type Remote, type Scope } from '@scout/shared'
 import { Layers } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'

@@ -18,11 +18,11 @@ describe('useSidebarOpen', () => {
     expect(result.current).toMatchObject({ desktop: true, open: true })
     act(() => result.current.toggle())
     expect(result.current.open).toBe(false)
-    expect(window.localStorage.getItem('review-dash:rail')).toBe('closed')
+    expect(window.localStorage.getItem('scout:rail')).toBe('closed')
     expect(renderHook(() => useSidebarOpen()).result.current.open).toBe(false)
     act(() => result.current.toggle())
     expect(result.current.open).toBe(true)
-    expect(window.localStorage.getItem('review-dash:rail')).toBe('open')
+    expect(window.localStorage.getItem('scout:rail')).toBe('open')
   })
 
   it('is a closed drawer by default on a narrow screen and does not touch the remembered choice', () => {
@@ -33,6 +33,6 @@ describe('useSidebarOpen', () => {
     expect(result.current.open).toBe(true)
     act(() => result.current.close())
     expect(result.current.open).toBe(false)
-    expect(window.localStorage.getItem('review-dash:rail')).toBeNull()
+    expect(window.localStorage.getItem('scout:rail')).toBeNull()
   })
 })

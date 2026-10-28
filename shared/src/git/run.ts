@@ -1,5 +1,5 @@
 // NODE ONLY. `shared/src/git/**` spawns git and reads the filesystem; the web must never import it
-// (import `@review-dash/shared/git/<file>` from the server and the CLI only; `index.ts` does not re-export it).
+// (import `@scout/shared/git/<file>` from the server and the CLI only; `index.ts` does not re-export it).
 //
 // Thin git runner. Every command runs with `core.quotepath=false` so paths come back unescaped;
 // output is captured as a Buffer and decoded only where it is text.

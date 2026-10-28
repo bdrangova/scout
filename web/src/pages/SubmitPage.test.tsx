@@ -1,4 +1,4 @@
-import type { AgentRun, SendResponse, SessionDetail } from '@review-dash/shared'
+import type { AgentRun, SendResponse, SessionDetail } from '@scout/shared'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode } from 'react'

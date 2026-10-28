@@ -1,4 +1,4 @@
-import type { CommentWithStatus } from '@review-dash/shared'
+import type { CommentWithStatus } from '@scout/shared'
 import { CheckCheckIcon } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
 import { Textarea } from '@/components/ui/textarea'

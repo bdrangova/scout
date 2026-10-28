@@ -1,6 +1,6 @@
 ---
 name: publish-data-setup
-description: Publish the data setup of a feature-test run to the review-dash dashboard (/t/<id>) by writing the dataSetup key of the run's test-run.json index (data steps, setup videos and screenshots, DB snapshot path) and adding the Data setup page. Use when the user runs /publish-data-setup, or says "publish the data setup" for a plans/**/test-runs/ run folder.
+description: Publish the data setup of a feature-test run to the Scout dashboard (/t/<id>) by writing the dataSetup key of the run's test-run.json index (data steps, setup videos and screenshots, DB snapshot path) and adding the Data setup page. Use when the user runs /publish-data-setup, or says "publish the data setup" for a plans/**/test-runs/ run folder.
 argument-hint: "<run-folder> [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Bash(wc *) Bash(shasum *) Bash(mv *) Read Glob Grep Write AskUserQuestion
 ---

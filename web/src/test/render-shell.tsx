@@ -1,4 +1,4 @@
-import { mergeComments, progress, type ReviewItem, type Resolutions, type Review, type SessionDetail } from '@review-dash/shared'
+import { mergeComments, progress, type ReviewItem, type Resolutions, type Review, type SessionDetail } from '@scout/shared'
 import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router'

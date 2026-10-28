@@ -1,4 +1,4 @@
-import type { SpecItem } from '@review-dash/shared'
+import type { SpecItem } from '@scout/shared'
 import { ExternalLink, Package } from 'lucide-react'
 import { IconLink } from '@/components/common/IconLink'
 import { SandboxedHtml } from '@/components/common/SandboxedHtml'

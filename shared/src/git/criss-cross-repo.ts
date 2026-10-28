@@ -50,7 +50,7 @@ export interface CrissCrossOptions {
  * neither: only `h1.txt` and the uncommitted edit.
  */
 export async function createCrissCrossRepo(options: CrissCrossOptions = {}): Promise<CrissCrossRepo> {
-  const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'review-dash-crisscross-')))
+  const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'scout-crisscross-')))
   const repo = path.join(root, 'repo')
   const remote = path.join(root, 'remote.git')
   let tick = 0

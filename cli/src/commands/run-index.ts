@@ -2,7 +2,7 @@
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { parseRunRef, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type TestRunIndex } from '@review-dash/shared'
+import { parseRunRef, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type TestRunIndex } from '@scout/shared'
 
 export interface RunIndexReport {
   /** Zod and alias problems; any entry makes the index invalid. */

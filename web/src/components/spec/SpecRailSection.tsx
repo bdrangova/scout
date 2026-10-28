@@ -1,4 +1,4 @@
-import type { SpecItem } from '@review-dash/shared'
+import type { SpecItem } from '@scout/shared'
 import { ClipboardList, FileText, Globe, type LucideIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { RailSection } from '@/components/layout/RailSlot'

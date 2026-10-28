@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { SESSION_ID_RE } from '@review-dash/shared'
+import { SESSION_ID_RE } from '@scout/shared'
 import { afterEach, describe, expect, it } from 'vitest'
 import { newSessionId, resolveHome, sessionDir, slugify, writeJsonAtomic } from './store.ts'
 

@@ -1,7 +1,7 @@
 import { useCallback, useState, useSyncExternalStore } from 'react'
 
-const INLINE_KEY = 'review-dash:journal-inline'
-const STRIP_KEY = (sessionId: string) => `review-dash:journal-strip:${sessionId}`
+const INLINE_KEY = 'scout:journal-inline'
+const STRIP_KEY = (sessionId: string) => `scout:journal-strip:${sessionId}`
 
 function read(key: string): string | null {
   try {

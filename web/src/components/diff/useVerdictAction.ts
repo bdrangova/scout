@@ -1,4 +1,4 @@
-import { effectiveVerdict, type FileReview } from '@review-dash/shared'
+import { effectiveVerdict, type FileReview } from '@scout/shared'
 import { useCallback, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { draftKey } from '@/lib/comment-drafts'

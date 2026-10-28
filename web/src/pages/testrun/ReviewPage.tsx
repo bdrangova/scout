@@ -1,4 +1,4 @@
-import { effectiveVerdict, nextUnreviewedFile, type ReviewItem } from "@review-dash/shared";
+import { effectiveVerdict, nextUnreviewedFile, type ReviewItem } from "@scout/shared";
 import { ListChecks } from "lucide-react";
 import { useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router";

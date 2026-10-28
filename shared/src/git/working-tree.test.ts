@@ -29,7 +29,7 @@ async function write(rel: string, content: string | Buffer): Promise<void> {
 }
 
 beforeAll(async () => {
-  repo = await mkdtemp(path.join(os.tmpdir(), 'review-dash-tree-'))
+  repo = await mkdtemp(path.join(os.tmpdir(), 'scout-tree-'))
   await run(['init', '-q', '-b', 'main'])
   await write('.gitignore', 'ignored.txt\n')
   await write('a.txt', 'one\ntwo\nthree\n')

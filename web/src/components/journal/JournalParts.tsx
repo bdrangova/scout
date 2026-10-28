@@ -1,4 +1,4 @@
-import type { JournalEntry, JournalKind } from '@review-dash/shared'
+import type { JournalEntry, JournalKind } from '@scout/shared'
 import { X } from 'lucide-react'
 import { Eyebrow } from '@/components/common/Eyebrow'
 import { Markdown } from '@/components/common/Markdown'

@@ -1,4 +1,4 @@
-import type { AgentRun } from '@review-dash/shared'
+import type { AgentRun } from '@scout/shared'
 import { CopyIcon, ExternalLinkIcon, GitForkIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'

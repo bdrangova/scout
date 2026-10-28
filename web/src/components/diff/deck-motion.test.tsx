@@ -1,4 +1,4 @@
-import type { Verdict } from '@review-dash/shared'
+import type { Verdict } from '@scout/shared'
 import { renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useExitDirection } from './deck-motion'

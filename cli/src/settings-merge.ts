@@ -1,4 +1,4 @@
-// Idempotent merge of the review-dash hooks and permission into a Claude Code settings file.
+// Idempotent merge of the Scout hooks and permission into a Claude Code settings file.
 // Existing entries are never removed or reordered; a hook is recognised by its script name.
 
 export type JsonObject = Record<string, unknown>

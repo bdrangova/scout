@@ -1,4 +1,4 @@
-import type { EvidenceRef } from "@review-dash/shared";
+import type { EvidenceRef } from "@scout/shared";
 import { Tag } from "@/components/ui/tag";
 import { isDeviation, type Band } from "./data-setup-bands";
 import { EvidenceGallery } from "./EvidenceGallery";

@@ -1,4 +1,4 @@
-import { effectiveVerdict, type TestRunDetail, type Verdict } from "@review-dash/shared";
+import { effectiveVerdict, type TestRunDetail, type Verdict } from "@scout/shared";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { PEEK_COUNT, PEEK_INSET, PEEK_RISE, useExitDirection, type ExitDirection } from "@/components/diff/deck-motion";

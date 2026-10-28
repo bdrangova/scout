@@ -1,4 +1,4 @@
-import { progress } from '@review-dash/shared'
+import { progress } from '@scout/shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FilePatchState } from '@/lib/hooks'

@@ -3,9 +3,9 @@ import os from 'node:os'
 import path from 'node:path'
 import type { Express } from 'express'
 import { fileURLToPath } from 'node:url'
-import { SCHEMA_VERSION } from '@review-dash/shared'
-import type { CodeReviewDetail, CodeReviewManifest, SessionDetail, TestRunManifest } from '@review-dash/shared'
-import { defaultBase } from '@review-dash/shared/git/repo'
+import { SCHEMA_VERSION } from '@scout/shared'
+import type { CodeReviewDetail, CodeReviewManifest, SessionDetail, TestRunManifest } from '@scout/shared'
+import { defaultBase } from '@scout/shared/git/repo'
 import { createApp } from '../app.ts'
 import type { AppOverrides } from '../app.ts'
 import { loadConfig } from '../config.ts'
@@ -78,7 +78,7 @@ async function writeFile(file: string, content: string | Buffer): Promise<void> 
  * (invalid index, ignored), spec (indexed) and a PR description, plus a session with a broken manifest.
  */
 export async function createFixtureStore(options: { repoInsideHome?: boolean; testRun?: boolean } = {}): Promise<FixtureStore> {
-  const home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-store-')))
+  const home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'scout-store-')))
   let repoParent = os.tmpdir()
   if (options.repoInsideHome) {
     repoParent = path.join(home, 'repos')
@@ -138,7 +138,7 @@ export async function createFixtureStore(options: { repoInsideHome?: boolean; te
 }
 
 async function createTestRun(home: string): Promise<FixtureTestRun> {
-  const repo = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'review-dash-testrepo-')))
+  const repo = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'scout-testrepo-')))
   await fs.cp(DEMO_RUN_SOURCE, path.join(repo, 'plans', 'f', 'a'), { recursive: true })
   const runPath = path.join(repo, 'plans', 'f', 'a', 'test-runs', 'run-1')
   const manifest: TestRunManifest = {

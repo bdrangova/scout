@@ -1,4 +1,4 @@
-import { anchorKey, anchorLabel, type CommentWithStatus } from '@review-dash/shared'
+import { anchorKey, anchorLabel, type CommentWithStatus } from '@scout/shared'
 import { Eyebrow } from '@/components/common/Eyebrow'
 import { CommentBox } from '@/components/common/CommentBox'
 import { ReplyChip } from '@/components/journal/JournalParts'

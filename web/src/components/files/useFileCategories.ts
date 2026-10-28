@@ -1,4 +1,4 @@
-import { effectiveVerdict, type TreeFile, type Verdict } from '@review-dash/shared'
+import { effectiveVerdict, type TreeFile, type Verdict } from '@scout/shared'
 import { useMemo } from 'react'
 import { indexByPath } from '@/lib/scope'
 import { useReview } from '@/state/review-context'

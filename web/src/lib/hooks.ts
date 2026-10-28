@@ -8,7 +8,7 @@ import {
   type SessionDetail,
   type SessionListItem,
   type WorkingTree,
-} from '@review-dash/shared'
+} from '@scout/shared'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiRequestError, apiGet } from './api'
 import { commitsPath, fileContentsPath, journalPath, filePatchPath, scopeTreePath, type DiffSide, type SessionKind } from './paths'

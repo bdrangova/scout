@@ -1,4 +1,4 @@
-import type { SessionDetail } from '@review-dash/shared'
+import type { SessionDetail } from '@scout/shared'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MotionGlobalConfig } from 'motion/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
@@ -101,7 +101,7 @@ describe('SessionLayout', () => {
   })
 
   it('puts the identity, the status and the progress in the rail (roomy) and none of them in the bar', async () => {
-    window.localStorage.setItem('review-dash:rail-density:files', 'roomy')
+    window.localStorage.setItem('scout:rail-density:files', 'roomy')
     renderLayout()
     const banner = await header()
     const side = await rail()
@@ -121,8 +121,8 @@ describe('SessionLayout', () => {
     expect(within(side).queryByText('+2,556')).not.toBeInTheDocument()
     fireEvent.click(within(side).getByRole('button', { name: 'Expand session details' }))
     expect(within(side).getByText('+2,556')).toBeInTheDocument()
-    expect(window.localStorage.getItem('review-dash:rail-density:files')).toBe('roomy')
-    expect(window.localStorage.getItem('review-dash:rail-density:other')).toBeNull()
+    expect(window.localStorage.getItem('scout:rail-density:files')).toBe('roomy')
+    expect(window.localStorage.getItem('scout:rail-density:other')).toBeNull()
   })
 
   it('archives the session from the overflow menu, offers Undo and goes back to the list', async () => {

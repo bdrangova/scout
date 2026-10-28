@@ -1,4 +1,4 @@
-import { anchorLabel, type PrCommentView } from '@review-dash/shared'
+import { anchorLabel, type PrCommentView } from '@scout/shared'
 import { pluralize } from '@/lib/format'
 import type { PrFileCounts } from '@/lib/pr-threads'
 

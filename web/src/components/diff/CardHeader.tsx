@@ -1,4 +1,4 @@
-import type { TreeFile } from '@review-dash/shared'
+import type { TreeFile } from '@scout/shared'
 import { Columns2, Eye, Files, Rows3, type LucideIcon } from 'lucide-react'
 import type { PointerEvent } from 'react'
 import { PrCardChip } from '@/components/prcomments/PrCardChip'

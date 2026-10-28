@@ -37,7 +37,7 @@ async function sha(rev: string): Promise<string> {
 }
 
 beforeAll(async () => {
-  root = await mkdtemp(path.join(os.tmpdir(), 'review-dash-commits-'))
+  root = await mkdtemp(path.join(os.tmpdir(), 'scout-commits-'))
   repo = path.join(root, 'repo')
   const remote = path.join(root, 'remote.git')
   await git(root, ['init', '-q', '--bare', remote], { env: baseEnv })

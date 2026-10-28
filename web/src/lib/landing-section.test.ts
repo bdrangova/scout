@@ -1,4 +1,4 @@
-import type { CodeReviewDetail, Review } from '@review-dash/shared'
+import type { CodeReviewDetail, Review } from '@scout/shared'
 import { describe, expect, it } from 'vitest'
 import { commentFixture, resolutionsFixture, reviewFixture, sessionDetailFixture, withChangedFile } from '@/test/fixtures'
 import { landingSection } from './landing-section'

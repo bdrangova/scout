@@ -1,4 +1,4 @@
-import type { StoreEvent } from '@review-dash/shared'
+import type { StoreEvent } from '@scout/shared'
 import { useEffect, useRef } from 'react'
 
 /** The union member(s) whose `type` admits `K` (the first member's `type` is itself a union). */

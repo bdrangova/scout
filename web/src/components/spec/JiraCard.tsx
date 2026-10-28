@@ -1,4 +1,4 @@
-import type { SpecItem } from '@review-dash/shared'
+import type { SpecItem } from '@scout/shared'
 import { ClipboardList, ExternalLink } from 'lucide-react'
 import { IconLink } from '@/components/common/IconLink'
 import { Markdown } from '@/components/common/Markdown'

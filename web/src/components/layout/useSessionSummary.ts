@@ -1,4 +1,4 @@
-import { prReviewSessionStatus, sessionStatus, type Decision } from '@review-dash/shared'
+import { prReviewSessionStatus, sessionStatus, type Decision } from '@scout/shared'
 import { useMemo } from 'react'
 import { verdictSummary, suggestDecision, type VerdictSummary } from '@/components/submit/verdict-summary'
 import { isTestRunDetail } from '@/lib/detail-kind'

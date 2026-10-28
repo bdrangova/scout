@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
 import type { Command } from 'commander'
-import { COMMENT_ID_RE, SCHEMA_VERSION, type Resolutions } from '@review-dash/shared'
+import { COMMENT_ID_RE, SCHEMA_VERSION, type Resolutions } from '@scout/shared'
 import { RESOLUTIONS_FILE, readResolutions, readReview, unapproveAfterRerun, writeResolutions } from '../sessions.ts'
 import { manifestExists, readManifest, resolveHome, sessionDir } from '../store.ts'
 

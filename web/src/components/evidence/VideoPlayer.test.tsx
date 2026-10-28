@@ -1,4 +1,4 @@
-import type { EvidenceItem } from '@review-dash/shared'
+import type { EvidenceItem } from '@scout/shared'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'

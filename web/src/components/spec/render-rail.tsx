@@ -1,4 +1,4 @@
-import type { SessionDetail } from '@review-dash/shared'
+import type { SessionDetail } from '@scout/shared'
 import { render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'

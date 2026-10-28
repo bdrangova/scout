@@ -1,4 +1,4 @@
-import type { AgentRun, CommentWithStatus, Review } from '@review-dash/shared'
+import type { AgentRun, CommentWithStatus, Review } from '@scout/shared'
 import { RailSection } from '@/components/layout/RailSlot'
 import type { SectionDetail } from './open-comments-sections'
 import { RailRuns } from './RailRuns'

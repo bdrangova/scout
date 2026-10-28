@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { SCHEMA_VERSION } from '@review-dash/shared'
+import { SCHEMA_VERSION } from '@scout/shared'
 import pkg from '../package.json' with { type: 'json' }
 import { registerArchive } from './commands/archive.ts'
 import { registerEnv } from './commands/env.ts'
@@ -26,7 +26,7 @@ const program = new Command()
 
 program
   .name('ai-review')
-  .description(`Create review-dash sessions for Claude Code work and read the review back (contract v${SCHEMA_VERSION})`)
+  .description(`Create Scout sessions for Claude Code work and read the review back (contract v${SCHEMA_VERSION})`)
   .version(pkg.version)
 
 registerInit(program)

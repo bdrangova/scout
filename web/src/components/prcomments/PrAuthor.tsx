@@ -1,4 +1,4 @@
-import type { PrCommentView } from '@review-dash/shared'
+import type { PrCommentView } from '@scout/shared'
 import { Bot } from 'lucide-react'
 import { Tag } from '@/components/ui/tag'
 

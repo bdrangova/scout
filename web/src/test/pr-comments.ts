@@ -1,5 +1,5 @@
-import { buildPrCommentsResponse, type PrComment, type PrReplies, type PrReplyDraft, type PrResolutions, type PutPrReplyResponse } from '@review-dash/shared'
-import { makePrComment, makePrComments } from '@review-dash/shared/testing/fixtures'
+import { buildPrCommentsResponse, type PrComment, type PrReplies, type PrReplyDraft, type PrResolutions, type PutPrReplyResponse } from '@scout/shared'
+import { makePrComment, makePrComments } from '@scout/shared/testing/fixtures'
 import { vi, type Mock } from 'vitest'
 import { prCommentsValueFrom, type PrCommentsValue } from '@/state/pr-comments-context'
 import { SESSION_ID } from './fixtures'

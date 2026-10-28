@@ -1,4 +1,4 @@
-import type { CommentWithStatus } from '@review-dash/shared'
+import type { CommentWithStatus } from '@scout/shared'
 import { formatDuration } from '@/lib/format'
 import { cn } from '@/lib/utils'
 

@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { Router } from 'express'
-import type { PickFolderResponse } from '@review-dash/shared'
+import type { PickFolderResponse } from '@scout/shared'
 import { readSettings, writeSettings } from '../settings.ts'
 
 // Runs inside the frontmost app so the chooser opens in front of the browser, not behind it.

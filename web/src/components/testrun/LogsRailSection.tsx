@@ -1,4 +1,4 @@
-import type { RunLog, Scenario } from "@review-dash/shared";
+import type { RunLog, Scenario } from "@scout/shared";
 import { LogList } from "./LogList";
 import { LogSearchPicker } from "./LogSearchPicker";
 import { RunRailSection } from "./RunRailSection";

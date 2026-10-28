@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
-import type { PrFinding } from '@review-dash/shared'
+import type { PrFinding } from '@scout/shared'
 import { ChevronDown } from 'lucide-react'
 import { EvidenceNav } from '@/components/evidence/EvidenceNav'
 import { ImageViewer } from '@/components/evidence/ImageViewer'

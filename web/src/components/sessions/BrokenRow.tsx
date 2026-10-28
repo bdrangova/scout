@@ -1,4 +1,4 @@
-import type { SessionListItem } from '@review-dash/shared'
+import type { SessionListItem } from '@scout/shared'
 import { TriangleAlert } from 'lucide-react'
 
 export function BrokenRow({ item }: { item: Extract<SessionListItem, { error: string }> }) {

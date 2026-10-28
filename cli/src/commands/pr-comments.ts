@@ -2,7 +2,7 @@
 // (untrusted bodies delimited as data; comments from untrusted authors only counted). Read-only.
 import path from 'node:path'
 import type { Command } from 'commander'
-import { derivePrComments, renderPrCommentsMarkdown } from '@review-dash/shared'
+import { derivePrComments, renderPrCommentsMarkdown } from '@scout/shared'
 import { findPrSession } from '../pr/session.ts'
 import { readPrComments, readPrResolutions, readReview } from '../sessions.ts'
 import { resolveHome } from '../store.ts'

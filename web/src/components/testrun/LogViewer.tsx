@@ -1,4 +1,4 @@
-import type { CommentKind, CommentTarget, Scenario } from "@review-dash/shared";
+import type { CommentKind, CommentTarget, Scenario } from "@scout/shared";
 import { MessageSquare } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AsyncBoundary } from "@/components/common/AsyncBoundary";

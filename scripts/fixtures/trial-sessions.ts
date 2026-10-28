@@ -22,8 +22,8 @@ import {
   type Review,
   type SpecIndex,
   type WorkingTree,
-} from '@review-dash/shared'
-import { computeWorkingTree } from '@review-dash/shared/git/working-tree'
+} from '@scout/shared'
+import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { writeJsonAtomic } from '../../cli/src/store.ts'
 import { BASE_REF, DASHBOARD_ORIGIN, inputDir, judged, makeComment, makeManifest, writeFiles, writeSessionFolder, type SessionArtifacts } from './common.ts'
 import { FIXTURE_SESSION_ID, REVIEWED_SESSION_ID } from './ids.ts'

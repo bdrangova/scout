@@ -1,4 +1,4 @@
-import type { Mode } from '@review-dash/shared'
+import type { Mode } from '@scout/shared'
 
 export const MODE_PARAM = 'mode'
 
@@ -37,7 +37,7 @@ export function isCardMode(mode: Mode): mode is CardMode {
 
 export const MODE_LABELS: Record<Mode, string> = { scroll: 'Scroll', swipe: 'Swipe', grid: 'Grid' }
 
-const LAST_CARD_MODE_KEY = 'review-dash:last-card-mode'
+const LAST_CARD_MODE_KEY = 'scout:last-card-mode'
 
 /** The card mode the grid was opened from (what a tile opens and what `G` returns to). */
 export function readLastCardMode(): CardMode {

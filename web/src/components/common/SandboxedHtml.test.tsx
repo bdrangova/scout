@@ -12,7 +12,7 @@ describe('buildSrcDoc', () => {
     expect(doc.indexOf(CSP)).toBeLessThan(doc.indexOf('<title>'))
     expect(doc).toContain("shim('localStorage'); shim('sessionStorage')")
     expect(doc).toContain('ResizeObserver')
-    expect(doc).toContain("parent.postMessage({ type: 'review-dash:height', height: height }, '*')")
+    expect(doc).toContain("parent.postMessage({ type: 'scout:height', height: height }, '*')")
   })
 
   it('creates a head when the document has none', () => {

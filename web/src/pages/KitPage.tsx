@@ -1,5 +1,5 @@
 import { ScoutMark, ScoutMascot } from '@/components/brand/Scout'
-import type { AgentRunStatus, FileStatus, SessionStatus, Verdict } from '@review-dash/shared'
+import type { AgentRunStatus, FileStatus, SessionStatus, Verdict } from '@scout/shared'
 import {
   ArchiveIcon,
   ChevronDownIcon,

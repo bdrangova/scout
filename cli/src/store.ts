@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { access, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { ARCHIVE_DIR, ManifestSchema, SESSIONS_DIR, type Manifest } from '@review-dash/shared'
+import { ARCHIVE_DIR, ManifestSchema, SESSIONS_DIR, type Manifest } from '@scout/shared'
 
 export const MANIFEST_FILE = 'manifest.json'
 export const SLUG_MAX_LENGTH = 40

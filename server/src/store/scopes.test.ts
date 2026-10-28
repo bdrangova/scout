@@ -1,5 +1,5 @@
-import { makeTree } from '@review-dash/shared/testing/fixtures'
-import type { WorkingTreeResult } from '@review-dash/shared/git/working-tree'
+import { makeTree } from '@scout/shared/testing/fixtures'
+import type { WorkingTreeResult } from '@scout/shared/git/working-tree'
 import { describe, expect, it } from 'vitest'
 import { ScopeCache } from './scopes.ts'
 import type { ComputeScope } from './scopes.ts'

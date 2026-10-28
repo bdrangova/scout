@@ -1,5 +1,5 @@
 import { ScoutMascot } from '@/components/brand/Scout'
-import type { CodeReviewDetail } from '@review-dash/shared'
+import type { CodeReviewDetail } from '@scout/shared'
 import { ArrowLeftIcon, FileTextIcon, ImageIcon, PackageIcon, SendIcon, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'

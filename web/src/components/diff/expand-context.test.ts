@@ -1,4 +1,4 @@
-import { COLLAPSE_MAX_BYTES, parsePatchLines } from '@review-dash/shared'
+import { COLLAPSE_MAX_BYTES, parsePatchLines } from '@scout/shared'
 import type { FileDiffMetadata } from '@pierre/diffs/react'
 import { describe, expect, it, vi } from 'vitest'
 import { makeTreeFile } from '@/test/fixtures'

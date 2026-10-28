@@ -14,14 +14,14 @@ describe('useRailDensity', () => {
     const files = renderHook(() => useRailDensity('files'))
     act(() => files.result.current[1]())
     expect(files.result.current[0]).toBe('roomy')
-    expect(window.localStorage.getItem('review-dash:rail-density:files')).toBe('roomy')
-    expect(window.localStorage.getItem('review-dash:rail-density:other')).toBeNull()
+    expect(window.localStorage.getItem('scout:rail-density:files')).toBe('roomy')
+    expect(window.localStorage.getItem('scout:rail-density:other')).toBeNull()
     expect(renderHook(() => useRailDensity('files')).result.current[0]).toBe('roomy')
     expect(renderHook(() => useRailDensity('other')).result.current[0]).toBe('roomy')
   })
 
   it('switches to the other group\'s own choice when the group changes', () => {
-    window.localStorage.setItem('review-dash:rail-density:other', 'compact')
+    window.localStorage.setItem('scout:rail-density:other', 'compact')
     const { result, rerender } = renderHook(({ group }) => useRailDensity(group), { initialProps: { group: 'files' as const } as { group: 'files' | 'other' } })
     expect(result.current[0]).toBe('compact')
     rerender({ group: 'other' })
@@ -33,7 +33,7 @@ describe('useRailDensity', () => {
   })
 
   it('ignores a stored value it does not know', () => {
-    window.localStorage.setItem('review-dash:rail-density:files', 'huge')
+    window.localStorage.setItem('scout:rail-density:files', 'huge')
     expect(renderHook(() => useRailDensity('files')).result.current[0]).toBe('compact')
   })
 })

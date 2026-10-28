@@ -1,4 +1,4 @@
-import type { WorktreeDetail, WorktreeListResponse } from '@review-dash/shared'
+import type { WorktreeDetail, WorktreeListResponse } from '@scout/shared'
 import { apiDelete, apiGet } from '@/lib/api'
 import { useAsync } from '@/lib/hooks'
 import { useRefetchOnFocus } from './useRefetchOnFocus'

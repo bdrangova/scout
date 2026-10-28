@@ -1,4 +1,4 @@
-import { mergeComments } from '@review-dash/shared'
+import { mergeComments } from '@scout/shared'
 import { describe, expect, it } from 'vitest'
 import { commentFixture, resolutionsFixture, reviewFixture, sessionDetailFixture, testRunDetailFixture, treeFixture } from '@/test/fixtures'
 import { commentSections } from './open-comments-sections'

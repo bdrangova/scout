@@ -1,4 +1,4 @@
-import { mergeComments, progress, type CommentWithStatus, type TreeFile } from '@review-dash/shared'
+import { mergeComments, progress, type CommentWithStatus, type TreeFile } from '@scout/shared'
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

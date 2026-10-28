@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 export type SessionListLayout = 'list' | 'grid'
-export const SESSION_LAYOUT_KEY = 'review-dash:session-list-layout'
+export const SESSION_LAYOUT_KEY = 'scout:session-list-layout'
 export const SESSION_CARD_GRID = 'grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3'
 
 export function useSessionListLayout() {

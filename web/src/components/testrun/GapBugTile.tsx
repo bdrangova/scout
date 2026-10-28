@@ -1,4 +1,4 @@
-import type { Bug, Gap } from "@review-dash/shared";
+import type { Bug, Gap } from "@scout/shared";
 import { Tag } from "@/components/ui/tag";
 import { useOpenCommentCount } from "@/lib/useOpenCommentCount";
 import { RunTile } from "./RunTile";

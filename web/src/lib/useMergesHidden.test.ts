@@ -15,7 +15,7 @@ describe('useMergesHidden', () => {
       expect(result.current[1]()).toBe(true)
     })
     expect(result.current[0]).toBe(true)
-    expect(window.localStorage.getItem('review-dash:hide-merges')).toBe('hidden')
+    expect(window.localStorage.getItem('scout:hide-merges')).toBe('hidden')
     const { result: again } = renderHook(() => useMergesHidden())
     expect(again.current[0]).toBe(true)
   })

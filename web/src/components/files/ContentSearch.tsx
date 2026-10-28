@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { SearchHit, SearchResponse } from '@review-dash/shared'
+import type { SearchHit, SearchResponse } from '@scout/shared'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { apiGet } from '@/lib/api'

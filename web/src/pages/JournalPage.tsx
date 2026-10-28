@@ -1,4 +1,4 @@
-import { type JournalEntry, type JournalKind } from '@review-dash/shared'
+import { type JournalEntry, type JournalKind } from '@scout/shared'
 import { NotebookText } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'

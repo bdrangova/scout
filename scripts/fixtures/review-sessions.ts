@@ -21,8 +21,8 @@ import {
   type Manifest,
   type Review,
   type WorkingTree,
-} from '@review-dash/shared'
-import { computeWorkingTree } from '@review-dash/shared/git/working-tree'
+} from '@scout/shared'
+import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { writeJsonAtomic } from '../../cli/src/store.ts'
 import { BASE_REF, DASHBOARD_ORIGIN, fixturesDir, judged, makeComment, writeSessionFolder } from './common.ts'
 import { ACTIVE_RUN_SESSION_ID, ALL_VERDICTS_SESSION_ID, APPROVED_SESSION_ID, CHANGES_SENT_SESSION_ID, FAILED_RUN_SESSION_ID, IN_PROGRESS_SESSION_ID } from './ids.ts'

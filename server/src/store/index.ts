@@ -1,10 +1,10 @@
 import { constants as fsConstants } from 'node:fs'
-import { prReviewSessionStatus, searchPatch, SEARCH_MAX_PER_FILE, SEARCH_MAX_TOTAL, type PrReviewReport, type SearchFileHits, type SearchResponse } from '@review-dash/shared'
+import { prReviewSessionStatus, searchPatch, SEARCH_MAX_PER_FILE, SEARCH_MAX_TOTAL, type PrReviewReport, type SearchFileHits, type SearchResponse } from '@scout/shared'
 import { readPrReviewReport } from './pr-review.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import readline from 'node:readline'
-import { RUN_ID_RE, journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@review-dash/shared'
+import { RUN_ID_RE, journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@scout/shared'
 import type {
   AgentRun,
   AnySentSnapshot,
@@ -39,12 +39,12 @@ import type {
   TestRunSummary,
   TreeFile,
   WorkingTree,
-} from '@review-dash/shared'
-import { overlayDirFor, resolveBase } from '@review-dash/shared/git/base'
-import { showFile } from '@review-dash/shared/git/repo'
-import { git, gitTry } from '@review-dash/shared/git/run'
-import type { RunOptions } from '@review-dash/shared/git/run'
-import type { WorkingTreeResult } from '@review-dash/shared/git/working-tree'
+} from '@scout/shared'
+import { overlayDirFor, resolveBase } from '@scout/shared/git/base'
+import { showFile } from '@scout/shared/git/repo'
+import { git, gitTry } from '@scout/shared/git/run'
+import type { RunOptions } from '@scout/shared/git/run'
+import type { WorkingTreeResult } from '@scout/shared/git/working-tree'
 import { HttpError, badRequest, conflict, errorMessage, invalidStoreFile, notFound } from '../errors.ts'
 import { StoreEventBus } from '../events.ts'
 import { archiveEntryKind, archivedSession, isDir, moveDir, readArchivedAt, removeArchivedDir, removeArchivedMarker, writeArchivedMarker } from './archive.ts'

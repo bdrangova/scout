@@ -1,8 +1,8 @@
 // Reads one pull request from GitHub through `gh`: identity, review (line) comments, review summaries,
 // conversation comments, and the thread flags (outdated, resolved) from GraphQL.
 import { z } from 'zod'
-import type { PrComment, PrIdentity } from '@review-dash/shared'
-import { PrIdentitySchema } from '@review-dash/shared'
+import type { PrComment, PrIdentity } from '@scout/shared'
+import { PrIdentitySchema } from '@scout/shared'
 import { classifyGhError, parsePagedArray, PrSyncError, type GhRunner } from './gh.ts'
 import {
   GhIssueCommentSchema,

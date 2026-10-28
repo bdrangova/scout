@@ -193,12 +193,12 @@ allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git lo
 Skills + CLI cover both directions; every "tool" is a CLI command with a JSON file, which works identically in the terminal, Desktop, and `-p`. The shim would add a second process, an approval prompt, and a root-level `.mcp.json` that is not gitignored in qbdvision (it would show as untracked in a 9k-file repo). Revisit when adding `claude/channel` push. The entry to use then:
 
 ```json
-{ "mcpServers": { "review-dash": { "command": "node",
+{ "mcpServers": { "scout": { "command": "node",
     "args": ["/Users/bojanadrangova/.ai-review/mcp/server.js"],
     "env": { "REVIEW_DASH_URL": "http://127.0.0.1:4545" } } } }
 ```
 
-(tools `publish_review_session`, `get_review_feedback`, `resolve_feedback_item` forwarding to `/api/*`; pre-approve with `"permissions":{"allow":["mcp__review-dash__*"]}`).
+(tools `publish_review_session`, `get_review_feedback`, `resolve_feedback_item` forwarding to `/api/*`; pre-approve with `"permissions":{"allow":["mcp__scout__*"]}`).
 
 ### d. Hooks (`.claude/settings.local.json` in qbdvision; `settings.json` elsewhere via `--shared`)
 

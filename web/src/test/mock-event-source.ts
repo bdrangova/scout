@@ -1,4 +1,4 @@
-import type { AgentRunEvent } from '@review-dash/shared'
+import type { AgentRunEvent } from '@scout/shared'
 import { vi } from 'vitest'
 
 type Listener = (event: MessageEvent) => void

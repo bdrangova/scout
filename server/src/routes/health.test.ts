@@ -1,13 +1,13 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { HealthSchema } from '@review-dash/shared'
+import { HealthSchema } from '@scout/shared'
 import request from 'supertest'
 import { afterAll, describe, expect, it } from 'vitest'
 import { closeApp, createApp } from '../app.ts'
 import { loadConfig } from '../config.ts'
 
-const home = fs.mkdtempSync(path.join(os.tmpdir(), 'review-dash-health-'))
+const home = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-health-'))
 const app = createApp(
   loadConfig({ AI_REVIEW_HOME: home, AGENT_ADAPTER: 'fake', AI_REVIEW_CLAUDE_BIN: '/opt/claude/bin/claude', PATH: '' }),
   { log: () => undefined },

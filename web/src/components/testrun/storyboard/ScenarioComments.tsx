@@ -1,4 +1,4 @@
-import type { CommentKind, CommentTarget } from "@review-dash/shared";
+import type { CommentKind, CommentTarget } from "@scout/shared";
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CommentBox } from "@/components/common/CommentBox";

@@ -6,8 +6,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Command } from 'commander'
 import { CONFIG_FILE, DEFAULT_CONFIG, readConfig } from '../config.ts'
-import { mainWorktree, remoteUrl, topLevel } from '@review-dash/shared/git/repo'
-import { gitText } from '@review-dash/shared/git/run'
+import { mainWorktree, remoteUrl, topLevel } from '@scout/shared/git/repo'
+import { gitText } from '@scout/shared/git/run'
 import { mergeSettings, type HookSpec } from '../settings-merge.ts'
 import { resolveHome, writeJsonAtomic } from '../store.ts'
 
@@ -237,7 +237,7 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
   const launcher = path.join(options.home, 'bin', 'ai-review')
   const launcherContent = [
     '#!/bin/sh',
-    '# review-dash launcher: absolute node and CLI paths so hooks and the Desktop app can run ai-review.',
+    '# Scout launcher: absolute node and CLI paths so hooks and the Desktop app can run ai-review.',
     `exec ${JSON.stringify(options.nodeBin ?? process.execPath)} ${JSON.stringify(options.cliBundle ?? defaultCliBundle())} "$@"`,
     '',
   ].join('\n')
@@ -255,7 +255,7 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
       record(link, 'created', `-> ${launcher}`)
     } else {
       record(link, 'skipped', 'something else is already there')
-      messages.push(`${link} already exists and is not the review-dash launcher; put ${path.dirname(launcher)} on PATH instead`)
+      messages.push(`${link} already exists and is not the Scout launcher; put ${path.dirname(launcher)} on PATH instead`)
     }
   } else {
     messages.push(`put ${path.dirname(launcher)} on PATH (or symlink ${launcher} into a PATH directory) so sessions can run ai-review`)

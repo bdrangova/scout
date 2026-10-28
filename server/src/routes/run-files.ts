@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import type { ApiError } from '@review-dash/shared'
+import type { ApiError } from '@scout/shared'
 import { notFound } from '../errors.ts'
 import type { Store } from '../store/index.ts'
 import { sendStoreFile } from './artifacts.ts'

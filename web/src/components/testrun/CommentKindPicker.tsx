@@ -1,4 +1,4 @@
-import type { CommentKind } from "@review-dash/shared";
+import type { CommentKind } from "@scout/shared";
 import { cn } from "@/lib/utils";
 
 /** What the three comment kinds say to the agent that re-runs the scenario. */

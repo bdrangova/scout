@@ -1,4 +1,4 @@
-import { currentProposal, anchorLabel, type PrFinding, type ProposalReview } from '@review-dash/shared'
+import { currentProposal, anchorLabel, type PrFinding, type ProposalReview } from '@scout/shared'
 import { useState } from 'react'
 import { CommentBox } from '@/components/common/CommentBox'
 import { Button } from '@/components/ui/button'

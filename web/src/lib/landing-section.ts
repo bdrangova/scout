@@ -1,4 +1,4 @@
-import { effectiveVerdict, mergeComments, progress, sessionStatus, type CommentTarget, type CodeReviewDetail, type Resolutions, type Review } from '@review-dash/shared'
+import { effectiveVerdict, mergeComments, progress, sessionStatus, type CommentTarget, type CodeReviewDetail, type Resolutions, type Review } from '@scout/shared'
 
 export type LandingSection = 'spec' | 'extras' | 'evidence' | 'files' | 'submit'
 
