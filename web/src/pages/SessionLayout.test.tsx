@@ -257,6 +257,21 @@ describe('SessionLayout', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('/Users/bojana/Projects/gone is gone or is no longer a git checkout.')
     expect(screen.queryByText('Loading session…')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Archive' })).toBeInTheDocument()
+  })
+
+  it('archives a session whose repository is gone and goes back to the list', async () => {
+    const { api } = renderLayout({ detail: json(422, { error: 'repo-missing: /Users/bojana/Projects/worktrees/gone' }) })
+    const base = api.fetchMock.getMockImplementation()
+    api.fetchMock.mockImplementation(async (input, init) => {
+      if (init?.method === 'POST' && urlOf(input).endsWith('/archive')) return json(200, { id: SESSION_ID })
+      return base ? base(input, init) : json(404, {})
+    })
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive' }))
+    await waitFor(() =>
+      expect(api.fetchMock).toHaveBeenCalledWith(`/api/sessions/${SESSION_ID}/archive`, expect.objectContaining({ method: 'POST' })),
+    )
+    expect(await screen.findByText('Sessions list')).toBeInTheDocument()
   })
 
   it('names an archived session and offers Unarchive instead of a raw not-found', async () => {

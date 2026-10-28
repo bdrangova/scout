@@ -2,6 +2,7 @@ import { Command } from 'commander'
 import { SCHEMA_VERSION } from '@review-dash/shared'
 import pkg from '../package.json' with { type: 'json' }
 import { registerArchive } from './commands/archive.ts'
+import { registerEnv } from './commands/env.ts'
 import { registerFeedback } from './commands/feedback.ts'
 import { registerInit } from './commands/init.ts'
 import { registerInstall } from './commands/install.ts'
@@ -30,6 +31,7 @@ program
 
 registerInit(program)
 registerPath(program)
+registerEnv(program)
 registerFeedback(program)
 registerResolve(program)
 registerJournal(program)

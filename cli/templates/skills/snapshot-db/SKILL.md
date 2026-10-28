@@ -2,7 +2,7 @@
 name: snapshot-db
 description: Checkpoint the local database(s) this checkout's app uses right after a reproduction's data setup, so later runs restore that state instead of repeating the setup. Looks up an existing checkpoint for the same setup first and restores it; otherwise, after the caller has seeded the data, dumps only local databases, writes a manifest with row counts, and prints the restore command. Called by the review skills (publish-pr-review, publish-review, apply-review, apply-test-review, address-pr-comments) around any data setup; also use it when the user runs /snapshot-db.
 argument-hint: "lookup|save|restore <setup-key> [--session <id>] [--setup <file>] [--auto]"
-allowed-tools: Bash(docker *) Bash(lsof *) Bash(ps *) Bash(git rev-parse *) Bash(ai-review path *) Bash(shasum *) Bash(du *) Read Glob Grep AskUserQuestion
+allowed-tools: Bash(docker *) Bash(lsof *) Bash(ps *) Bash(git rev-parse *) Bash(ai-review path *) Bash(ai-review env*) Bash(shasum *) Bash(du *) Read Glob Grep AskUserQuestion
 ---
 # Checkpoint the database after data setup
 
@@ -12,6 +12,8 @@ A reproduction's data setup (seeding a company, creating users, proposing and ap
 
 ## Rules
 - Local databases only: `localhost`, `127.0.0.1`, `::1`, a docker compose service of this checkout, or a file in it. A connection string that points anywhere else (a shared dev, staging or production host) is never dumped or restored; stop and report it.
+- This checkout's databases only. Other worktrees of the same repository run their own containers on the same machine, often from the same compose file: a dump or restore that reaches one of them corrupts someone else's data. Before any `save` or `restore`, prove the target is this checkout's (step 2); when you cannot, stop and report it.
+- Never assume a port, a container or a compose project name: they come from the checkout runtime (`ai-review env`) or, without one, from this checkout's own files.
 - `save` and `lookup` are read-only and need no question. `restore` replaces data: ask once per run unless the user already said yes in it; with `--auto`/`AI_REVIEW_HEADLESS=1` restore only a checkpoint this session saved (it is local by the rule above), never one from elsewhere.
 - Checkpoints hold real data: keep them in the session folder, never in the report evidence, never committed, never uploaded.
 - Prefer the project's own tooling (a `db:dump`/`backup`/`snapshot` script, a Makefile target, a documented command) over a hand-built command.
@@ -25,10 +27,10 @@ A reproduction's data setup (seeding a company, creating users, proposing and ap
 - **`restore <key|folder>`**: puts a matching checkpoint back (asking as the rules say), then reads the row counts and compares them with the manifest. A mismatch means the restore did not take: report it, and the caller sets up from scratch.
 
 ## Steps
-1. **Find the databases.** In this order: `.claude/launch.json`, `docker-compose*.yml` (services from images such as `mysql`, `mariadb`, `postgres`, `mongo`, `amazon/dynamodb-local`, `redis`), `.env*` and config files (`DATABASE_URL`, `DB_HOST`, `MONGO_URI`, `DYNAMODB_ENDPOINT`…), `serverless*.yml` (offline DynamoDB), SQLite files, the README. Note each one's engine, host, port, name and how the app reaches it. Several: checkpoint every one the setup touches; when unsure, all local ones. Auth stores count too (a local Cognito, Keycloak or users table) when the setup created users.
-2. **Check it is local and up.** Host rules above; `lsof -nP -iTCP:<port> -sTCP:LISTEN` or `docker compose ps`. Not running: report `Checkpoint: none: <db> not running` (the caller starts the app with `/run-app` first).
-3. **Folder.** `--session <id>`: `$(ai-review path <id>)/snapshots/<setup-key>/<UTC yyyymmdd-hhmmss>/`; otherwise `.ai-review-snapshots/<setup-key>/<…>/` at the checkout root (add it to `.git/info/exclude`).
-4. **Dump** (`save`; inside the container with `docker compose exec -T <service> …` for a compose service; credentials from the same env the app uses, never typed into the transcript):
+1. **Find the databases.** First `ai-review env`: when it has `runtime.databases` (and `runtime.services` for auth stores), use exactly those (engine, host, port, database, `compose.project`/`compose.file`/`compose.service`, `container`) and skip the search below. `runtimeError`: report it and search. No runtime: search in this order: `.claude/launch.json`, `docker-compose*.yml` (services from images such as `mysql`, `mariadb`, `postgres`, `mongo`, `amazon/dynamodb-local`, `redis`), `.env*` and config files (`DATABASE_URL`, `DB_HOST`, `MONGO_URI`, `DYNAMODB_ENDPOINT`…), `serverless*.yml` (offline DynamoDB), SQLite files, the README. Note each one's engine, host, port, name and how the app reaches it. Several: checkpoint every one the setup touches; when unsure, all local ones. Auth stores count too (a local Cognito, Keycloak or users table) when the setup created users.
+2. **Check it is local, up and this checkout's.** Host rules above; `lsof -nP -iTCP:<port> -sTCP:LISTEN`, or for compose `docker compose -p <project> -f <file> ps` (always pass the project: without it compose derives a name from the folder, which can be another worktree's). For a container, check `docker port <container>` matches the port the app of this checkout uses. Not running: report `Checkpoint: none: <db> not running` (the caller starts the app with `/run-app` first). A mismatch, or a database you could only guess in a linked worktree (`linkedWorktree: true` and no runtime): `save` may continue after saying so, `restore` stops with `Checkpoint: none: cannot prove <db> is this checkout's`.
+3. **Folder.** `--session <id>`: `$(ai-review path <id>)/snapshots/<setup-key>/<UTC yyyymmdd-hhmmss>/`; otherwise `<scratch>/snapshots/<setup-key>/<…>/` with `scratch` from `ai-review env` (outside the checkout, so removing a worktree neither refuses nor deletes checkpoints). Never inside the checkout.
+4. **Dump** (`save`; inside the container with `docker compose -p <project> -f <file> exec -T <service> …` for a compose service (or `docker exec -i <container> …`); credentials from the same env the app uses, never typed into the transcript):
    - PostgreSQL: `pg_dump -Fc --no-owner -d <db> > db.dump`
    - MySQL/MariaDB: `mysqldump --single-transaction --routines --triggers --databases <db> > db.sql`
    - MongoDB: `mongodump --archive --gzip --db <db> > db.archive.gz`

@@ -5,8 +5,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Command } from 'commander'
-import { CONFIG_FILE, DEFAULT_CONFIG } from '../config.ts'
-import { topLevel } from '@review-dash/shared/git/repo'
+import { CONFIG_FILE, DEFAULT_CONFIG, readConfig } from '../config.ts'
+import { mainWorktree, topLevel } from '@review-dash/shared/git/repo'
 import { gitText } from '@review-dash/shared/git/run'
 import { mergeSettings, type HookSpec } from '../settings-merge.ts'
 import { resolveHome, writeJsonAtomic } from '../store.ts'
@@ -254,6 +254,13 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
     } else {
       messages.push('--mirror: .claude/hooks/sync_claude_folders.sh not found; nothing mirrored')
     }
+  }
+
+  // Linked worktrees get the skills from the main worktree (symlinked .claude/ or per-skill links), and they share its runtime command.
+  const main = (await mainWorktree(repo)).split(path.sep).join('/')
+  if (main !== repo.split(path.sep).join('/')) messages.push(`${repo} is a linked worktree: install into the main worktree ${main} instead, and link its .claude/ into worktrees`)
+  if ((await readConfig(options.home)).repos?.[main]?.runtime === undefined) {
+    messages.push(`no runtime command for ${main}: /run-app and /snapshot-db fall back to guessing ports. Set one with: ai-review env --repo ${JSON.stringify(main)} --set-runtime '<command that prints the runtime JSON>'`)
   }
 
   return { repo, changes, messages, changed: changes.some((c) => c.action === 'created' || c.action === 'updated') }

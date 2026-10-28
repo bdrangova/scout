@@ -1,12 +1,12 @@
-import { ArchiveRestore, ArrowLeft, FolderX, RotateCw } from 'lucide-react'
+import { Archive, ArchiveRestore, ArrowLeft, FolderX, RotateCw } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { Panel, PanelBody, PanelFooter, PanelHeader } from '@/components/ui/panel'
 import { ApiRequestError } from '@/lib/api'
-import { archiveErrorMessage, unarchiveSession } from '@/lib/archive'
+import { archiveErrorMessage, archiveSession, unarchiveSession } from '@/lib/archive'
 import { useArchivedSessions } from '@/lib/hooks'
 import { describeApiError } from '@/lib/runs'
 
@@ -89,19 +89,47 @@ function NotFoundPanel({ id, error, onRetry }: { id: string; error: Error; onRet
   return <FailurePanel id={id} error={error} onRetry={onRetry} title="Can't open session" />
 }
 
+/** A removed worktree or a moved checkout: the review state is still in the session folder, so archiving keeps it. */
+function ArchiveMissingRepoButton({ id }: { id: string }) {
+  const navigate = useNavigate()
+  const [busy, setBusy] = useState(false)
+  async function archive() {
+    setBusy(true)
+    try {
+      await archiveSession(id)
+      void navigate('/')
+    } catch (reason: unknown) {
+      toast.error(archiveErrorMessage(reason))
+      setBusy(false)
+    }
+  }
+  return (
+    <Button variant="ghost" onClick={() => void archive()} disabled={busy} aria-busy={busy}>
+      <Archive aria-hidden />
+      Archive
+    </Button>
+  )
+}
+
 function FailurePanel({ id, error, onRetry, title }: { id: string; error: Error; onRetry: () => void; title?: string }) {
   const missingRepo = repoMissingPath(error)
   const heading = missingRepo !== null ? 'Repository missing' : (title ?? "Couldn't load this session")
-  const description = missingRepo !== null ? `${missingRepo} is gone or is no longer a git checkout.` : describeApiError(error)
+  const description =
+    missingRepo !== null
+      ? `${missingRepo} is gone or is no longer a git checkout. A removed worktree ends here: archive the session to keep its review, or retry once the checkout is back.`
+      : describeApiError(error)
   return (
     <ErrorPanel
       title={heading}
       id={id}
       actions={
-        <Button variant="primary" onClick={onRetry}>
-          <RotateCw aria-hidden />
-          Retry
-        </Button>
+        <>
+          {missingRepo !== null && <ArchiveMissingRepoButton id={id} />}
+          <Button variant="primary" onClick={onRetry}>
+            <RotateCw aria-hidden />
+            Retry
+          </Button>
+        </>
       }
     >
       <ErrorNotice>{description}</ErrorNotice>

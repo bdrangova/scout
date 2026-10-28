@@ -55,6 +55,24 @@ Session status, in order: `agent-working` while a run is active; `updated` when 
 its verdict or the agent answered after the send; `approved` when the last send approved and every file is
 still effectively approved; `sent` (a decision was sent, shown as "Changes sent"); `ready` (every file reviewed, nothing sent); `in-progress`; `unreviewed`. Approved is only ever the result of sending Approve; the list summary carries the optional `lastSend` (`{ at, decision }`).
 
+## Worktrees and the checkout runtime
+
+Several checkouts of one repository (the main worktree plus linked `git worktree`s) can run their own app,
+database and services at the same time, each on its own ports. Scout never guesses those ports. A repository
+can tell it through one shell command that prints the checkout's runtime as JSON:
+
+```
+ai-review env --set-runtime '<command>'    # once, from a terminal; covers the main worktree and every linked one
+ai-review env                               # what the skills read: worktree facts, a scratch folder, the runtime
+```
+
+The command runs inside the checkout being asked about and prints
+`{ label?, apps?: [{ name, url, port? }], databases?: [{ engine, host?, port?, database?, compose?: { project, file?, service? }, container? }], services?: [...], start?, notes? }`.
+`/run-app`, `/snapshot-db` and `/reproduce` use it before anything else; without one they fall back to the
+project's own files and say that the ports were guessed. Snapshots and evidence that have no session go to the
+checkout's scratch folder under `AI_REVIEW_HOME/checkouts/`, never inside the checkout, so removing a worktree
+loses nothing. A session whose worktree was removed shows "Repository missing" with an Archive action.
+
 ## Development
 
 - `npm install` installs every workspace (`shared`, `server`, `web`, `cli`) with one lockfile.

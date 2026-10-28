@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -81,6 +81,19 @@ describe('init --kind test-run', () => {
     await expect(initTestRunSession({ home, run: path.join(repo, 'nope'), repo })).rejects.toThrow(/does not exist/)
     await expect(initTestRunSession({ home, run: repo, repo })).rejects.toThrow(/is not inside the repository/)
 
+  })
+
+  it('accepts a run folder in the main worktree reached through a symlink from a linked worktree', async () => {
+    await gitText(repo, ['commit', '-q', '--allow-empty', '-m', 'base'], { env: GIT_ENV })
+    const worktree = path.join(home, 'worktrees', 'wt-1')
+    await gitText(repo, ['worktree', 'add', '-q', '-b', 'wt-1', worktree], { env: GIT_ENV })
+    await rm(path.join(worktree, 'plans'), { recursive: true, force: true })
+    await symlink(path.join(repo, 'plans'), path.join(worktree, 'plans'))
+    const result = await initTestRunSession({ home, run: path.join(worktree, 'plans', 'f', 'a', 'test-runs', 'run-1'), repo: worktree, now: NOW })
+    expect(result.manifest.run).toMatchObject({ path: runPath, repo: worktree })
+    const other = path.join(home, 'other')
+    await initRepo(other)
+    await expect(initTestRunSession({ home, run: runPath, repo: other })).rejects.toThrow(/is not inside the repository/)
   })
 
   it('derives feature and area from the two folders above test-runs', () => {

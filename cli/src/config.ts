@@ -6,10 +6,18 @@ import { DASHBOARD_HOST, DEFAULT_WEB_PORT, type ManifestKind } from '@review-das
 
 export const CONFIG_FILE = 'config.json'
 
+export const RepoConfigSchema = z.object({
+  /** Shell command run in a checkout that prints its runtime (`CheckoutRuntimeSchema`) as JSON; see `ai-review env`. */
+  runtime: z.string().min(1).optional(),
+})
+export type RepoConfig = z.infer<typeof RepoConfigSchema>
+
 export const ConfigSchema = z.object({
   port: z.number().int().min(1).max(65535),
   /** GitHub logins whose PR comments are handed to the agent although they are not repo members (copied into pr-comments.json at every sync). */
   trustedPrCommentAuthors: z.array(z.string()).optional(),
+  /** Per repository, keyed by the main worktree's absolute path, so every linked worktree of it shares the entry. */
+  repos: z.record(z.string(), RepoConfigSchema).optional(),
 })
 export type Config = z.infer<typeof ConfigSchema>
 

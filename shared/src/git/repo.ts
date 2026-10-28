@@ -5,6 +5,13 @@ export async function topLevel(cwd: string): Promise<string> {
   return (await gitText(cwd, ['rev-parse', '--show-toplevel'])).trim()
 }
 
+/** The main worktree of the repository `cwd` is in: `git worktree list` always lists it first. Itself outside a linked worktree. */
+export async function mainWorktree(cwd: string): Promise<string> {
+  const out = await gitText(cwd, ['worktree', 'list', '--porcelain'])
+  const first = out.split('\n').find((line) => line.startsWith('worktree '))
+  return first === undefined ? topLevel(cwd) : first.slice('worktree '.length).trim()
+}
+
 export async function headSha(repo: string, options: RunOptions = {}): Promise<string> {
   return (await gitText(repo, ['rev-parse', '--verify', 'HEAD^{commit}'], options)).trim()
 }

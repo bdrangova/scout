@@ -3,14 +3,14 @@
 import { mkdir, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { commentsSince, SCHEMA_VERSION, type TestRunManifest } from '@review-dash/shared'
-import { topLevel } from '@review-dash/shared/git/repo'
+import { mainWorktree, topLevel } from '@review-dash/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
 import { openSessionForRun, resetApprovedDecision, unapproveAfterRerun } from '../sessions.ts'
 import { newSessionId, sessionDir, writeManifest } from '../store.ts'
 
 export interface InitTestRunOptions {
   home: string
-  /** The run folder; resolved to an absolute path and required to exist inside the repo top level. */
+  /** The run folder; resolved to an absolute path and required to exist inside the repo top level or its main worktree. */
   run: string
   /** A path inside the checkout the run belongs to; default: the run folder itself. */
   repo?: string | null
@@ -41,7 +41,11 @@ export function deriveFeatureArea(runPath: string): { feature: string | null; ar
   return { feature: segments[at - 2] ?? null, area: segments[at - 1] ?? null }
 }
 
-async function resolveRunPath(run: string, repoTop: string): Promise<string> {
+/**
+ * The run folder, real path. It must be inside the checkout or inside the main worktree of the same repository: a
+ * linked worktree often reaches an untracked folder (plans, test runs) through a symlink into the main worktree.
+ */
+async function resolveRunPath(run: string, roots: readonly string[]): Promise<string> {
   const absolute = path.resolve(run)
   let real: string
   try {
@@ -50,9 +54,12 @@ async function resolveRunPath(run: string, repoTop: string): Promise<string> {
     throw new Error(`run folder ${absolute} does not exist`)
   }
   if (!(await stat(real)).isDirectory()) throw new Error(`run path ${absolute} is not a folder`)
-  const relative = path.relative(repoTop, real)
-  if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
-    throw new Error(`run folder ${real} is not inside the repository ${repoTop}: pass --repo <checkout that contains the run folder>`)
+  const inside = roots.some((root) => {
+    const relative = path.relative(root, real)
+    return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
+  })
+  if (!inside) {
+    throw new Error(`run folder ${real} is not inside the repository ${roots[0]}: pass --repo <checkout that contains the run folder>`)
   }
   return real.split(path.sep).join('/')
 }
@@ -60,7 +67,8 @@ async function resolveRunPath(run: string, repoTop: string): Promise<string> {
 export async function initTestRunSession(options: InitTestRunOptions): Promise<InitTestRunResult> {
   const now = (options.now ?? new Date()).toISOString()
   const repoTop = await realpath(await topLevel(path.resolve(options.repo ?? options.run)))
-  const runPath = await resolveRunPath(options.run, repoTop)
+  const mainTop = await realpath(await mainWorktree(repoTop))
+  const runPath = await resolveRunPath(options.run, mainTop === repoTop ? [repoTop] : [repoTop, mainTop])
   const open = options.fresh ? null : await openSessionForRun(options.home, runPath)
   const previous = open?.manifest ?? null
   const derived = deriveFeatureArea(runPath)
