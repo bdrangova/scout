@@ -40,6 +40,7 @@ import {
 import { ensureMedia } from './fixtures/media.ts'
 import { writePrFreshSession, writePrMergedSession, writePrMixedSession, writePrNoCommentsSession } from './fixtures/pr-sessions.ts'
 import { writeActiveRunSession, writeAllVerdictsSession, writeApprovedSession, writeChangesSentSession, writeFailedRunSession, writeInProgressSession } from './fixtures/review-sessions.ts'
+import { writeWorktrees } from './fixtures/worktrees.ts'
 import { writeTestRunSessions } from './fixtures/test-run-session.ts'
 import { buildCleanRepo, buildTrialRepo } from './fixtures/trial-app.ts'
 import { TRIAL_TITLE, writeReviewedSession, writeUnreviewedSession } from './fixtures/trial-sessions.ts'
@@ -134,7 +135,12 @@ async function main(): Promise<void> {
     reports.push({ id: run.id, title: run.title, covers: run.covers, repo: run.repo, tree: null })
   }
 
+  const worktrees = await writeWorktrees(clean, cleanOrigin)
+
   printSummary(reports)
+  console.log('')
+  console.log('worktrees (config.json worktreeFolders = store/worktrees):')
+  for (const wt of worktrees) console.log(`  ${wt.path} [${wt.branch}] ${wt.covers}`)
 }
 
 await main()

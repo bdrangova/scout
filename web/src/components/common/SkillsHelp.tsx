@@ -6,8 +6,15 @@ interface SkillsHelpProps {
   onOpenChange: (open: boolean) => void
 }
 
-/** The installed skills (cli/templates/skills) per session tab, in run order. */
+/** The installed skills (cli/templates/skills, plus the repo's own worktree skill) per tab, in run order. */
 const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string; when: string }[] }[] = [
+  {
+    title: 'Worktrees',
+    skills: [
+      { command: '/qbd-worktree', when: 'Start, list or remove a worktree (qbdvision). New sessions there show on it.' },
+      { command: 'Settings', when: 'Pick the folders Scout scans for worktrees.' },
+    ],
+  },
   {
     title: 'Development',
     skills: [
@@ -22,13 +29,13 @@ const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string
     skills: [
       { command: '/publish-test-plan <run>', when: 'Plan written. Scenarios + steps.' },
       { command: '/publish-data-setup <run>', when: 'Test data ready.' },
-      { command: '/publish-test-run <run>', when: 'After /feature-test. Results + evidence.' },
+      { command: '/publish-test-run <run>', when: 'After /feature-test (it asks: new worktree or here). Results + evidence.' },
       { command: '/apply-test-review <id>', when: 'After Submit. Answers, re-runs.' },
     ],
   },
   {
     title: 'PR reviews',
-    skills: [{ command: '/publish-pr-review <PR url>', when: 'Findings + repro. Nothing posted to GitHub.' }],
+    skills: [{ command: '/publish-pr-review <PR url>', when: 'Asks: new worktree or here. Findings + repro. Nothing posted to GitHub.' }],
   },
 ]
 

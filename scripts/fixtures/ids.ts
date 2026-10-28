@@ -48,3 +48,10 @@ export const TEST_RUN_SESSION_ID = '20261021-1800-diffing-run-7e2a'
 export const STATE_MANAGEMENT_RUN_SESSION_ID = '20261012-1745-qi-15267-approve-archive-5a1c'
 /** A test run without a plan file or data setup: baseline checks and gap demos, one unsupported panel. */
 export const WITHDRAWN_RUN_SESSION_ID = '20261022-1545-qi-16304-withdrawn-repropose-9c3d'
+
+/** A code review whose repo is the `qi-15531-trial-bar-polish` worktree (linked, so that worktree cannot be deleted). */
+export const WORKTREE_CODE_REVIEW_SESSION_ID = '20261026-0900-qi-15531-trial-bar-polish-7a31'
+/** A test run whose checkout is the same worktree. */
+export const WORKTREE_TEST_RUN_SESSION_ID = '20261026-0930-qi-15531-polish-run-7b32'
+/** PR review (`kind: 'pr-review'`) linked to the same worktree as the two above. */
+export const WORKTREE_PR_REVIEW_SESSION_ID = '20261026-1000-qi-15531-polish-pr-review-7c33'

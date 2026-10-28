@@ -51,7 +51,7 @@ test.describe('test-run session', () => {
   })
 
   test('toggles the list to Test runs and opens the run on its overview', async () => {
-    await page.goto('/')
+    await page.goto('/d')
     await expect(page.getByRole('heading', { level: 1, name: 'Development' })).toBeVisible()
     await page.getByRole('link', { name: 'Test runs', exact: true }).click()
     await expect(page).toHaveURL(/\/t$/)

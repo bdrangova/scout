@@ -14,7 +14,7 @@ describe('SessionErrorBar', () => {
       </ThemeProvider>,
     )
     const bar = screen.getByRole('banner')
-    expect(screen.getByRole('link', { name: 'Sessions' })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: 'Sessions' })).toHaveAttribute('href', '/d')
     expect(bar).toHaveTextContent('20260920-0800-qi-15301-a7c1')
     expect(screen.getByRole('group', { name: 'Colour theme' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()

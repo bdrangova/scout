@@ -3,7 +3,7 @@
 `npm run fixture` rebuilds `fixtures/store` (git-ignored) from `scripts/make-fixture.ts` and the modules under
 `scripts/fixtures/`: real git repos under `store/repos/` (each with a local bare origin so `origin/master`
 resolves, a feature branch and the change set left uncommitted) and the Contract v2 sessions below under
-`store/sessions/` and `store/archive/`. `npm run dev:fixtures` serves it; the e2e run builds its own copy
+`store/sessions/` and `store/archive/`. `npm run dev:fixtures` serves it on API 4555 / web 4556 (next to the real Scout on 4545/4546); the e2e run builds its own copy
 (`FIXTURE_OUT`). The script prints a summary of every session and its computed tree at the end.
 
 Inputs: `src/` (spec, extras and PR description of the trial-bar sessions), `media/` (screenshots and a recording
@@ -17,7 +17,8 @@ rendered once with Playwright and cached; delete a file to re-render it), `agent
 | `trial-app` | 12 changed files: staged renames/deletes/adds, two unstaged edits, one untracked test, a binary, a collapsed lockfile and a collapsed 2,000-line generated file. Shared by every session that only reads it. |
 | `trial-app-2`, `trial-app-all-verdicts`, `trial-app-runs`, `trial-app-long` | Copies of `trial-app` for sessions whose fixture edits the tree, pins verdicts to it or renames the branch. |
 | `variety-app` | 26 changed files: at least two each of `.ts .tsx .js .jsx .yaml/.yml .json .css .md`, one `.png`; added, modified, deleted, renamed-with-edits and untracked; `src/data/countries.ts` (2,100 added lines → collapsed, `too-many-changed-lines`, the 413 large-file gate) and `package-lock.json` (collapsed, generated). |
-| `clean-app` | The trial-app base commit with a feature branch and no changes at all. |
+| `clean-app` | The trial-app base commit with a feature branch and no changes at all. Also the main checkout of the fixture worktrees. |
+| `worktrees/*` | Linked worktrees of `clean-app` in `store/worktrees/` (and `store/config.json` with `worktreeFolders` pointing there; a plain `notes/` folder is ignored): `qi-15500-export-filters` (clean, 2 commits ahead), `qi-15512-bulk-archive` (1 commit ahead, one modified and one untracked file: delete refused as dirty), `qi-15531-trial-bar-polish` (clean, 2 ahead, linked to the three sessions below: delete refused). For the Worktrees page (`GET /worktrees`). |
 
 ## Sessions
 
@@ -47,6 +48,9 @@ Ids are constants in `scripts/fixtures/ids.ts`. The first two are what `e2e/smok
 | `20261021-1800-diffing-run-7e2a` | test-run | `kind: "test-run"`: the synthetic demo run from `fixtures/test-runs/demo/plans` (3 scenarios) copied into `repos/qa-plans` (a plain folder, not a git repo; only `run.path` inside `run.repo` is required). Unreviewed, one ticket (QA-31). For the /t/<run> test review module. |
 | `20261012-1745-qi-15267-approve-archive-5a1c` | test-run | The user's state-management feature test, shrunk: 6 scenarios (pass, gap, fail, blocked), 3 bugs, 3 gaps, data setup with a snapshot path, 4 logs, real JPEGs and short MP4 clips (about 4.4 MB), in `repos/qa-state-management`. Scenario `s1-uo-approve` is approved and an open `incorrect` comment sits on `s8-reject-then-approve`. Created 2026-10-12. |
 | `20261022-1545-qi-16304-withdrawn-repropose-9c3d` | test-run | The withdrawn-repropose notes: no test plan file, no data setup, 9 scenarios (baseline checks and gap demos D1-D5), the three notes copied under a `notes` root and shown as markdown panels, one deliberately unsupported panel type (`timeline`), in `repos/qa-withdrawn-repropose`. Unreviewed. Created 2026-10-22. |
+| `20261026-0900-qi-15531-trial-bar-polish-7a31` | worktree code review | A code review whose repo is the `qi-15531-trial-bar-polish` worktree: shows as a linked session on that worktree. |
+| `20261026-0930-qi-15531-polish-run-7b32` | worktree test run | A test run whose checkout is the same worktree (the demo plan is committed there). |
+| `20261026-1000-qi-15531-polish-pr-review-7c33` | worktree PR review | A PR review (`kind: "pr-review"`, one finding) on the same worktree. |
 
 `pr-mixed` also shows the reply loop (`review/pr-resolutions.json` `proposedReply`, `review/pr-replies.json`): proposed replies on `rc9001`, `rc9003`, `rc9005` (declined) and `ic9201`; drafts: `rc9001` an edited `reply`, not yet posted; `rc9002` an `instruction` on an open comment; `rc9003` a `reply` already posted (`postedAt`, `githubUrl`); `rc9005` and `ic9201` have a proposal but no draft yet. The sent snapshot of this session predates them, so it has no `prReplies`; a new Submit from the UI lists the unposted drafts.
 

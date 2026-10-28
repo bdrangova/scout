@@ -15,7 +15,7 @@ export function SessionErrorBar({ id }: { id: string }) {
       data-slot="session-bar"
       className={cn('flex h-(--shell-h) items-center gap-3 border-b-fine border-line bg-hdr px-5 text-hdr-ink max-lg:px-3.5', HEADER_INK_VARS)}
     >
-      <Link to="/" title="Sessions" className={cn(buttonVariants({ size: 'sm' }), HEADER_CHIP_CLASS, 'w-(--header-control-h) px-0')}>
+      <Link to="/d" title="Sessions" className={cn(buttonVariants({ size: 'sm' }), HEADER_CHIP_CLASS, 'w-(--header-control-h) px-0')}>
         <ChevronLeft aria-hidden />
         <span className="sr-only">Sessions</span>
       </Link>

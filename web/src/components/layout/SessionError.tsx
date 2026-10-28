@@ -35,7 +35,7 @@ function ErrorPanel({ title, id, children, actions }: { title: string; id: strin
           {children}
         </PanelBody>
         <PanelFooter className="flex justify-end gap-2.5">
-          <Button variant="ghost" render={<Link to="/" />}>
+          <Button variant="ghost" render={<Link to="/d" />}>
             <ArrowLeft aria-hidden />
             Back to sessions
           </Button>
@@ -97,7 +97,7 @@ function ArchiveMissingRepoButton({ id }: { id: string }) {
     setBusy(true)
     try {
       await archiveSession(id)
-      void navigate('/')
+      void navigate('/d')
     } catch (reason: unknown) {
       toast.error(archiveErrorMessage(reason))
       setBusy(false)

@@ -5,7 +5,7 @@
       "name": "dashboard",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:fixtures"],
-      "port": 4546
+      "port": 4556
     },
     {
       "name": "dashboard-alt",

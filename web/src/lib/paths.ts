@@ -185,11 +185,23 @@ export function shortRunPath(run: { path: string; repo: string }): string {
   return run.path.startsWith(`${repo}/`) ? run.path.slice(repo.length + 1) : run.path
 }
 
-/** The other session list: `/` from the test runs, `/t` from the code reviews (what `T` opens). */
+/** The list of a session kind: `/d` for code reviews (Development), `/t` for test runs, `/pr` for PR reviews. */
 export function sessionListRoute(kind: SessionKind): string {
-  return kind === 'pr-review' ? '/pr' : kind === 'test-run' ? '/t' : '/'
+  return kind === 'pr-review' ? '/pr' : kind === 'test-run' ? '/t' : '/d'
 }
 
-export function otherKindRoute(kind: SessionKind): string {
-  return kind === 'code-review' ? '/t' : kind === 'test-run' ? '/pr' : '/'
+/** A top-level list: the worktrees or one of the session kinds. */
+export type ListKind = SessionKind | 'worktrees'
+
+/** The next list in the `T` cycle: Worktrees, Development, Test runs, PR reviews, then back. */
+export function otherKindRoute(kind: ListKind): string {
+  return kind === 'worktrees' ? '/d' : kind === 'code-review' ? '/t' : kind === 'test-run' ? '/pr' : '/'
+}
+
+/** The worktrees list route, the app's home (`/w` redirects here). */
+export const WORKTREES_ROUTE = '/'
+
+/** A worktree's own route (`/w/:id`). */
+export function worktreeRoute(id: string): string {
+  return `/w/${encodeURIComponent(id)}`
 }

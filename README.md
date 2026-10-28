@@ -82,7 +82,7 @@ loses nothing. A session whose worktree was removed shows "Repository missing" w
 - `npm install` installs every workspace (`shared`, `server`, `web`, `cli`) with one lockfile.
 - `npm run fixture` builds the demo session and its git repo into `fixtures/store`.
 - `npm run dev:fixtures` runs the server and the web app against the fixture store with the fake agent
-  adapter. API on `http://127.0.0.1:4545` (`/api`), web on `http://127.0.0.1:4546` (proxies `/api`). Links the CLI and skills print use `http://scout.localhost:4546`.
+  adapter. API on `http://127.0.0.1:4555` (`/api`), web on `http://127.0.0.1:4556` (proxies `/api`), so it runs next to the real Scout on 4545/4546.
   The `dashboard` entry in `.claude/launch.json` starts the same command for the Claude Code browser pane.
 - `npm test` runs the vitest suites of every workspace; `npm run typecheck`, `npm run lint` and
   `npm run build` cover the rest.

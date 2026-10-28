@@ -16,6 +16,7 @@ import {
   type TestRunSummary,
   type TreeFile,
   type WorkingTree,
+  type WorktreeSummary,
 } from '@review-dash/shared'
 import {
   BASE_SHA,
@@ -353,6 +354,24 @@ export function makeCommitList(overrides: Partial<CommitList> = {}): CommitList 
     commits,
     uncommitted: { files: 2, additions: 7, deletions: 1 },
     fingerprint: fp('commits:v1'),
+    ...overrides,
+  }
+}
+
+export function worktreeSummary(overrides: Partial<WorktreeSummary> & Pick<WorktreeSummary, 'id' | 'name'>): WorktreeSummary {
+  return {
+    path: `/Users/bojana/worktrees/${overrides.name}`,
+    folder: '/Users/bojana/worktrees',
+    mainRepo: '/Users/bojana/Projects/qbdvision',
+    branch: 'bojana-qi-15472-trial-bar',
+    ticket: 'QI-15472',
+    baseRef: 'origin/master',
+    ahead: 3,
+    behind: 1,
+    stats: { files: 8, additions: 272, deletions: 51 },
+    uncommitted: 0,
+    pr: null,
+    sessions: { 'code-review': 0, 'pr-review': 0, 'test-run': 0 },
     ...overrides,
   }
 }

@@ -34,10 +34,11 @@ function renderAt(path: string) {
     <ThemeProvider>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/" element={<SessionListPage />} />
+          <Route path="/d" element={<SessionListPage />} />
           <Route path="/pr" element={<SessionListPage kind="pr-review" />} />
           <Route path="/t" element={<SessionListPage kind="test-run" />} />
           <Route path="/t/:id" element={<p>Run route</p>} />
+          <Route path="/" element={<p>Worktrees route</p>} />
         </Routes>
       </MemoryRouter>
     </ThemeProvider>,
@@ -83,7 +84,7 @@ describe('SessionListPage kinds', () => {
 
   it('asks for the code reviews on / and the test runs on /t', () => {
     hooks.current = { sessions: sessionListFixture, loading: false, error: null, reload: () => {} }
-    const { unmount } = renderAt('/')
+    const { unmount } = renderAt('/d')
     expect(new Set(hooks.kinds)).toEqual(new Set(['code-review']))
     unmount()
     hooks.kinds.length = 0
@@ -98,7 +99,7 @@ describe('SessionListPage kinds', () => {
     expect(within(toggle).getByRole('link', { name: 'Test runs' })).toHaveAttribute('aria-current', 'true')
     expect(within(toggle).getByRole('link', { name: 'Test runs' })).toHaveAttribute('href', '/t')
     expect(within(toggle).getByRole('link', { name: 'Development' })).not.toHaveAttribute('aria-current')
-    expect(within(toggle).getByRole('link', { name: 'Development' })).toHaveAttribute('href', '/')
+    expect(within(toggle).getByRole('link', { name: 'Development' })).toHaveAttribute('href', '/d')
   })
 
   it('titles the page "Test runs" and shows the empty state, not an error, when there is none', () => {
@@ -124,13 +125,13 @@ describe('SessionListPage kinds', () => {
 
   it('switches between the lists with the T key', async () => {
     hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
-    renderAt('/')
+    renderAt('/d')
     const user = userEvent.setup()
     await user.keyboard('t')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Test runs')
     await user.keyboard('t')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('PR review')
     await user.keyboard('t')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Development')
+    expect(screen.getByText('Worktrees route')).toBeInTheDocument()
   })
 })

@@ -36,6 +36,7 @@ describe('paths', () => {
     expect(otherKindRoute('code-review')).toBe('/t')
     expect(otherKindRoute('test-run')).toBe('/pr')
     expect(otherKindRoute('pr-review')).toBe('/')
+    expect(otherKindRoute('worktrees')).toBe('/d')
     expect(sessionRoute('pr-review', 'sid', 'files')).toBe('/s/sid/files')
   })
 

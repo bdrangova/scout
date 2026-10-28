@@ -16,7 +16,7 @@ describe('SessionBar', () => {
     const shortcuts = within(bar).getByRole('button', { name: 'Keyboard shortcuts' })
     const theme = within(bar).getByRole('group', { name: 'Colour theme' })
     const more = within(bar).getByRole('button', { name: 'More actions' })
-    expect(sessions).toHaveAttribute('href', '/')
+    expect(sessions).toHaveAttribute('href', '/d')
     expect(toggle).toHaveAttribute('title', 'Hide sidebar (B)')
     const order = [toggle, sessions, tabs, shortcuts, theme, more]
     for (let index = 1; index < order.length; index += 1) {

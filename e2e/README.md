@@ -10,7 +10,7 @@ Isolation (`store.ts`, `global-setup.ts`, `global-teardown.ts`, `playwright.conf
   `scripts/make-fixture.ts` (`FIXTURE_OUT`, `DASHBOARD_ORIGIN`); `globalTeardown` removes it.
 - `webServer` always starts its own `npm run dev:fixtures` (`reuseExistingServer: false`) with `FIXTURE_HOME` pointing
   at that store, API on 4745 and web on 4746 (`AI_REVIEW_PORT`, `WEB_PORT`, `DASHBOARD_URL`), and waits for
-  `/api/health` through the Vite proxy so both servers are up. A `dev:fixtures` running on 4545/4546 against
+  `/api/health` through the Vite proxy so both servers are up. A `dev:fixtures` running on 4555/4556 against
   `fixtures/store` is left alone, and `fixtures/store` itself is never read or written.
 
 What it covers, in order (one serial `describe`, one shared page):

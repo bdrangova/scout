@@ -6,7 +6,17 @@ description: Publish a pull request review to Scout with findings and reproducti
 
 Generate a report in the agent session. Scout is the human review surface, with no skill picker or agent execution from this tab. Never post comments or submit a review to the PR in this workflow; the user copies an approved summary.
 
-Use the PR and checkout specified by the user. Resolve the PR base/head and repository with the available git/GitHub tools. Use a clean checkout of that head and the PR's actual target base; an isolated checkout is appropriate when the user's working tree has changes. Do not reset their work to make it clean. If PR access or reproduction setup is unavailable, explain what is missing rather than inventing it.
+Use the PR specified by the user. Resolve the PR base/head and repository with the available git/GitHub tools. Review a clean checkout of that head against the PR's actual target base. Do not reset the user's work to make it clean. If PR access or reproduction setup is unavailable, explain what is missing rather than inventing it.
+
+## Pick the checkout first
+
+Before any review work, ask the user (AskUserQuestion) where to review:
+- **New worktree** (recommended when the current folder is not on the PR's head branch or has uncommitted changes): a worktree of the PR's head branch, so Scout lists it on its Worktrees page and links this review to it.
+- **This folder**: only offered when it is already on the PR's head branch with no uncommitted changes.
+
+For a new worktree, use the repository's own worktree skill when it has one (for example `qbd-worktree`: its "existing branch" flow, then its app and data steps when findings need reproducing) and follow that skill's rules. Without one, ask the user for the parent folder (suggest one of Scout's worktree folders) and run `git worktree add <folder>/<branch-name> <head-branch>`. Never make an ad-hoc clone or temporary copy, and never use `EnterWorktree` or the desktop app's own worktree feature. Then work on the worktree by its absolute path: it is `<PR-checkout>` below.
+
+With `--auto` or `AI_REVIEW_HEADLESS=1`, don't ask: review this folder when it qualifies, otherwise create the worktree.
 
 Create or reuse a session:
 

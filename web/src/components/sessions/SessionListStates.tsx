@@ -19,24 +19,24 @@ export function ListNote({ children }: { children: ReactNode }) {
 
 /** No sessions at all: how to start one. */
 export function EmptyState({ kind = 'code-review' }: { kind?: SessionKind }) {
-  const command = kind === 'pr-review' ? 'ai-review init --kind pr-review --repo <path>' : kind === 'test-run' ? '/publish-test-run <run-folder>' : 'ai-review init --repo <path>'
+  const command = kind === 'pr-review' ? '/publish-pr-review <PR-URL>' : kind === 'test-run' ? '/publish-test-run <run-folder>' : '/publish-review'
   return (
     <Panel className="items-center gap-2 border-dashed px-6 py-14 text-center">
       <ScoutMascot />
       <p className="m-0 text-base font-bold">{kind === 'test-run' ? 'No test runs' : 'No sessions'}</p>
       <p className="m-0 text-[13px] text-ink-muted">
-        Start with{' '}
-        <code className="rounded-sm border-fine border-line bg-code px-1.5 py-0.5 font-mono text-xs text-ink">{command}</code>.
+        Run{' '}
+        <code className="rounded-sm border-fine border-line bg-code px-1.5 py-0.5 font-mono text-xs text-ink">{command}</code> in Claude Code.
       </p>
     </Panel>
   )
 }
 
-export function LoadingState({ archived = false, kind = 'code-review' }: { archived?: boolean; kind?: SessionKind }) {
+export function LoadingState({ archived = false, kind = 'code-review', label }: { archived?: boolean; kind?: SessionKind; label?: string }) {
   return (
     <p className="m-0 flex items-center gap-2 text-[13px] font-medium text-ink-muted" aria-busy="true">
       <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
-      {archived ? 'Loading archived sessions…' : kind === 'test-run' ? 'Loading test runs…' : 'Loading sessions…'}
+      {label ?? (archived ? 'Loading archived sessions…' : kind === 'test-run' ? 'Loading test runs…' : 'Loading sessions…')}
     </p>
   )
 }

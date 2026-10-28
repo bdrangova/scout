@@ -1,5 +1,5 @@
 import { ScoutMark } from '@/components/brand/Scout'
-import { BookOpen, Keyboard } from 'lucide-react'
+import { BookOpen, Keyboard, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { SkillsHelp } from '@/components/common/SkillsHelp'
 import { HEADER_CHIP_CLASS, HEADER_INK_VARS } from '@/components/layout/AppHeader'
@@ -7,20 +7,22 @@ import { Button } from '@/components/ui/button'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useHotkeys } from '@/lib/useHotkeys'
-import type { SessionKind } from '@/lib/paths'
+import type { ListKind } from '@/lib/paths'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/theme/ThemeToggle'
+import { SettingsDialog } from '@/components/worktrees/SettingsDialog'
 import { SessionKindToggle } from './SessionKindToggle'
 
 const ICON_CHIP = cn(HEADER_CHIP_CLASS, 'w-(--header-control-h) px-0')
 
 /**
  * The bar of the sessions list: the session bar's height (`--shell-h`) and colour with the
- * wordmark and the Development | Test runs toggle where Sessions and the tabs will be, then the Skills (`?`) and Shortcuts (Ctrl+?) icon buttons and the theme. No rail here.
+ * wordmark and the Worktrees | Development | Test runs | PR reviews toggle where Sessions and the tabs will be, then the Skills (`?`), Shortcuts (Ctrl+?) and Settings icon buttons and the theme. No rail here.
  */
-/** `onHelp` toggles the shortcuts help (button and Ctrl+?); `?` toggles Skills. */
-export function SessionsBar({ kind, onHelp }: { kind: SessionKind; onHelp: () => void }) {
+/** `onHelp` toggles the shortcuts help (button and Ctrl+?); `?` toggles Skills; `onSettingsSaved` runs after the Settings dialog saved. */
+export function SessionsBar({ kind, onHelp, onSettingsSaved }: { kind: ListKind; onHelp: () => void; onSettingsSaved?: () => void }) {
   const [skillsOpen, setSkillsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   useHotkeys({ help: () => setSkillsOpen((open) => !open), altHelp: onHelp })
   return (
     <TooltipProvider delay={150}>
@@ -52,10 +54,17 @@ export function SessionsBar({ kind, onHelp }: { kind: SessionKind; onHelp: () =>
               </KbdGroup>
             </TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger render={<Button size="sm" aria-label="Settings" onClick={() => setSettingsOpen(true)} className={ICON_CHIP} />}>
+              <Settings aria-hidden />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Settings</TooltipContent>
+          </Tooltip>
           <ThemeToggle />
         </div>
       </header>
       <SkillsHelp open={skillsOpen} onOpenChange={setSkillsOpen} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} onSaved={onSettingsSaved} />
     </TooltipProvider>
   )
 }

@@ -3,19 +3,20 @@ import { Kbd } from '@/components/ui/kbd'
 import { Segmented } from '@/components/ui/segmented'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import type { SessionKind } from '@/lib/paths'
+import type { ListKind } from '@/lib/paths'
 
-const KINDS: readonly { kind: SessionKind; label: string; to: string }[] = [
-  { kind: 'code-review', label: 'Development', to: '/' },
+const KINDS: readonly { kind: ListKind; label: string; to: string }[] = [
+  { kind: 'worktrees', label: 'Worktrees', to: '/' },
+  { kind: 'code-review', label: 'Development', to: '/d' },
   { kind: 'test-run', label: 'Test runs', to: '/t' },
   { kind: 'pr-review', label: 'PR reviews', to: '/pr' },
 ]
 
 /**
- * Development | Test runs, as a flat chooser of links (`Segmented` look, like `ModeToggle`) between the two lists.
+ * Worktrees | Development | Test runs | PR reviews, as a flat chooser of links (`Segmented` look, like `ModeToggle`) between the lists.
  * `T` toggles it (bound by the page). Needs a `TooltipProvider`.
  */
-export function SessionKindToggle({ kind }: { kind: SessionKind }) {
+export function SessionKindToggle({ kind }: { kind: ListKind }) {
   return (
     <Segmented aria-label="Session type" data-slot="kind-toggle">
       {KINDS.map((candidate) => {

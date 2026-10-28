@@ -12,35 +12,39 @@ import { sessionRoute } from '@/lib/paths'
 import { reviewStatusOf, runChipOf, type LiveSummary, statusSourceOf } from '@/lib/session-status'
 import { SCENARIO_STATUS_LABEL, SCENARIO_STATUS_TONE } from '@/lib/scenario-status'
 import { TONE_TEXT_CLASS } from '@/lib/status-tone'
+import { Tag } from '@/components/ui/tag'
 import { cn } from '@/lib/utils'
 import { SessionStatusLabel } from './SessionStatusLabel'
 
 /** Each card line stays one line, with keyboard/touch/trackpad access to clipped details. */
-function CardLine({ children, label, className }: { children: ReactNode; label: string; className?: string }) {
+export function CardLine({ children, label, className }: { children: ReactNode; label: string; className?: string }) {
   return <div tabIndex={0} aria-label={label} className={cn('min-w-0 overflow-x-auto overscroll-x-contain whitespace-nowrap [scrollbar-width:thin]', className)}><div className="flex w-max min-w-full items-center gap-2">{children}</div></div>
 }
 
-function CardIdentity({ title, tickets, status, statusDetail }: { title: string; tickets: readonly Ticket[]; status?: ReactNode; statusDetail?: ReactNode }) {
+const KIND_LABEL = { 'code-review': 'Development', 'pr-review': 'PR review', 'test-run': 'Test run' } as const
+
+function CardIdentity({ title, tickets, status, statusDetail, kindLabel }: { title: string; tickets: readonly Ticket[]; status?: ReactNode; statusDetail?: ReactNode; kindLabel?: string }) {
   const prefix = tickets.find((ticket) => title.startsWith(`${ticket.key}: `))
   return <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5">
-    <CardLine label="Session name"><span className="text-sm font-bold" title={title}>{prefix ? title.slice(prefix.key.length + 2) : title}</span></CardLine>
+    <CardLine label="Session name">{kindLabel && <Tag size="sm" className="shrink-0">{kindLabel}</Tag>}<span className="text-sm font-bold" title={title}>{prefix ? title.slice(prefix.key.length + 2) : title}</span></CardLine>
     <div className="col-start-2 row-start-1 justify-self-end">{status}</div>
     <TicketStrip tickets={tickets} quiet className="col-start-1 row-start-2 py-0" />
     {statusDetail && <div className="col-start-2 row-start-2 justify-self-end">{statusDetail}</div>}
   </div>
 }
 
-function Branches({ base, current, children }: { base?: string | null; current?: string | null; children?: ReactNode }) {
+export function Branches({ base, current, children }: { base?: string | null; current?: string | null; children?: ReactNode }) {
   return <CardLine label="Base and current branch" className="font-mono text-[11px] text-(--tk-t)"><GitBranch aria-hidden className="size-3.5 shrink-0" /><span>{base ?? 'Not recorded'}</span><ArrowLeft aria-label="from" className="size-3 shrink-0 text-ink-muted" /><span>{current ?? 'Detached HEAD'}</span>{children}</CardLine>
 }
 function CardTime({ at }: { at: string }) {
   return <time dateTime={at} title={new Date(at).toLocaleString()}>{formatRelativeTime(at)}</time>
 }
-function RepoName({ path }: { path: string }) {
+export function RepoName({ path }: { path: string }) {
   return <span title={path} className="inline-flex items-center gap-1.5 text-(--tk-n)"><Folder aria-hidden className="size-3.5 shrink-0" />{path.split('/').filter(Boolean).at(-1)}</span>
 }
 
-export function LiveSessionCard({ session, onArchive, layout = 'grid' }: { session: LiveSummary; onArchive: (session: LiveSummary) => void; layout?: 'grid' | 'list' }) {
+/** `showKind` labels the card Development / PR review / Test run, for lists that mix the kinds (a worktree's sessions). */
+export function LiveSessionCard({ session, onArchive, layout = 'grid', showKind = false }: { session: LiveSummary; onArchive: (session: LiveSummary) => void; layout?: 'grid' | 'list'; showKind?: boolean }) {
   const navigate = useNavigate()
   const href = sessionRoute(session.kind ?? 'code-review', session.id)
   const source = statusSourceOf(session)
@@ -51,7 +55,7 @@ export function LiveSessionCard({ session, onArchive, layout = 'grid' }: { sessi
       onClick={() => navigate(href)}
       onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate(href) } }}
       className="h-full cursor-pointer gap-3 p-4 transition-colors hover:bg-paper-2">
-      <CardIdentity title={session.title} tickets={session.tickets} status={<SessionStatusLabel status={reviewStatusOf(source)} />} statusDetail={!isRun && <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />} />
+      <CardIdentity title={session.title} tickets={session.tickets} kindLabel={showKind ? KIND_LABEL[session.kind ?? 'code-review'] : undefined} status={<SessionStatusLabel status={reviewStatusOf(source)} />} statusDetail={!isRun && <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />} />
       <div className={cn('flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:border-t-0 md:pt-0')}>
         {isRun ? <CardLine label="Scenario counts" className="text-xs font-medium">
           <span>{source.progress.total} scenarios</span><span className="text-ink-muted">|</span>

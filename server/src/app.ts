@@ -21,6 +21,8 @@ import { runsRouter } from './routes/runs.ts'
 import { scopesRouter } from './routes/scopes.ts'
 import { sendRouter } from './routes/send.ts'
 import { sessionsRouter } from './routes/sessions.ts'
+import { settingsRouter } from './routes/settings.ts'
+import { worktreesRouter } from './routes/worktrees.ts'
 import { localOnly } from './security.ts'
 import { SseRegistry } from './sse.ts'
 import { Store } from './store/index.ts'
@@ -114,6 +116,8 @@ export function createApp(config: Config, overrides: AppOverrides = {}): Express
   api.use(prCommentsRouter(store))
   api.use(journalRouter(store))
   api.use(prReviewRouter(store))
+  api.use(settingsRouter(config.home))
+  api.use(worktreesRouter(config.home, store))
   api.use(sendRouter({ store, runs, adapter, dashboardUrl: config.dashboardUrl }))
   api.use(runsRouter({ store, runs, adapter, sse }))
   api.use(eventsRouter({ bus, watcher, sse }))

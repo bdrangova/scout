@@ -36,12 +36,12 @@ const archivedFixture: ArchivedSession[] = [
   },
 ]
 
-function renderAt(initialEntries = ['/']) {
+function renderAt(initialEntries = ['/d']) {
   return render(
     <ThemeProvider>
       <MemoryRouter initialEntries={initialEntries}>
         <Routes>
-          <Route path="/" element={<SessionListPage />} />
+          <Route path="/d" element={<SessionListPage />} />
           <Route path="/s/:id" element={<p>Session route</p>} />
         </Routes>
       </MemoryRouter>
@@ -450,7 +450,7 @@ describe('SessionListPage', () => {
   it('shows the empty state, the loading state and the error state with a retry', async () => {
     const { unmount } = renderPage({ sessions: [] })
     expect(screen.getByText('No sessions')).toBeInTheDocument()
-    expect(screen.getByText('ai-review init --repo <path>')).toBeInTheDocument()
+    expect(screen.getByText('/publish-review')).toBeInTheDocument()
     unmount()
 
     const loading = renderPage({ loading: true })

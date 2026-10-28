@@ -21,7 +21,7 @@ export function SessionLayout() {
     [id, detail, reload],
   )
 
-  if (!id) return <Navigate to="/" replace />
+  if (!id) return <Navigate to="/d" replace />
 
   if (error) {
     return (

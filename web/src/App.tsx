@@ -1,4 +1,4 @@
-import { RouterProvider, createBrowserRouter } from 'react-router'
+import { Navigate, RouterProvider, createBrowserRouter } from 'react-router'
 import { DiffWorkerProvider } from './components/diff/DiffWorkerProvider'
 import { SessionIndexRedirect } from './components/layout/SessionIndexRedirect'
 import { TestRunIndexRedirect } from './components/layout/TestRunIndexRedirect'
@@ -11,6 +11,8 @@ import { SessionLayout } from './pages/SessionLayout'
 import { SessionListPage } from './pages/SessionListPage'
 import { SpecPage } from './pages/SpecPage'
 import { SubmitPage } from './pages/SubmitPage'
+import { WorktreeDetailPage } from './pages/WorktreeDetailPage'
+import { WorktreesPage } from './pages/WorktreesPage'
 import { TestRunLayout } from './pages/TestRunLayout'
 import { DataSetupPage } from './pages/testrun/DataSetupPage'
 import { GapsPage } from './pages/testrun/GapsPage'
@@ -19,13 +21,17 @@ import { OverviewPage } from './pages/testrun/OverviewPage'
 import { ReviewPage } from './pages/testrun/ReviewPage'
 import { TestRunSubmitPage } from './pages/testrun/TestRunSubmitPage'
 
-// Web routes from the contract: `/`, `/s/:id/files`, `/s/:id/files/*path`,
+// Web routes from the contract: `/` (worktrees), `/d` (development sessions), `/s/:id/files`, `/s/:id/files/*path`,
 // `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/journal`, `/s/:id/submit`.
 // `/s/:id` itself redirects to the step the review should open on (lib/landing-section.ts).
 // Test runs: `/t` (list), `/t/:id/{overview,review,review/:scenarioId,gaps,data-setup,logs,submit}`; `/t/:id` redirects like `/s/:id`.
+// Worktrees: `/` (list; the old `/w` redirects there), `/w/:id` (detail).
 // `/__kit` is the dev-only primitives gallery (web/src/pages/KitPage.tsx).
 const router = createBrowserRouter([
-  { path: '/', Component: SessionListPage },
+  { path: '/', Component: WorktreesPage },
+  { path: '/w', element: <Navigate to="/" replace /> },
+  { path: '/d', Component: SessionListPage },
+  { path: '/w/:id', Component: WorktreeDetailPage },
   { path: '/pr', element: <SessionListPage kind="pr-review" /> },
   { path: '/t', element: <SessionListPage kind="test-run" /> },
   ...(import.meta.env.DEV

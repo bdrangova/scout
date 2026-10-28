@@ -30,6 +30,10 @@ review/runs/<runId>.json      AgentRun;  review/runs/<runId>.jsonl  raw stream-j
 
 `AI_REVIEW_HOME/archive/<id>/` holds archived sessions: the same folder, moved as a whole from `sessions/<id>/` (one `fs.rename`; copy + remove only across volumes), plus `archived.json` = `{ archivedAt }` written by whoever archived it (`POST /sessions/:id/archive` or `ai-review archive <id>`). The id never changes. Archived sessions are never listed as live, their repos are not watched and no tree is computed for them; `ai-review init` never reuses one. Unarchiving moves the folder back and removes `archived.json`. An archived session can be deleted permanently (`DELETE /sessions/archived/:id` or `ai-review delete <id> --yes`): that removes `archive/<id>` recursively (review state, comments, sent snapshots and run logs) and nothing else: never the repository, `refs/ai-review/*` or `<home>/cache`, and a symlinked entry only loses the link. Live sessions cannot be deleted (404; archive first). Because the session watcher only watches `sessions/`, archiving produces `session.removed` and unarchiving `session.added`; there are no archive-specific events, and deleting emits nothing (the web refetches the archived list itself).
 
+### Settings
+
+`AI_REVIEW_HOME/config.json` (`CONFIG_FILE`, `SettingsSchema`): `{ worktreeFolders: string[] }`, written by `PUT /settings` only (atomically). A missing file reads as the defaults (no folders). The server expands a leading `~`, makes the paths absolute (posix separators) and removes duplicates before writing.
+
 Session id: `<yyyymmdd>-<hhmm>-<slug>-<4hex>` matching `SESSION_ID_RE`. Run id: `run-<yyyymmddhhmmss>-<4hex>`. Comment ids `c<n>`, n ≥ 1, never reused. Artifacts have no ids: they are referred to by their path relative to their folder (`evidence/flow.webm` → `flow.webm`).
 
 ## constants.ts
@@ -269,10 +273,17 @@ GET  /sessions/:id/review                         ReviewResponse (empty review i
 PUT  /sessions/:id/review                         PutReviewRequest → { updatedAt } | 409 { error, current }
 POST /sessions/:id/review/send                    SendRequest → SendResponse; writes sent/<stem>.json|.md|.patch
 GET  /sessions/:id/runs · POST /sessions/:id/runs · GET /runs/:runId · GET /runs/:runId/events (SSE) · POST /runs/:runId/cancel
+GET  /settings · PUT /settings                    Settings (PutSettingsRequest = the whole object; folders normalised on save; 400 invalid body, 422 unreadable config.json)
+POST /settings/pick-folder                         PickFolderResponse: opens the native macOS folder chooser on the server machine ({ path: null } when cancelled; 501 off macOS)
+GET  /worktrees                                   WorktreeListResponse: linked git worktrees found in the configured folders (a folder that is itself a main checkout is read with
+                                                  `git worktree list`, otherwise its child folders whose `.git` is a file), sorted by name; computed live, read-only git; a missing/unreadable folder is an `errors` entry
+GET  /worktrees/:id                               WorktreeDetail (summary + live linked sessions, newest first); 404 unknown id. Sessions link by working directory (repo path / test-run checkout), realpath compared
+DELETE /worktrees/:id                             204 after `git -C <main> worktree remove <path>` (never --force, branch kept); 404 unknown,
+                                                  409 { reason: 'dirty' } while uncommitted > 0, 409 { reason: 'sessions' } while live sessions are linked (archive them first), 409 { reason: 'git' } when git refuses
 GET  /events                                      SSE of StoreEvent
 ```
 
-Express 5 path syntax. Web routes: `/`, `/s/:id/files`, `/s/:id/files/*path`, `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/submit`.
+Express 5 path syntax. Web routes: `/` (worktrees; `/w` redirects), `/w/:id`, `/d` (development sessions), `/t`, `/pr`, `/s/:id/files`, `/s/:id/files/*path`, `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/submit`.
 
 ## shared/src/git (Node-only)
 

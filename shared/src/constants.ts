@@ -48,6 +48,8 @@ export const SESSIONS_DIR = 'sessions'
 export const ARCHIVE_DIR = 'archive'
 /** Written into an archived session folder: `{ archivedAt }`. */
 export const ARCHIVED_FILE = 'archived.json'
+/** Scout's settings in the home root (`SettingsSchema`). */
+export const CONFIG_FILE = 'config.json'
 
 export const SESSION_EVIDENCE_DIR = 'evidence'
 export const SESSION_EXTRAS_DIR = 'extras'

@@ -54,7 +54,7 @@ function renderLayout({ review = reviewResponseFixture(), detail = sessionDetail
     <ThemeProvider defaultTheme="light">
       <MemoryRouter initialEntries={[`/s/${SESSION_ID}/files`]}>
         <Routes>
-          <Route path="/" element={<p>Sessions list</p>} />
+          <Route path="/d" element={<p>Sessions list</p>} />
           <Route path="/s/:id" element={<SessionLayout />}>
             <Route path="files" element={<FilesPage />} />
             <Route path="files/*" element={<FilesPage />} />
