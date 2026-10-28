@@ -70,4 +70,10 @@ describe('ai-review env', () => {
     expect(JSON.parse(await readFile(path.join(home, 'config.json'), 'utf8'))).toMatchObject({ repos: {} })
     await expect(setRuntimeCommand({ home, repo, command: 'true', interactive: false })).rejects.toThrow(/terminal, not by an agent/)
   })
+
+  it('reads the runtime command from a file the dashboard Settings wrote (no port)', async () => {
+    await writeFile(path.join(home, 'config.json'), JSON.stringify({ worktreeFolders: ['/w'], repos: { [repo]: { runtime: 'echo {}' } } }))
+    expect(await readConfig(home)).toMatchObject({ port: 4546, repos: { [repo]: { runtime: 'echo {}' } } })
+    expect((await checkoutEnv({ home, repo: worktree })).runtimeCommand).toBe('echo {}')
+  })
 })

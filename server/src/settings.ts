@@ -36,11 +36,25 @@ export async function readSettings(home: string): Promise<Settings> {
   return parsed.data
 }
 
-/** Validates, normalises and writes the whole settings object; returns what was stored. */
+/**
+ * Validates, normalises and writes the settings; returns what was stored. The file is shared with the CLI
+ * (`port`, `repos` runtime commands, trusted PR authors), so every other key is kept as it was.
+ */
 export async function writeSettings(home: string, body: unknown): Promise<Settings> {
   const parsed = PutSettingsRequestSchema.safeParse(body)
   if (!parsed.success) throw badRequest(formatZodError(parsed.error))
   const settings = normalizeSettings(parsed.data)
-  await writeFileAtomic(path.join(home, CONFIG_FILE), `${JSON.stringify(settings, null, 2)}\n`)
+  const file = path.join(home, CONFIG_FILE)
+  const text = await readTextIfExists(file)
+  let existing: unknown = {}
+  if (text !== null) {
+    try {
+      existing = JSON.parse(text)
+    } catch {
+      throw invalidStoreFile(`${CONFIG_FILE} is not valid JSON`)
+    }
+  }
+  const base = existing !== null && typeof existing === 'object' && !Array.isArray(existing) ? existing : {}
+  await writeFileAtomic(file, `${JSON.stringify({ ...base, ...settings }, null, 2)}\n`)
   return settings
 }
