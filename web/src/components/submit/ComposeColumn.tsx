@@ -29,7 +29,7 @@ export function ComposeColumn({ pending, cwd, command, descriptionPanel, decisio
 
   return (
     <>
-      {pending && <PendingPanel sessionId={sessionId} repoPath={cwd} command={command} mode={pending.mode} />}
+      {pending && <PendingPanel sessionId={sessionId} repoPath={cwd} command={command} mode={pending.mode} copied={pending.copied} />}
       <Panel role="region" aria-label="Overall feedback">
         <PanelHeader>
           <PanelTitle>Overall feedback</PanelTitle>

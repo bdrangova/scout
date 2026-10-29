@@ -233,7 +233,7 @@ describe('SubmitPage', () => {
     expect(assign).toHaveBeenCalledWith(href)
   })
 
-  it('sends a CLI session at once (no confirmation) and shows the pending panel without opening anything', async () => {
+  it('sends a CLI session at once (no confirmation), copies the command and shows the pending panel without opening anything', async () => {
     const writeText = vi.fn(() => Promise.resolve())
     vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
     const api = renderSubmit(withComment(), { detail: cliDetail, send: () => json(200, sendResponse()) })
@@ -244,7 +244,8 @@ describe('SubmitPage', () => {
     const panel = await screen.findByLabelText('Feedback pending')
     expect(within(panel).getByText(`/apply-review ${SESSION_ID}`)).toBeInTheDocument()
     expect(within(panel).queryByRole('link', { name: 'Open in Claude Desktop' })).not.toBeInTheDocument()
-    expect(writeText).not.toHaveBeenCalled()
+    expect(writeText).toHaveBeenCalledWith(`/apply-review ${SESSION_ID}`)
+    expect(await within(panel).findByText('The command is on your clipboard.')).toBeInTheDocument()
   })
 
   it('"New session" from a CLI session shows the Desktop link without opening it', async () => {

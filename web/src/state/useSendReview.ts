@@ -25,6 +25,8 @@ const TARGET_PARAM = 'target'
 
 export interface PendingState {
   mode: SendTarget
+  /** The command went to the clipboard with this send (not after a reload). */
+  copied: boolean
 }
 
 export interface SendReviewState {
@@ -100,9 +102,10 @@ export function useSendReview(): SendReviewState {
   // Reset on every visit on purpose: the choice is per send, not a preference.
   const [target, setTarget] = useState<SendTarget>(canContinue ? 'current' : 'new')
 
+  const [copied, setCopied] = useState(false)
   const pending = useMemo<PendingState | null>(
-    () => (params.get(PENDING_PARAM) === null ? null : { mode: params.get(TARGET_PARAM) === 'new' ? 'new' : 'current' }),
-    [params],
+    () => (params.get(PENDING_PARAM) === null ? null : { mode: params.get(TARGET_PARAM) === 'new' ? 'new' : 'current', copied }),
+    [params, copied],
   )
 
   const openComments = comments.filter((comment) => comment.status === 'open').length
@@ -140,6 +143,12 @@ export function useSendReview(): SendReviewState {
   const send = useCallback(async () => {
     setSending(true)
     setSendError(null)
+    setCopied(false)
+    // Copied right away, while the click still counts as a user gesture; harmless if the send then fails.
+    const copying = navigator.clipboard.writeText(applyReviewCommand(sessionId, command)).then(
+      () => true,
+      () => false,
+    )
     try {
       // The server snapshots the review on disk: every comment shown must be saved first.
       // A reply typed a moment ago is still in its box's debounce: save it too, or it is not in the snapshot.
@@ -153,9 +162,7 @@ export function useSendReview(): SendReviewState {
         next.set(PENDING_PARAM, '1')
         next.set(TARGET_PARAM, target)
       })
-      if (origin === 'desktop' && target === 'current') {
-        await navigator.clipboard.writeText(applyReviewCommand(sessionId, command)).catch(() => undefined)
-      }
+      setCopied(await copying)
       if (origin === 'desktop' && target === 'new') {
         // May be blocked after the await; the pending panel repeats the link.
         window.location.assign(desktopNewSessionUrl(cwd, sessionId, command))

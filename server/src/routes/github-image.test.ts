@@ -44,4 +44,38 @@ describe('GET /api/github-image', () => {
     expect(fetchMock).not.toHaveBeenCalled()
     expect((await request(app).get(`/api/github-image?url=${encodeURIComponent(ATTACHMENT)}`)).status).toBe(502)
   })
+
+  it('refuses requests from other sites and redirects that leave GitHub', async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 302, headers: { location: 'https://tracker.example/a.png' } }))
+    const app = appWith({ fetch: fetchMock as typeof fetch, token: async () => 'tok' })
+    const path = `/api/github-image?url=${encodeURIComponent(ATTACHMENT)}`
+    expect((await request(app).get(path).set('Sec-Fetch-Site', 'cross-site')).status).toBe(403)
+    expect((await request(app).get(path).set('Sec-Fetch-Site', 'same-site')).status).toBe(403)
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect((await request(app).get(path).set('Sec-Fetch-Site', 'same-origin')).status).toBe(502)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('sends the token only to github.com attachment links', async () => {
+    const fetchMock = vi.fn(async () => png())
+    const app = appWith({ fetch: fetchMock as typeof fetch, token: async () => 'tok' })
+    await request(app).get(`/api/github-image?url=${encodeURIComponent('https://user-images.githubusercontent.com/1/a.png')}`)
+    const calls = fetchMock.mock.calls as unknown as [URL, RequestInit][]
+    expect((calls[0]?.[1].headers as Record<string, string>).Authorization).toBeUndefined()
+  })
+
+  it('stops reading an image that grows past the size cap', async () => {
+    const chunk = new Uint8Array(1024 * 1024)
+    let sent = 0
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        sent += 1
+        controller.enqueue(chunk)
+      },
+    })
+    const fetchMock = vi.fn(async () => new Response(stream, { status: 200, headers: { 'content-type': 'image/png' } }))
+    const app = appWith({ fetch: fetchMock as typeof fetch, token: async () => null })
+    expect((await request(app).get(`/api/github-image?url=${encodeURIComponent(ATTACHMENT)}`)).status).toBe(502)
+    expect(sent).toBeLessThan(20)
+  })
 })

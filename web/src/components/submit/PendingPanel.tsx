@@ -14,6 +14,8 @@ export interface PendingPanelProps {
   /** The slash command to run; `/apply-review` unless this is a test run. */
   command?: ReviewCommand
   mode: SendTarget
+  /** Submit already put the command on the clipboard. */
+  copied?: boolean
   className?: string
 }
 
@@ -22,7 +24,7 @@ export interface PendingPanelProps {
  * their next message (or `/apply-review` there). `new`: a Desktop deep link opens a fresh session
  * with the command prefilled. The command can always be copied.
  */
-export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-review', mode, className }: PendingPanelProps) {
+export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-review', mode, copied: autoCopied = false, className }: PendingPanelProps) {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const command = applyReviewCommand(sessionId, slash)
@@ -52,6 +54,7 @@ export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-rev
         ) : (
           <p>Send any message in your open Claude Code session, or run {code} there, to pick it up.</p>
         )}
+        {autoCopied && <p className="font-medium text-ink-muted">The command is on your clipboard.</p>}
       </PanelBody>
       <PanelFooter className="flex flex-wrap items-center gap-2">
         {mode === 'new' && (
