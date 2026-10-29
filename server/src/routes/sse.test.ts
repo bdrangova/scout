@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { AgentRunEventSchema, AgentRunSchema, SCHEMA_VERSION, StoreEventSchema } from '@scout/shared'
+import { SCHEMA_VERSION, StoreEventSchema } from '@scout/shared'
 import type { Resolutions, Review, CodeReviewDetail, StoreEvent } from '@scout/shared'
 import { makeComment, makeReview } from '@scout/shared/testing/fixtures'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -17,7 +17,7 @@ let app: Express
 let server: Awaited<ReturnType<typeof listen>>
 beforeAll(async () => {
   store = await createFixtureStore()
-  app = appFor(store.home, { fake: { delayMs: 2 } })
+  app = appFor(store.home)
   server = await listen(app)
 })
 afterAll(async () => {
@@ -32,53 +32,19 @@ async function send(method: 'POST' | 'PUT', url: string, body: unknown): Promise
   const res = await fetch(server.url + url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
   return { status: res.status, body: await res.json() }
 }
-const post = (url: string, body: unknown) => send('POST', url, body)
 const put = (url: string, body: unknown) => send('PUT', url, body)
 
 function draft(): Review {
   return makeReview({ sessionId: FIXTURE_SESSION_ID, comments: [makeComment({ id: 'c1', target: { kind: 'file', ref: 'src/old.ts' } })] })
 }
 
-const isEvent = (m: SseMessage, event: string) => m.kind === 'event' && m.event === event
 const dataOf = (m: SseMessage): unknown => (m.kind === 'event' ? JSON.parse(m.data) : null)
 const isStoreEvent = (type: StoreEvent['type']) => (m: SseMessage) => m.kind === 'event' && (dataOf(m) as { type: string }).type === type
-
-describe('GET /api/runs/:runId/events', () => {
-  it('replays after Last-Event-ID, streams live events and ends with the final run', async () => {
-    expect((await put(`${sessionUrl}/review`, { review: draft(), baseUpdatedAt: null })).status).toBe(200)
-    expect((await post(`${sessionUrl}/review/send`, { decision: 'request-changes', dispatch: false })).status).toBe(200)
-    const started = await post(`${sessionUrl}/runs`, {})
-    expect(started.status).toBe(200)
-    const run = AgentRunSchema.parse(started.body)
-
-    const reader = await openSseReader(`${server.url}/api/runs/${run.id}/events`, { 'Last-Event-ID': '5' })
-    await reader.waitFor((m) => isEvent(m, 'end'), { timeoutMs: 10_000 })
-    await reader.ended
-    const events = reader.messages.filter((m) => isEvent(m, 'run'))
-    const ids = events.map((m) => Number(m.kind === 'event' ? m.id : Number.NaN))
-    expect(ids.length).toBeGreaterThan(10)
-    expect(ids[0]).toBe(6)
-    expect(ids).toEqual([...ids].sort((a, b) => a - b))
-    for (const m of events) expect(() => AgentRunEventSchema.parse(dataOf(m))).not.toThrow()
-    const end = reader.messages.find((m) => isEvent(m, 'end'))
-    expect(AgentRunSchema.parse(dataOf(end as SseMessage))).toMatchObject({ id: run.id, status: 'succeeded', costUsd: 0.42 })
-    expect(reader.messages[0]).toEqual({ kind: 'comment', text: 'connected' })
-
-    const again = await openSseReader(`${server.url}/api/runs/${run.id}/events`)
-    await again.waitFor((m) => isEvent(m, 'end'))
-    const allIds = again.messages.filter((m) => isEvent(m, 'run')).map((m) => Number(m.kind === 'event' ? m.id : Number.NaN))
-    expect(allIds[0]).toBe(1)
-    expect(allIds.length).toBe(ids.length + 5)
-    expect(appServices(app).sse.size).toBe(0)
-  })
-})
 
 describe('GET /api/events', () => {
   it('reports external review, resolutions, artifact and manifest writes, repo edits as tree.updated, but not our own PUT', async () => {
     const reader = await openSseReader(`${server.url}/api/events`)
     await reader.waitFor((m) => m.kind === 'comment' && m.text === 'ready')
-    // The watcher runs from app start: let the previous test's run (resolutions.json, run files) settle first.
-    await new Promise((resolve) => setTimeout(resolve, 500))
     expect(appServices(app).watcher.active).toBe(true)
     expect(appServices(app).watcher.watchedRepos.get(FIXTURE_SESSION_ID)).toBe(store.repo.repo)
     const storeEvents = () => reader.messages.filter((m) => m.kind === 'event').map((m) => StoreEventSchema.parse(dataOf(m)))
@@ -115,7 +81,7 @@ describe('GET /api/events', () => {
     await new Promise((resolve) => setTimeout(resolve, 500))
     expect(reader.messages.slice(before).filter(isStoreEvent('session.updated'))).toHaveLength(1)
 
-    // Repo edit → tree.updated with a new fingerprint (the tree was computed by the earlier send).
+    // Repo edit → tree.updated with a new fingerprint .
     const detail = (await (await fetch(`${server.url}${sessionUrl}`)).json()) as CodeReviewDetail
     before = reader.messages.length
     await store.repo.write('src/app.ts', "export const app = 'v3'\n")

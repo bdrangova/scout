@@ -1,5 +1,5 @@
 import type { SessionDetail } from '@scout/shared'
-import { BookOpen, Bug, CircleAlert, Database, FileText, Files, Image, LayoutDashboard, ListChecks, Package, ScrollText, Send, Check, type LucideIcon } from 'lucide-react'
+import { BookOpen, Bug, Database, FileText, Files, Image, LayoutDashboard, ListChecks, Package, ScrollText, Send, Check, type LucideIcon } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router'
 import { isTestRunDetail } from '@/lib/detail-kind'
 import { PrTab } from './PrTab'
@@ -13,12 +13,12 @@ interface SectionTab {
   icon: LucideIcon
   /** Shown when > 0 (Files and Review always show their count). */
   count?: number
-  /** Submit only: the review is ready to send, or the last run failed. */
+  /** Submit only: the review is ready to send. */
   state?: SubmitState
 }
 
-/** Submit's own signal: green with a check when ready, red when the last run failed. */
-export type SubmitState = 'ready' | 'failed' | null
+/** Submit's own signal: green with a check when ready. */
+export type SubmitState = 'ready' | null
 
 export interface SubmitTab {
   /** The open comments, the number Submit sends. */
@@ -54,9 +54,9 @@ function sectionTabs(config: ShellConfig, detail: SessionDetail, submit: SubmitT
   }))
 }
 
-const STATE_CLASS = { ready: { link: 'text-paper', fill: 'bg-st-ready' }, failed: { link: 'text-paper', fill: 'bg-st-failed' } } as const
-const STATE_ICON = { ready: Check, failed: CircleAlert } as const
-const STATE_WORDS = { ready: 'ready', failed: 'last run failed' } as const
+const STATE_CLASS = { ready: { link: 'text-paper', fill: 'bg-st-ready' } } as const
+const STATE_ICON = { ready: Check } as const
+const STATE_WORDS = { ready: 'ready' } as const
 
 /** `Spec 4`, `Submit, ready, 2 open comments`: what a tab says to assistive technology. */
 function tabName(tab: SectionTab, counted: boolean): string {
@@ -74,7 +74,7 @@ function showsCount(tab: SectionTab): tab is SectionTab & { count: number } {
 /**
  * Section tabs in the bar as arrow-shaped steps (purely visual; every tab is a plain link): icon, full label and count on every tab. Below 1024px the
  * inactive tabs fall back to icon and count (the active one keeps its word). Each link is named `Label count` for assistive technology.
- * Submit counts the open comments and, while another page is open, turns green with a check when the review is ready and red when the last run failed.
+ * Submit counts the open comments and, while another page is open, turns green with a check when the review is ready.
  */
 export function SectionTabs({ detail, submit }: { detail: SessionDetail; submit: SubmitTab }) {
   const location = useLocation()

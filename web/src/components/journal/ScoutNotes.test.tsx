@@ -1,4 +1,5 @@
-import { mergeComments } from '@scout/shared'
+import { mergeComments, type CommentWithStatus } from '@scout/shared'
+import { makeComment } from '@scout/shared/testing/fixtures'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ReactNode } from 'react'
@@ -44,14 +45,14 @@ vi.mock('@/lib/hooks', async (importOriginal) => ({
 const file = makeTreeFile({ path: 'src/other.ts', additions: 1 })
 const review = reviewFixture()
 
-function reviewValue(dispatch: () => void, draft: string, setDraft: (key: string, text: string) => void): ReviewContextValue {
+function reviewValue(dispatch: () => void, draft: string, setDraft: (key: string, text: string) => void, fileComments: CommentWithStatus[] = []): ReviewContextValue {
   return {
     state: { review, pendingReject: null, atEnd: false },
     items: [file],
     itemKind: 'file',
     dispatch,
     comments: mergeComments(review, null),
-    commentsFor: () => [],
+    commentsFor: () => fileComments,
     fileReview: () => null,
     draftFor: () => draft,
     setDraft,
@@ -68,15 +69,15 @@ function reviewValue(dispatch: () => void, draft: string, setDraft: (key: string
 const anchoredAt2 = { side: 'new', line: 2, snippet: 'b' } as const
 
 /** The card's footer box is controlled by the review state: hold its draft here. */
-function Harness({ dispatch, children }: { dispatch: () => void; children: ReactNode }) {
+function Harness({ dispatch, comments, children }: { dispatch: () => void; comments?: CommentWithStatus[]; children: ReactNode }) {
   const [draft, setDraft] = useState('')
-  return <ReviewStateContext.Provider value={reviewValue(dispatch, draft, (_key, text) => setDraft(text))}>{children}</ReviewStateContext.Provider>
+  return <ReviewStateContext.Provider value={reviewValue(dispatch, draft, (_key, text) => setDraft(text), comments)}>{children}</ReviewStateContext.Provider>
 }
 
-function renderCard(entries: ReturnType<typeof makeEntry>[], dispatch = vi.fn()) {
+function renderCard(entries: ReturnType<typeof makeEntry>[], dispatch = vi.fn(), comments?: CommentWithStatus[]) {
   return render(
     <JournalContext.Provider value={{ journal: makeJournal(entries), loading: false, error: null, reload: () => {} }}>
-      <Harness dispatch={dispatch}>
+      <Harness dispatch={dispatch} comments={comments}>
         <FileReviewCard file={file} sessionId={SESSION_ID} />
       </Harness>
     </JournalContext.Provider>,
@@ -146,16 +147,24 @@ describe("Scout's notes on a file card", () => {
     expect(screen.queryByText('Body 1')).not.toBeInTheDocument()
   })
 
-  it('replies on the same lines: chip, then ADD_COMMENT with about', async () => {
+  it('replies under the note itself, then ADD_COMMENT with about', async () => {
     const dispatch = vi.fn()
     renderCard([makeEntry('j7', { title: 'Chose a ref', anchor: anchoredAt2 })], dispatch)
     await userEvent.click(screen.getByRole('button', { name: 'Reply' }))
-    const draftSlot = screen.getAllByTestId('slot:additions:2').find((slot) => slot.querySelector('[data-line-draft]'))
-    expect(draftSlot).toBeDefined()
-    expect(within(draftSlot as HTMLElement).getByText(/Replying to Scout/)).toHaveTextContent('Replying to Scout · Chose a ref')
-    await userEvent.type(within(draftSlot as HTMLElement).getByRole('textbox'), 'Why not state?')
-    await userEvent.click(within(draftSlot as HTMLElement).getByRole('button', { name: 'Comment' }))
+    expect(document.querySelector('[data-line-draft]')).toBeNull()
+    const note = screen.getByRole('region', { name: 'Scout note: Chose a ref' })
+    expect(within(note).queryByRole('button', { name: 'Reply' })).not.toBeInTheDocument()
+    await userEvent.type(within(note).getByRole('textbox'), 'Why not state?')
+    await userEvent.click(within(note).getByRole('button', { name: 'Comment' }))
     expect(dispatch).toHaveBeenCalledWith({ type: 'ADD_COMMENT', target: { kind: 'file', ref: file.path, anchor: { side: 'new', line: 2 } }, body: 'Why not state?', about: 'j7' })
+  })
+
+  it("shows the reviewer's saved reply under the note it answers, not in its own slot", () => {
+    const reply: CommentWithStatus = { ...makeComment({ id: 'c5', body: 'Why not state?', target: { kind: 'file', ref: file.path, anchor: { side: 'new', line: 2 } }, about: 'j7' }), status: 'open', resolution: null }
+    renderCard([makeEntry('j7', { title: 'Chose a ref', anchor: anchoredAt2 })], vi.fn(), [reply])
+    const note = screen.getByRole('region', { name: 'Scout note: Chose a ref' })
+    expect(within(note).getByText('Why not state?')).toBeInTheDocument()
+    expect(document.querySelector('[data-line-comments]')).toBeNull()
   })
 
   it('replying to a file-level note makes a file comment with about', async () => {

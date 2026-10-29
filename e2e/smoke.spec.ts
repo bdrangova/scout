@@ -5,12 +5,12 @@ import { E2E_STORE } from './store.ts'
 
 /**
  * Smoke test of the whole review loop against a throwaway copy of the fixture store (built into
- * `E2E_STORE` by `global-setup.ts`; a live git working tree in `<store>/repos/trial-app`) and the
- * fake agent adapter, on the test's own servers (see `playwright.config.ts`):
+ * `E2E_STORE` by `global-setup.ts`; a live git working tree in `<store>/repos/trial-app`), on the
+ * test's own servers (see `playwright.config.ts`):
  * list → approve → reject with a comment → autosave survives a reload → a file edited on disk shows
- * up live → submit → the agent run finishes, resolves the comment and edits README.md, which comes
- * back into the deck as "updated". It resets the f1a0 session's review state and the fixture repo's
- * README.md first and restores `src/app.ts` afterwards. `fixtures/store` is never touched.
+ * up live → submit → the feedback is saved and the page shows the `/apply-review` command (Scout starts
+ * no agent). It resets the f1a0 session's review state first and restores `src/app.ts` afterwards.
+ * `fixtures/store` is never touched.
  */
 
 const SESSION_ID = '20260926-1200-qi-15472-trial-bar-f1a0'
@@ -20,9 +20,6 @@ const SECOND_FILE = 'package-lock.json'
 const THIRD_FILE = 'src/app.ts'
 const TOTAL_FILES = 12
 const REJECT_COMMENT = 'Smoke test: the lockfile change needs an explanation.'
-const FAKE_RESOLUTION_NOTE = 'Applied by the fake adapter'
-/** The fake adapter appends a line containing this to the fixture repo's README.md. */
-const FAKE_ADAPTER_MARKER = 'ai-review fake adapter'
 const LIVE_EDIT_LINE = '\n// smoke test: edited on disk\n'
 const FINGERPRINT_RE = /^[0-9a-f]{16}$/
 /** Watcher debounce (300 ms) plus some slack. */
@@ -31,16 +28,11 @@ const LIVE_UPDATE_TIMEOUT_MS = 20_000
 
 const reviewDir = path.join(E2E_STORE, 'sessions', SESSION_ID, 'review')
 const fixtureRepo = path.join(E2E_STORE, 'repos', 'trial-app')
-const readmePath = path.join(fixtureRepo, FIRST_FILE)
 const appTsPath = path.join(fixtureRepo, THIRD_FILE)
 
 interface ReviewFile {
   files: Record<string, { verdict: string; fingerprint: string | null }>
   comments: { id: string; target: { kind: string; ref?: string }; body: string; sentAt: string | null }[]
-}
-
-interface ResolutionsFile {
-  comments: Record<string, { status: string; note: string | null }>
 }
 
 async function readJson<T>(file: string): Promise<T> {
@@ -57,14 +49,6 @@ async function listDir(dir: string): Promise<string[]> {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/** Drop every line the fake adapter appended to README.md in earlier runs; rewrite only if needed. */
-async function stripFakeAdapterLines(file: string): Promise<void> {
-  const original = await fs.readFile(file, 'utf8')
-  const kept = original.split('\n').filter((line) => !line.includes(FAKE_ADAPTER_MARKER))
-  const next = kept.join('\n')
-  if (next !== original) await fs.writeFile(file, next)
 }
 
 /** `reviewed 2/12` in the session rail. */
@@ -85,7 +69,6 @@ test.describe('review loop smoke', () => {
 
   test.beforeAll(async ({ browser }) => {
     await fs.rm(reviewDir, { recursive: true, force: true })
-    await stripFakeAdapterLines(readmePath)
     // Give the store and repo watchers a moment to notice before the first request.
     await sleep(WATCHER_SETTLE_MS)
     page = await browser.newPage()
@@ -179,7 +162,7 @@ test.describe('review loop smoke', () => {
     await expect(headerProgress(page, 2)).toBeVisible()
   })
 
-  test('submits with "Request changes" and the fake agent resolves the comment', async () => {
+  test('submits with "Request changes" and shows the pending command', async () => {
     await page.goto(`/s/${SESSION_ID}/submit`)
     await expect(page.getByRole('heading', { level: 1, name: 'Submit' })).toBeVisible()
 
@@ -189,56 +172,21 @@ test.describe('review loop smoke', () => {
     // No confirmation step: the split button's main action sends at once.
     await page.getByRole('button', { name: 'Submit to current session' }).click()
 
-    const status = page.getByRole('region', { name: 'Agent status' })
-    await expect(status).toBeVisible()
-    await expect(page.getByRole('region', { name: 'Transcript' })).toBeVisible()
-
-    await expect(status.getByText('Claude Code finished working on your comments')).toBeVisible({ timeout: 60_000 })
-    await expect(status.getByText('1 of 1', { exact: true })).toBeVisible()
-    await expect(page.getByRole('region', { name: 'Transcript' }).getByText('$0.42').first()).toBeVisible()
-
-    const comments = page.getByRole('region', { name: 'Comments', exact: true })
-    await expect(comments.getByLabel('1 resolved', { exact: true })).toBeVisible()
-    const toggle = comments.getByRole('button', { name: 'Show 1 resolved' })
-    await expect(toggle).toBeVisible()
-    await toggle.click()
-    await expect(comments.getByText(FAKE_RESOLUTION_NOTE)).toBeVisible()
-    await expect(comments.getByText(REJECT_COMMENT)).toBeVisible()
+    const pending = page.getByRole('region', { name: 'Feedback pending' })
+    await expect(pending).toBeVisible()
+    await expect(pending.getByText('/apply-review').first()).toBeVisible()
   })
 
-  test('marks the README the agent edited as updated and asks for a new verdict', async () => {
-    // The UI reports the run finished from the stream's result line; the adapter appends the README marker just after it.
-    await expect.poll(() => fs.readFile(readmePath, 'utf8'), { timeout: LIVE_UPDATE_TIMEOUT_MS }).toContain(FAKE_ADAPTER_MARKER)
-
-    // The deck remembers its position, so open the README card by its URL.
-    await page.goto(`/s/${SESSION_ID}/files/${FIRST_FILE}`)
-    const card = page.getByRole('article', { name: FIRST_FILE })
-    await expect(card).toBeVisible()
-    // The stale approval no longer counts: the chip is on and the verdict buttons are back.
-    await expect(card.getByText(/^updated since sent$/i)).toBeVisible({ timeout: LIVE_UPDATE_TIMEOUT_MS })
-    const approve = card.getByRole('button', { name: 'Approve' })
-    await expect(approve).toBeVisible()
-    await expect(approve).toHaveAttribute('aria-pressed', 'false')
-    // Only the reject still counts.
-    await expect(headerProgress(page, 1)).toBeVisible()
-  })
-
-  test('wrote the sent snapshot, the run log and the resolutions to disk', async () => {
+  test('wrote the sent snapshot and stamped the comment as sent', async () => {
     const sent = await listDir(path.join(reviewDir, 'sent'))
     expect(sent.some((name) => name.endsWith('.json'))).toBe(true)
     expect(sent.some((name) => name.endsWith('.md'))).toBe(true)
     expect(sent.some((name) => name.endsWith('.patch'))).toBe(true)
 
-    const runs = await listDir(path.join(reviewDir, 'runs'))
-    expect(runs.some((name) => /^run-.*\.jsonl$/.test(name))).toBe(true)
-
     const review = await readJson<ReviewFile>(path.join(reviewDir, 'review.json'))
     const comment = review.comments.find((entry) => entry.body === REJECT_COMMENT)
     expect(comment).toBeDefined()
     expect(comment?.sentAt).not.toBeNull()
-
-    const resolutions = await readJson<ResolutionsFile>(path.join(reviewDir, 'resolutions.json'))
-    expect(resolutions.comments[comment!.id]).toMatchObject({ status: 'resolved', note: FAKE_RESOLUTION_NOTE })
   })
 
   test('sends overall feedback typed a moment before clicking Submit', async () => {
@@ -249,7 +197,7 @@ test.describe('review loop smoke', () => {
     await page.getByRole('textbox', { name: 'Overall feedback' }).fill(OVERALL)
     // The click blurs the field and sends well inside the 250 ms autosave delay.
     await page.getByRole('button', { name: 'Submit to current session' }).click()
-    await expect(page.getByRole('region', { name: 'Agent status' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Feedback pending' })).toBeVisible()
 
     const sentDir = path.join(reviewDir, 'sent')
     const newest = (await listDir(sentDir)).filter((name) => name.endsWith('.json')).sort().at(-1)
@@ -258,7 +206,6 @@ test.describe('review loop smoke', () => {
     expect(snapshot.comments.map((comment) => comment.body)).toContain(OVERALL)
     const markdown = (await listDir(sentDir)).filter((name) => name.endsWith('.md')).sort().at(-1)
     expect(await fs.readFile(path.join(sentDir, markdown ?? ''), 'utf8')).toContain(OVERALL)
-    await expect(page.getByRole('region', { name: 'Agent status' }).getByText('Claude Code finished working on your comments')).toBeVisible({ timeout: 60_000 })
   })
 })
 

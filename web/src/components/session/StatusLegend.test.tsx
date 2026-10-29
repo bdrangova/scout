@@ -7,7 +7,7 @@ describe('StatusLegend', () => {
     render(<StatusLegend />)
     fireEvent.click(screen.getByRole('button', { name: 'What do the statuses mean?' }))
     const dialog = await screen.findByRole('dialog', { name: 'Session statuses' })
-    for (const label of ['Awaiting review', 'In progress', 'Ready to submit', 'Changes sent', 'Agent working', 'Run failed', 'Updated since sent', 'Approved']) {
+    for (const label of ['Awaiting review', 'In progress', 'Ready to submit', 'Changes sent', 'Updated since sent', 'Approved']) {
       expect(dialog).toHaveTextContent(label)
     }
   })

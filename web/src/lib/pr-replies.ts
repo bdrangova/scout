@@ -1,11 +1,16 @@
-import type { PrCommentView, PrReplyKind, PutPrReplyResponse } from '@scout/shared'
+import type { PrCommentsResponse, PrCommentView, PrReplyKind, PutPrReplyResponse } from '@scout/shared'
 import type { PrThread } from '@/lib/pr-threads'
 import { ApiRequestError, apiPut } from './api'
-import { prReplyPath } from './paths'
+import { prReplyPath, prResolvedPath } from './paths'
 
 /** Saves the text for a thread root; a blank text deletes the draft (the server keeps an already posted one). */
 export function putPrReply(sessionId: string, commentId: string, body: string, kind?: PrReplyKind): Promise<PutPrReplyResponse> {
   return apiPut<PutPrReplyResponse>(prReplyPath(sessionId, commentId), kind === undefined ? { body } : { body, kind })
+}
+
+/** Marks a thread root handled in Scout (`resolved`) or reopens it; nothing reaches GitHub. */
+export function putPrResolved(sessionId: string, commentId: string, resolved: boolean): Promise<PrCommentsResponse> {
+  return apiPut<PrCommentsResponse>(prResolvedPath(sessionId, commentId), { resolved })
 }
 
 /** True when the server refused a save because the draft's kind no longer fits its thread (409 `pr-reply-kind-mismatch`). */

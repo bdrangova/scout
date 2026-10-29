@@ -169,25 +169,20 @@ describe('SessionLayout', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
-  it('reloads the detail on run.updated and session.updated (artifacts), ignoring other sessions', async () => {
+  it('reloads the detail on session.updated (artifacts), ignoring other sessions', async () => {
     const { publish, detailGets, events } = renderLayout()
     await header()
     const before = detailGets()
 
-    publish({ ...sessionDetailFixture, activeRunId: 'run-20260926180000-ab12' })
-    events().emit('message', { type: 'run.updated', sessionId: SESSION_ID, runId: 'run-20260926180000-ab12' })
-    await waitFor(() => expect(detailGets()).toBe(before + 1))
-
     publish({ ...sessionDetailFixture, extras: [...sessionDetailFixture.extras, { path: 'flow.mmd', type: 'mermaid', title: 'Flow' }] })
     events().emit('message', { type: 'session.updated', sessionId: SESSION_ID })
     await waitFor(() => expect(screen.getByRole('link', { name: /Extras/ })).toHaveTextContent('2'))
-    expect(detailGets()).toBe(before + 2)
+    expect(detailGets()).toBe(before + 1)
 
-    events().emit('message', { type: 'run.updated', sessionId: 'other-session', runId: 'run-20260926180000-ab12' })
     events().emit('message', { type: 'session.updated', sessionId: 'other-session' })
     events().emit('message', { type: 'tree.updated', sessionId: 'other-session', fingerprint: fp('elsewhere'), durationMs: 5 })
     await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(detailGets()).toBe(before + 2)
+    expect(detailGets()).toBe(before + 1)
   })
 
   it('on tree.updated refetches the detail, resets a verdict pinned to the old fingerprint, refetches the patch and toasts', async () => {

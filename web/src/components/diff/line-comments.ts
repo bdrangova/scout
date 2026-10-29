@@ -24,6 +24,9 @@ export function useLineComments(): LineCommentsValue | null {
   return useContext(LineCommentsContext)
 }
 
+/** The card's "hide comments" view switch: the diff leaves out every panel but an open draft. Nothing is changed or removed. */
+export const CommentsHiddenContext = createContext(false)
+
 /** What one annotation slot of the diff shows. */
 export type LineAnnotationContent =
   | { kind: 'proposal'; finding: PrFinding; changed: boolean }

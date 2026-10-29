@@ -2,25 +2,18 @@ import { describe, expect, it } from 'vitest'
 import { STATUS_TONE } from './status-tone'
 
 describe('STATUS_TONE', () => {
-  it('maps the active states to a pulsing dot', () => {
-    expect(STATUS_TONE.session('agent-working').pulse).toBe(true)
-    expect(STATUS_TONE.run('running').pulse).toBe(true)
-    expect(STATUS_TONE.session('agent-working')).toMatchObject({ label: 'Agent working', tone: 'info' })
+  it('names the session states', () => {
     expect(STATUS_TONE.session('approved')).toMatchObject({ tone: 'ok', label: 'Approved', pulse: false })
-  })
-
-  it('names the new session states', () => {
     expect(STATUS_TONE.session('ready')).toMatchObject({ tone: 'ok', label: 'Ready to submit', pulse: false })
-    expect(STATUS_TONE.session('run-failed')).toMatchObject({ tone: 'err', label: 'Run failed', pulse: false })
     expect(STATUS_TONE.session('updated').label).toBe('Updated since sent')
   })
 
   it('gives each lifecycle state its own label, hue and icon; plain "Sent" is gone', () => {
-    const statuses = ['unreviewed', 'in-progress', 'ready', 'sent', 'agent-working', 'run-failed', 'updated', 'approved'] as const
+    const statuses = ['unreviewed', 'in-progress', 'ready', 'sent', 'updated', 'approved'] as const
     const specs = statuses.map((status) => STATUS_TONE.session(status))
-    expect(new Set(specs.map((spec) => spec.label)).size).toBe(8)
-    expect(new Set(specs.map((spec) => spec.icon)).size).toBe(8)
-    expect(new Set(specs.map((spec) => spec.hue)).size).toBe(8)
+    expect(new Set(specs.map((spec) => spec.label)).size).toBe(6)
+    expect(new Set(specs.map((spec) => spec.icon)).size).toBe(6)
+    expect(new Set(specs.map((spec) => spec.hue)).size).toBe(6)
     expect(STATUS_TONE.session('sent').label).toBe('Changes sent')
     expect(specs.map((spec) => spec.label)).not.toContain('Sent')
   })

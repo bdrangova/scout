@@ -4,7 +4,7 @@ import path from 'node:path'
 import type { Command } from 'commander'
 import { derivePrComments, renderPrCommentsMarkdown } from '@scout/shared'
 import { findPrSession } from '../pr/session.ts'
-import { readPrComments, readPrResolutions, readReview } from '../sessions.ts'
+import { readPrComments, readPrReplies, readPrResolutions, readReview } from '../sessions.ts'
 import { resolveHome } from '../store.ts'
 
 /** The `## GitHub PR comments` section, or a one-line note when nothing is open. */
@@ -13,7 +13,7 @@ export async function renderSessionPrComments(options: { home: string; repo: str
   const prComments = await readPrComments(session.dir)
   if (prComments === null) return `no GitHub PR synced for session ${session.id}: run ai-review pr-sync first`
   const lastSend = (await readReview(session.dir))?.sent?.at ?? null
-  const views = derivePrComments(prComments, await readPrResolutions(session.dir), lastSend)
+  const views = derivePrComments(prComments, await readPrResolutions(session.dir), lastSend, await readPrReplies(session.dir))
   return renderPrCommentsMarkdown({ sessionId: session.id, pr: prComments.pr, views }) ?? `no open GitHub PR comments on #${prComments.pr.number}`
 }
 

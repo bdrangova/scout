@@ -1,9 +1,10 @@
+import { githubImageRelayPath, isGithubImageUrl } from '@scout/shared'
 import type { ComponentProps, ReactNode } from 'react'
 import { useRef } from 'react'
 import type { LinkSafetyModalProps } from 'streamdown'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { isAllowedImageUrl, parseUrl } from './untrusted-markdown'
+import { parseUrl } from './untrusted-markdown'
 
 function BlockedImage({ src, alt }: { src?: string; alt?: string }) {
   const host = parseUrl(src)?.host ?? 'invalid address'
@@ -17,8 +18,9 @@ function BlockedImage({ src, alt }: { src?: string; alt?: string }) {
 
 export function SafeImage({ src, alt }: Pick<ComponentProps<'img'>, 'src' | 'alt'>) {
   const url = typeof src === 'string' ? src : undefined
-  if (!isAllowedImageUrl(url)) return <BlockedImage src={url} alt={alt} />
-  return <img src={url} alt={alt ?? ''} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="max-w-full" />
+  if (!isGithubImageUrl(url)) return <BlockedImage src={url} alt={alt} />
+  // Through the server's relay: it fetches signed in to GitHub, so private-repo attachments load too.
+  return <img src={githubImageRelayPath(url)} alt={alt ?? ''} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="max-w-full rounded-sm" />
 }
 
 export function LinkSafetyDialog({ isOpen, onClose, onConfirm, url }: LinkSafetyModalProps): ReactNode {

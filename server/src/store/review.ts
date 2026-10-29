@@ -1,14 +1,12 @@
-import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { z } from 'zod'
-import { AgentRunSchema, JOURNAL_FILE, JournalSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@scout/shared'
-import type { AgentRun, Journal, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@scout/shared'
+import { JOURNAL_FILE, JournalSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@scout/shared'
+import type { Journal, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@scout/shared'
 import { errorMessage, formatZodError, invalidStoreFile } from '../errors.ts'
-import { isMissing, readTextIfExists, writeFileAtomic } from './fs.ts'
+import { readTextIfExists, writeFileAtomic } from './fs.ts'
 
 export const REVIEW_FILE = path.join('review', 'review.json')
 export const RESOLUTIONS_FILE = path.join('review', 'resolutions.json')
-export const RUNS_DIR = path.join('review', 'runs')
 
 function parseValidated<T>(text: string, label: string, schema: z.ZodType<T>): T {
   let json: unknown
@@ -90,56 +88,7 @@ export async function writePrReplies(sessionDir: string, replies: PrReplies): Pr
   await writeFileAtomic(path.join(sessionDir, ...PR_REPLIES_FILE.split('/')), `${JSON.stringify(replies, null, 2)}\n`)
 }
 
-/**
- * Every `review/runs/*.json` that validates as an `AgentRun`, oldest first. Files that do not
- * parse (for example one being written right now) are skipped.
- */
-export async function listRuns(sessionDir: string): Promise<AgentRun[]> {
-  const dir = path.join(sessionDir, RUNS_DIR)
-  let names: string[]
-  try {
-    names = await fs.readdir(dir)
-  } catch (err) {
-    if (isMissing(err)) return []
-    throw err
-  }
-  const runs: AgentRun[] = []
-  for (const name of names.filter((n) => n.endsWith('.json')).sort()) {
-    const text = await readTextIfExists(path.join(dir, name))
-    if (text === null) continue
-    try {
-      runs.push(parseValidated(text, `review/runs/${name}`, AgentRunSchema))
-    } catch {
-      // ignore: mid-write or foreign file
-    }
-  }
-  return runs.sort((a, b) => a.startedAt.localeCompare(b.startedAt) || a.id.localeCompare(b.id))
-}
-
-/** The id of the run that is `queued` or `running`, if any. */
-export function activeRunId(runs: readonly AgentRun[]): string | null {
-  return runs.find((run) => run.status === 'queued' || run.status === 'running')?.id ?? null
-}
-
-/** Status of the newest run (run files sort by their time-stamped id), if any. */
-export function latestRunStatus(runs: readonly AgentRun[]): AgentRun['status'] | null {
-  return runs[runs.length - 1]?.status ?? null
-}
-
 export const SENT_DIR = path.join('review', 'sent')
-
-export function runFile(sessionDir: string, runId: string): string {
-  return path.join(sessionDir, RUNS_DIR, `${runId}.json`)
-}
-
-export function runLogFile(sessionDir: string, runId: string): string {
-  return path.join(sessionDir, RUNS_DIR, `${runId}.jsonl`)
-}
-
-/** One `review/runs/<id>.json`, validated; `null` when absent. */
-export async function readRun(sessionDir: string, runId: string): Promise<AgentRun | null> {
-  return readValidated(runFile(sessionDir, runId), `review/runs/${runId}.json`, AgentRunSchema)
-}
 
 /** `review/sent/<stem>.json`, `.md` and `.patch` for one Submit; stem = `sentFileStem(sentAt)`. */
 export function sentFiles(sessionDir: string, sentAt: string): { json: string; markdown: string; patch: string } {

@@ -22,7 +22,7 @@ import { CardActions } from './CardActions'
 import { CardHeader, type CardView } from './CardHeader'
 import { JournalAnnotationsContext, type JournalAnnotationsValue } from './journal-annotations'
 import { LargeFileGate } from './LargeFileGate'
-import { LineCommentsContext, type LineCommentsValue } from './line-comments'
+import { CommentsHiddenContext, LineCommentsContext, type LineCommentsValue } from './line-comments'
 import { MarkdownPreview } from './MarkdownPreview'
 import { PrAnnotationsContext, type PrAnnotationsValue } from './pr-annotations'
 import { useVerdictAction } from './useVerdictAction'
@@ -74,6 +74,13 @@ export function FileReviewCard({
   const sendVerdict = useVerdictAction()
   const commentActions = useCommentActions()
   const [view, setView] = useState<CardView>('unified')
+  // A view-only switch, never saved: leaving the card (it stops being the current one) shows comments again.
+  const [commentsHidden, setCommentsHidden] = useState(false)
+  const [wasActive, setWasActive] = useState(active)
+  if (wasActive !== active) {
+    setWasActive(active)
+    if (!active) setCommentsHidden(false)
+  }
   const inlineFindings = scope || view === 'preview' || file.binary || file.omitted ? [] : findings
   const [localFocus, bumpLocalFocus] = useReducer((count: number) => count + 1, 0)
   const { name } = splitPath(file.path)
@@ -190,6 +197,8 @@ export function FileReviewCard({
         view={view}
         views={views}
         onViewChange={setView}
+        commentsHidden={commentsHidden}
+        onCommentsHiddenChange={setCommentsHidden}
         onPointerDown={onHeaderPointerDown}
       />
 
@@ -204,6 +213,7 @@ export function FileReviewCard({
         {view === 'preview' && previewable ? (
           <MarkdownPreview file={file} sessionId={sessionId} scope={scope?.scope ?? null} />
         ) : (
+          <CommentsHiddenContext.Provider value={commentsHidden}>
           <LineCommentsContext.Provider value={lineComments}>
             <PrAnnotationsContext.Provider value={prAnnotations}>
               <JournalAnnotationsContext.Provider value={journalAnnotations}>
@@ -219,8 +229,9 @@ export function FileReviewCard({
               </JournalAnnotationsContext.Provider>
             </PrAnnotationsContext.Provider>
           </LineCommentsContext.Provider>
+          </CommentsHiddenContext.Provider>
         )}
-        {findings.length > 0 && inlineFindings.length === 0 && <div className="flex flex-col gap-3 bg-surface p-4">{findings.map((f) => <ProposalCard key={f.id} finding={f} changed={!!scope} />)}</div>}
+        {!commentsHidden && findings.length > 0 && inlineFindings.length === 0 && <div className="flex flex-col gap-3 bg-surface p-4">{findings.map((f) => <ProposalCard key={f.id} finding={f} changed={!!scope} />)}</div>}
         {findings.length > 0 && <ReproductionEvidence findings={findings} />}
       </div>
 
@@ -228,8 +239,8 @@ export function FileReviewCard({
         {!reviewable && (
           <p className="text-xs text-ink-muted">No net change: a later change undid this one.</p>
         )}
-        <PrFooterGroup threads={footerThreads} path={file.path} />
-        <CommentList comments={fileComments} {...commentActions} />
+        {!commentsHidden && <PrFooterGroup threads={footerThreads} path={file.path} />}
+        {!commentsHidden && <CommentList comments={fileComments} {...commentActions} />}
         {reviewable && fileReply && <ReplyChip reply={fileReply} onCancel={() => setFileReply(null)} />}
         {reviewable && (
           <CommentBox

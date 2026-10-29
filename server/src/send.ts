@@ -1,15 +1,11 @@
 import { buildSentPrReplies, buildSentSnapshot, buildTestRunSentSnapshot, derivePrComments, emptyReview, isTestRun, renderSentMarkdown, renderTestRunSentMarkdown, stampSent } from '@scout/shared'
-import type { AgentRun, AnySentSnapshot, Resolutions, Review, SendRequest, SendResponse } from '@scout/shared'
-import type { AgentAdapter } from './agent/adapter.ts'
-import type { RunManager } from './agent/runs.ts'
+import type { AnySentSnapshot, Resolutions, Review, SendRequest, SendResponse } from '@scout/shared'
 import { badRequest } from './errors.ts'
 import { concatPatches, readJournal, readPrComments, readPrReplies, readPrResolutions } from './store/index.ts'
 import type { LoadedSession, Store } from './store/index.ts'
 
 export interface SendDeps {
   store: Store
-  runs: RunManager
-  adapter: AgentAdapter
   dashboardUrl: string
   now?: () => string
 }
@@ -66,11 +62,11 @@ async function testRunBuilder(deps: SendDeps, session: LoadedSession, request: S
 
 /**
  * One Submit: snapshot the open comments, verdicts and decision against the live tree (code review) or the run's scenarios
- * (test run) to `review/sent/<stem>.json|.md` (and `.patch` for a code review), stamp `review.json`, and (with `dispatch`) start the
- * agent or explain why it is pending.
+ * (test run) to `review/sent/<stem>.json|.md` (and `.patch` for a code review) and stamp `review.json`. The reviewer then applies
+ * it from their own Claude Code session (`/apply-review`); Scout starts no agent.
  */
 export async function sendReview(deps: SendDeps, sessionId: string, request: SendRequest): Promise<SendResponse> {
-  const { store, runs, adapter } = deps
+  const { store } = deps
   const session = await store.loadSession(sessionId)
   if (session.manifest.kind === 'pr-review') throw badRequest('PR reviews use copy-only export, not send')
   const build = await (isTestRun(session.manifest) ? testRunBuilder(deps, session, request) : codeReviewBuilder(deps, session, request))
@@ -87,18 +83,5 @@ export async function sendReview(deps: SendDeps, sessionId: string, request: Sen
   const { sent } = written
   if (sent === undefined) throw new Error('send did not produce a snapshot')
 
-  let run: AgentRun | null = null
-  let pending: { reason: string } | null = null
-  if (request.dispatch) {
-    const active = runs.activeRun(sessionId)
-    if (active) {
-      pending = { reason: `run ${active.id} is still active for this session; the new feedback will be picked up by the next run` }
-    } else {
-      const detail = await store.getSession(sessionId)
-      const can = await adapter.canResume(detail, { fork: false })
-      if (can.ok) run = await runs.start(detail, { sentAt: sent.sentAt, decision: sent.decision, fork: false })
-      else pending = { reason: can.reason }
-    }
-  }
-  return { sent, run, pending }
+  return { sent }
 }

@@ -1,11 +1,13 @@
-import { anchorLabel, type CommentWithStatus } from '@scout/shared'
-import { ChevronDown, ChevronRight, CircleCheck } from 'lucide-react'
+import type { CommentWithStatus } from '@scout/shared'
+import { ChevronDown, ChevronRight, CircleCheck, Pencil, RotateCcw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { bodyExcerpt } from '@/components/prcomments/pr-format'
 import { Button } from '@/components/ui/button'
 import { Tag } from '@/components/ui/tag'
 import { Textarea } from '@/components/ui/textarea'
-import { formatDuration, formatRelativeTime } from '@/lib/format'
+import { formatDuration } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { CommentAction, CommentHeader, YouAvatar } from './CommentHeader'
 
 export interface CommentListProps {
   comments: CommentWithStatus[]
@@ -17,7 +19,7 @@ export interface CommentListProps {
 }
 
 /**
- * Open comments with edit / delete / mark resolved; resolved ones hidden behind
+ * Open comments with edit / delete / mark resolved, each foldable to one line; resolved ones hidden behind
  * "Show n resolved", each with the agent's note and a Reopen action.
  */
 export function CommentList({ comments, onEdit, onDelete, onResolve, onReopen, className }: CommentListProps) {
@@ -62,38 +64,22 @@ export function CommentList({ comments, onEdit, onDelete, onResolve, onReopen, c
   )
 }
 
+/** The video time of a test-run comment, as a badge. */
 function Timestamp({ seconds }: { seconds: number | null }) {
   if (seconds === null) return null
-  return <span className="font-mono text-[11px] text-st-r">at {formatDuration(seconds)}</span>
-}
-
-function Meta({ comment }: { comment: CommentWithStatus }) {
   return (
-    <span className="flex flex-wrap items-center gap-2 text-[11px] text-ink-muted">
-      <span className="font-mono">{comment.id}</span>
-      {comment.target.anchor && <span className="font-mono text-st-r">{anchorLabel(comment.target.anchor)}</span>}
-      <Timestamp seconds={comment.timestampSec} />
-      <time dateTime={comment.updatedAt ?? comment.createdAt}>
-        {formatRelativeTime(comment.updatedAt ?? comment.createdAt)}
-        {comment.updatedAt ? ' · edited' : ''}
-      </time>
-      {comment.sentAt && (
-        <Tag tone="info" size="sm" pill title={`Sent ${comment.sentAt}`}>
-          Sent
-        </Tag>
-      )}
-    </span>
+    <Tag size="sm" mono>
+      at {formatDuration(seconds)}
+    </Tag>
   )
 }
 
-/** A flat text action in the comment's meta row. */
-function TextAction({ className, ...props }: React.ComponentProps<'button'>) {
+function SentBadge({ comment }: { comment: CommentWithStatus }) {
+  if (!comment.sentAt) return null
   return (
-    <button
-      type="button"
-      className={cn('rounded-sm text-xs font-semibold text-ink-muted underline-offset-[3px] transition-colors hover:text-ink hover:underline', className)}
-      {...props}
-    />
+    <Tag tone="info" size="sm" pill title={`Sent ${comment.sentAt}`}>
+      Sent
+    </Tag>
   )
 }
 
@@ -104,9 +90,11 @@ interface OpenCommentProps {
   onResolve: (id: string) => void
 }
 
+/** Caret, avatar, "You", badges and Edit / Delete / Resolve on one row, the text under it. Id, line and time stay in the data only. */
 function OpenComment({ comment, onEdit, onDelete, onResolve }: OpenCommentProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(comment.body)
+  const [collapsed, setCollapsed] = useState(false)
 
   function save() {
     const body = draft.trim()
@@ -115,15 +103,48 @@ function OpenComment({ comment, onEdit, onDelete, onResolve }: OpenCommentProps)
   }
 
   return (
-    <li className="flex gap-2.5 rounded-lg border-fine border-line bg-paper px-3 py-2 text-[13px]" aria-label={`Comment ${comment.id}`}>
-      <span
-        className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-fine border-fill-line bg-ink text-[9px] font-bold text-paper"
-        aria-hidden
-      >
-        You
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {editing ? (
+    <li className="flex flex-col gap-1.5 rounded-lg border-fine border-l-[3px] border-line border-l-ink bg-surface px-3 py-2 text-[13px]" aria-label={`Comment ${comment.id}`}>
+      <CommentHeader
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(!collapsed)}
+        avatar={<YouAvatar />}
+        title="You"
+        label={`comment ${comment.id}`}
+        badges={
+          (comment.sentAt || comment.timestampSec !== null) && (
+            <>
+              <Timestamp seconds={comment.timestampSec} />
+              <SentBadge comment={comment} />
+            </>
+          )
+        }
+        preview={bodyExcerpt(comment.body)}
+        actions={
+          !editing && (
+            <>
+              <CommentAction
+                icon={Pencil}
+                onClick={() => {
+                  setCollapsed(false)
+                  setEditing(true)
+                }}
+              >
+                Edit
+              </CommentAction>
+              {comment.sentAt === null && (
+                <CommentAction icon={Trash2} className="hover:text-red" onClick={() => onDelete(comment.id)}>
+                  Delete
+                </CommentAction>
+              )}
+              <CommentAction icon={CircleCheck} className="hover:text-green" onClick={() => onResolve(comment.id)}>
+                Resolve
+              </CommentAction>
+            </>
+          )
+        }
+      />
+      {!collapsed &&
+        (editing ? (
           <>
             <Textarea
               value={draft}
@@ -150,50 +171,54 @@ function OpenComment({ comment, onEdit, onDelete, onResolve }: OpenCommentProps)
             </div>
           </>
         ) : (
-          <p className="whitespace-pre-wrap">{comment.body}</p>
-        )}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Meta comment={comment} />
-          {!editing && (
-            <span className="ml-auto flex gap-2.5">
-              <TextAction onClick={() => setEditing(true)}>Edit</TextAction>
-              {comment.sentAt === null && (
-                <TextAction className="hover:text-red" onClick={() => onDelete(comment.id)}>
-                  Delete
-                </TextAction>
-              )}
-              <TextAction className="hover:text-green" onClick={() => onResolve(comment.id)}>
-                Mark resolved
-              </TextAction>
-            </span>
-          )}
-        </div>
-      </div>
+          <p className="m-0 whitespace-pre-wrap">{comment.body}</p>
+        ))}
     </li>
   )
 }
 
 function ResolvedComment({ comment, onReopen }: { comment: CommentWithStatus; onReopen: (id: string) => void }) {
+  const [collapsed, setCollapsed] = useState(false)
   const note = comment.resolution?.note ?? null
   const byAgent = comment.resolution !== null && comment.resolution.status === 'resolved'
   return (
     <li
-      className="flex flex-col gap-1 rounded-lg border-fine border-dashed border-line bg-paper-2 px-3 py-2 text-[13px] text-ink-muted"
+      className="flex flex-col gap-1.5 rounded-lg border-fine border-l-[3px] border-line border-l-green bg-paper-2 px-3 py-2 text-[13px] text-ink-muted"
       aria-label={`Resolved comment ${comment.id}`}
     >
-      <p className="whitespace-pre-wrap">{comment.body}</p>
-      {note && (
-        <p className="flex gap-1.5 text-xs">
-          <span className="font-bold text-green">{byAgent ? 'Claude Code:' : 'Note:'}</span>
-          <span>{note}</span>
-        </p>
+      <CommentHeader
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(!collapsed)}
+        avatar={<YouAvatar />}
+        title="You"
+        label={`resolved comment ${comment.id}`}
+        badges={
+          <>
+            <Timestamp seconds={comment.timestampSec} />
+            <Tag tone="ok" size="sm">
+              <CircleCheck aria-hidden />
+              Resolved
+            </Tag>
+          </>
+        }
+        preview={bodyExcerpt(comment.body)}
+        actions={
+          <CommentAction icon={RotateCcw} onClick={() => onReopen(comment.id)}>
+            Reopen
+          </CommentAction>
+        }
+      />
+      {!collapsed && (
+        <>
+          <p className="m-0 whitespace-pre-wrap">{comment.body}</p>
+          {note && (
+            <p className="m-0 flex gap-1.5 text-xs">
+              <span className="font-bold text-green">{byAgent ? 'Claude Code:' : 'Note:'}</span>
+              <span>{note}</span>
+            </p>
+          )}
+        </>
       )}
-      <div className="flex flex-wrap items-center gap-x-3">
-        <Meta comment={comment} />
-        <TextAction className="ml-auto" onClick={() => onReopen(comment.id)}>
-          Reopen
-        </TextAction>
-      </div>
     </li>
   )
 }

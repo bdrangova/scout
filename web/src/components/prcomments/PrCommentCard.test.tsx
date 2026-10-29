@@ -82,4 +82,20 @@ describe('PrCommentCard', () => {
     renderCard({})
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
+
+  it('folds when the author name is clicked too', async () => {
+    renderCard({ body: 'nit: **rename** this.' })
+    await userEvent.click(screen.getByText('maya'))
+    expect(screen.getByRole('button', { name: "Expand maya's comment" })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('folds to the author row and a one-line preview, and unfolds again', async () => {
+    renderCard({ body: 'nit: **rename** this.' }, undefined, true)
+    await userEvent.click(screen.getByRole('button', { name: "Collapse maya's comment" }))
+    expect(screen.queryByRole('list', { name: /Replies to/ })).not.toBeInTheDocument()
+    expect(screen.getByText('maya')).toBeInTheDocument()
+    expect(screen.getByText('nit: rename this. · 1 reply')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: "Expand maya's comment" }))
+    expect(screen.getByRole('list', { name: /Replies to/ })).toBeInTheDocument()
+  })
 })

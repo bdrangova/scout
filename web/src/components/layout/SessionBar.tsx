@@ -5,6 +5,7 @@ import { SkillsHelp } from '@/components/common/SkillsHelp'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
+import { PAGE_MODES } from '@/lib/mode'
 import { useHotkeys } from '@/lib/useHotkeys'
 import { sessionListRoute } from '@/lib/paths'
 import { useSessionContext } from '@/lib/session-context'
@@ -27,14 +28,13 @@ export interface SessionBarProps {
 
 const ICON_CHIP = cn(HEADER_CHIP_CLASS, 'w-(--header-control-h) px-0')
 
-function submitState({ status, run }: Pick<ReturnType<typeof useSessionSummary>, 'status' | 'run'>): SubmitState {
-  if (run === 'failed') return 'failed'
+function submitState({ status }: Pick<ReturnType<typeof useSessionSummary>, 'status'>): SubmitState {
   return status === 'ready' ? 'ready' : null
 }
 
 /**
  * The 52px bar on top of every session page: the sidebar toggle, Sessions, the section tabs
- * with their counts, the Swipe/Grid switch (Files, or a test run's card pages), Shortcuts, the theme and the overflow
+ * with their counts, the Swipe/Grid switch (Files, or a test run's card pages; Scroll/Grid on Spec and Extras), Shortcuts, the theme and the overflow
  * menu. No identity and no status: those live in the rail. Its height is `--shell-h` (index.css).
  */
 export function SessionBar({ onHelp }: SessionBarProps) {
@@ -48,6 +48,8 @@ export function SessionBar({ onHelp }: SessionBarProps) {
   const { pathname } = useLocation()
   const section = useCurrentSection()
   const onModes = kind === 'test-run' ? ['review', 'gaps', 'logs', 'data-setup'].includes(section ?? '') : section === 'files'
+  // Spec and Extras switch between their stacked cards and a grid of tiles, on their own route.
+  const onPageModes = kind !== 'test-run' && (section === 'spec' || section === 'extras')
   const saveText = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Not saved' : ''
 
   return (
@@ -80,6 +82,7 @@ export function SessionBar({ onHelp }: SessionBarProps) {
             </span>
           )}
           {onModes && <ModeToggle pathname={kind === 'test-run' ? pathname : undefined} />}
+          {onPageModes && <ModeToggle pathname={pathname} modes={PAGE_MODES} />}
           <Tooltip>
             <TooltipTrigger render={<Button size="sm" aria-label="Skills" onClick={() => setSkillsOpen(true)} className={cn(ICON_CHIP, 'max-lg:hidden')} />}>
               <BookOpen aria-hidden />

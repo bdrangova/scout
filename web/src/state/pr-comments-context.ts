@@ -23,6 +23,8 @@ export interface PrCommentsValue {
   queued: QueuedReplyCounts
   /** Saves the instruction or reply text of a thread root (`PUT /pr-replies/:id`); a blank text deletes the draft. */
   saveReply: (commentId: string, body: string, kind?: PrReplyKind) => Promise<PutPrReplyResponse>
+  /** Marks a thread root handled in Scout, or reopens it (`PUT /pr-resolved/:id`). */
+  setResolved: (commentId: string, resolved: boolean) => Promise<void>
   /** A box registers its "save what is pending now" function; the returned function unregisters it. */
   registerReplyFlush: (flush: () => Promise<boolean>) => () => void
   /** Saves every pending box; false when one failed. Submit awaits it next to the review's own flush. */
@@ -41,6 +43,7 @@ export const NO_PR_COMMENTS: PrCommentsValue = {
   reload: () => {},
   queued: { instructions: 0, replies: 0 },
   saveReply: () => Promise.reject(new Error('No PR comments provider is mounted')),
+  setResolved: () => Promise.reject(new Error('No PR comments provider is mounted')),
   registerReplyFlush: () => () => {},
   flushReplies: () => Promise.resolve(true),
 }
@@ -48,7 +51,7 @@ export const NO_PR_COMMENTS: PrCommentsValue = {
 /** The context value for a loaded (or absent) response. */
 export function prCommentsValueFrom(
   data: PrCommentsResponse | null,
-  status: Pick<PrCommentsValue, 'loading' | 'error' | 'reload' | 'saveReply' | 'registerReplyFlush' | 'flushReplies'>,
+  status: Pick<PrCommentsValue, 'loading' | 'error' | 'reload' | 'saveReply' | 'setResolved' | 'registerReplyFlush' | 'flushReplies'>,
 ): PrCommentsValue {
   const comments = data?.comments ?? []
   const threads = groupPrThreads(comments)

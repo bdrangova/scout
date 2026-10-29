@@ -1,3 +1,4 @@
+import { githubImageRelayPath } from '@scout/shared'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -13,7 +14,7 @@ describe('PrCommentBody', () => {
     expect(open).not.toHaveBeenCalled()
     expect(await screen.findByRole('alertdialog', { name: 'Open external link?' })).toHaveTextContent('https://docs.example/a')
     expect(screen.getByText(/image blocked: tracker\.example/)).toBeInTheDocument()
-    expect([...container.querySelectorAll('img')].map((img) => img.getAttribute('src'))).toEqual(['https://user-images.githubusercontent.com/1/s.png'])
+    expect([...container.querySelectorAll('img')].map((img) => img.getAttribute('src'))).toEqual([githubImageRelayPath('https://user-images.githubusercontent.com/1/s.png')])
   })
 
   it('keeps script, event handlers, iframes and javascript: links inert', async () => {

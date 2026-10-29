@@ -15,7 +15,7 @@ const TREE_TOAST_DURATION_MS = 4000
  * The session's one `/api/events` subscription. `tree.updated` refetches the detail unless its
  * fingerprint is the one already shown; the cards then update in place (a changed file refetches
  * its patch and loses a stale verdict) and a small toast says how many files moved.
- * `session.updated` (artifacts, PR description) and `run.updated` refetch the detail too. A test run has no tree: `testrun.updated`
+ * `session.updated` (artifacts, PR description) refetches the detail too. A test run has no tree: `testrun.updated`
  * (the run folder changed) refetches its detail instead, with no toast.
  * `review.updated` / `resolutions.updated` reload the review (not while it is being saved).
  */
@@ -53,9 +53,6 @@ export function SessionLiveUpdates() {
       if (kind === 'test-run' && event.sessionId === sessionId) reloadDetail()
     },
     'session.updated': (event) => {
-      if (event.sessionId === sessionId) reloadDetail()
-    },
-    'run.updated': (event) => {
       if (event.sessionId === sessionId) reloadDetail()
     },
     'review.updated': (event) => {

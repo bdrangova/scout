@@ -116,7 +116,7 @@ async function markPosted(dir: string, sessionId: string, entry: SentPrReply, no
   const current = await readPrReplies(dir)
   const replies: PrReplies['replies'] = { ...(current?.replies ?? {}) }
   replies[entry.commentId] = { body: entry.body, kind: 'reply', editedAt: replies[entry.commentId]?.editedAt ?? now, postedAt: now, ...(url === null ? {} : { githubUrl: url }) }
-  await writePrReplies(dir, { schemaVersion: SCHEMA_VERSION, sessionId, updatedAt: now, replies })
+  await writePrReplies(dir, { ...current, schemaVersion: SCHEMA_VERSION, sessionId, updatedAt: now, replies })
 }
 
 export function formatPrReply(result: PrReplyResult): string {

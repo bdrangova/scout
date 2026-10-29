@@ -113,4 +113,18 @@ describe("SessionHotkeys", () => {
     expect(search()).toBe("?mode=swipe");
     expect(where()).toBe(`/t/${SESSION_ID}/review/s2-fail`);
   });
+
+  it("G flips Spec between grid and scroll on its own page, and S returns to scroll", async () => {
+    await renderHotkeys("code-review", `/s/${SESSION_ID}/spec`);
+    const search = () => screen.getByTestId("search").textContent;
+    fireEvent.keyDown(window, { key: "g" });
+    expect(where()).toBe(`/s/${SESSION_ID}/spec`);
+    expect(search()).toBe("?mode=grid");
+    fireEvent.keyDown(window, { key: "g" });
+    expect(search()).toBe("?mode=scroll");
+    fireEvent.keyDown(window, { key: "g" });
+    fireEvent.keyDown(window, { key: "s" });
+    expect(search()).toBe("?mode=scroll");
+    expect(where()).toBe(`/s/${SESSION_ID}/spec`);
+  });
 });

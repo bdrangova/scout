@@ -1,22 +1,16 @@
 import type { CommentTarget, ExtraItem } from '@scout/shared'
-import { Code, FileText, Workflow, type LucideIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { ContentCard } from '@/components/common/ContentCard'
 import { Markdown } from '@/components/common/Markdown'
 import { SandboxedHtml } from '@/components/common/SandboxedHtml'
 import { TargetComments } from '@/components/common/TargetComments'
+import { EXTRA_KIND } from '@/components/spec/item-kinds'
 import { splitPath } from '@/lib/paths'
 import { useContent } from '@/lib/useContent'
 
 export interface ExtraCardProps {
   item: ExtraItem
   sessionId: string
-}
-
-const KIND: Record<ExtraItem['type'], { icon: LucideIcon; label: string }> = {
-  markdown: { icon: FileText, label: 'Markdown' },
-  mermaid: { icon: Workflow, label: 'Mermaid' },
-  html: { icon: Code, label: 'HTML' },
 }
 
 /** A `.mmd` file is a single diagram: render it through the markdown pipeline as a mermaid fence. */
@@ -32,8 +26,9 @@ export function ExtraCard({ item, sessionId }: ExtraCardProps) {
   return (
     <ContentCard
       label={item.title}
-      kind={KIND[item.type]}
+      kind={EXTRA_KIND[item.type]}
       title={item.title}
+      collapseLabel={item.title}
       actions={
         <span className="font-mono text-xs font-medium text-ink-muted" title={item.path}>
           {splitPath(item.path).name}

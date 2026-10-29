@@ -31,6 +31,16 @@ export function modeSearch(params: URLSearchParams, mode: Mode): string {
   return `?${next.toString()}`
 }
 
+/** The Spec and Extras pages: their full cards stacked (scroll) or a tile per item (grid). */
+export type PageMode = Extract<Mode, 'scroll' | 'grid'>
+
+export const PAGE_MODES: readonly PageMode[] = ['scroll', 'grid']
+
+/** `?mode=` on the Spec and Extras pages: grid, else scroll. */
+export function parsePageMode(value: string | null | undefined): PageMode {
+  return value === 'grid' ? 'grid' : 'scroll'
+}
+
 export function isCardMode(mode: Mode): mode is CardMode {
   return mode !== 'grid'
 }

@@ -26,7 +26,6 @@ const child = spawn(npm, ['run', 'dev'], {
     API_PORT: apiPort,
     WEB_PORT: webPort,
     DASHBOARD_URL: env.DASHBOARD_URL ?? `http://scout.localhost:${webPort}`,
-    AGENT_ADAPTER: 'fake',
   },
 })
 

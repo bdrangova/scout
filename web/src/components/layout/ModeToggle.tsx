@@ -22,20 +22,23 @@ const VISIBLE_MODES: readonly Mode[] = ['swipe', 'grid']
  * Swipe | Grid as a flat chooser (icons below `xl`, icons and words from `xl`) (`Segmented` look, links inside). Writes `?mode=`
  * on the files route (keeping the current file and the commit scope when already there); in a test run on the review
  * route (keeping the current scenario; `?mode=scroll` reads as swipe), or on `pathname` when the page (Gaps, Logs, Data
- * setup, from the session header) names its own. Needs a `TooltipProvider`.
+ * setup, from the session header) names its own. The Spec and Extras pages pass their own `modes` (Scroll | Grid): a
+ * `?mode=` outside them reads as the first. Needs a `TooltipProvider`.
  */
-export function ModeToggle({ pathname: fixedPathname }: { pathname?: string } = {}) {
+export function ModeToggle({ pathname: fixedPathname, modes }: { pathname?: string; modes?: readonly Mode[] } = {}) {
   const { sessionId } = useSessionContext()
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const testRun = useShellConfig().kind === 'test-run'
-  const mode = testRun ? parseRunMode(searchParams.get(MODE_PARAM)) : parseMode(searchParams.get(MODE_PARAM))
+  const parsed = testRun ? parseRunMode(searchParams.get(MODE_PARAM)) : parseMode(searchParams.get(MODE_PARAM))
+  const shown = modes ?? VISIBLE_MODES
+  const mode = modes === undefined || modes.includes(parsed) ? parsed : modes[0]
   const base = testRun ? testRunRoute(sessionId, 'review') : sessionFilesRoute(sessionId)
   const pathname = fixedPathname ?? (location.pathname.startsWith(base) ? location.pathname : base)
 
   return (
     <Segmented aria-label="Review mode" data-slot="mode-toggle">
-      {VISIBLE_MODES.map((candidate) => {
+      {shown.map((candidate) => {
         const active = candidate === mode
         const Icon = MODE_ICONS[candidate]
         return (

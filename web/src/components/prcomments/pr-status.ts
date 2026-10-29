@@ -20,6 +20,7 @@ export function prStatusLabel(view: Pick<PrCommentView, 'status' | 'closedBy'>):
   if (view.status !== 'outdated') return PR_STATUS[view.status].label
   if (view.closedBy === 'github-resolved') return 'Resolved on GitHub'
   if (view.closedBy === 'removed') return 'Deleted on GitHub'
+  if (view.closedBy === 'scout-resolved') return 'Resolved'
   return PR_STATUS.outdated.label
 }
 

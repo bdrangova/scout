@@ -6,7 +6,7 @@ const app = createApp(config)
 
 const server = app.listen(config.port, '127.0.0.1', () => {
   console.log(
-    `Scout server listening on http://127.0.0.1:${config.port} (store ${config.home}, adapter ${config.adapter})`,
+    `Scout server listening on http://127.0.0.1:${config.port} (store ${config.home})`,
   )
 })
 

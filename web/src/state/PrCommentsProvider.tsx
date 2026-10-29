@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { apiGet } from '@/lib/api'
 import { useAsync } from '@/lib/hooks'
 import { prCommentsPath } from '@/lib/paths'
-import { putPrReply } from '@/lib/pr-replies'
+import { putPrReply, putPrResolved } from '@/lib/pr-replies'
 import { useStoreEvents } from '@/lib/useStoreEvents'
 import { PrCommentsContext, prCommentsValueFrom } from './pr-comments-context'
 
@@ -23,6 +23,13 @@ export function PrCommentsProvider({ sessionId, children }: { sessionId: string;
   })
 
   const saveReply = useCallback((commentId: string, body: string, kind?: PrReplyKind) => putPrReply(sessionId, commentId, body, kind), [sessionId])
+  const setResolved = useCallback(
+    async (commentId: string, resolved: boolean) => {
+      await putPrResolved(sessionId, commentId, resolved)
+      reload()
+    },
+    [sessionId, reload],
+  )
   const [flushers] = useState(() => new Set<() => Promise<boolean>>())
   const registerReplyFlush = useCallback((flush: () => Promise<boolean>) => {
     flushers.add(flush)
@@ -36,8 +43,8 @@ export function PrCommentsProvider({ sessionId, children }: { sessionId: string;
   }, [flushers])
 
   const value = useMemo(
-    () => prCommentsValueFrom(data, { loading, error, reload, saveReply, registerReplyFlush, flushReplies }),
-    [data, loading, error, reload, saveReply, registerReplyFlush, flushReplies],
+    () => prCommentsValueFrom(data, { loading, error, reload, saveReply, setResolved, registerReplyFlush, flushReplies }),
+    [data, loading, error, reload, saveReply, setResolved, registerReplyFlush, flushReplies],
   )
 
   return <PrCommentsContext.Provider value={value}>{children}</PrCommentsContext.Provider>

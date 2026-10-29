@@ -1,33 +1,24 @@
 import { SendIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
-import { StatusDot } from '@/components/ui/status-dot'
 import { SEND_TARGET_LABELS } from '@/lib/runs'
-import { STATUS_TONE } from '@/lib/status-tone'
 import type { SaveStatus } from '@/state/review-context'
 import type { SendReviewState } from '@/state/useSendReview'
 import { SendTargetMenu } from './SendTargetMenu'
 import { UnsavedDraftsNotice } from './UnsavedDraftsNotice'
 
 export interface SendBarProps {
-  send: Pick<SendReviewState, 'target' | 'setTarget' | 'canContinue' | 'agentWorking' | 'sending' | 'sendError' | 'sendBlocker' | 'sendSummary' | 'send'>
+  send: Pick<SendReviewState, 'target' | 'setTarget' | 'canContinue' | 'sending' | 'sendError' | 'sendBlocker' | 'sendSummary' | 'send'>
   saveStatus: SaveStatus
 }
 
-/** The sticky bar at the bottom of Submit: agent status, save and send errors, the blocker and the split Submit button. */
+/** The sticky bar at the bottom of Submit: save and send errors, the blocker and the split Submit button. */
 export function SendBar({ send, saveStatus }: SendBarProps) {
-  const { target, setTarget, canContinue, agentWorking, sending, sendError, sendBlocker, sendSummary } = send
+  const { target, setTarget, canContinue, sending, sendError, sendBlocker, sendSummary } = send
   const disabled = sendBlocker !== null || sending
-  const working = STATUS_TONE.session('agent-working')
   const label = sending ? 'Sending…' : `Submit to ${SEND_TARGET_LABELS[target].toLowerCase()}`
   return (
     <div className="sticky bottom-0 z-10 flex min-h-16 flex-wrap items-center gap-x-4 gap-y-2 border-t-fine border-line bg-paper-2 px-6 py-3">
-      {agentWorking && (
-        <span className="flex items-center gap-2.5 text-[13px] font-bold" aria-live="polite">
-          <StatusDot pulse label="" aria-hidden className={working.fillClass} />
-          Claude Code is working
-        </span>
-      )}
       <UnsavedDraftsNotice />
       {sendError && (
         <Notice tone="err" className="max-w-full [&>span:last-child]:truncate">

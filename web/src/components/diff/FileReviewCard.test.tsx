@@ -173,7 +173,28 @@ describe('FileReviewCard', () => {
       const footer = screen.getByRole('region', { name: `Comments on ${untouched.path}` })
       expect(within(footer).getByText('Footer note.')).toBeInTheDocument()
       expect(within(footer).queryByText('Inline note.')).not.toBeInTheDocument()
-      expect(screen.getByText('line 2')).toBeInTheDocument()
+    })
+
+    it('hides every comment for viewing only, and shows them again when the card is left', async () => {
+      useFilePatchMock.mockReturnValue({ patch: PATCH, isLarge: false, isOmitted: false, loading: false, error: null, reload: () => {} })
+      const comments = mergeComments(reviewFixture({ comments: [lineComment, fileComment], nextCommentId: 3 }), null)
+      const view = (active: boolean) => (
+        <ReviewStateContext.Provider value={contextValue(vi.fn(), '', comments)}>
+          <FileReviewCard file={{ ...untouched, additions: 1 }} sessionId={SESSION_ID} active={active} />
+        </ReviewStateContext.Provider>
+      )
+      const { rerender } = render(view(true))
+      await userEvent.click(screen.getByRole('button', { name: 'Hide comments' }))
+      expect(screen.queryByText('Inline note.')).not.toBeInTheDocument()
+      expect(screen.queryByText('Footer note.')).not.toBeInTheDocument()
+      expect(screen.getByRole('article')).toHaveAttribute('data-verdict')
+      await userEvent.click(screen.getByRole('button', { name: 'Show comments' }))
+      expect(screen.getByText('Inline note.')).toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: 'Hide comments' }))
+      rerender(view(false))
+      rerender(view(true))
+      expect(screen.getByText('Inline note.')).toBeInTheDocument()
+      expect(screen.getByText('Footer note.')).toBeInTheDocument()
     })
 
     it('dispatches ADD_COMMENT with the anchor from the gutter "+"', async () => {

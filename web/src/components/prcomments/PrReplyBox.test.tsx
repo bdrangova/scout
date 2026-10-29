@@ -39,11 +39,12 @@ function renderCard({ comments = [makePrComment({ githubId: 1 })], drafts, resol
 }
 
 describe('PrReplyBox', () => {
-  it('offers a collapsed instruction trigger on an open thread, saves the typed text after a pause and shows Saved', async () => {
+  it('offers Reply on an open thread, which opens the instruction box; saves the typed text after a pause and shows Saved', async () => {
     const user = userEvent.setup()
     const { saveReply } = renderCard()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: "Instruction for Claude about maya's comment" }))
+    await user.click(screen.getByRole('button', { name: "Reply to maya's comment" }))
+    expect(screen.queryByRole('button', { name: "Reply to maya's comment" })).not.toBeInTheDocument()
     expect(screen.getByText('Instruction for Claude · sent with your next submit')).toBeInTheDocument()
     await user.type(screen.getByRole('textbox', { name: "Instruction for Claude about maya's comment" }), 'Rename it to dayCount')
     expect(saveReply).not.toHaveBeenCalled()
@@ -52,25 +53,72 @@ describe('PrReplyBox', () => {
     expect(await screen.findByText('Saved')).toBeInTheDocument()
   })
 
-  it('shows an existing instruction draft in the box with a Queued chip', () => {
+  it('shows an existing instruction draft as text with a Queued chip; Edit opens it and Comment closes it', async () => {
+    const user = userEvent.setup()
     renderCard({ drafts: { rc1: draft('instruction', 'Use the helper.') } })
-    expect(screen.getByRole('textbox', { name: /Instruction for Claude/ })).toHaveValue('Use the helper.')
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(screen.getByText('Use the helper.')).toBeInTheDocument()
     expect(screen.getByText('Queued')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
+    expect(screen.getByRole('textbox', { name: /Instruction for Claude/ })).toHaveValue('Use the helper.')
+    await user.click(screen.getByRole('button', { name: 'Comment' }))
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 
-  it('saves on blur at once and on Escape leaves the box', async () => {
+  it('Delete removes only the note, Resolve marks the thread handled in Scout', async () => {
+    const user = userEvent.setup()
+    const setResolved = vi.fn(() => Promise.resolve())
+    const saveReply = okSaveReply()
+    const value = prCommentsValue([makePrComment({ githubId: 1 })], { saveReply, setResolved, drafts: { rc1: draft('instruction', 'a') } })
+    const [thread] = value.threads
+    if (!thread) throw new Error('no thread')
+    render(
+      <PrCommentsContext.Provider value={value}>
+        <ul>
+          <PrCommentCard thread={thread} />
+        </ul>
+      </PrCommentsContext.Provider>,
+    )
+    await user.click(screen.getByRole('button', { name: "Delete your instruction on maya's comment" }))
+    expect(saveReply).toHaveBeenCalledWith('rc1', '')
+    await user.click(screen.getByRole('button', { name: "Resolve maya's comment in Scout" }))
+    expect(setResolved).toHaveBeenCalledWith('rc1', true)
+  })
+
+  it('saves on blur at once', async () => {
     const user = userEvent.setup()
     const { saveReply } = renderCard({ drafts: { rc1: draft('instruction', 'a') } })
-    const box = screen.getByRole('textbox')
-    await user.type(box, 'b')
-    await user.keyboard('{Escape}')
-    expect(box).not.toHaveFocus()
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
+    await user.type(screen.getByRole('textbox'), 'b')
+    await user.tab()
     expect(saveReply).toHaveBeenCalledWith('rc1', 'ab')
+  })
+
+  it('saves and closes on Cmd+Enter; Escape and Cancel put the text back and close', async () => {
+    const user = userEvent.setup()
+    const { saveReply } = renderCard({ drafts: { rc1: draft('instruction', 'a') } })
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
+    await user.type(screen.getByRole('textbox'), 'b')
+    await user.keyboard('{Meta>}{Enter}{/Meta}')
+    await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument())
+    expect(saveReply).toHaveBeenLastCalledWith('rc1', 'ab')
+    saveReply.mockClear()
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
+    await user.type(screen.getByRole('textbox'), 'c')
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument())
+    expect(saveReply).not.toHaveBeenCalledWith('rc1', 'abc')
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
+    await user.type(screen.getByRole('textbox'), 'd')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument())
+    expect(saveReply).not.toHaveBeenCalledWith('rc1', 'abd')
   })
 
   it('saves a blank text (deleting the draft) when the user clears the box', async () => {
     const user = userEvent.setup()
     const { saveReply } = renderCard({ drafts: { rc1: draft('instruction', 'a') } })
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
     await user.clear(screen.getByRole('textbox'))
     await waitFor(() => expect(saveReply).toHaveBeenCalledWith('rc1', ''))
   })
@@ -95,6 +143,7 @@ describe('PrReplyBox', () => {
   it('sends no kind with an autosave of typed text', async () => {
     const user = userEvent.setup()
     const { saveReply } = renderCard({ drafts: { rc1: draft('instruction', 'a') } })
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
     await user.type(screen.getByRole('textbox'), 'b')
     await waitFor(() => expect(saveReply).toHaveBeenCalledTimes(1))
     expect(saveReply.mock.calls[0]).toEqual(['rc1', 'ab'])
@@ -127,6 +176,7 @@ describe('PrReplyBox', () => {
         </ul>
       </PrCommentsContext.Provider>,
     )
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
     await user.type(screen.getByRole('textbox'), 'b')
     expect(await screen.findByRole('alert')).toHaveTextContent('It was not posted')
     expect(screen.getByText('Not saved')).toBeInTheDocument()
@@ -145,11 +195,13 @@ describe('PrReplyBox', () => {
     await waitFor(() => expect(saveReply).toHaveBeenCalledWith('rc1', 'Not now.'))
   })
 
-  it('shows an unposted reply draft with its kind label and Queued chip, no proposal button', () => {
+  it('shows an unposted reply draft with its kind label and Queued chip, no proposal button', async () => {
+    const user = userEvent.setup()
     renderCard({
       resolutions: resolutions({ rc1: makePrResolution({ status: 'addressed', note: 'Done.', proposedReply: 'Fixed.' }) }),
       drafts: { rc1: draft('reply', 'Edited reply') },
     })
+    await user.click(screen.getByRole('button', { name: /^Edit your/ }))
     expect(screen.getByRole('textbox', { name: "Reply to maya's comment" })).toHaveValue('Edited reply')
     expect(screen.getByText('Reply to post on GitHub · posted when you submit')).toBeInTheDocument()
     expect(screen.getByText('Queued')).toBeInTheDocument()
@@ -170,18 +222,18 @@ describe('PrReplyBox', () => {
   it('has no box on an answered thread without a proposal or draft, on an outdated thread, or on replies', () => {
     renderCard({ resolutions: resolutions({ rc1: makePrResolution({ status: 'addressed', note: 'Done.' }) }) })
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
-    expect(screen.queryByText('Tell Claude what to do…')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Reply to/ })).not.toBeInTheDocument()
   })
 
   it('has no box on an outdated thread', () => {
     renderCard({ comments: [makePrComment({ githubId: 1, outdated: true })], drafts: { rc1: draft('instruction', 'x') } })
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
-    expect(screen.queryByText('Tell Claude what to do…')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Reply to/ })).not.toBeInTheDocument()
   })
 
   it('keeps the box for an untrusted comment, with its tag', () => {
     renderCard({ comments: [makePrComment({ githubId: 1, authorAssociation: 'FIRST_TIME_CONTRIBUTOR', author: { login: 'eve', isBot: false, kind: 'human' } })] })
     expect(screen.getByText('Not sent to agent')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: "Instruction for Claude about eve's comment" })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: "Reply to eve's comment" })).toBeInTheDocument()
   })
 })

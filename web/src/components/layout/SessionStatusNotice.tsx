@@ -2,22 +2,19 @@ import type { SessionSummary } from '@scout/shared'
 import { MessageSquare } from 'lucide-react'
 import { Link } from 'react-router'
 import { Notice } from '@/components/ui/notice'
-import { RunChip } from '@/components/session/RunChip'
-import { statusPill, type ReviewStatus, type RunChipKind } from '@/lib/session-status'
+import { statusPill } from '@/lib/session-status'
 import { STATUS_TONE } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'
 
 interface SessionStatusNoticeProps {
-  summary: Pick<SessionSummary, 'progress' | 'openComments' | 'lastSend'> & { status: ReviewStatus; run?: RunChipKind | null }
+  summary: Pick<SessionSummary, 'status' | 'progress' | 'openComments' | 'lastSend'>
   /** Makes the review pill a link (Submit, for "Ready to submit"). */
   to?: string
-  /** Makes the failed-run chip a link (Submit, to retry). */
-  runTo?: string
   className?: string
 }
 
-/** The review state as a tinted notice (icon, the wording of `statusPill`, the open-comment count) with the run chip beside it while an agent run is active or failed. */
-export function SessionStatusNotice({ summary, to, runTo, className }: SessionStatusNoticeProps) {
+/** The review state as a tinted notice (icon, the wording of `statusPill`, the open-comment count). */
+export function SessionStatusNotice({ summary, to, className }: SessionStatusNoticeProps) {
   const spec = statusPill(summary)
   const { icon: Icon, noticeClass } = STATUS_TONE.session(summary.status)
   const pill = (
@@ -36,18 +33,11 @@ export function SessionStatusNotice({ summary, to, runTo, className }: SessionSt
       )}
     </Notice>
   )
-  const review = to ? (
+  return to ? (
     <Link to={to} aria-label={`${spec.label}: go to Submit`} className="min-w-0 shrink rounded-md no-underline">
       {pill}
     </Link>
   ) : (
     pill
-  )
-  if (!summary.run) return review
-  return (
-    <>
-      {review}
-      <RunChip run={summary.run} to={summary.run === 'failed' ? runTo : undefined} />
-    </>
   )
 }

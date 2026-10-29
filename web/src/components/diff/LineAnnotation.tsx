@@ -11,7 +11,10 @@ interface LineAnnotationProps {
   onCancelDraft: () => void
 }
 
-/** A small raised panel under the diff line, back in the UI font. */
+/** The slot under a diff line, back in the UI font; comment cards bring their own box. */
+export const SLOT_CLASS = 'my-1.5 ml-3 mr-3 flex flex-col gap-2 font-sans text-[13px] leading-normal text-ink'
+
+/** A small raised panel under the diff line (Scout's notes, the draft box). */
 export const PANEL_CLASS = 'my-1.5 ml-3 mr-3 flex flex-col gap-2 rounded-lg border-fine border-line bg-surface px-3 py-2 font-sans text-[13px] leading-normal text-ink'
 
 /** The React content of one annotation slot under a diff line: saved comments, the draft box, or the orphaned comments. */
@@ -36,13 +39,13 @@ export function LineAnnotation({ content, comments, onCancelDraft }: LineAnnotat
       )
     case 'comments':
       return (
-        <div className={PANEL_CLASS} data-line-comments={anchorKey(content.anchor)}>
+        <div className={SLOT_CLASS} data-line-comments={anchorKey(content.anchor)}>
           {list(content.comments)}
         </div>
       )
     case 'orphans':
       return (
-        <div className={PANEL_CLASS} data-line-comments="changed">
+        <div className={SLOT_CLASS} data-line-comments="changed">
           {groupOrphans(content.comments).map(({ key, label, items }) => (
             <div key={key} className="flex flex-col gap-1.5">
               <Eyebrow>{label} (changed)</Eyebrow>

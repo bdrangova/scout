@@ -21,21 +21,24 @@ function timeOf(iso: string): number {
   return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t
 }
 
-/** Why GitHub says the comment needs no action, or null while it is live. Removed wins over outdated wins over resolved. */
-export function prCommentClosedBy(comment: PrComment): PrClosedBy | null {
+/**
+ * Why the comment needs no action, or null while it is live. Removed wins over outdated wins over resolved on GitHub;
+ * a thread the user marked handled in Scout (`resolvedInScout`) comes last.
+ */
+export function prCommentClosedBy(comment: PrComment, resolvedInScout = false): PrClosedBy | null {
   if (comment.removedAt !== null) return 'removed'
   if (comment.outdated) return 'github-outdated'
   if (comment.resolvedOnGitHub) return 'github-resolved'
-  return null
+  return resolvedInScout ? 'scout-resolved' : null
 }
 
 /**
  * The agent's resolution wins (addressed or declined); otherwise a comment GitHub already closed
  * (outdated, resolved there, or deleted) is `outdated`, i.e. handled without action; otherwise `open`.
  */
-export function prCommentStatus(comment: PrComment, resolution: PrResolution | null): PrCommentStatus {
+export function prCommentStatus(comment: PrComment, resolution: PrResolution | null, resolvedInScout = false): PrCommentStatus {
   if (resolution !== null) return resolution.status
-  return prCommentClosedBy(comment) === null ? 'open' : 'outdated'
+  return prCommentClosedBy(comment, resolvedInScout) === null ? 'open' : 'outdated'
 }
 
 /**
@@ -91,12 +94,13 @@ export function derivePrComments(
     const owner = root ?? comment
     const resolution = resolutions?.comments[owner.id] ?? null
     const draft = root === undefined ? (drafts?.replies[comment.id] ?? null) : null
+    const resolvedInScout = drafts?.resolved?.[owner.id] !== undefined
     return {
       ...comment,
-      status: prCommentStatus(owner, resolution),
+      status: prCommentStatus(owner, resolution, resolvedInScout),
       trusted: isTrustedPrComment(comment, trust),
       resolution,
-      closedBy: prCommentClosedBy(owner),
+      closedBy: prCommentClosedBy(owner, resolvedInScout),
       isReply: root !== undefined,
       inLastSend: isAddressedInLastSend(resolution, lastSendAt),
       anchor: prCommentAnchor(comment),

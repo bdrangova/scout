@@ -28,10 +28,10 @@ const detail: SessionDetail = {
   ],
 }
 
-function renderSpec(review = reviewFixture()) {
+function renderSpec(review = reviewFixture(), path = '/') {
   const api = mockReviewApi(reviewResponseFixture(review), { contents: CONTENTS })
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <SessionContext.Provider value={{ sessionId: SESSION_ID, detail, reload: () => {} }}>
         <ReviewProvider>
           <SpecPage />
@@ -61,6 +61,32 @@ describe('SpecPage', () => {
     expect(within(screen.getByRole('article', { name: 'Markdown spec' })).getByRole('button', { name: /^Collapse/ })).toHaveAttribute('aria-expanded', 'true')
     await userEvent.setup().click(within(jira).getByRole('button', { name: 'Expand QI-15472: Trial bar' }))
     expect(within(jira).getByRole('heading', { level: 2, name: 'Acceptance criteria' })).toBeInTheDocument()
+  })
+
+  it('folds a card from a click on its title', async () => {
+    renderSpec()
+    const plan = await screen.findByRole('article', { name: 'Markdown spec' })
+    expect(await within(plan).findByText('Hook first')).toBeInTheDocument()
+    await userEvent.setup().click(within(plan).getByRole('button', { name: 'plan.md' }))
+    expect(within(plan).getByRole('button', { name: 'Expand Implementation plan' })).toHaveAttribute('aria-expanded', 'false')
+    expect(within(plan).getByText('Hook first')).not.toBeVisible()
+  })
+
+  it('shows a tile per source in the grid view with its kind, headings and comments, and a tile opens the cards', async () => {
+    renderSpec(reviewFixture({ comments: [commentFixture('c1', { kind: 'spec', ref: 'plan.md' }, 'Step 2 is missing.')], nextCommentId: 2 }), '/?mode=grid')
+    const grid = await screen.findByRole('list', { name: 'All sources' })
+    expect(screen.queryByRole('article')).not.toBeInTheDocument()
+    const [jira, plan, artifact] = within(grid).getAllByRole('listitem')
+    expect(jira).toHaveTextContent('Jira ticket')
+    expect(await within(jira!).findByText('Acceptance criteria')).toBeInTheDocument()
+    expect(plan).toHaveTextContent('Implementation plan')
+    expect(plan).toHaveTextContent('plan.md')
+    expect(await within(plan!).findByText('1 open comment')).toBeInTheDocument()
+    expect(artifact).toHaveTextContent('Exported artifact')
+
+    await userEvent.setup().click(within(grid).getByRole('button', { name: 'Open Implementation plan' }))
+    expect(await screen.findByRole('article', { name: 'Markdown spec' })).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'All sources' })).not.toBeInTheDocument()
   })
 
   it('renders the Jira, markdown and artifact cards from the derived spec items via /spec/<path>', async () => {

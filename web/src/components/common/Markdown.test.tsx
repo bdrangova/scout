@@ -1,3 +1,4 @@
+import { githubImageRelayPath } from '@scout/shared'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -59,11 +60,20 @@ describe('Markdown untrusted variant', () => {
     )
     await screen.findByText(/image blocked: tracker\.example/)
     const sources = [...container.querySelectorAll('img')].map((img) => img.getAttribute('src'))
-    expect(sources).toEqual(['https://user-images.githubusercontent.com/1/a.png', 'https://github.com/acme/app/assets/1/b.png', 'https://private-user-images.githubusercontent.com/1/c.png'])
+    expect(sources).toEqual(['https://user-images.githubusercontent.com/1/a.png', 'https://github.com/acme/app/assets/1/b.png', 'https://private-user-images.githubusercontent.com/1/c.png'].map(githubImageRelayPath))
     expect(container.querySelector('img')).toHaveAttribute('referrerpolicy', 'no-referrer')
     expect(screen.getByText(/image blocked: github\.com\.evil\.example/)).toBeInTheDocument()
     expect(container.innerHTML).not.toContain('tracker.example/pixel')
     expect(container.innerHTML).not.toContain('data:image')
+  })
+
+  it('shows a pasted <img> tag as an image, through the relay and the same host gate', async () => {
+    const { container } = renderUntrusted('Look:\n<img width="803" height="547" alt="Image" src="https://github.com/user-attachments/assets/cfbc" />\n\n<img src=\'https://tracker.example/x.png\'>')
+    await screen.findByText(/image blocked: tracker\.example/)
+    const img = container.querySelector('img')
+    expect(img).toHaveAttribute('src', githubImageRelayPath('https://github.com/user-attachments/assets/cfbc'))
+    expect(img).toHaveAttribute('alt', 'Image')
+    expect(container.textContent).not.toContain('<img')
   })
 
   it('keeps raw HTML inert', async () => {

@@ -8,8 +8,6 @@ export function healthRouter(config: Config): Router {
     const body: Health = {
       ok: true,
       home: config.home,
-      adapter: config.adapter,
-      claudeBin: config.claudeBin,
     }
     res.json(body)
   })

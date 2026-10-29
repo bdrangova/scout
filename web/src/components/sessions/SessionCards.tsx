@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Panel } from '@/components/ui/panel'
 import { formatAdditions, formatDeletions, formatRelativeTime } from '@/lib/format'
 import { sessionRoute } from '@/lib/paths'
-import { reviewStatusOf, runChipOf, type LiveSummary, statusSourceOf } from '@/lib/session-status'
+import { type LiveSummary, statusSourceOf } from '@/lib/session-status'
 import { SCENARIO_STATUS_LABEL, SCENARIO_STATUS_TONE } from '@/lib/scenario-status'
 import { TONE_TEXT_CLASS } from '@/lib/status-tone'
 import { Tag } from '@/components/ui/tag'
@@ -49,13 +49,12 @@ export function LiveSessionCard({ session, onArchive, layout = 'grid', showKind 
   const href = sessionRoute(session.kind ?? 'code-review', session.id)
   const source = statusSourceOf(session)
   const isRun = session.kind === 'test-run'
-  const run = runChipOf(session.status)
   return <li className="min-w-0">
     <Panel role="link" tabIndex={0} aria-label={session.title} data-href={href} data-layout={layout} data-kind={session.kind ?? 'code-review'}
       onClick={() => navigate(href)}
       onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); navigate(href) } }}
       className="h-full cursor-pointer gap-3 p-4 transition-colors hover:bg-paper-2">
-      <CardIdentity title={session.title} tickets={session.tickets} kindLabel={showKind ? KIND_LABEL[session.kind ?? 'code-review'] : undefined} status={<SessionStatusLabel status={reviewStatusOf(source)} />} statusDetail={!isRun && <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />} />
+      <CardIdentity title={session.title} tickets={session.tickets} kindLabel={showKind ? KIND_LABEL[session.kind ?? 'code-review'] : undefined} status={<SessionStatusLabel status={source.status} />} statusDetail={!isRun && <BranchChangedChip sessionBranch={session.repo.sessionBranch} current={session.repo.branch} />} />
       <div className={cn('flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:border-t-0 md:pt-0')}>
         {isRun ? <CardLine label="Scenario counts" className="text-xs font-medium">
           <span>{source.progress.total} scenarios</span><span className="text-ink-muted">|</span>
@@ -68,7 +67,6 @@ export function LiveSessionCard({ session, onArchive, layout = 'grid', showKind 
       </div>
       <div className={cn('mt-auto flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && '-mt-2 border-t-0 pt-0')}>
 
-        {run && <SessionStatusLabel status={run === 'working' ? 'agent-working' : 'run-failed'} />}
         <div className="flex min-w-0 items-center gap-2 text-[11px] text-ink-muted">
           <CardLine label="Session metadata" className="flex-1"><RepoName path={isRun ? session.run.path : session.repo.path} /><span>·</span><CardTime at={session.updatedAt} /><span title={session.id} className="font-mono">· {session.id}</span></CardLine>
           <Button variant="ghost" size="icon-sm" title={isRun ? 'Archive test run' : 'Archive session'} aria-label={`Archive ${session.title}`} onClick={(event) => { event.stopPropagation(); onArchive(session) }} className="shrink-0 shadow-none"><Archive aria-hidden /></Button>

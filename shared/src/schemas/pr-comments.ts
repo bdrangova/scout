@@ -176,6 +176,8 @@ export const PrRepliesSchema = z.object({
   sessionId: z.string().regex(SESSION_ID_RE),
   updatedAt: isoDate,
   replies: z.record(prCommentId, PrReplyDraftSchema),
+  /** Thread roots the user marked handled in Scout ("Resolve"): when. Nothing is posted and Claude is not asked about them. */
+  resolved: z.record(prCommentId, isoDate).optional(),
 })
 export type PrReplies = z.infer<typeof PrRepliesSchema>
 
@@ -209,7 +211,7 @@ export const PrCommentStatusSchema = z.enum(PR_COMMENT_STATUSES)
 export type PrCommentStatus = z.infer<typeof PrCommentStatusSchema>
 
 /** Why an `outdated` comment needs no action. */
-export const PrClosedBySchema = z.enum(['github-outdated', 'github-resolved', 'removed'])
+export const PrClosedBySchema = z.enum(['github-outdated', 'github-resolved', 'removed', 'scout-resolved'])
 export type PrClosedBy = z.infer<typeof PrClosedBySchema>
 
 const lineAnchor = z.object({ side: LineSideSchema, line: z.number().int().positive(), endLine: z.number().int().positive().optional() })
@@ -248,6 +250,10 @@ export const PrCommentCountsSchema = z.object({
   declinedInLastSend: nonNegativeInt,
 })
 export type PrCommentCounts = z.infer<typeof PrCommentCountsSchema>
+
+/** `PUT /sessions/:id/pr-resolved/:commentId`: marks an open thread handled in Scout, or reopens it. */
+export const PutPrResolvedRequestSchema = z.object({ resolved: z.boolean() })
+export type PutPrResolvedRequest = z.infer<typeof PutPrResolvedRequestSchema>
 
 /** `GET /sessions/:id/pr-comments`; `pr: null` and no comments when the session was never synced. */
 export const PrCommentsResponseSchema = z.object({

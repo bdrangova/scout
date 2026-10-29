@@ -9,7 +9,7 @@ import { loadConfig } from '../config.ts'
 
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-health-'))
 const app = createApp(
-  loadConfig({ AI_REVIEW_HOME: home, AGENT_ADAPTER: 'fake', AI_REVIEW_CLAUDE_BIN: '/opt/claude/bin/claude', PATH: '' }),
+  loadConfig({ AI_REVIEW_HOME: home, PATH: '' }),
   { log: () => undefined },
 )
 afterAll(async () => {
@@ -22,7 +22,7 @@ describe('GET /api/health', () => {
     const res = await request(app).get('/api/health')
     expect(res.status).toBe(200)
     expect(res.headers['content-type']).toMatch(/application\/json/)
-    expect(HealthSchema.parse(res.body)).toEqual({ ok: true, home, adapter: 'fake', claudeBin: '/opt/claude/bin/claude' })
+    expect(HealthSchema.parse(res.body)).toEqual({ ok: true, home })
   })
 
   it('answers unknown /api routes with an ApiError body', async () => {

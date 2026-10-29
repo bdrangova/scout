@@ -1,8 +1,9 @@
 import type { TreeFile } from '@scout/shared'
-import { Columns2, Eye, Files, Rows3, type LucideIcon } from 'lucide-react'
+import { Columns2, Eye, Files, MessageSquare, MessageSquareOff, Rows3, type LucideIcon } from 'lucide-react'
 import type { PointerEvent } from 'react'
 import { PrCardChip } from '@/components/prcomments/PrCardChip'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { PrFileCounts } from '@/lib/pr-threads'
 import { formatAdditions, formatDeletions } from '@/lib/format'
 import { splitPath } from '@/lib/paths'
@@ -30,6 +31,9 @@ export interface CardHeaderProps {
   view: CardView
   views: readonly CardView[]
   onViewChange: (view: CardView) => void
+  /** The view-only "hide comments" switch; the button is left out when absent. */
+  commentsHidden?: boolean
+  onCommentsHiddenChange?: (hidden: boolean) => void
   /** Swipe mode starts the drag from the header. */
   onPointerDown?: (event: PointerEvent<HTMLDivElement>) => void
 }
@@ -39,7 +43,7 @@ export interface CardHeaderProps {
  * below, "renamed from" under), then the delta, the position and the layout chooser. The strip's
  * background is the file type's colour (`bg-ft` from the `ft-*` class on the card), with ink text.
  */
-export function CardHeader({ file, position, updated, prComments, changedJustNow, view, views, onViewChange, onPointerDown }: CardHeaderProps) {
+export function CardHeader({ file, position, updated, prComments, changedJustNow, view, views, onViewChange, commentsHidden = false, onCommentsHiddenChange, onPointerDown }: CardHeaderProps) {
   const { dir, name } = splitPath(file.path)
   const renamedFrom = file.oldPath !== null && file.oldPath !== file.path ? file.oldPath : null
 
@@ -79,6 +83,7 @@ export function CardHeader({ file, position, updated, prComments, changedJustNow
           <span>{formatDeletions(file.deletions)}</span>
         </span>
         {position && <Position index={position.index} total={position.total} />}
+        {onCommentsHiddenChange && <CommentsToggle hidden={commentsHidden} onChange={onCommentsHiddenChange} />}
         {views.length > 0 && (
           <Segmented aria-label="Diff layout" className="bg-surface">
             {views.map((option) => {
@@ -96,6 +101,22 @@ export function CardHeader({ file, position, updated, prComments, changedJustNow
         )}
       </div>
     </div>
+  )
+}
+
+/** One icon button that hides every comment on the card and brings them back; viewing only. */
+function CommentsToggle({ hidden, onChange }: { hidden: boolean; onChange: (hidden: boolean) => void }) {
+  const label = hidden ? 'Show comments' : 'Hide comments'
+  const Icon = hidden ? MessageSquareOff : MessageSquare
+  return (
+    <Segmented aria-label="Comments" className="bg-surface">
+      <Tooltip>
+        <TooltipTrigger render={<SegmentedItem pressed={hidden} onClick={() => onChange(!hidden)} aria-label={label} />}>
+          <Icon aria-hidden />
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{label}</TooltipContent>
+      </Tooltip>
+    </Segmented>
   )
 }
 

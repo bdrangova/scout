@@ -1,10 +1,11 @@
 import { Router } from 'express'
-import { PR_COMMENT_ID_RE, PutPrReplyRequestSchema } from '@scout/shared'
+import { PR_COMMENT_ID_RE, PutPrReplyRequestSchema, PutPrResolvedRequestSchema } from '@scout/shared'
 import { badRequest, formatZodError } from '../errors.ts'
 import type { Store } from '../store/index.ts'
 
 /**
  * `GET /sessions/:id/pr-comments`: the synced GitHub PR comments with their derived status, the agent's proposed replies and the user's drafts (read-only for the CLI's files).
+ * `PUT /sessions/:id/pr-resolved/:commentId`: marks an open thread handled in Scout (`{ resolved: true }`) or reopens it; returns the comments.
  * `PUT /sessions/:id/pr-replies/:commentId`: saves the user's instruction (open thread) or reply (answered thread) for a comment; nothing is posted to GitHub.
  */
 export function prCommentsRouter(store: Store): Router {
@@ -18,6 +19,13 @@ export function prCommentsRouter(store: Store): Router {
     const parsed = PutPrReplyRequestSchema.safeParse(req.body)
     if (!parsed.success) throw badRequest(`invalid PutPrReplyRequest: ${formatZodError(parsed.error)}`)
     res.json(await store.putPrReply(req.params.id, commentId, parsed.data.body, parsed.data.kind))
+  })
+  router.put('/sessions/:id/pr-resolved/:commentId', async (req, res) => {
+    const { commentId } = req.params
+    if (!PR_COMMENT_ID_RE.test(commentId)) throw badRequest(`${JSON.stringify(commentId)} is not a PR comment id (rc<n>, ic<n> or rv<n>)`)
+    const parsed = PutPrResolvedRequestSchema.safeParse(req.body)
+    if (!parsed.success) throw badRequest(`invalid PutPrResolvedRequest: ${formatZodError(parsed.error)}`)
+    res.json(await store.putPrResolved(req.params.id, commentId, parsed.data.resolved))
   })
   return router
 }

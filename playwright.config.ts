@@ -24,7 +24,6 @@ export default defineConfig({
       AI_REVIEW_PORT: String(E2E_API_PORT),
       WEB_PORT: String(E2E_WEB_PORT),
       DASHBOARD_URL: E2E_BASE_URL,
-      AGENT_ADAPTER: 'fake',
     },
   },
 })

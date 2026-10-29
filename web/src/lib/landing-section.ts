@@ -8,7 +8,7 @@ const KIND: Record<ArtifactSection, CommentTarget['kind']> = { spec: 'spec', ext
 
 /**
  * The step a session opens on (the index route `/s/:id`):
- * - every file reviewed, or already sent / run failed / agent working with no open comments: `submit`;
+ * - every file reviewed, or already sent with no open comments: `submit`;
  * - nothing done yet: the first of spec, extras, evidence, files that has content (`files` when all are empty);
  * - started: `files`, unless only spec/extras/evidence has comments, then the first of those with open comments.
  */
@@ -16,11 +16,11 @@ export function landingSection(detail: CodeReviewDetail, review: Review, resolut
   const { tree } = detail
   const comments = mergeComments(review, resolutions)
   const open = comments.filter((comment) => comment.status === 'open')
-  const status = sessionStatus({ review, tree, resolutions, activeRun: detail.activeRunId !== null, latestRunStatus: detail.latestRunStatus })
+  const status = sessionStatus({ review, tree, resolutions })
   const { reviewed, total } = progress(review, tree, resolutions)
 
   if (status === 'ready' && total > 0 && reviewed === total) return 'submit'
-  if ((status === 'sent' || status === 'approved' || status === 'run-failed' || status === 'agent-working') && open.length === 0) return 'submit'
+  if ((status === 'sent' || status === 'approved') && open.length === 0) return 'submit'
 
   const hasVerdict = tree.files.some((file) => effectiveVerdict(review.files[file.path], file) !== 'none')
   const started = hasVerdict || comments.length > 0 || review.sent !== null || review.overall.decision !== 'undecided'

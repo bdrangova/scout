@@ -1,4 +1,3 @@
-import type { AgentRunStatus } from '../schemas/agent.ts'
 import type { Resolution, Resolutions } from '../schemas/resolutions.ts'
 import type { Comment, CommentTargetKind, FileReview, Review, Verdict } from '../schemas/review.ts'
 
@@ -12,8 +11,6 @@ export const SESSION_STATUSES = [
   'in-progress',
   'ready',
   'sent',
-  'agent-working',
-  'run-failed',
   'updated',
   'approved',
 ] as const
@@ -119,8 +116,6 @@ export function allFilesApproved(review: Review, tree: ReviewItems): boolean {
  * Verdicts count only while they are effective: a verdict pinned to an older fingerprint is `none`
  * (see `effectiveVerdict`), consistently with `progress`.
  *
- * - agent-working: a run is active
- * - run-failed: the latest run failed (a retry or a newer run replaces it)
  * - updated: a judged file changed on disk since its verdict (sent or not), or the agent wrote resolutions after the send
  * - approved: the last send approved and every file's effective verdict is approved
  * - sent: sent, nothing new since
@@ -132,13 +127,8 @@ export function sessionStatus(input: {
   review: Review | null
   tree: ReviewItems
   resolutions: Resolutions | null
-  activeRun: boolean
-  /** Status of the newest run, when the caller knows it. */
-  latestRunStatus?: AgentRunStatus | null
 }): SessionStatus {
-  const { review, tree, resolutions, activeRun, latestRunStatus = null } = input
-  if (activeRun) return 'agent-working'
-  if (latestRunStatus === 'failed') return 'run-failed'
+  const { review, tree, resolutions } = input
   const sent = review?.sent ?? null
   if (review && anyFileUpdated(review, tree)) return 'updated'
   if (review && sent) {

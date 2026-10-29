@@ -4,9 +4,8 @@ import { readPrReviewReport } from './pr-review.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import readline from 'node:readline'
-import { RUN_ID_RE, journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@scout/shared'
+import { journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@scout/shared'
 import type {
-  AgentRun,
   AnySentSnapshot,
   ArchivedSession,
   CodeReviewManifest,
@@ -56,7 +55,7 @@ import { ManifestReader } from './manifest.ts'
 import type { ManifestResult } from './manifest.ts'
 import { safeJoin, storePaths } from './paths.ts'
 import type { StorePaths } from './paths.ts'
-import { REVIEW_FILE, activeRunId, latestRunStatus, listRuns, readJournal, readPrComments, readPrReplies, readPrResolutions, writePrReplies, readResolutions, readReview, readRun, runFile, runLogFile, sentFiles } from './review.ts'
+import { REVIEW_FILE, readJournal, readPrComments, readPrReplies, readPrResolutions, writePrReplies, readResolutions, readReview, sentFiles } from './review.ts'
 import { ScopeCache } from './scopes.ts'
 import type { ScopeCacheOptions } from './scopes.ts'
 import { deriveRunDetail, indexFingerprint, loadRunIndex, normalizeRef, refToAbsolute, resolveRoots, servablePaths } from './test-run.ts'
@@ -64,7 +63,7 @@ import { TreeCache } from './tree.ts'
 import type { SessionTree, TreeCacheOptions } from './tree.ts'
 
 export { safeJoin, storePaths } from './paths.ts'
-export { activeRunId, listRuns, readJournal, readPrComments, readPrReplies, readPrResolutions, readResolutions, readReview, readRun, runFile, runLogFile, writeReview } from './review.ts'
+export { readJournal, readPrComments, readPrReplies, readPrResolutions, readResolutions, readReview, writeReview } from './review.ts'
 
 export interface LoadedSession {
   id: string
@@ -76,11 +75,11 @@ export interface LoadedSession {
 export interface ReviewState {
   review: Review | null
   resolutions: Resolutions | null
-  activeRunId: string | null
-  latestRunStatus?: AgentRun['status'] | null
   /** The synced GitHub PR (`pr-comments.json`) and the agent's answers; null when absent or unreadable. */
   prComments?: PrComments | null
   prResolutions?: PrResolutions | null
+  /** The user's drafts and "resolved in Scout" marks (`pr-replies.json`). */
+  prReplies?: PrReplies | null
   /** Scout's journal (`journal.json`); null when absent or unreadable. */
   journal?: Journal | null
 }
@@ -89,7 +88,7 @@ export interface ReviewState {
 function prFields(state: ReviewState): Pick<SessionSummary, 'pr' | 'prComments'> {
   const prComments = state.prComments ?? null
   if (prComments === null) return { pr: null, prComments: null }
-  const views = derivePrComments(prComments, state.prResolutions ?? null, state.review?.sent?.at ?? null)
+  const views = derivePrComments(prComments, state.prResolutions ?? null, state.review?.sent?.at ?? null, state.prReplies ?? null)
   return { pr: prSummary(prComments), prComments: prCommentCounts(prComments, views) }
 }
 
@@ -151,7 +150,7 @@ export function latestUpdatedAt(manifest: Manifest, state: ReviewState, contentA
 
 export function sessionSummary(manifest: CodeReviewManifest, state: ReviewState, tree: WorkingTree, report?: PrReviewReport | null): SessionSummary {
   const openComments = state.review === null ? 0 : mergeComments(state.review, state.resolutions).filter((c) => c.status === 'open').length
-  const derivedStatus = sessionStatus({ review: state.review, tree, resolutions: state.resolutions, activeRun: state.activeRunId !== null, latestRunStatus: state.latestRunStatus })
+  const derivedStatus = sessionStatus({ review: state.review, tree, resolutions: state.resolutions })
   return {
     kind: manifest.kind,
     id: manifest.id,
@@ -163,8 +162,6 @@ export function sessionSummary(manifest: CodeReviewManifest, state: ReviewState,
     openComments,
     stats: { files: tree.stats.files, additions: tree.stats.additions, deletions: tree.stats.deletions },
     updatedAt: latestUpdatedAt(manifest, state, tree.computedAt),
-    activeRunId: state.activeRunId,
-    latestRunStatus: state.latestRunStatus ?? null,
     lastSend: state.review?.sent ?? null,
     journalCount: journalCount(state.journal ?? null),
     ...prFields(state),
@@ -177,7 +174,7 @@ export function scenarioItems(detail: TestRunDetail): { path: string; fingerprin
 }
 
 function testRunStatus(state: ReviewState, detail: TestRunDetail): SessionStatus {
-  return sessionStatus({ review: state.review, tree: scenarioItems(detail), resolutions: state.resolutions, activeRun: state.activeRunId !== null, latestRunStatus: state.latestRunStatus })
+  return sessionStatus({ review: state.review, tree: scenarioItems(detail), resolutions: state.resolutions })
 }
 
 export function testRunSummary(manifest: TestRunManifest, state: ReviewState, detail: TestRunDetail): TestRunSummary {
@@ -199,8 +196,6 @@ export function testRunSummary(manifest: TestRunManifest, state: ReviewState, de
     total,
     openComments,
     lastSend: state.review?.sent ?? null,
-    activeRunId: state.activeRunId,
-    latestRunStatus: state.latestRunStatus ?? null,
   }
 }
 
@@ -425,15 +420,15 @@ export class Store {
   /** `review.json`, `resolutions.json` and the active run, read together. */
   async reviewState(session: LoadedSession): Promise<ReviewState> {
     // The PR files are optional extras: an unreadable one must not break the session list.
-    const [review, resolutions, runs, prComments, prResolutions, journal] = await Promise.all([
+    const [review, resolutions, prComments, prResolutions, prReplies, journal] = await Promise.all([
       readReview(session.dir, session.id),
       readResolutions(session.dir, session.id),
-      listRuns(session.dir),
       readPrComments(session.dir, session.id).catch(() => null),
       readPrResolutions(session.dir, session.id).catch(() => null),
+      readPrReplies(session.dir, session.id).catch(() => null),
       readJournal(session.dir, session.id),
     ])
-    return { review, resolutions, activeRunId: activeRunId(runs), latestRunStatus: latestRunStatus(runs), prComments, prResolutions, journal }
+    return { review, resolutions, prComments, prResolutions, prReplies, journal }
   }
 
   /** The live working tree, per-file patches and commit list (cached; 422 `repo-missing: <path>` when the repo is gone). */
@@ -504,8 +499,7 @@ export class Store {
   async getSession(id: string): Promise<SessionDetail> {
     const session = await this.loadSession(id)
     if (isTestRun(session.manifest)) {
-      const [state, detail] = await Promise.all([this.reviewState(session), this.runDetail(session.manifest)])
-      return { ...detail, activeRunId: state.activeRunId, latestRunStatus: state.latestRunStatus ?? null }
+      return await this.runDetail(session.manifest)
     }
     const [state, { tree }, artifacts, prDescription] = await Promise.all([
       this.reviewState(session),
@@ -523,8 +517,6 @@ export class Store {
       prDescription,
       status: sessionSummary(session.manifest, state, tree, report).status,
       progress: progress(state.review, tree, state.resolutions),
-      activeRunId: state.activeRunId,
-      latestRunStatus: state.latestRunStatus ?? null,
       journalCount: journalCount(state.journal ?? null),
       ...prFields(state),
     }
@@ -750,7 +742,7 @@ export class Store {
     return this.prRepliesLock.run(id, async () => {
       const session = await this.loadSession(id)
       const [prComments, prResolutions, review, current] = await Promise.all([readPrComments(session.dir, id), readPrResolutions(session.dir, id), readReview(session.dir, id), readPrReplies(session.dir, id)])
-      const view = derivePrComments(prComments, prResolutions, review?.sent?.at ?? null).find((candidate) => candidate.id === commentId)
+      const view = derivePrComments(prComments, prResolutions, review?.sent?.at ?? null, current).find((candidate) => candidate.id === commentId)
       if (view === undefined) throw notFound(`PR comment ${commentId} is not in session ${id}'s pr-comments.json`)
       const derived = prReplyKindFor(view)
       if (derived === null) throw badRequest(`${commentId} is ${view.isReply ? 'a reply inside a thread: use the thread root' : `${view.status}: nothing to instruct or reply`}`)
@@ -771,10 +763,33 @@ export class Store {
         replies[commentId] = { body, kind: keeps && requestedKind === undefined ? existing.kind : derived, editedAt: now, postedAt: null }
       }
       const updatedAt = nextUpdatedAt(current?.updatedAt ?? null)
-      await writePrReplies(session.dir, { schemaVersion: SCHEMA_VERSION, sessionId: id, updatedAt, replies })
+      await writePrReplies(session.dir, { ...current, schemaVersion: SCHEMA_VERSION, sessionId: id, updatedAt, replies })
       const saved = replies[commentId]
       return { commentId, draft: saved === undefined ? null : pickDraft(saved), updatedAt }
     })
+  }
+
+  /**
+   * Marks an open thread root handled in Scout (or reopens it) in `review/pr-replies.json`: it then reads as outdated
+   * ("Resolved in Scout"), so its instruction is not sent and Claude is not asked about it. Nothing reaches GitHub.
+   * 404 for an unknown comment, 400 for a reply inside a thread or a thread that is not open (or not resolved here, to reopen).
+   */
+  async putPrResolved(id: string, commentId: string, resolved: boolean, now: string = new Date().toISOString()): Promise<PrCommentsResponse> {
+    await this.prRepliesLock.run(id, async () => {
+      const session = await this.loadSession(id)
+      const [prComments, prResolutions, review, current] = await Promise.all([readPrComments(session.dir, id), readPrResolutions(session.dir, id), readReview(session.dir, id), readPrReplies(session.dir, id)])
+      const view = derivePrComments(prComments, prResolutions, review?.sent?.at ?? null, current).find((candidate) => candidate.id === commentId)
+      if (view === undefined) throw notFound(`PR comment ${commentId} is not in session ${id}'s pr-comments.json`)
+      if (view.isReply) throw badRequest(`${commentId} is a reply inside a thread: use the thread root`)
+      const marked = view.closedBy === 'scout-resolved'
+      if (resolved === marked) return
+      if (resolved && view.status !== 'open') throw badRequest(`${commentId} is ${view.status}: only an open comment can be resolved`)
+      const next: Record<string, string> = { ...(current?.resolved ?? {}) }
+      if (resolved) next[commentId] = now
+      else delete next[commentId]
+      await writePrReplies(session.dir, { schemaVersion: SCHEMA_VERSION, sessionId: id, updatedAt: nextUpdatedAt(current?.updatedAt ?? null), replies: current?.replies ?? {}, resolved: next })
+    })
+    return this.getPrComments(id)
   }
 
   /** `review.json` merged with `resolutions.json`; an in-memory empty review when none was saved. */
@@ -851,26 +866,13 @@ export class Store {
     if (patch !== null) await writeFileAtomic(files.patch, patch)
   }
 
-  async writeRun(sessionDir: string, run: AgentRun): Promise<void> {
-    await this.writeOwned(runFile(sessionDir, run.id), run)
-  }
-
-  async appendRunLog(sessionDir: string, runId: string, line: string): Promise<void> {
-    const file = runLogFile(sessionDir, runId)
-    await fs.mkdir(path.dirname(file), { recursive: true })
-    await fs.appendFile(file, `${line}\n`, 'utf8')
-  }
-
   /**
    * Moves `sessions/<id>` to `archive/<id>` after writing `archived.json` into it. 404 when the
-   * session is not live, 409 `run-active` while a run is queued or running. The session watcher
+   * session is not live. The session watcher
    * sees the folder vanish and emits `session.removed`, unwatching the repo.
    */
   async archiveSession(id: string, now: Date = new Date()): Promise<void> {
     const session = await this.loadSession(id)
-    const runs = await listRuns(session.dir)
-    const active = activeRunId(runs)
-    if (active !== null) throw new HttpError(409, 'run-active', `run ${active} is still active for session ${id}`)
     const target = this.paths.archivedSessionDir(id)
     if (await isDir(target)) throw new HttpError(409, 'exists', `session ${id} is already archived`)
     await writeArchivedMarker(session.dir, now.toISOString())
@@ -881,16 +883,12 @@ export class Store {
   /**
    * Deletes `archive/<id>` permanently (archived sessions only: a live id is 404 and untouched).
    * Never touches the repository, `refs/ai-review/*` or `cache/`; a symlinked entry only loses the
-   * link. 409 `run-active` if a run record still says running. No events: the live list is unaffected.
+   * link. No events: the live list is unaffected.
    */
   async deleteArchivedSession(id: string): Promise<void> {
     const dir = this.paths.archivedSessionDir(id)
     const kind = await archiveEntryKind(dir)
     if (kind === 'missing' || kind === 'other') throw notFound(`session ${id} is not archived`)
-    if (kind === 'dir') {
-      const active = activeRunId(await listRuns(dir))
-      if (active !== null) throw new HttpError(409, 'run-active', `run ${active} is still active for session ${id}`)
-    }
     await removeArchivedDir(this.paths.archiveDir, dir)
   }
 
@@ -926,17 +924,6 @@ export class Store {
       items.push(archivedSession(result.manifest, await readArchivedAt(dir)))
     }
     return items.sort((a, b) => Date.parse(b.archivedAt) - Date.parse(a.archivedAt) || b.id.localeCompare(a.id))
-  }
-
-  /** Finds a run by id across every session folder (runs live under their session). */
-  async findRun(runId: string): Promise<{ run: AgentRun; sessionDir: string } | null> {
-    if (!RUN_ID_RE.test(runId)) return null
-    for (const id of await this.sessionIds()) {
-      const sessionDir = path.join(this.paths.sessionsDir, id)
-      const run = await readRun(sessionDir, runId)
-      if (run) return { run, sessionDir }
-    }
-    return null
   }
 
   /** Stops background tree work. */

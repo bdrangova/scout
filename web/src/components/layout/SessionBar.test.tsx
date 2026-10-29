@@ -66,12 +66,6 @@ describe('SessionBar', () => {
       expect(submit.querySelector('svg')).toHaveClass('lucide-check')
     })
 
-    it('turns red with an alert when the last run failed', () => {
-      const { bar } = renderShell(`/s/${SESSION_ID}/files`, { detail: { ...sessionDetailFixture, latestRunStatus: 'failed' }, review: reviewFixture({ files: approvedAll, comments: [open] }) })
-      const submit = within(bar).getByRole('link', { name: 'Submit, last run failed, 1 open comment' })
-      expect(submit.querySelector('.step-tab-in')).toHaveClass('bg-st-failed')
-    })
-
     it('keeps the plain active look on the Submit page itself', () => {
       const { bar } = renderShell(`/s/${SESSION_ID}/submit`, { review: reviewFixture({ files: approvedAll }) })
       const submit = within(bar).getByRole('link', { name: 'Submit, ready' })

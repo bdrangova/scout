@@ -6,7 +6,7 @@ import { makeComment, makeReview } from '@scout/shared/testing/fixtures'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Express } from 'express'
-import { appServices, closeApp } from '../app.ts'
+import { closeApp } from '../app.ts'
 import { FIXTURE_SESSION_ID, appFor, createFixtureStore } from '../testing/fixture-store.ts'
 import type { FixtureStore } from '../testing/fixture-store.ts'
 
@@ -15,7 +15,7 @@ let app: Express
 let detail: CodeReviewDetail
 beforeAll(async () => {
   store = await createFixtureStore()
-  app = appFor(store.home, { fake: { delayMs: 0 } })
+  app = appFor(store.home)
   detail = (await request(app).get(`/api/sessions/${FIXTURE_SESSION_ID}`)).body as CodeReviewDetail
 })
 afterAll(async () => {
@@ -75,8 +75,6 @@ describe('POST /api/sessions/:id/review/send', () => {
     const res = await request(app).post(`${url}/send`).send({ decision: 'request-changes', dispatch: false })
     expect(res.status).toBe(200)
     const body = SendResponseSchema.parse(res.body)
-    expect(body.run).toBeNull()
-    expect(body.pending).toBeNull()
     const sent = CodeReviewSentSnapshotSchema.parse(body.sent)
     expect(sent.comments.map((c) => c.id)).toEqual(['c1', 'c2', 'c4'])
     expect(sent.comments.every((c) => c.sentAt === sent.sentAt)).toBe(true)
@@ -123,29 +121,5 @@ describe('POST /api/sessions/:id/review/send', () => {
 
     const summary = (await request(app).get('/api/sessions')).body.find((s: { id: string }) => s.id === FIXTURE_SESSION_ID)
     expect(summary).toMatchObject({ status: 'sent', openComments: 3, lastSend: { at: sent.sentAt, decision: 'request-changes' } })
-  })
-
-  it('starts a run when dispatching with the fake adapter, reports pending while one is active, then shows the session as updated', async () => {
-    const res = await request(app).post(`${url}/send`).send({ decision: 'request-changes', dispatch: true })
-    expect(res.status).toBe(200)
-    const body = SendResponseSchema.parse(res.body)
-    expect(body.pending).toBeNull()
-    expect(body.run).toMatchObject({ status: 'running', adapter: 'fake', sentAt: body.sent.sentAt })
-    if (!body.run) throw new Error('expected a run')
-
-    const again = await request(app).post(`${url}/send`).send({ decision: 'request-changes', dispatch: true })
-    const second = SendResponseSchema.parse(again.body)
-    if (second.run === null) expect(second.pending?.reason).toMatch(/still active/)
-
-    const final = await appServices(app).runs.wait(body.run.id)
-    expect(final).toMatchObject({ status: 'succeeded', costUsd: 0.42 })
-    expect(final?.resolvedComments).toEqual(expect.arrayContaining(['c1', 'c2', 'c4']))
-    const merged = ReviewResponseSchema.parse((await request(app).get(url)).body)
-    expect(merged.comments.filter((c) => c.status === 'open')).toEqual([])
-    // The agent answered after the send: resolutions.updatedAt > sent.at.
-    const summary = (await request(app).get('/api/sessions')).body.find((s: { id: string }) => s.id === FIXTURE_SESSION_ID)
-    expect(summary).toMatchObject({ status: 'updated', openComments: 0 })
-    // The fixture repo lives outside AI_REVIEW_HOME, so the fake adapter must not have touched it.
-    expect(fs.readFileSync(path.join(store.repo.repo, 'README.md'), 'utf8')).toBe('# Fixture repo\n')
   })
 })

@@ -4,7 +4,7 @@ import { CircleHelpIcon } from 'lucide-react'
 import { STATUS_TONE } from '@/lib/status-tone'
 import { cn } from '@/lib/utils'
 
-/** What each session status means and what moves it on, in the order a review moves through them, then the two run chips. */
+/** What each session status means and what moves it on, in the order a review moves through them. */
 const STATUS_MEANINGS: readonly { status: SessionStatus; meaning: string; next: string }[] = [
   { status: 'unreviewed', meaning: 'Nothing reviewed yet: no verdict and no comment.', next: 'Give a file a verdict or a comment.' },
   { status: 'in-progress', meaning: 'Some files have a verdict or a comment (a comment alone counts as reviewed).', next: 'Review the rest.' },
@@ -12,8 +12,6 @@ const STATUS_MEANINGS: readonly { status: SessionStatus; meaning: string; next: 
   { status: 'sent', meaning: 'You sent Request changes or Reject to Claude Code and it has not answered or changed anything since. Also shown if Approve was sent but a file is no longer approved.', next: 'Wait for the agent, then re-review.' },
   { status: 'updated', meaning: 'Files changed on disk, or Claude Code replied, after you sent.', next: 'Re-review the changed files, then submit again.' },
   { status: 'approved', meaning: 'You sent an Approve decision and nothing has changed since. The only way to get here.', next: 'Done.' },
-  { status: 'agent-working', meaning: 'A chip beside the status, not a status: a Claude Code run is applying your comments right now.', next: 'It ends with the result as Updated since sent, or as Run failed.' },
-  { status: 'run-failed', meaning: 'A chip beside the status: the latest Claude Code run failed. The review status is unchanged.', next: 'Open Submit to retry or resend.' },
 ]
 
 /** The vocabulary of session statuses as a popover opened from a "?" button. */

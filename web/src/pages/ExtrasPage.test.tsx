@@ -26,10 +26,10 @@ const detail: SessionDetail = {
   ],
 }
 
-function renderExtras(review = reviewFixture()) {
+function renderExtras(review = reviewFixture(), path = '/') {
   const api = mockReviewApi(reviewResponseFixture(review), { contents: CONTENTS })
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <SessionContext.Provider value={{ sessionId: SESSION_ID, detail, reload: () => {} }}>
         <ReviewProvider>
           <ExtrasPage />
@@ -71,6 +71,35 @@ describe('ExtrasPage', () => {
     await user.type(within(report).getByRole('textbox', { name: 'Comment on Test report' }), 'Two cases are skipped.')
     await user.click(within(report).getByRole('button', { name: 'Comment' }))
     await waitFor(() => expect(api.puts.at(-1)?.review.comments.at(-1)?.target).toEqual({ kind: 'extra', ref: 'reports/report.html' }), { timeout: 1500 })
+  })
+
+  it('folds a card from its chevron or its title', async () => {
+    renderExtras()
+    const architecture = await screen.findByRole('article', { name: 'Architecture' })
+    expect(await within(architecture).findByRole('heading', { level: 1, name: 'Architecture' })).toBeInTheDocument()
+    const user = userEvent.setup()
+    await user.click(within(architecture).getByRole('button', { name: 'Collapse Architecture' }))
+    expect(within(architecture).queryByRole('heading', { level: 1, name: 'Architecture' })).not.toBeInTheDocument()
+    await user.click(within(architecture).getByRole('heading', { level: 2, name: 'Architecture' }).querySelector('button')!)
+    expect(within(architecture).getByRole('button', { name: 'Collapse Architecture' })).toHaveAttribute('aria-expanded', 'true')
+    expect(within(architecture).getByRole('heading', { level: 1, name: 'Architecture' })).toBeInTheDocument()
+  })
+
+  it('shows a tile per extra in the grid view, and a tile opens the cards', async () => {
+    renderExtras(reviewFixture({ comments: [commentFixture('c1', { kind: 'extra', ref: 'architecture.md' }, 'Missing the provider node.')], nextCommentId: 2 }), '/?mode=grid')
+    const grid = await screen.findByRole('list', { name: 'All extras' })
+    expect(screen.queryByRole('article')).not.toBeInTheDocument()
+    const tiles = within(grid).getAllByRole('listitem')
+    expect(tiles).toHaveLength(2)
+    expect(tiles[0]).toHaveTextContent('Markdown')
+    expect(tiles[0]).toHaveTextContent('architecture.md')
+    expect(await within(tiles[0]!).findByText('1 open comment')).toBeInTheDocument()
+    expect(tiles[1]).toHaveTextContent('HTML')
+    expect(tiles[1]).toHaveTextContent('No open comments')
+
+    await userEvent.setup().click(within(grid).getByRole('button', { name: 'Open Test report' }))
+    expect(await screen.findByRole('article', { name: 'Test report' })).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'All extras' })).not.toBeInTheDocument()
   })
 
   it('shows the empty state when the extras folder has nothing', async () => {

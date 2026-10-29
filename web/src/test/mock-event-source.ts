@@ -1,4 +1,3 @@
-import type { AgentRunEvent } from '@scout/shared'
 import { vi } from 'vitest'
 
 type Listener = (event: MessageEvent) => void
@@ -55,17 +54,4 @@ export class MockEventSource {
 export function stubEventSource(): void {
   MockEventSource.reset()
   vi.stubGlobal('EventSource', MockEventSource)
-}
-
-type Distribute<E> = E extends AgentRunEvent ? Omit<E, 'seq' | 'at'> : never
-/** An `AgentRunEvent` without the numbering, for `runEventFactory`. */
-export type RunEventBody = Distribute<AgentRunEvent>
-
-/** Numbers events `1, 2, 3…` with a fixed timestamp. */
-export function runEventFactory(at = '2026-09-26T18:47:33.000Z'): (body: RunEventBody) => AgentRunEvent {
-  let seq = 0
-  return (body) => {
-    seq += 1
-    return { seq, at, ...body } as AgentRunEvent
-  }
 }

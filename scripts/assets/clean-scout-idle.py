@@ -13,6 +13,25 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 
+def magnifier_pocket(frame, index):
+    """Clear the stray matte in the two mirrored jump poses.
+
+    The near-black fill is enclosed by the lens, earpiece and arm in poses
+    8 and 190. Restrict the repair to that gap and retain two pixels of dark
+    outline, as in the working animation's pocket cleanup.
+    """
+    a = np.asarray(frame)
+    selected = np.zeros(a.shape[:2], dtype=bool)
+    if index not in (8, 190):
+        return selected
+    dark = ((a[:, :, 0] < 36) & (a[:, :, 1] < 27)
+            & (a[:, :, 2] < 25) & (a[:, :, 3] > 0))
+    core = np.asarray(Image.fromarray(dark.astype('uint8') * 255)
+                      .filter(ImageFilter.MinFilter(5))) > 0
+    selected[190:280, 250:340] = core[190:280, 250:340]
+    return selected
+
+
 def indexed(frame):
     """Preserve the exact source RGB palette and binary transparency for GIF."""
     a = np.asarray(frame)
@@ -48,6 +67,8 @@ def main():
         median = np.asarray(Image.fromarray(original_alpha)
                             .filter(ImageFilter.MedianFilter(3)))
         alpha = np.minimum(original_alpha, median)
+        pocket = magnifier_pocket(Image.fromarray(a), i)
+        alpha[pocket] = 0
         a[:, :, 3] = alpha
         gif_frames.append(indexed(Image.fromarray(a)))
         feather = np.asarray(Image.fromarray(alpha)
@@ -56,6 +77,7 @@ def main():
         webp_frames.append(Image.fromarray(a))
         durations.append(source.info.get('duration', 100))
         report.append({'frame': i,
+                       'pocket_pixels': int(pocket.sum()),
                        'removed_pixels': int((original_alpha != alpha).sum()),
                        'feathered_pixels': int(((a[:, :, 3] > 0)
                                                & (a[:, :, 3] < 255)).sum())})

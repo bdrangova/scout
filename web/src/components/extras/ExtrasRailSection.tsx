@@ -1,19 +1,17 @@
 import type { ExtraItem } from '@scout/shared'
-import { Code, FileText, Workflow, type LucideIcon } from 'lucide-react'
 import { RailSection } from '@/components/layout/RailSlot'
+import { EXTRA_KIND } from '@/components/spec/item-kinds'
 import { RailBlock, RailItem } from '@/components/spec/RailItem'
 import { scrollToTarget } from '@/components/spec/rail-targets'
 import { useActiveTarget } from '@/components/spec/useActiveTarget'
 import { splitPath } from '@/lib/paths'
 import { useOpenCommentCount } from '@/lib/useOpenCommentCount'
 
-const ICON: Record<ExtraItem['type'], LucideIcon> = { markdown: FileText, mermaid: Workflow, html: Code }
-
 function ExtraRow({ item, current, onSelect }: { item: ExtraItem; current: boolean; onSelect: (path: string) => void }) {
   const comments = useOpenCommentCount('extra', item.path)
   return (
     <RailItem
-      icon={ICON[item.type]}
+      icon={EXTRA_KIND[item.type].icon}
       title={item.title}
       subtitle={splitPath(item.path).name}
       mono

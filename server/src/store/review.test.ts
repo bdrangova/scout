@@ -1,11 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type { AgentRun } from '@scout/shared'
-import { FIXTURE_SESSION_ID, codeReviewDetail, createFixtureStore, fixtureSessionDir } from '../testing/fixture-store.ts'
+import { FIXTURE_SESSION_ID, createFixtureStore, fixtureSessionDir } from '../testing/fixture-store.ts'
 import type { FixtureStore } from '../testing/fixture-store.ts'
 import { Store } from './index.ts'
-import { activeRunId, listRuns, readResolutions, readReview, sentFiles } from './review.ts'
+import { readResolutions, readReview, sentFiles } from './review.ts'
 
 let fixture: FixtureStore
 beforeAll(async () => {
@@ -13,34 +12,10 @@ beforeAll(async () => {
 })
 afterAll(() => fixture.cleanup())
 
-function run(overrides: Partial<AgentRun>): AgentRun {
-  return {
-    id: 'run-20260101090000-0001',
-    sessionId: FIXTURE_SESSION_ID,
-    sentAt: '2026-01-01T09:00:00.000Z',
-    adapter: 'fake',
-    status: 'succeeded',
-    pid: null,
-    argv: [],
-    startedAt: '2026-01-01T09:00:01.000Z',
-    endedAt: '2026-01-01T09:05:00.000Z',
-    exitCode: 0,
-    agentSessionId: null,
-    numTurns: 3,
-    costUsd: 0.1,
-    resultText: 'done',
-    error: null,
-    resolvedComments: [],
-    ...overrides,
-  }
-}
-
 describe('review store helpers', () => {
   it('reads null when review.json and resolutions.json are absent', async () => {
     expect(await readReview(fixture.dir, FIXTURE_SESSION_ID)).toBeNull()
     expect(await readResolutions(fixture.dir, FIXTURE_SESSION_ID)).toBeNull()
-    expect(await listRuns(fixture.dir)).toEqual([])
-    expect(activeRunId([])).toBeNull()
   })
 
   it('names the three sent files from the stem', () => {
@@ -50,39 +25,6 @@ describe('review store helpers', () => {
       markdown: path.join('/s', 'review', 'sent', '2026-01-01T09-00-00.000Z.md'),
       patch: path.join('/s', 'review', 'sent', '2026-01-01T09-00-00.000Z.patch'),
     })
-  })
-
-  it('lists validated runs oldest first, skips broken files and finds the active run', async () => {
-    const runsDir = path.join(fixture.dir, 'review', 'runs')
-    fs.mkdirSync(runsDir, { recursive: true })
-    const done = run({})
-    const active = run({
-      id: 'run-20260101093000-0002',
-      status: 'running',
-      pid: 4242,
-      startedAt: '2026-01-01T09:30:00.000Z',
-      endedAt: null,
-      exitCode: null,
-      resultText: null,
-    })
-    fs.writeFileSync(path.join(runsDir, `${active.id}.json`), JSON.stringify(active))
-    fs.writeFileSync(path.join(runsDir, `${done.id}.json`), JSON.stringify(done))
-    fs.writeFileSync(path.join(runsDir, `${done.id}.jsonl`), '{"type":"system"}\n')
-    fs.writeFileSync(path.join(runsDir, 'run-20260101094500-0003.json'), '{ "half": tru')
-
-    const runs = await listRuns(fixture.dir)
-    expect(runs.map((r) => r.id)).toEqual([done.id, active.id])
-    expect(activeRunId(runs)).toBe(active.id)
-
-    const store = new Store(fixture.home, { log: () => undefined })
-    try {
-      const detail = codeReviewDetail(await store.getSession(FIXTURE_SESSION_ID))
-      expect(detail.activeRunId).toBe(active.id)
-      expect(detail.status).toBe('agent-working')
-    } finally {
-      store.close()
-      fs.rmSync(runsDir, { recursive: true, force: true })
-    }
   })
 })
 

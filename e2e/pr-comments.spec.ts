@@ -66,13 +66,15 @@ test('edits instructions and replies on PR threads, and counts them in Will be s
 
   // The seeded instruction (rc9002, open) and the seeded unsent reply (rc9001) are queued already.
   const instruction = panel.locator('[data-pr-comment="rc9002"]')
+  await expect(instruction.getByText('Instruction for Claude', { exact: true })).toBeVisible()
+  await instruction.getByRole('button', { name: /^Edit your instruction/ }).click()
   const box = instruction.getByRole('textbox')
   await expect(box).toHaveValue('Yes, switch it to a <ul> and keep the timestamps.')
-  await expect(instruction.getByText('Instruction for Claude · sent with your next submit')).toBeVisible()
   await box.fill('Yes, switch it to a <ul> and keep the timestamps. Add a test.')
   await expect(instruction.getByText('Saved')).toBeVisible()
 
   const reply = panel.locator('[data-pr-comment="rc9001"]')
+  await reply.getByRole('button', { name: /^Edit your reply/ }).click()
   await reply.getByRole('textbox').fill('Fixed in 3f9a1c2, thanks for catching it.')
   await expect(reply.getByText('Saved')).toBeVisible()
   await expect(reply.getByText('Queued')).toBeVisible()

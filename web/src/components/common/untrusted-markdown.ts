@@ -1,7 +1,5 @@
 import { defaultRehypePlugins, type StreamdownProps } from 'streamdown'
 
-/** Image hosts a comment may load from: GitHub's own, where pasted screenshots and attachments live. */
-const IMAGE_HOSTS: readonly RegExp[] = [/^github\.com$/, /^user-images\.githubusercontent\.com$/, /^[a-z0-9-]+(\.[a-z0-9-]+)*\.githubusercontent\.com$/]
 const LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:'])
 
 export function parseUrl(value: string | undefined): URL | null {
@@ -13,10 +11,19 @@ export function parseUrl(value: string | undefined): URL | null {
   }
 }
 
-/** True for an https image on an allowed GitHub host; everything else is never requested. */
-export function isAllowedImageUrl(value: string | undefined): boolean {
-  const url = parseUrl(value)
-  return url !== null && url.protocol === 'https:' && IMAGE_HOSTS.some((host) => host.test(url.hostname))
+/**
+ * GitHub stores a pasted screenshot as a raw `<img>` tag, and raw HTML never becomes elements here:
+ * each tag with a `src` is rewritten to a markdown image first, so it goes through the same host gate.
+ */
+export function imgTagsToMarkdown(source: string): string {
+  return source.replace(/<img\b[^>]*>/gi, (tag) => {
+    const src = /\ssrc\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag)
+    const url = src?.[1] ?? src?.[2]
+    if (!url) return tag
+    const alt = /\salt\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag)
+    const text = (alt?.[1] ?? alt?.[2] ?? '').replace(/[[\]]/g, '')
+    return `![${text}](<${url.replace(/[<>\s]/g, '')}>)`
+  })
 }
 
 interface HastNode {

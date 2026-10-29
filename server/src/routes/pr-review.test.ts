@@ -13,7 +13,7 @@ import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { publishReport, readReport, reportMediaRoot, reportRevision } from '@scout/shared/pr-review/report'
 import { appFor } from '../testing/fixture-store.ts'
 import { pngBytes } from '../testing/fixture-repo.ts'
-import { appServices, closeApp } from '../app.ts'
+import { closeApp } from '../app.ts'
 
 let home: string, repo: string, dir: string, app: Express, tree: WorkingTree, report: PrReviewReport, review: Review
 const id = '20261023-0900-pr-review-abcd'
@@ -86,7 +86,6 @@ describe('PR review sessions', () => {
     expect(await fs.readFile(path.join(dir, 'review', 'review.json'), 'utf8')).toBe(before)
     const send = await request(app).post(`/api/sessions/${id}/review/send`).send({ decision: 'approve', dispatch: true })
     expect(send.status).toBe(400)
-    expect(appServices(app).runs.activeRun(id)).toBeNull()
   })
   it('refuses stale review/report/tree stamps before exporting', async () => {
     for (const patch of [{ reportRevision: 'old' }, { treeFingerprint: 'old' }, { reviewUpdatedAt: T0 }]) {

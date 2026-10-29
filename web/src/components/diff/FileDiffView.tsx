@@ -1,4 +1,4 @@
-import { anchorInPatch, parsePatchLines, relocateJournalAnchor, type JournalEntry, type LineAnchor } from '@scout/shared'
+import { anchorInPatch, anchorLabel, parsePatchLines, relocateJournalAnchor, type JournalEntry, type LineAnchor } from '@scout/shared'
 import { PatchDiff, type PatchDiffProps } from '@pierre/diffs/react'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useJournalInlineVisible } from '@/lib/journal-prefs'
@@ -8,6 +8,8 @@ import type { JournalReply } from '@/lib/journal-view'
 import { cn } from '@/lib/utils'
 import { ThemeContext } from '@/theme/ThemeContext'
 import { contentsLoader, fullFileRows, type FileSides } from './expand-context'
+import { CommentBox } from '@/components/common/CommentBox'
+import { CommentList } from '@/components/common/CommentList'
 import { ProposalCard } from '@/components/prreview/ProposalCard'
 import { useProposalAnnotations } from '@/components/prreview/proposal-annotations'
 import { PANEL_CLASS } from './LineAnnotation'
@@ -23,6 +25,7 @@ import {
   buildJournalAnnotations,
   buildPrAnnotations,
   selectionFor,
+  CommentsHiddenContext,
   useLineComments,
   type DiffAnnotation,
   type LineAnnotationContent,
@@ -110,6 +113,7 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
   const prAnnotations = usePrAnnotations()
   const journal = useJournalAnnotations()
   const journalVisible = useJournalInlineVisible()
+  const commentsHidden = useContext(CommentsHiddenContext)
   // Read without `useTheme()` so a diff rendered outside the provider (tests) still works, as light.
   const themeType = useContext(ThemeContext)?.resolved ?? 'light'
   const [draft, setDraft] = useState<LineDraft | null>(null)
@@ -191,13 +195,23 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
     onJournalPlaced?.(journalKey === '' ? [] : journalKey.split(','))
     return () => onJournalPlaced?.([])
   }, [onJournalPlaced, journalKey])
-  const annotations = useMemo<DiffAnnotation[]>(
-    () => [...(lineComments ? buildAnnotations(anchorRows, lineComments.comments, draft) : []), ...buildPrAnnotations(prPlacement.placed), ...(journalVisible ? buildJournalAnnotations(journalPlaced) : []), ...proposals.map((finding): DiffAnnotation => {
+  // The reviewer's replies to a note shown in the diff sit under that note, not as their own slot.
+  const noteReplies = useMemo(() => {
+    if (!lineComments || !journalVisible || commentsHidden) return []
+    const shown = new Set(journalPlaced.map(({ entry }) => entry.id))
+    return lineComments.comments.filter((comment) => comment.about !== undefined && shown.has(comment.about) && comment.target.anchor !== undefined)
+  }, [lineComments, journalVisible, commentsHidden, journalPlaced])
+  const annotations = useMemo<DiffAnnotation[]>(() => {
+    // A reply to a note shown in the diff opens under that note instead of as its own box.
+    const nested = new Set(noteReplies.map((comment) => comment.id))
+    const lineDraft = draft?.reply && journalVisible && !commentsHidden && journalPlaced.some(({ entry }) => entry.id === draft.reply?.id) ? null : draft
+    const all: DiffAnnotation[] = [...(lineComments ? buildAnnotations(anchorRows, nested.size > 0 ? lineComments.comments.filter((comment) => !nested.has(comment.id)) : lineComments.comments, lineDraft) : []), ...buildPrAnnotations(prPlacement.placed), ...(journalVisible ? buildJournalAnnotations(journalPlaced) : []), ...proposals.map((finding): DiffAnnotation => {
       const changed = !anchorInPatch(anchorRows, finding.anchor)
       return { side: finding.anchor.side === 'new' ? 'additions' : 'deletions', lineNumber: changed ? 0 : finding.anchor.endLine ?? finding.anchor.line, metadata: { kind: 'proposal', finding, changed } }
-    })],
-    [lineComments, anchorRows, draft, prPlacement, journalPlaced, journalVisible, proposals],
-  )
+    })]
+    // Hidden comments still count as placed above (the footer must not pick them up); only an open draft stays.
+    return commentsHidden ? all.filter((annotation) => annotation.metadata.kind === 'draft') : all
+  }, [lineComments, anchorRows, draft, prPlacement, journalPlaced, journalVisible, proposals, commentsHidden, noteReplies])
   const cursorAnchor = cursor ? anchorFromCursor(rows, cursor) : null
   const jump = useLineJump(path)
   const selected = draft?.anchor ?? cursorAnchor ?? (jump ? { side: jump.side, line: jump.line } : null)
@@ -250,7 +264,31 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
               setDraft({ anchor, reply })
             }
           : undefined
-        return <JournalAnnotation anchor={metadata.anchor} entries={metadata.entries} collapsed={metadata.collapsed} onReply={onReply} />
+        const reply = lineComments && draft?.reply && metadata.entries.some((entry) => entry.id === draft.reply?.id) ? draft.reply : null
+        const replying =
+          reply && lineComments && draft
+            ? {
+                id: reply.id,
+                box: (
+                  <CommentBox
+                    label={`Reply on ${anchorLabel(draft.anchor)}`}
+                    pendingReject={false}
+                    focusToken={1}
+                    onSubmit={(body) => {
+                      lineComments.onAdd(draft.anchor, body, reply.id)
+                      setDraft(null)
+                    }}
+                    onCancelReject={() => {}}
+                    onCancel={() => setDraft(null)}
+                  />
+                ),
+              }
+            : null
+        const repliesFor = (id: string) => {
+          const items = lineComments ? noteReplies.filter((comment) => comment.about === id) : []
+          return lineComments && items.length > 0 ? <CommentList comments={items} onEdit={lineComments.onEdit} onDelete={lineComments.onDelete} onResolve={lineComments.onResolve} onReopen={lineComments.onReopen} /> : null
+        }
+        return <JournalAnnotation anchor={metadata.anchor} entries={metadata.entries} collapsed={metadata.collapsed} onReply={onReply} replying={replying} repliesFor={repliesFor} />
       }
       return lineComments ? (
         <LineAnnotation
@@ -267,7 +305,7 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
         />
       ) : null
     },
-    [lineComments],
+    [lineComments, draft, noteReplies],
   )
 
   return (

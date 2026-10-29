@@ -12,12 +12,6 @@ describe('Dashboard review language', () => {
     expect(screen.queryByRole('status', { name: 'Approved' })).not.toBeInTheDocument()
   })
 
-  it('keeps a failed run separate from the submitted review and its decision', () => {
-    render(<SessionReviewState session={sessionSummary({ id: 'failed', title: 'Failed run', status: 'run-failed', lastSend: { ...lastSend, decision: 'request-changes' } })} />)
-    expect(screen.getByRole('status', { name: 'Review sent · Changes requested' })).toHaveAttribute('data-status', 'sent')
-    expect(screen.getByRole('status', { name: 'Run failed' })).toHaveAttribute('data-run', 'failed')
-  })
-
   it('describes test-run progress in scenarios rather than files', () => {
     render(<SessionReviewState session={testRunSummary({ id: 'run', title: 'Run', status: 'in-progress', reviewed: 1, total: 3 })} />)
     expect(screen.getByText('1 of 3 scenarios reviewed')).toBeInTheDocument()

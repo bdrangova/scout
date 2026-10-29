@@ -11,6 +11,7 @@ export interface PrCommentsValueOptions {
   /** The user's drafts by thread root id, as `review/pr-replies.json` holds them. */
   drafts?: Record<string, PrReplyDraft>
   saveReply?: PrCommentsValue['saveReply']
+  setResolved?: PrCommentsValue['setResolved']
   flushReplies?: PrCommentsValue['flushReplies']
 }
 
@@ -37,6 +38,7 @@ export function prCommentsValue(comments: PrComment[], opts: PrCommentsValueOpti
     error: null,
     reload: () => {},
     saveReply: opts.saveReply ?? okSaveReply(),
+    setResolved: opts.setResolved ?? (() => Promise.resolve()),
     registerReplyFlush: () => () => {},
     flushReplies: opts.flushReplies ?? (() => Promise.resolve(true)),
   })

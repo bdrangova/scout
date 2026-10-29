@@ -17,7 +17,7 @@ export interface ContentCardProps {
   subtitle?: ReactNode
   /** Pushed to the right of the header: links, chips, icon buttons. */
   actions?: ReactNode
-  /** When set, a chevron folds the body and footer away: `Collapse <label>` / `Expand <label>`. */
+  /** When set, the chevron (and a click on the title) folds the body and footer away: `Collapse <label>` / `Expand <label>`. */
   collapseLabel?: string
   /** The fetched file; the body shows the loading / error states until it settles. */
   content?: ContentState
@@ -57,7 +57,16 @@ export function ContentCard({ label, kind, title, subtitle, actions, collapseLab
           </Button>
         )}
         <KindTag icon={kind.icon} label={kind.label} />
-        <PanelTitle className="min-w-0 break-words">{title}</PanelTitle>
+        <PanelTitle className="min-w-0 break-words">
+          {collapseLabel === undefined ? (
+            title
+          ) : (
+            // The title folds the card too (like a comment's header); the chevron is the keyboard stop.
+            <button type="button" tabIndex={-1} aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded((value) => !value)} className="cursor-pointer rounded-sm text-left">
+              {title}
+            </button>
+          )}
+        </PanelTitle>
         {subtitle && <span className="min-w-0 truncate text-[13px] font-medium text-ink-muted">{subtitle}</span>}
         {actions && <span className="ml-auto flex items-center gap-2.5">{actions}</span>}
       </PanelHeader>

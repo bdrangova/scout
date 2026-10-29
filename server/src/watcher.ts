@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import chokidar from 'chokidar'
 import type { FSWatcher } from 'chokidar'
-import { RUN_ID_RE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, isTestRun } from '@scout/shared'
+import { SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, isTestRun } from '@scout/shared'
 import type { StoreEvent } from '@scout/shared'
 import { errorMessage } from './errors.ts'
 import type { StoreEventBus } from './events.ts'
@@ -31,14 +31,13 @@ type Target =
   | { kind: 'resolutions'; sessionId: string }
   | { kind: 'journal'; sessionId: string }
   | { kind: 'pr-comments'; sessionId: string; file: 'pr-comments.json' | 'pr-resolutions.json' | 'pr-replies.json' }
-  | { kind: 'run'; sessionId: string; runId: string }
   | { kind: 'artifact'; sessionId: string }
 
 /**
  * Watches `<home>/sessions` with chokidar and every session's repo with a `RepoWatcher`, turning
  * file events into `StoreEvent`s and tree-cache invalidations. Session folder: `manifest.json`
  * (session.added/updated/removed, and the repo watch follows the manifest), `review/review.json`,
- * `review/resolutions.json`, `review/journal.json` (`journal.updated` + `session.updated`), `review/pr-comments.json` and `review/pr-resolutions.json` and `review/pr-replies.json` (`pr-comments.updated`, plus `session.updated` for the first: the session's PR changed), `review/runs/*.json` (own writes are not reported), and the
+ * `review/resolutions.json`, `review/journal.json` (`journal.updated` + `session.updated`), `review/pr-comments.json` and `review/pr-resolutions.json` and `review/pr-replies.json` (`pr-comments.updated`, plus `session.updated` for the first: the session's PR changed), and the
  * artifacts (`evidence/`, `extras/`, `spec/`, `pr-description.md` → one debounced `session.updated`).
  */
 export class StoreWatcher {
@@ -159,20 +158,19 @@ export class StoreWatcher {
     const rel = path.relative(root, file)
     if (rel === '' || rel.startsWith('..')) return false
     const parts = rel.split(path.sep)
-    const [, second = '', third = '', fourth = ''] = parts
+    const [, second = '', third = ''] = parts
     if (parts.length === 1) return false
     if (parts.some((part) => part.startsWith('.'))) return true
     if (ARTIFACT_FOLDERS.has(second)) return false
     if (parts.length === 2) return second !== 'manifest.json' && second !== 'pr-review.json' && second !== SESSION_PR_DESCRIPTION_FILE && second !== 'review'
     if (second !== 'review') return true
-    if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'journal.json' && third !== 'runs'
-    if (parts.length === 4) return third !== 'runs' || !fourth.endsWith('.json')
+    if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'journal.json'
     return true
   }
 
   private classify(root: string, file: string): Target | null {
     const parts = path.relative(root, file).split(path.sep)
-    const [sessionId, second, third, fourth] = parts
+    const [sessionId, second, third] = parts
     if (!sessionId || !SESSION_ID_RE.test(sessionId) || second === undefined) return null
     if (parts.length === 2 && second === 'manifest.json') return { kind: 'manifest', sessionId }
     if (parts.length === 2 && (second === SESSION_PR_DESCRIPTION_FILE || second === 'pr-review.json')) return { kind: 'artifact', sessionId }
@@ -182,10 +180,6 @@ export class StoreWatcher {
     if (parts.length === 3 && third === 'resolutions.json') return { kind: 'resolutions', sessionId }
     if (parts.length === 3 && third === 'journal.json') return { kind: 'journal', sessionId }
     if (parts.length === 3 && (third === 'pr-comments.json' || third === 'pr-resolutions.json' || third === 'pr-replies.json')) return { kind: 'pr-comments', sessionId, file: third }
-    if (parts.length === 4 && third === 'runs' && fourth?.endsWith('.json')) {
-      const runId = fourth.slice(0, -'.json'.length)
-      return RUN_ID_RE.test(runId) ? { kind: 'run', sessionId, runId } : null
-    }
     return null
   }
 
@@ -265,6 +259,5 @@ export class StoreWatcher {
     if (await this.store.isOwnWrite(file)) return
     if (target.kind === 'review') this.bus.emit({ type: 'review.updated', sessionId })
     else if (target.kind === 'resolutions') this.bus.emit({ type: 'resolutions.updated', sessionId })
-    else this.bus.emit({ type: 'run.updated', sessionId, runId: target.runId })
   }
 }

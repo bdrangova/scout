@@ -82,15 +82,15 @@ describe('sessionStatus', () => {
   const tree = makeTree()
 
   it('unreviewed without a review or with an untouched one', () => {
-    expect(sessionStatus({ review: null, tree, resolutions: null, activeRun: false })).toBe('unreviewed')
-    expect(sessionStatus({ review: makeReview(), tree, resolutions: null, activeRun: false })).toBe('unreviewed')
+    expect(sessionStatus({ review: null, tree, resolutions: null })).toBe('unreviewed')
+    expect(sessionStatus({ review: makeReview(), tree, resolutions: null })).toBe('unreviewed')
   })
 
   it('in-progress with a verdict or a comment', () => {
     const withVerdict = makeReview({ files: { 'src/a.tsx': { verdict: 'approved', fingerprint: fp('src/a.tsx'), viewed: true } } })
-    expect(sessionStatus({ review: withVerdict, tree, resolutions: null, activeRun: false })).toBe('in-progress')
+    expect(sessionStatus({ review: withVerdict, tree, resolutions: null })).toBe('in-progress')
     const withComment = makeReview({ comments: [makeComment()] })
-    expect(sessionStatus({ review: withComment, tree, resolutions: null, activeRun: false })).toBe('in-progress')
+    expect(sessionStatus({ review: withComment, tree, resolutions: null })).toBe('in-progress')
   })
 
   it('sent after a request-changes submit with nothing new since', () => {
@@ -98,13 +98,8 @@ describe('sessionStatus', () => {
       sent: { at: T1, decision: 'request-changes' },
       files: { 'src/a.tsx': { verdict: 'rejected', fingerprint: fp('src/a.tsx'), viewed: true } },
     })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('sent')
-    expect(sessionStatus({ review: r, tree, resolutions: makeResolutions({}, T0), activeRun: false })).toBe('sent')
-  })
-
-  it('agent-working while a run is active, whatever the review says', () => {
-    const r = makeReview({ sent: { at: T1, decision: 'approve' } })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: true })).toBe('agent-working')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('sent')
+    expect(sessionStatus({ review: r, tree, resolutions: makeResolutions({}, T0) })).toBe('sent')
   })
 
   it('updated when a judged file changed since the send, or the agent wrote resolutions after it', () => {
@@ -112,9 +107,9 @@ describe('sessionStatus', () => {
       sent: { at: T1, decision: 'request-changes' },
       files: { 'src/a.tsx': { verdict: 'rejected', fingerprint: fp('before-fix'), viewed: true } },
     })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('updated')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('updated')
     const unchanged = makeReview({ sent: { at: T1, decision: 'request-changes' } })
-    expect(sessionStatus({ review: unchanged, tree, resolutions: makeResolutions({ c1: makeResolution({ at: T2 }) }, T2), activeRun: false })).toBe('updated')
+    expect(sessionStatus({ review: unchanged, tree, resolutions: makeResolutions({ c1: makeResolution({ at: T2 }) }, T2) })).toBe('updated')
   })
 
   it('approved when the last send approved and every file is still effectively approved', () => {
@@ -126,7 +121,7 @@ describe('sessionStatus', () => {
         'src/c.ts': { verdict: 'approved', fingerprint: fp('src/c.ts'), viewed: true },
       },
     })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('approved')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('approved')
   })
 
   it('updated, not approved, when every approved file went stale after the approving send', () => {
@@ -138,7 +133,7 @@ describe('sessionStatus', () => {
         'src/c.ts': { verdict: 'approved', fingerprint: fp('older-c'), viewed: true },
       },
     })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('updated')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('updated')
     expect(progress(r, tree)).toEqual({ reviewed: 0, total: 3 })
   })
 
@@ -151,7 +146,7 @@ describe('sessionStatus', () => {
         'src/c.ts': { verdict: 'approved', fingerprint: fp('src/c.ts'), viewed: true },
       },
     })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('updated')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('updated')
   })
 
   it('back to approved once the stale files are approved again on their current content', () => {
@@ -163,7 +158,7 @@ describe('sessionStatus', () => {
         'src/c.ts': { verdict: 'approved', fingerprint: fp('src/c.ts'), viewed: true },
       },
     })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('approved')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('approved')
   })
 
   it('sent, not approved, when the approving send left a file without an effective approval', () => {
@@ -171,30 +166,23 @@ describe('sessionStatus', () => {
       sent: { at: T1, decision: 'approve' },
       files: { 'src/a.tsx': { verdict: 'approved', fingerprint: fp('src/a.tsx'), viewed: true } },
     })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('sent')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('sent')
   })
 
   it('ready once every file is reviewed and nothing is sent', () => {
     const files = Object.fromEntries(tree.files.map((file) => [file.path, { verdict: 'approved' as const, fingerprint: file.fingerprint, viewed: true }]))
-    expect(sessionStatus({ review: makeReview({ files }), tree, resolutions: null, activeRun: false })).toBe('ready')
+    expect(sessionStatus({ review: makeReview({ files }), tree, resolutions: null })).toBe('ready')
     // A comment counts as reviewed too.
     const partial = Object.fromEntries(tree.files.slice(1).map((file) => [file.path, { verdict: 'rejected' as const, fingerprint: file.fingerprint, viewed: true }]))
     const commented = makeReview({ files: partial, comments: [makeComment({ target: { kind: 'file', ref: tree.files[0]?.path ?? '' } })] })
-    expect(sessionStatus({ review: commented, tree, resolutions: null, activeRun: false })).toBe('ready')
+    expect(sessionStatus({ review: commented, tree, resolutions: null })).toBe('ready')
     // Sent wins over ready.
-    expect(sessionStatus({ review: makeReview({ files, sent: { at: T1, decision: 'request-changes' } }), tree, resolutions: null, activeRun: false })).toBe('sent')
-  })
-
-  it('run-failed when the latest run failed, unless a run is active', () => {
-    const r = makeReview({ sent: { at: T1, decision: 'request-changes' } })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false, latestRunStatus: 'failed' })).toBe('run-failed')
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: true, latestRunStatus: 'failed' })).toBe('agent-working')
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false, latestRunStatus: 'succeeded' })).toBe('sent')
+    expect(sessionStatus({ review: makeReview({ files, sent: { at: T1, decision: 'request-changes' } }), tree, resolutions: null })).toBe('sent')
   })
 
   it('updated, not in-progress or unreviewed, when the only verdict went stale before any send', () => {
     const r = makeReview({ files: { 'src/a.tsx': { verdict: 'approved', fingerprint: fp('older'), viewed: true } } })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('updated')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('updated')
   })
 })
 
@@ -221,7 +209,7 @@ describe('progress and anyFileUpdated', () => {
     const r = makeReview({ comments: [makeComment({ id: 'c1', target: { kind: 'file', ref: 'src/b.ts', anchor: { side: 'new', line: 4 } } })] })
     expect(commentedPaths(r)).toEqual(new Set(['src/b.ts']))
     expect(progress(r, tree)).toEqual({ reviewed: 1, total: 3 })
-    expect(sessionStatus({ review: r, tree, resolutions: null, activeRun: false })).toBe('in-progress')
+    expect(sessionStatus({ review: r, tree, resolutions: null })).toBe('in-progress')
   })
 
   it('a comment counts until the agent resolves it; other targets never count', () => {

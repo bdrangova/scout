@@ -1,23 +1,18 @@
 import express from 'express'
 import type { ErrorRequestHandler, Express, Request, Response } from 'express'
 import type { ApiError } from '@scout/shared'
-import type { AgentAdapter } from './agent/adapter.ts'
-import { ClaudeCodeAdapter } from './agent/claude-code.ts'
-import { FakeAdapter } from './agent/fake.ts'
-import type { FakeAdapterOptions } from './agent/fake.ts'
-import { RunManager } from './agent/runs.ts'
 import type { Config } from './config.ts'
 import { StoreEventBus } from './events.ts'
 import { artifactsRouter } from './routes/artifacts.ts'
 import { eventsRouter } from './routes/events.ts'
 import { filesRouter } from './routes/files.ts'
+import { githubImageRouter } from './routes/github-image.ts'
 import { healthRouter } from './routes/health.ts'
 import { prReviewRouter } from './routes/pr-review.ts'
 import { journalRouter } from './routes/journal.ts'
 import { prCommentsRouter } from './routes/pr-comments.ts'
 import { reviewRouter } from './routes/review.ts'
 import { runFilesRouter } from './routes/run-files.ts'
-import { runsRouter } from './routes/runs.ts'
 import { scopesRouter } from './routes/scopes.ts'
 import { sendRouter } from './routes/send.ts'
 import { sessionsRouter } from './routes/sessions.ts'
@@ -66,27 +61,16 @@ export interface AppServices {
   config: Config
   store: Store
   bus: StoreEventBus
-  adapter: AgentAdapter
-  runs: RunManager
   watcher: StoreWatcher
   sse: SseRegistry
 }
 
-/** Test hooks: a custom adapter, faster fake replay, quicker watchers and tree debounce, shorter run timeouts. */
+/** Test hooks: quicker watchers and tree debounce. */
 export interface AppOverrides {
-  adapter?: AgentAdapter
-  fake?: FakeAdapterOptions
   watcher?: WatcherOptions
   trees?: StoreOptions['trees']
   scopes?: StoreOptions['scopes']
-  runs?: { idleTimeoutMs?: number; maxDurationMs?: number }
   log?: (message: string) => void
-}
-
-function buildAdapter(config: Config, overrides: AppOverrides): AgentAdapter {
-  if (overrides.adapter) return overrides.adapter
-  if (config.adapter === 'fake') return new FakeAdapter(overrides.fake)
-  return new ClaudeCodeAdapter({ claudeBin: config.claudeBin })
 }
 
 export function createApp(config: Config, overrides: AppOverrides = {}): Express {
@@ -97,11 +81,9 @@ export function createApp(config: Config, overrides: AppOverrides = {}): Express
 
   const bus = new StoreEventBus()
   const store = new Store(config.home, { bus, ...(overrides.trees ? { trees: overrides.trees } : {}), ...(overrides.scopes ? { scopes: overrides.scopes } : {}), ...(overrides.log ? { log: overrides.log } : {}) })
-  const adapter = buildAdapter(config, overrides)
-  const runs = new RunManager({ store, adapter, bus, home: config.home, ...overrides.runs })
   const watcher = new StoreWatcher(store, bus, { ...(overrides.log ? { log: overrides.log } : {}), ...overrides.watcher })
   const sse = new SseRegistry()
-  const services: AppServices = { config, store, bus, adapter, runs, watcher, sse }
+  const services: AppServices = { config, store, bus, watcher, sse }
   app.locals.services = services
   // The tree cache is only correct while the repos are watched, so watching starts with the app.
   watcher.start()
@@ -115,12 +97,12 @@ export function createApp(config: Config, overrides: AppOverrides = {}): Express
   api.use(runFilesRouter(store))
   api.use(reviewRouter(store))
   api.use(prCommentsRouter(store))
+  api.use(githubImageRouter())
   api.use(journalRouter(store))
   api.use(prReviewRouter(store))
   api.use(settingsRouter(config.home))
   api.use(worktreesRouter(config.home, store))
-  api.use(sendRouter({ store, runs, adapter, dashboardUrl: config.dashboardUrl }))
-  api.use(runsRouter({ store, runs, adapter, sse }))
+  api.use(sendRouter({ store, dashboardUrl: config.dashboardUrl }))
   api.use(eventsRouter({ bus, watcher, sse }))
   app.use('/api', api)
 
@@ -139,10 +121,9 @@ export function appServices(app: Express): AppServices {
   return services
 }
 
-/** Aborts active runs, ends open SSE streams, stops the watchers and the tree cache. */
+/** Ends open SSE streams, stops the watchers and the tree cache. */
 export async function closeApp(app: Express): Promise<void> {
-  const { runs, sse, watcher, store } = appServices(app)
-  await runs.close()
+  const { sse, watcher, store } = appServices(app)
   sse.closeAll()
   await watcher.close()
   store.close()

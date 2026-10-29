@@ -3,19 +3,22 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { IconCount } from '@/components/common/IconCount'
 import { PageHeader } from '@/components/common/PageHeader'
 import { ExtraCard } from '@/components/extras/ExtraCard'
+import { ExtrasGrid } from '@/components/extras/ExtrasGrid'
 import { ExtrasRailSection } from '@/components/extras/ExtrasRailSection'
 import { TARGET_ATTR } from '@/components/spec/rail-targets'
+import { usePageMode } from '@/components/spec/usePageMode'
 import { pluralize } from '@/lib/format'
 import { useCodeReviewDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { useOpenCommentCount } from '@/lib/useOpenCommentCount'
 
-/** The files of the session's `extras/` folder (markdown, HTML, mermaid), one card each. */
+/** The files of the session's `extras/` folder (markdown, HTML, mermaid), one card each, or a grid of tiles. */
 export function ExtrasPage() {
   const { sessionId } = useSessionContext()
   const detail = useCodeReviewDetail()
   const open = useOpenCommentCount('extra')
   const extras = detail.extras
+  const { mode, openInScroll } = usePageMode()
   const items = pluralize(extras.length, 'item')
   const openLabel = pluralize(open, 'open comment')
 
@@ -32,7 +35,8 @@ export function ExtrasPage() {
           ) : null
         }
       />
-      {extras.length > 0 && <ExtrasRailSection extras={extras} />}
+      {/* Keyed by the view: the rail follows the cards or the tiles, whichever is on the page. */}
+      {extras.length > 0 && <ExtrasRailSection key={mode} extras={extras} />}
       {extras.length === 0 ? (
         <EmptyState
           icon={Files}
@@ -43,6 +47,8 @@ export function ExtrasPage() {
             </>
           }
         />
+      ) : mode === 'grid' ? (
+        <ExtrasGrid extras={extras} sessionId={sessionId} onOpen={openInScroll} />
       ) : (
         <div className="flex flex-col gap-5">
           {extras.map((item) => (

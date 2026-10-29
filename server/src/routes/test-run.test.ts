@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { FINGERPRINT_RE, ReviewResponseSchema, SendResponseSchema, SessionListItemSchema, TestRunDetailSchema, TestRunSentSnapshotSchema, TestRunSummarySchema, emptyReview } from '@scout/shared'
-import type { Review, TestRunDetail } from '@scout/shared'
+import { FINGERPRINT_RE, SCHEMA_VERSION, SendResponseSchema, SessionListItemSchema, TestRunDetailSchema, TestRunSentSnapshotSchema, TestRunSummarySchema, emptyReview } from '@scout/shared'
+import type { Resolutions, Review, TestRunDetail } from '@scout/shared'
 import { makeComment } from '@scout/shared/testing/fixtures'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -42,7 +42,7 @@ describe('test-run sessions', () => {
   let app: Express
   beforeAll(async () => {
     store = await createFixtureStore({ testRun: true })
-    app = appFor(store.home, { fake: { delayMs: 0 } })
+    app = appFor(store.home)
     await appServices(app).watcher.ready
   })
   afterAll(async () => {
@@ -69,7 +69,6 @@ describe('test-run sessions', () => {
         reviewed: 0,
         total: 3,
         openComments: 0,
-        activeRunId: null,
       })
 
       const reviews = (await request(app).get('/api/sessions?kind=code-review')).body as { id: string }[]
@@ -157,7 +156,7 @@ describe('test-run sessions', () => {
     })
   })
 
-  describe('review, send and agent run', () => {
+  describe('review and send', () => {
     const reviewUrl = `${base}/review`
 
     function draft(fingerprint: string): Review {
@@ -181,7 +180,7 @@ describe('test-run sessions', () => {
       expect(summary).toMatchObject({ status: 'in-progress', reviewed: 2, total: 3 })
     })
 
-    it('send writes .json and .md and no .patch, then the fake agent resolves the comment', async () => {
+    it('send writes .json and .md and no .patch', async () => {
       const res = await request(app).post(`${reviewUrl}/send`).send({ decision: 'request-changes', dispatch: true })
       expect(res.status).toBe(200)
       const body = SendResponseSchema.parse(res.body)
@@ -203,26 +202,19 @@ describe('test-run sessions', () => {
       expect(markdown).toContain('### s2-fail')
       expect(markdown).toContain('**[incorrect]** The empty state is wrong.')
       expect(TestRunSentSnapshotSchema.parse(JSON.parse(fs.readFileSync(path.join(sentDir, `${stem}.json`), 'utf8')))).toEqual(sent)
-
-      if (!body.run) throw new Error(`expected a run, got ${JSON.stringify(body.pending)}`)
-      expect(body.run).toMatchObject({ adapter: 'fake' })
-      const final = await appServices(app).runs.wait(body.run.id)
-      expect(final).toMatchObject({ status: 'succeeded' })
-      expect(final?.resolvedComments).toEqual(['c1'])
-      const merged = ReviewResponseSchema.parse((await request(app).get(reviewUrl)).body)
-      expect(merged.comments.filter((c) => c.status === 'open')).toEqual([])
-      // The detail carries the run state (the web's Submit follows it), live and not cached with the index.
-      expect(await detailOf(app)).toMatchObject({ activeRunId: null, latestRunStatus: 'succeeded' })
-      const listed = (await request(app).get(`${base}/runs`)).body as { id: string; status: string }[]
-      expect(listed.map((run) => [run.id, run.status])).toEqual([[body.run.id, 'succeeded']])
-      // The fake adapter wrote nothing into the checkout.
-      expect(fs.existsSync(path.join(store.testRun?.repo ?? '', 'README.md'))).toBe(false)
     })
 
     it('refuses to send nothing', async () => {
       const dir = store.testRun?.dir ?? ''
       const before = fs.readdirSync(path.join(dir, 'review', 'sent')).length
-      // Everything is sent already; with no new comments and no decision there is nothing to send.
+      // The only comment gets resolved (as `/apply-review` would record it): no open comments and no decision leaves nothing to send.
+      const resolutions: Resolutions = {
+        schemaVersion: SCHEMA_VERSION,
+        sessionId: TEST_RUN_SESSION_ID,
+        updatedAt: '2026-01-02T00:00:00.000Z',
+        comments: { c1: { status: 'resolved', note: 'fixed', at: '2026-01-02T00:00:00.000Z', files: [] } },
+      }
+      fs.writeFileSync(path.join(dir, 'review', 'resolutions.json'), JSON.stringify(resolutions))
       const res = await request(app).post(`${reviewUrl}/send`).send({ decision: 'undecided', dispatch: false })
       expect(res.status).toBe(400)
       expect(fs.readdirSync(path.join(dir, 'review', 'sent'))).toHaveLength(before)

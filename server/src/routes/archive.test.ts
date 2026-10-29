@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { ARCHIVED_FILE, ArchivedSessionSchema, StoreEventSchema } from '@scout/shared'
-import type { AgentRun, StoreEvent } from '@scout/shared'
+import type { StoreEvent } from '@scout/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Express } from 'express'
 import { appServices, closeApp } from '../app.ts'
@@ -101,38 +101,6 @@ describe('archive and unarchive', () => {
     expect((await post('/api/sessions/not-an-id/unarchive')).status).toBe(404)
   })
 
-  it('refuses to archive while a run is active (409 run-active)', async () => {
-    const run: AgentRun = {
-      id: 'run-20260101090000-ab12',
-      sessionId: FIXTURE_SESSION_ID,
-      sentAt: FIXTURE_T0,
-      adapter: 'fake',
-      status: 'running',
-      pid: null,
-      argv: [],
-      startedAt: FIXTURE_T0,
-      endedAt: null,
-      exitCode: null,
-      agentSessionId: null,
-      numTurns: null,
-      costUsd: null,
-      resultText: null,
-      error: null,
-      resolvedComments: [],
-    }
-    const file = path.join(store.dir, 'review', 'runs', `${run.id}.json`)
-    await fs.mkdir(path.dirname(file), { recursive: true })
-    await fs.writeFile(file, JSON.stringify(run))
-    try {
-      const res = await post(`/api/sessions/${FIXTURE_SESSION_ID}/archive`)
-      expect(res.status).toBe(409)
-      expect(res.body.error).toBe('run-active')
-      expect(await exists(store.dir)).toBe(true)
-    } finally {
-      await fs.rm(file, { force: true })
-    }
-  })
-
   it('deletes an archived session permanently, leaving siblings, cache/ and live sessions alone', async () => {
     const id = '20260105-1200-doomed-dead'
     const sibling = '20260105-1300-sibling-cafe'
@@ -200,40 +168,6 @@ describe('archive and unarchive', () => {
       expect(await exists(path.join(real, 'manifest.json'))).toBe(true)
     } finally {
       await fs.rm(path.join(store.home, 'elsewhere'), { recursive: true, force: true })
-    }
-  })
-
-  it('refuses to delete an archived session whose run record still says running (409 run-active)', async () => {
-    const id = '20260107-0900-running-0bad'
-    const runFile = path.join(archivedDir(id), 'review', 'runs', 'run-20260101090000-ab12.json')
-    await fs.mkdir(path.dirname(runFile), { recursive: true })
-    await fs.writeFile(path.join(archivedDir(id), 'manifest.json'), JSON.stringify({ ...store.manifest, id }))
-    const run: AgentRun = {
-      id: 'run-20260101090000-ab12',
-      sessionId: id,
-      sentAt: FIXTURE_T0,
-      adapter: 'fake',
-      status: 'running',
-      pid: null,
-      argv: [],
-      startedAt: FIXTURE_T0,
-      endedAt: null,
-      exitCode: null,
-      agentSessionId: null,
-      numTurns: null,
-      costUsd: null,
-      resultText: null,
-      error: null,
-      resolvedComments: [],
-    }
-    await fs.writeFile(runFile, JSON.stringify(run))
-    try {
-      const res = await fetch(`${server.url}/api/sessions/archived/${id}`, { method: 'DELETE' })
-      expect(res.status).toBe(409)
-      expect(((await res.json()) as { error?: string }).error).toBe('run-active')
-      expect(await exists(path.join(archivedDir(id), 'manifest.json'))).toBe(true)
-    } finally {
-      await fs.rm(archivedDir(id), { recursive: true, force: true })
     }
   })
 

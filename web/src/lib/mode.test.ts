@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { modeSearch, parseMode, readLastCardMode, rememberCardMode, toggledCardMode, toggledGridMode } from './mode'
+import { modeSearch, parseMode, parsePageMode, readLastCardMode, rememberCardMode, toggledCardMode, toggledGridMode } from './mode'
 
 describe('mode', () => {
   beforeEach(() => {
@@ -33,5 +33,12 @@ describe('mode', () => {
   it('modeSearch switches the mode and keeps the commit scope', () => {
     expect(modeSearch(new URLSearchParams('mode=swipe&commit=uncommitted'), 'grid')).toBe('?mode=grid&commit=uncommitted')
     expect(modeSearch(new URLSearchParams(), 'scroll')).toBe('?mode=scroll')
+  })
+
+  it('reads the Spec and Extras page mode as grid or scroll', () => {
+    expect(parsePageMode('grid')).toBe('grid')
+    expect(parsePageMode('scroll')).toBe('scroll')
+    expect(parsePageMode('swipe')).toBe('scroll')
+    expect(parsePageMode(null)).toBe('scroll')
   })
 })

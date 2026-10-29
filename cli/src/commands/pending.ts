@@ -5,7 +5,7 @@ import type { Command } from 'commander'
 import { ManifestSchema, derivePrComments, manifestKind, mergeComments, type ManifestKind } from '@scout/shared'
 import { topLevel } from '@scout/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
-import { listSessionIds, peekManifest, readPrComments, readPrResolutions, readResolutions, readReview } from '../sessions.ts'
+import { listSessionIds, peekManifest, readPrComments, readPrReplies, readPrResolutions, readResolutions, readReview } from '../sessions.ts'
 import { resolveHome } from '../store.ts'
 
 export interface PendingSession {
@@ -51,7 +51,7 @@ export async function pendingForRepo(options: { home: string; repo: string }): P
     const manifest = ManifestSchema.safeParse(peek.raw)
     if (!manifest.success) continue
     const open = mergeComments(review, await readResolutions(peek.dir)).filter((c) => c.status === 'open' && c.sentAt !== null)
-    const openPr = derivePrComments(await readPrComments(peek.dir), await readPrResolutions(peek.dir), review.sent.at).filter((v) => !v.isReply && v.status === 'open' && v.trusted)
+    const openPr = derivePrComments(await readPrComments(peek.dir), await readPrResolutions(peek.dir), review.sent.at, await readPrReplies(peek.dir)).filter((v) => !v.isReply && v.status === 'open' && v.trusted)
     if (open.length === 0 && openPr.length === 0) continue
     const kind = manifestKind(manifest.data)
     sessions.push({ id, kind, title: manifest.data.title, sentAt: review.sent.at, openComments: open.length, openPrComments: openPr.length, url: dashboardUrl(config, id, kind) })

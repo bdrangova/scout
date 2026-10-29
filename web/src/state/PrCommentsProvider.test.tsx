@@ -83,7 +83,7 @@ describe('PrCommentsProvider', () => {
         <Submit />
       </PrCommentsProvider>,
     )
-    await user.click(await screen.findByRole('button', { name: /Instruction for Claude/ }))
+    await user.click(await screen.findByRole('button', { name: /^Reply to/ }))
     // No blur: the text is still in the 250 ms debounce when Submit asks every box to save.
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Do it' } })
     expect(puts).toHaveLength(0)

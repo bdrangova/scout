@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import { FINGERPRINT_RE, RUN_ID_RE, SESSION_ID_RE } from '../constants.ts'
+import { FINGERPRINT_RE, SESSION_ID_RE } from '../constants.ts'
 import { COMMENT_STATUSES, SESSION_STATUSES } from '../review/status.ts'
-import { AgentAdapterNameSchema, AgentRunSchema, AgentRunStatusSchema } from './agent.ts'
 import { EvidenceItemSchema, ExtraItemSchema, SpecItemSchema } from './artifacts.ts'
 import { CodeReviewManifestSchema, TestRunManifestSchema, TicketSchema } from './manifest.ts'
 import { PrCommentCountsSchema, PrSummarySchema } from './pr-comments.ts'
@@ -29,8 +28,6 @@ export type Progress = z.infer<typeof ProgressSchema>
 export const HealthSchema = z.object({
   ok: z.literal(true),
   home: z.string(),
-  adapter: AgentAdapterNameSchema,
-  claudeBin: z.string().nullable(),
 })
 export type Health = z.infer<typeof HealthSchema>
 
@@ -52,9 +49,6 @@ export const SessionSummarySchema = z.object({
   updatedAt: isoDate,
   /** Live (non-superseded) journal entries; 0 when there is no journal. */
   journalCount: nonNegativeInt.default(0),
-  activeRunId: z.string().regex(RUN_ID_RE).nullable(),
-  /** Status of the newest run (`failed` makes the session status `run-failed`); absent when there is none. */
-  latestRunStatus: AgentRunStatusSchema.nullable().optional(),
   /** The last send (when and which decision: approve, request-changes, reject); null before the first send, absent from older servers. */
   lastSend: z.object({ at: isoDate, decision: DecisionSchema }).nullable().optional(),
   /** GitHub PR comment counts from `review/pr-comments.json`; null/absent when the session was never synced. */
@@ -89,8 +83,6 @@ export const TestRunSummarySchema = z.object({
   total: nonNegativeInt,
   openComments: nonNegativeInt,
   lastSend: z.object({ at: isoDate, decision: DecisionSchema }).nullable().optional(),
-  activeRunId: z.string().regex(RUN_ID_RE).nullable(),
-  latestRunStatus: AgentRunStatusSchema.nullable().optional(),
 })
 export type TestRunSummary = z.infer<typeof TestRunSummarySchema>
 
@@ -134,9 +126,6 @@ export const CodeReviewDetailSchema = z.object({
   progress: ProgressSchema,
   /** Live (non-superseded) journal entries; 0 when there is no journal. */
   journalCount: nonNegativeInt.default(0),
-  activeRunId: z.string().regex(RUN_ID_RE).nullable(),
-  /** Status of the newest run (`failed` makes the session status `run-failed`); absent when there is none. */
-  latestRunStatus: AgentRunStatusSchema.nullable().optional(),
   /** GitHub PR comment counts (see `SessionSummary.prComments`). */
   prComments: PrCommentCountsSchema.nullable().optional(),
   /** The session's current PR (from `review/pr-comments.json`); null/absent when none is known. */
@@ -156,9 +145,6 @@ export const TestRunDetailSchema = z.object({
   /** Referenced `alias:path`s that do not exist on disk. */
   missing: z.array(z.string()),
   computedAt: isoDate,
-  /** The agent run in progress and the status of the newest run (live per request, not cached with the index). */
-  activeRunId: z.string().regex(RUN_ID_RE).nullable().optional(),
-  latestRunStatus: AgentRunStatusSchema.nullable().optional(),
 })
 export type TestRunDetail = z.infer<typeof TestRunDetailSchema>
 
@@ -185,30 +171,22 @@ export type PutReviewResponse = z.infer<typeof PutReviewResponseSchema>
 export const PutReviewConflictSchema = z.object({ error: z.string(), current: ReviewSchema })
 export type PutReviewConflict = z.infer<typeof PutReviewConflictSchema>
 
+/** Submit only writes the feedback; the reviewer applies it from their own Claude Code session (`/apply-review`). */
 export const SendRequestSchema = z.object({
   decision: DecisionSchema,
-  dispatch: z.boolean(),
 })
 export type SendRequest = z.infer<typeof SendRequestSchema>
 
 export const SendResponseSchema = z.object({
   sent: SentSnapshotSchema,
-  run: AgentRunSchema.nullable(),
-  pending: z.object({ reason: z.string() }).nullable(),
 })
 export type SendResponse = z.infer<typeof SendResponseSchema>
-
-export const StartRunRequestSchema = z.object({
-  fork: z.boolean().optional(),
-})
-export type StartRunRequest = z.infer<typeof StartRunRequestSchema>
 
 export const StoreEventSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated', 'journal.updated', 'pr-comments.updated', 'testrun.updated']),
     sessionId: z.string(),
   }),
-  z.object({ type: z.literal('run.updated'), sessionId: z.string(), runId: z.string() }),
   /** The working tree was recomputed; `fingerprint` is `WorkingTree.fingerprint`. */
   z.object({
     type: z.literal('tree.updated'),

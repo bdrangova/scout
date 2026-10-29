@@ -1,8 +1,4 @@
-import type {
-  AgentRun,
-  SendResponse,
-  TestRunDetail,
-} from "@scout/shared";
+import type { SendResponse, TestRunDetail } from "@scout/shared";
 import {
   cleanup,
   fireEvent,
@@ -40,28 +36,6 @@ function json(status: number, body: unknown): Response {
     status,
     headers: { "content-type": "application/json" },
   });
-}
-
-function run(overrides: Partial<AgentRun> = {}): AgentRun {
-  return {
-    id: "run-20261021120000-ab12",
-    sessionId: SESSION_ID,
-    sentAt: SENT_AT,
-    adapter: "fake",
-    status: "running",
-    pid: null,
-    argv: ["fake-agent"],
-    startedAt: SENT_AT,
-    endedAt: null,
-    exitCode: null,
-    agentSessionId: null,
-    numTurns: null,
-    costUsd: null,
-    resultText: null,
-    error: null,
-    resolvedComments: [],
-    ...overrides,
-  };
 }
 
 const emptyRunDetail: TestRunDetail = {
@@ -263,8 +237,6 @@ describe("TestRunSubmitPage", () => {
       () =>
         json(200, {
           sent,
-          run: null,
-          pending: { reason: "Claude Desktop is open" },
         } satisfies SendResponse),
     );
     fireEvent.click(
@@ -273,39 +245,11 @@ describe("TestRunSubmitPage", () => {
     await waitFor(() =>
       expect(
         api.posts.find((post) => post.url.endsWith("/review/send"))?.body,
-      ).toEqual({ decision: "request-changes", dispatch: false }),
+      ).toEqual({ decision: "request-changes" }),
     );
     expect(
       await screen.findByRole("region", { name: "Feedback pending" }),
     ).toHaveTextContent(`/apply-test-review ${SESSION_ID}`);
     expect(writeText).toHaveBeenCalledWith(`/apply-test-review ${SESSION_ID}`);
-  });
-
-  it("shows the agent run in place of the compose cards after a send that starts one", async () => {
-    const sent = {
-      schemaVersion: 2,
-      kind: "test-run",
-      sessionId: SESSION_ID,
-      sentAt: SENT_AT,
-    } as unknown as SendResponse["sent"];
-    renderSubmit(
-      reviewResponseFixture(
-        reviewFixture({
-          overall: { ...reviewFixture().overall, decision: "approve" },
-        }),
-      ),
-      testRunDetailFixture,
-      () =>
-        json(200, { sent, run: run(), pending: null } satisfies SendResponse),
-    );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Submit to current session" }),
-    );
-    expect(
-      await screen.findByRole("button", { name: "Back to the review" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("region", { name: "Run summary" }),
-    ).not.toBeInTheDocument();
   });
 });

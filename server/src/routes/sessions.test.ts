@@ -36,7 +36,6 @@ describe('GET /api/sessions', () => {
       status: 'unreviewed',
       progress: { reviewed: 0, total: 8 },
       openComments: 0,
-      activeRunId: null,
     })
     expect(summary.stats.files).toBe(8)
     expect(summary.stats.additions).toBeGreaterThan(0)
@@ -110,7 +109,6 @@ describe('GET /api/sessions/:id', () => {
     expect(detail.prDescription).toContain('# Fixture change')
     expect(detail.status).toBe('unreviewed')
     expect(detail.progress).toEqual({ reviewed: 0, total: 8 })
-    expect(detail.activeRunId).toBeNull()
   })
 
   it('serves the second request from the cache (same computedAt and fingerprint)', async () => {

@@ -1,20 +1,14 @@
 import type { SpecItem } from '@scout/shared'
-import { ClipboardList, FileText, Globe, type LucideIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { RailSection } from '@/components/layout/RailSlot'
 import { splitPath } from '@/lib/paths'
 import { useContent } from '@/lib/useContent'
 import { useOpenCommentCount } from '@/lib/useOpenCommentCount'
+import { SPEC_KIND } from './item-kinds'
 import { extractHeadings } from './outline'
 import { RailBlock, RailHeadingItem, RailItem } from './RailItem'
 import { scrollToHeading, scrollToTarget } from './rail-targets'
 import { useActiveTarget } from './useActiveTarget'
-
-const KIND: Record<SpecItem['type'], { icon: LucideIcon; label: string }> = {
-  jira: { icon: ClipboardList, label: 'Jira ticket' },
-  markdown: { icon: FileText, label: 'Markdown' },
-  artifact: { icon: Globe, label: 'Exported artifact' },
-}
 
 interface SourceProps {
   item: SpecItem
@@ -29,7 +23,7 @@ function SpecSourceRow({ item, sessionId, current, onSelect }: SourceProps) {
   const comments = useOpenCommentCount('spec', item.path)
   const [heading, setHeading] = useState<string | null>(null)
   const headings = useMemo(() => (item.type === 'artifact' || content === null ? [] : extractHeadings(content)), [item.type, content])
-  const { icon, label } = KIND[item.type]
+  const { icon, label } = SPEC_KIND[item.type]
   const isMarkdown = item.type === 'markdown'
 
   return (

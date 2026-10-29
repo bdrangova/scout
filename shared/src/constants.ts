@@ -7,8 +7,6 @@ export const DASHBOARD_HOST = 'scout.localhost'
 
 /** `<yyyymmdd>-<hhmm>-<slug>-<4hex>` */
 export const SESSION_ID_RE = /^\d{8}-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{4}$/
-/** `run-<yyyymmddhhmmss>-<4hex>` */
-export const RUN_ID_RE = /^run-\d{14}-[0-9a-f]{4}$/
 /** `c<n>`, n >= 1 */
 export const COMMENT_ID_RE = /^c[1-9]\d*$/
 /** `j<n>`, n >= 1: a journal entry id, never reused. */

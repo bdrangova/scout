@@ -85,7 +85,7 @@ describe('landingSection', () => {
     const sent = { at: '2026-09-27T00:00:00.000Z', decision: 'request-changes' as const }
 
     it('opens submit when nothing is open and nothing changed', () => {
-      expect(landingSection(without({ latestRunStatus: 'succeeded' }), reviewFixture({ files: judged('rejected', 2), sent }))).toBe('submit')
+      expect(landingSection(detail, reviewFixture({ files: judged('rejected', 2), sent }))).toBe('submit')
     })
 
     it('opens files again when a sent file changed since', () => {
@@ -102,11 +102,6 @@ describe('landingSection', () => {
       const review = reviewFixture({ files: judged('approved', 2), sent, comments: [comment('c1', 'file', files[0]?.path ?? '')], nextCommentId: 2 })
       const resolutions = resolutionsFixture({ c1: { status: 'resolved', note: 'done', at: '2026-09-26T00:00:00.000Z', files: [] } })
       expect(landingSection(detail, review, resolutions)).toBe('submit')
-    })
-
-    it('opens submit while the agent works or after a failed run', () => {
-      expect(landingSection(without({ activeRunId: 'r1' }), reviewFixture({ files: judged('approved', 1) }))).toBe('submit')
-      expect(landingSection(without({ latestRunStatus: 'failed' }), reviewFixture({ files: judged('approved', 1) }))).toBe('submit')
     })
   })
 })

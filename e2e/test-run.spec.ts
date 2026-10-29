@@ -4,15 +4,14 @@ import { expect, test, type Page } from '@playwright/test'
 import { E2E_STORE } from './store.ts'
 
 /**
- * The test-run module end to end on the throwaway fixture store and the fake agent adapter (see
+ * The test-run module end to end on the throwaway fixture store (see
  * `playwright.config.ts`): toggle the list to Test runs → open the demo run → the overview → the Review page →
- * Submit with "Changes requested" and an overall note → the fake run finishes and the note shows as resolved.
+ * Submit with "Changes requested" and an overall note → the feedback is saved and the page shows the `/apply-review` command.
  * Verdicts on scenarios are not driven here: they belong to the storyboard (M4b) and join this spec when it lands.
  */
 
 const SESSION_ID = '20261021-1800-diffing-run-7e2a'
 const OVERALL = 'Test-run smoke: the empty state needs a better message.'
-const FAKE_RESOLUTION_NOTE = 'Applied by the fake adapter'
 
 const sessionDir = path.join(E2E_STORE, 'sessions', SESSION_ID)
 const reviewDir = path.join(sessionDir, 'review')
@@ -72,7 +71,7 @@ test.describe('test-run session', () => {
     await expect(page.getByRole('article', { name: 'Happy path' })).toBeVisible()
   })
 
-  test('submits "Changes requested" with an overall note and the fake agent resolves it', async () => {
+  test('submits "Changes requested" with an overall note and shows the pending command', async () => {
     await page.goto(`/t/${SESSION_ID}/submit`)
     await expect(page.getByRole('heading', { level: 1, name: 'Submit' })).toBeVisible()
 
@@ -88,18 +87,12 @@ test.describe('test-run session', () => {
 
     await page.getByRole('button', { name: 'Submit to current session' }).click()
 
-    const status = page.getByRole('region', { name: 'Agent status' })
-    await expect(status).toBeVisible()
-    await expect(status.getByText('Claude Code finished working on your comments')).toBeVisible({ timeout: 60_000 })
-    await expect(status.getByText('1 of 1', { exact: true })).toBeVisible()
-
-    const comments = page.getByRole('region', { name: 'Comments', exact: true })
-    await comments.getByRole('button', { name: 'Show 1 resolved' }).click()
-    await expect(comments.getByText(FAKE_RESOLUTION_NOTE)).toBeVisible()
-    await expect(comments.getByText(OVERALL)).toBeVisible()
+    const pending = page.getByRole('region', { name: 'Feedback pending' })
+    await expect(pending).toBeVisible()
+    await expect(pending.getByText('/apply-review').first()).toBeVisible()
   })
 
-  test('wrote the test-run snapshot, its markdown and the resolutions to disk', async () => {
+  test('wrote the test-run snapshot and its markdown to disk', async () => {
     const sentDir = path.join(reviewDir, 'sent')
     const sent = await listDir(sentDir)
     expect(sent.some((name) => name.endsWith('.json'))).toBe(true)
@@ -114,9 +107,5 @@ test.describe('test-run session', () => {
     const markdown = await fs.readFile(path.join(sentDir, json.replace(/\.json$/, '.md')), 'utf8')
     expect(markdown).toContain(OVERALL)
     expect(markdown).toContain(`/t/${SESSION_ID}/review`)
-
-    expect((await listDir(path.join(reviewDir, 'runs'))).some((name) => /^run-.*\.jsonl$/.test(name))).toBe(true)
-    const resolutions = await readJson<{ comments: Record<string, { status: string; note: string | null }> }>(path.join(reviewDir, 'resolutions.json'))
-    expect(Object.values(resolutions.comments)).toContainEqual(expect.objectContaining({ status: 'resolved', note: FAKE_RESOLUTION_NOTE }))
   })
 })

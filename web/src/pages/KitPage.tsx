@@ -1,5 +1,5 @@
 import { ScoutMark, ScoutMascot } from '@/components/brand/Scout'
-import type { AgentRunStatus, FileStatus, SessionStatus, Verdict } from '@scout/shared'
+import type { FileStatus, SessionStatus, Verdict } from '@scout/shared'
 import {
   ArchiveIcon,
   ChevronDownIcon,
@@ -29,13 +29,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { FILE_TYPES, fileTypeClass } from '@/lib/file-type'
 import { StatusPill } from '@/components/session/StatusPill'
-import { STATUS_TONE, TONE_TEXT_CLASS } from '@/lib/status-tone'
+import { STATUS_TONE } from '@/lib/status-tone'
 import { VERDICT_STYLE, type VerdictKind } from '@/lib/verdict'
 import { ThemeToggle } from '@/theme/ThemeToggle'
 
-const SESSION_STATUSES: SessionStatus[] = ['unreviewed', 'in-progress', 'ready', 'sent', 'updated', 'approved', 'agent-working', 'run-failed']
+const SESSION_STATUSES: SessionStatus[] = ['unreviewed', 'in-progress', 'ready', 'sent', 'updated', 'approved']
 const FILE_STATUSES: FileStatus[] = ['added', 'modified', 'deleted', 'renamed', 'copied', 'typechange']
-const RUN_STATUSES: AgentRunStatus[] = ['queued', 'running', 'succeeded', 'failed', 'cancelled']
 const VERDICTS: VerdictKind[] = ['approved', 'rejected', 'commented', 'none']
 const TAG_TONES = ['neutral', 'info', 'warn', 'ok', 'err', 'yellow', 'mint', 'coral', 'blue', 'pink', 'sunken'] as const
 const NOTICE_TONES = ['info', 'warn', 'ok', 'err'] as const
@@ -202,7 +201,7 @@ export function KitPage() {
               <div key={theme} className={`${theme === 'dark' ? 'dark ' : ''}flex w-full flex-wrap items-center gap-3 rounded-xl border-fine border-line bg-paper p-3 text-ink`}>
                 <span className="w-12 text-[11px] font-bold tracking-[.08em] text-ink-muted uppercase">{theme}</span>
                 {SESSION_STATUSES.map((status) => (
-                  <StatusPill key={status} showWord summary={{ status, progress: { reviewed: 3, total: 3 }, openComments: 0, lastSend: status === 'agent-working' || status === 'run-failed' ? { at: '2026-10-01T10:00:00.000Z', decision: 'request-changes' } : null }} />
+                  <StatusPill key={status} showWord summary={{ status, progress: { reviewed: 3, total: 3 }, openComments: 0, lastSend: null }} />
                 ))}
               </div>
             ))}
@@ -217,17 +216,6 @@ export function KitPage() {
                   return (
                     <li key={s} className="flex items-center gap-2">
                       <StatusDot tone={spec.tone} label={spec.label} /> {spec.label}
-                    </li>
-                  )
-                })}
-              </ul>
-              <ul className="m-0 flex list-none flex-col gap-2 p-0">
-                <li className="text-[11px] font-bold tracking-[.08em] text-ink-muted uppercase">Run</li>
-                {RUN_STATUSES.map((s) => {
-                  const spec = STATUS_TONE.run(s)
-                  return (
-                    <li key={s} className={`flex items-center gap-2 ${TONE_TEXT_CLASS[spec.tone]}`}>
-                      <StatusDot tone={spec.tone} pulse={spec.pulse} label={spec.label} /> {spec.label}
                     </li>
                   )
                 })}

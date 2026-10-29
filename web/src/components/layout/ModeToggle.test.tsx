@@ -1,16 +1,18 @@
 import { render, screen } from '@testing-library/react'
+import type { ComponentProps } from 'react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
+import { PAGE_MODES } from '@/lib/mode'
 import { SessionContext } from '@/lib/session-context'
 import { SESSION_ID, sessionDetailFixture, testRunDetailFixture } from '@/test/fixtures'
 import { ModeToggle } from './ModeToggle'
 import { ShellConfigProvider } from './ShellConfigProvider'
 
-function renderToggle(path: string) {
+function renderToggle(path: string, props: ComponentProps<typeof ModeToggle> = {}) {
   render(
     <MemoryRouter initialEntries={[path]}>
       <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
-        <ModeToggle />
+        <ModeToggle {...props} />
       </SessionContext.Provider>
     </MemoryRouter>,
   )
@@ -42,6 +44,14 @@ describe('ModeToggle', () => {
     renderToggle(`/s/${SESSION_ID}/evidence`)
     expect(screen.getByRole('link', { name: 'Swipe' })).toHaveAttribute('aria-current', 'true')
     expect(screen.getByRole('link', { name: 'Grid' })).toHaveAttribute('href', `/s/${SESSION_ID}/files?mode=grid`)
+  })
+
+  it('offers Scroll and Grid on a page that names its own modes, defaulting to the first', () => {
+    renderToggle(`/s/${SESSION_ID}/spec`, { pathname: `/s/${SESSION_ID}/spec`, modes: PAGE_MODES })
+    const links = screen.getByRole('group', { name: 'Review mode' }).querySelectorAll('a')
+    expect([...links].map((link) => link.getAttribute('aria-label'))).toEqual(['Scroll', 'Grid'])
+    expect(screen.getByRole('link', { name: 'Scroll' })).toHaveAttribute('aria-current', 'true')
+    expect(screen.getByRole('link', { name: 'Grid' })).toHaveAttribute('href', `/s/${SESSION_ID}/spec?mode=grid`)
   })
 
   it('keeps the commit scope when switching modes', () => {

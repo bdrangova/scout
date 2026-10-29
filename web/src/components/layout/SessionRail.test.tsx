@@ -91,11 +91,6 @@ describe('SessionRail', () => {
       expect(side.queryByText('Suggested decision')).not.toBeInTheDocument()
       expect(side.queryByText('5 not reviewed')).not.toBeInTheDocument()
     })
-
-    it('has no suggestion while Claude Code is working', () => {
-      renderShell(`/s/${SESSION_ID}/spec`, { detail: { ...sessionDetailFixture, activeRunId: 'run-20260926180000-ab12' }, review: reviewFixture({ files: Object.fromEntries([verdict(0, 'rejected')]) }) })
-      expect(within(rail()).queryByText('Suggested decision')).not.toBeInTheDocument()
-    })
   })
 
   describe('visibility', () => {

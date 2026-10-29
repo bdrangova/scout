@@ -1,7 +1,6 @@
-import type { AgentRun, CommentWithStatus } from '@scout/shared'
+import type { CommentWithStatus } from '@scout/shared'
 import { pluralize } from '@/lib/format'
 import type { QueuedReplyCounts } from '@/lib/pr-replies'
-import { formatCost } from '@/lib/runs'
 
 export interface SendCounts {
   files: number
@@ -79,18 +78,4 @@ export function prReplyRows(queued: QueuedReplyCounts): SummaryRow[] {
   if (queued.instructions > 0) rows.push({ label: 'Instructions', value: String(queued.instructions) })
   if (queued.replies > 0) rows.push({ label: 'PR replies', value: String(queued.replies) })
   return rows
-}
-
-/** `Run 2 · failed`: runs are numbered oldest first. */
-export function runTitle(number: number, status: AgentRun['status']): string {
-  return `Run ${number} · ${status}`
-}
-
-/** The second line of a run in the rail: why it failed, or what it resolved and cost. */
-export function runDetail(run: AgentRun): string {
-  if (run.status === 'failed') return run.error ?? (run.exitCode === null ? 'failed' : `exit ${run.exitCode}`)
-  const parts: string[] = []
-  if (run.resolvedComments.length > 0) parts.push(`resolved ${pluralize(run.resolvedComments.length, 'comment')}`)
-  if (run.costUsd !== null) parts.push(formatCost(run.costUsd))
-  return parts.length > 0 ? parts.join(' · ') : run.status === 'running' ? 'in progress' : 'no comments resolved'
 }

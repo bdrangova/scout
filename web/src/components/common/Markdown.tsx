@@ -6,7 +6,7 @@ import { Streamdown, type LinkSafetyModalProps, type ThemeInput } from 'streamdo
 import { useMermaidConfig } from '@/lib/mermaid-theme'
 import { cn } from '@/lib/utils'
 import { LinkSafetyDialog, SafeImage } from './UntrustedParts'
-import { UNTRUSTED_REHYPE_PLUGINS } from './untrusted-markdown'
+import { imgTagsToMarkdown, UNTRUSTED_REHYPE_PLUGINS } from './untrusted-markdown'
 import './markdown.css'
 
 export interface MarkdownProps {
@@ -16,7 +16,8 @@ export interface MarkdownProps {
   tallDiagrams?: boolean
   /**
    * `untrusted` is for third-party text (GitHub comments, trusted authors included): links ask for
-   * confirmation and show their host, only GitHub-hosted images load, no raw HTML, no diagrams.
+   * confirmation and show their host, only GitHub-hosted images load (pasted `<img>` tags included,
+   * through the server's signed-in relay), no other raw HTML, no diagrams.
    * `trusted` (default) is the reviewer's own agent output.
    */
   variant?: 'trusted' | 'untrusted'
@@ -56,7 +57,7 @@ function UntrustedMarkdown({ source, className }: Omit<MarkdownProps, 'variant'>
       components={UNTRUSTED_COMPONENTS}
       className={cn('prose-rd', className)}
     >
-      {source}
+      {imgTagsToMarkdown(source)}
     </Streamdown>
   )
 }

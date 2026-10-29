@@ -73,7 +73,6 @@ export function useSessionList(kind: SessionKind = 'code-review'): SessionListVi
     'session.updated': scheduleReload,
     'session.removed': scheduleReload,
     'review.updated': scheduleReload,
-    'run.updated': scheduleReload,
     'tree.updated': scheduleReload,
     'resolutions.updated': scheduleReload,
     'testrun.updated': scheduleReload,

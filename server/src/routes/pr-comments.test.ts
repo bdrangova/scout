@@ -234,6 +234,34 @@ describe('PUT /sessions/:id/pr-replies/:commentId', () => {
   })
 })
 
+describe('PUT /sessions/:id/pr-resolved/:commentId', () => {
+  const resolve = (commentId: string, resolved: boolean) => request(app).put(`/api/sessions/${FIXTURE_SESSION_ID}/pr-resolved/${commentId}`).send({ resolved })
+
+  it('marks an open thread handled in Scout (outdated, out of the open count), keeps the drafts, and reopens it', async () => {
+    write('pr-comments.json', makePrComments([makePrComment({ githubId: 1 }), makePrComment({ githubId: 2, line: 30 })], { sessionId: FIXTURE_SESSION_ID }))
+    fs.rmSync(file('pr-resolutions.json'), { force: true })
+    write('pr-replies.json', { schemaVersion: 2, sessionId: FIXTURE_SESSION_ID, updatedAt: T3, replies: { rc2: { body: 'keep', kind: 'instruction', editedAt: T2, postedAt: null } } })
+    const res = await resolve('rc2', true)
+    expect(res.status).toBe(200)
+    const body = PrCommentsResponseSchema.parse(res.body)
+    expect(body.comments.find((c) => c.id === 'rc2')).toMatchObject({ status: 'outdated', closedBy: 'scout-resolved', draftReply: { body: 'keep' } })
+    expect(body.counts).toMatchObject({ open: 1, outdated: 1 })
+    // An edit of the note keeps the mark.
+    expect((await request(app).put(`/api/sessions/${FIXTURE_SESSION_ID}/pr-replies/rc1`).send({ body: 'x' })).status).toBe(200)
+    expect(Object.keys(JSON.parse(fs.readFileSync(file('pr-replies.json'), 'utf8')).resolved)).toEqual(['rc2'])
+    const reopened = PrCommentsResponseSchema.parse((await resolve('rc2', false)).body)
+    expect(reopened.comments.find((c) => c.id === 'rc2')).toMatchObject({ status: 'open', closedBy: null })
+  })
+
+  it('rejects an unknown comment (404) and a thread that is not open (400)', async () => {
+    write('pr-comments.json', makePrComments([makePrComment({ githubId: 1 }), makePrComment({ githubId: 3, outdated: true, line: null })], { sessionId: FIXTURE_SESSION_ID }))
+    fs.rmSync(file('pr-replies.json'), { force: true })
+    expect((await resolve('rc9', true)).status).toBe(404)
+    expect((await resolve('rc3', true)).status).toBe(400)
+    expect((await request(app).put(`/api/sessions/${FIXTURE_SESSION_ID}/pr-resolved/rc1`).send({ resolved: 'yes' })).status).toBe(400)
+  })
+})
+
 describe('Submit with PR drafts', () => {
   it('lists unposted drafts in the snapshot and the markdown, and leaves posted ones and stale instructions out', async () => {
     write('pr-comments.json', makePrComments([makePrComment({ githubId: 1 }), makePrComment({ githubId: 2, line: 30 }), makePrComment({ githubId: 5, line: 40 }), makePrComment({ githubId: 6, line: 41 })], { sessionId: FIXTURE_SESSION_ID }))

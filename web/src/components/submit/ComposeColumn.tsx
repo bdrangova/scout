@@ -3,7 +3,7 @@ import { Panel, PanelBody, PanelHeader, PanelTitle } from '@/components/ui/panel
 import { useSessionContext } from '@/lib/session-context'
 import { useReview } from '@/state/review-context'
 import { useCommentActions } from '@/state/useCommentActions'
-import type { PendingState, SendReviewState } from '@/state/useSendReview'
+import type { PendingState } from '@/state/useSendReview'
 import type { ReviewCommand } from '@/lib/runs'
 import { DecisionPicker, type DecisionChoice } from './DecisionPicker'
 import { OverallComment } from './OverallComment'
@@ -11,7 +11,6 @@ import { PendingPanel } from './PendingPanel'
 
 export interface ComposeColumnProps {
   pending: PendingState | null
-  onRun: SendReviewState['showRun']
   /** The agent's working directory and the slash command it is given (for the pending panel's Desktop link). */
   cwd: string
   command: ReviewCommand
@@ -21,8 +20,8 @@ export interface ComposeColumnProps {
   decisionChoices?: readonly DecisionChoice[]
 }
 
-/** The compose side of Submit: the pending notice (after a send without a run), overall feedback, decision and the description card. */
-export function ComposeColumn({ pending, onRun, cwd, command, descriptionPanel, decisionChoices }: ComposeColumnProps) {
+/** The compose side of Submit: the pending notice (after a send), overall feedback, decision and the description card. */
+export function ComposeColumn({ pending, cwd, command, descriptionPanel, decisionChoices }: ComposeColumnProps) {
   const { sessionId } = useSessionContext()
   const { state, dispatch, comments } = useReview()
   const { onEdit, onDelete } = useCommentActions()
@@ -30,7 +29,7 @@ export function ComposeColumn({ pending, onRun, cwd, command, descriptionPanel, 
 
   return (
     <>
-      {pending && <PendingPanel sessionId={sessionId} repoPath={cwd} command={command} mode={pending.mode} reason={pending.reason} onRun={onRun} />}
+      {pending && <PendingPanel sessionId={sessionId} repoPath={cwd} command={command} mode={pending.mode} />}
       <Panel role="region" aria-label="Overall feedback">
         <PanelHeader>
           <PanelTitle>Overall feedback</PanelTitle>

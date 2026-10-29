@@ -86,7 +86,7 @@ Every session page is `SessionBar` (52px, sticky, `--shell-h`) over `SessionRail
 
 ### Reply box (`PrReplyBox`, `state/usePrReplyDraft.ts`, `lib/pr-replies.ts`)
 The last row of a thread root's card (`border-t-fine`, same `Textarea` as the composers, `rounded-lg`, `text-[13px]`). Replies inside a thread, outdated threads, and answered threads with neither a proposal nor a draft have none. Hotkeys stay off while typing (`isTypingTarget`); Esc blurs, blur saves at once.
-- Open, no draft: a dashed "Tell Claude what to do…" trigger (`CommentBox` collapsed look) that opens the textarea ("Instruction for Claude · sent with your next submit").
+- Open, no draft: nothing under the comment; the header's Reply opens the textarea ("Instruction for Claude · sent with your next submit") with Cancel / Comment and ⌘↵, like the other comment boxes.
 - Open or answered with a draft, not posted: the draft in the textarea, kind label ("Instruction…" or "Reply to post on GitHub · posted when you submit"), a `Tag tone="info"` "Queued" chip, and a tiny "Saving…/Saved/Not saved" at the right. Text autosaves 250 ms after the last keystroke (`PUT /pr-replies/:id`; blank deletes the draft). `PrCommentsProvider` keeps a registry of the boxes' flush functions and `useSendReview` awaits `flushReplies()` next to the review's `flushSave()`, so a reply typed just before Submit is in the snapshot.
 - Answered with a proposal and no draft: the proposal fills the textarea ("Proposed reply from Claude", "Not queued yet" hint). It is not a draft, so not sent, until "Use this reply" (a plain button: Submit keeps the screen's one primary) or an edit saves it.
 - Posted (`draftReply.postedAt`): read-only quote with a green "Posted to GitHub" tag and the time; no textarea.

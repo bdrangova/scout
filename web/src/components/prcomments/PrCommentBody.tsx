@@ -12,7 +12,7 @@ export function PrCommentBody({ body, label }: { body: string; label: string }) 
     <div className="flex min-w-0 flex-col items-start gap-1">
       <div className={cn('relative w-full min-w-0 overflow-x-auto break-words', collapsed && 'max-h-[7.5rem] overflow-y-hidden')}>
         <Markdown variant="untrusted" source={body} className="text-[13px]" />
-        {collapsed && <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-paper to-transparent" />}
+        {collapsed && <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-surface to-transparent" />}
       </div>
       {long && (
         <button

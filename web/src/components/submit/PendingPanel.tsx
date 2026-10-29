@@ -1,11 +1,10 @@
-import type { AgentRun } from '@scout/shared'
-import { CopyIcon, ExternalLinkIcon, GitForkIcon } from 'lucide-react'
+import { CopyIcon, ExternalLinkIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { Panel, PanelBody, PanelFooter, PanelHeader, PanelTitle } from '@/components/ui/panel'
 import { StatusDot } from '@/components/ui/status-dot'
-import { applyReviewCommand, describeApiError, desktopNewSessionUrl, startRun, type ReviewCommand, type SendTarget } from '@/lib/runs'
+import { applyReviewCommand, desktopNewSessionUrl, type ReviewCommand, type SendTarget } from '@/lib/runs'
 import { cn } from '@/lib/utils'
 
 export interface PendingPanelProps {
@@ -15,35 +14,18 @@ export interface PendingPanelProps {
   /** The slash command to run; `/apply-review` unless this is a test run. */
   command?: ReviewCommand
   mode: SendTarget
-  /** The server's reason when it declined to start a run; `null` when no run was asked for. */
-  reason: string | null
-  onRun: (run: AgentRun) => void
   className?: string
 }
 
 /**
- * Shown when the feedback was written but no headless run started. `current`: the reviewer's open
- * Claude Code session picks it up on their next message (or `/apply-review` there). `new`: a
- * Desktop deep link opens a fresh session with the command prefilled. Either way a headless fork
- * is one click away.
+ * Shown after a send. `current`: the reviewer's open Claude Code session picks the feedback up on
+ * their next message (or `/apply-review` there). `new`: a Desktop deep link opens a fresh session
+ * with the command prefilled. The command can always be copied.
  */
-export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-review', mode, reason, onRun, className }: PendingPanelProps) {
-  const [starting, setStarting] = useState(false)
+export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-review', mode, className }: PendingPanelProps) {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const command = applyReviewCommand(sessionId, slash)
-
-  async function fork() {
-    setStarting(true)
-    setError(null)
-    try {
-      onRun(await startRun(sessionId, true))
-    } catch (reason: unknown) {
-      setError(describeApiError(reason))
-    } finally {
-      setStarting(false)
-    }
-  }
 
   async function copy() {
     try {
@@ -65,7 +47,6 @@ export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-rev
         <span className="text-[12.5px] font-medium text-ink-muted">not started</span>
       </PanelHeader>
       <PanelBody className="flex flex-col gap-2 text-[13.5px] leading-[1.45]">
-        {reason && <p className="font-medium text-ink-muted">{reason}</p>}
         {mode === 'new' ? (
           <p>The new Claude Desktop session opens with {code} ready; confirm it there.</p>
         ) : (
@@ -82,10 +63,6 @@ export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-rev
         <Button size="sm" onClick={copy}>
           <CopyIcon aria-hidden />
           {copied ? 'Copied' : 'Copy command'}
-        </Button>
-        <Button size="sm" onClick={fork} disabled={starting} aria-busy={starting}>
-          <GitForkIcon aria-hidden />
-          {starting ? 'Starting…' : 'Run as fork'}
         </Button>
         {error && (
           <Notice tone="err" className="basis-full">

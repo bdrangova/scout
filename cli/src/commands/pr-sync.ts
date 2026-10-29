@@ -10,7 +10,7 @@ import { fetchPr } from '../pr/fetch.ts'
 import { defaultGhRunner, PrSyncError, type GhRunner } from '../pr/gh.ts'
 import { mergeFetched } from '../pr/normalize.ts'
 import { findPrSession } from '../pr/session.ts'
-import { prCommentsPath, readPrComments, readPrResolutions, readReview, writePrComments, writePrResolutions } from '../sessions.ts'
+import { prCommentsPath, readPrComments, readPrReplies, readPrResolutions, readReview, writePrComments, writePrResolutions } from '../sessions.ts'
 import { resolveHome } from '../store.ts'
 
 export interface PrSyncResult {
@@ -60,7 +60,7 @@ export async function prSync(options: PrSyncOptions): Promise<PrSyncResult> {
     comments: merged.comments,
   })
   const lastSend = (await readReview(session.dir))?.sent?.at ?? null
-  const views = derivePrComments(written, await readPrResolutions(session.dir), lastSend)
+  const views = derivePrComments(written, await readPrResolutions(session.dir), lastSend, await readPrReplies(session.dir))
   const counts = prCommentCounts(written, views)
   if (counts === null) throw new Error('unreachable: written comments have counts')
   return {

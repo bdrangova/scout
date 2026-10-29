@@ -4,7 +4,9 @@ import {
   MODE_PARAM,
   modeSearch,
   parseMode,
+  parsePageMode,
   toggledCardMode,
+  type PageMode,
   toggledGridMode,
 } from "@/lib/mode";
 import { sessionFilesRoute } from "@/lib/paths";
@@ -16,7 +18,7 @@ import { useSidebar } from "./sidebar-context";
 /**
  * Session-wide shortcuts: `B` hides and shows the rail, `1-n` jump to the kind's visible sections
  * (the tabs, in order), `?` toggles the help; `S` (swipe, or swipe/scroll in a code review) and `G` (grid) on the pages with
- * cards. The Review page of a test run binds its own card keys, like the Files page.
+ * cards; on Spec and Extras `G` flips grid and scroll and `S` returns to scroll. The Review page of a test run binds its own card keys, like the Files page.
  */
 export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
   const { sessionId, detail } = useSessionContext();
@@ -37,6 +39,9 @@ export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
   const testRun = config.kind === "test-run";
   // A test run's pages with cards: the mode is the page's own `?mode=`.
   const onCardPage = new RegExp(`^${base}/(review|gaps|logs|data-setup)(/|$)`).test(location.pathname);
+
+  // Spec and Extras: `G` flips their own grid and scroll views, `S` returns to scroll.
+  const onPageModes = !testRun && new RegExp(`^${base}/(spec|extras)(/|$)`).test(location.pathname);
 
   function switchMode(pick: (current: Mode) => Mode) {
     if (testRun && !onCardPage) return;
@@ -60,7 +65,15 @@ export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
     section6: section(5),
     altHelp: onToggleHelp,
   };
-  if (config.hotkeys.modes) {
+  function switchPageMode(next: (current: PageMode) => PageMode) {
+    const mode = next(parsePageMode(searchParams.get(MODE_PARAM)));
+    navigate({ pathname: location.pathname, search: modeSearch(searchParams, mode) }, { replace: true });
+  }
+
+  if (config.hotkeys.modes && onPageModes) {
+    handlers.toggleMode = () => switchPageMode(() => "scroll");
+    handlers.toggleGrid = () => switchPageMode((current) => (current === "grid" ? "scroll" : "grid"));
+  } else if (config.hotkeys.modes) {
     // A test run has no scroll mode: `S` is swipe.
     handlers.toggleMode = () => switchMode(testRun ? () => "swipe" : toggledCardMode);
     // Back from the grid returns to the remembered card mode (a test run has no scroll mode).

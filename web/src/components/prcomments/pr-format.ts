@@ -10,6 +10,16 @@ export function isLongBody(body: string): boolean {
   return body.length > LONG_CHARS || body.split('\n').length > LONG_LINES
 }
 
+/** A folded comment's one-line preview: the body's text without markup, tags or line breaks. */
+export function bodyExcerpt(body: string): string {
+  return body
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[`*_>#~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /** Where the comment sits when it has no current line: the line it was written on, or "file comment". */
 export function prLocationLabel(view: PrCommentView): string | null {
   if (view.anchor) return anchorLabel(view.anchor)

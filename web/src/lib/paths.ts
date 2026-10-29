@@ -53,6 +53,11 @@ export function prReplyPath(sessionId: string, commentId: string): string {
   return `${sessionApiPath(sessionId)}/pr-replies/${encodeURIComponent(commentId)}`
 }
 
+/** `PUT /sessions/:id/pr-resolved/:commentId`: marks a PR comment thread handled in Scout, or reopens it. */
+export function prResolvedPath(sessionId: string, commentId: string): string {
+  return `${sessionApiPath(sessionId)}/pr-resolved/${encodeURIComponent(commentId)}`
+}
+
 /** `GET /sessions/:id/scopes/:scope`: the `WorkingTree` of one commit or of the uncommitted changes. */
 export function scopeTreePath(sessionId: string, scope: Scope): string {
   return `${sessionApiPath(sessionId)}/scopes/${encodeURIComponent(scope)}`
