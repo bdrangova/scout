@@ -16,9 +16,13 @@ Journal entries are for a reviewer who did not see this conversation. They appea
 - Do not journal what the diff already says (renames, obvious wiring, formatting) or every edit. A good session has a handful of entries, not one per file.
 
 ## How to write
+Load `/write-for-reviewers` (Skill tool) before writing and follow it.
 - Say why, not what. The reviewer sees what changed; they need the reason, the constraint behind it and what you rejected.
+- Write it for a person, not a compiler. Describe what the code does for users or data and why, in plain words. "Each customer gets its own saved settings, so one customer's changes never show up for another" beats "cache keyed by tenantId to avoid cross-tenant Map collisions".
+- Title and first sentences carry no code: no function, variable, prop, type or class names, no jargon without a plain explanation. Filenames are fine when they help locate things.
 - One entry per decision. Two decisions are two entries.
-- 2 to 6 sentences. Put at most 5 lines of code in an entry, never a longer block.
+- 2 to 6 sentences in the plain part.
+- Some things are only true in technical terms and the reviewer needs them exactly (a race condition, an API limit, an ordering rule, a query that must stay as it is). Do not blur these. Put them after the plain part, in a last paragraph that starts with `**Technical detail:**`, so the reader sees it is the technical part and can skip or study it. Names of code are fine there. At most 5 lines of code, never a longer block. Most entries need no technical detail.
 - Never put secrets, tokens, customer data or internal URLs in an entry.
 - Anchor the entry to the line where the decision is visible (`--file` + `--line`). A note about the whole file has `--file` only; a note about the whole change has neither.
 - List rejected alternatives with `--alt "option::why not"` (repeat it). This is what reviewers value most for `decision` and `tradeoff`.
@@ -27,9 +31,11 @@ Kinds: `decision` (chose A over B), `implementation` (how something non-obvious 
 
 ## Add an entry
 ```
-ai-review journal add --kind decision --title "Cache per tenant, not global" \
-  --body "Tenants can differ in …" --file src/cache.ts --line 42 \
-  --alt "global cache::leaks one tenant's config into another" [--related src/tenant.ts] [--supersedes j3]
+ai-review journal add --kind decision --title "Each customer keeps its own saved settings" \
+  --body "Customers can set different defaults, and a shared copy showed one customer's choices to another. …
+
+**Technical detail:** the cache key is the tenant id, so …" --file src/cache.ts --line 42 \
+  --alt "one shared copy for everyone::one customer's settings leak into another's" [--related src/tenant.ts] [--supersedes j3]
 ```
 - It finds this branch's review session, or creates it, so you can journal before `/publish-review`. Pass `--repo <path>` outside the repo and a session id as the first argument to target one.
 - `--line` takes `42` or `42-48`; `--side old` anchors to the base version of the file. The line must exist.

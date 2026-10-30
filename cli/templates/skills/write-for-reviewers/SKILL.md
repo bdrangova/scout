@@ -24,4 +24,4 @@ The reader is a person who did not see this conversation and often has not opene
 - **Summary bullets:** 2 to 6; lead with what changes for people who use the product, then what the reviewer should know (risky parts, what is left out, what the findings mean).
 - **Resolution note:** what changed, where (`path:line`), how it was verified. A reply without a fix says why.
 - **Reply on GitHub:** one or two sentences, written as the author: what you did, or why not.
-- **Journal entry:** why, not what; the constraint behind it and what you rejected.
+- **Journal entry:** why, not what; the constraint behind it and what you rejected, in plain words. Detail that only makes sense in code terms goes in a last paragraph starting `**Technical detail:**`.
