@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commented-files filter</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap">
+<style>
+  :root {
+    --paper: #FBF6E9; --paper-2: #F1E9DB; --ink: #2B2A33; --ink-muted: #5E5A58;
+    --line: rgba(43,42,51,.34); --hover: rgba(43,42,51,.08); --yellow: #F6B21E;
+    --red: #B8341F; --green: #2A7A58; --blue: #3B6FD6;
+    --sans: 'Space Grotesk', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); padding: 28px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lede { color: var(--ink-muted); margin: 0 0 24px; font-size: 14px; max-width: 760px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 28px; }
+  .opt { width: 296px; }
+  .opt h2 { font-size: 15px; margin: 0 0 4px; }
+  .opt p { font-size: 12.5px; color: var(--ink-muted); margin: 0 0 10px; line-height: 1.45; min-height: 54px; }
+  .state { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); margin: 14px 0 6px; }
+  .rail { width: 296px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; padding: 14px 10px 8px; }
+  .hdr { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; }
+  .hdr strong { font-size: 15px; }
+  .badge { display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 6px; border-radius: 99px; border: 1px solid var(--line); font-size: 11px; font-weight: 700; background: var(--paper); }
+  .ib { margin-left: auto; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; color: var(--ink-muted); }
+  .ib.first { margin-left: -3px; }
+  .search { display: flex; gap: 8px; align-items: center; padding-bottom: 8px; }
+  .input { flex: 1; min-width: 0; height: 32px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); display: flex; align-items: center; gap: 6px; padding: 0 9px; color: var(--ink-muted); font-size: 13px; white-space: nowrap; overflow: hidden; }
+  .sq { width: 32px; height: 32px; flex: none; border: 1px solid var(--line); border-radius: 6px; display: grid; place-items: center; color: var(--ink-muted); position: relative; }
+  .sq.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .sq .dot { position: absolute; top: -6px; right: -7px; height: 16px; min-width: 16px; padding: 0 4px; border-radius: 99px; background: var(--yellow); color: var(--ink); border: 1px solid var(--ink); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+  .pills { display: flex; gap: 4px; padding-bottom: 8px; flex-wrap: nowrap; }
+  .pill { height: 28px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--line); display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; white-space: nowrap; background: var(--paper); }
+  .pill.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .pill .n { font-size: 11px; opacity: .75; font-variant-numeric: tabular-nums; }
+  .tree { display: flex; flex-direction: column; gap: 2px; }
+  .row { height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 8px; border-radius: 9px; border: 1px solid transparent; font-size: 13px; white-space: nowrap; }
+  .row.folder { font-weight: 700; }
+  .row.cur { background: var(--yellow); border-color: var(--line); font-weight: 700; }
+  .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
+  .row.folder .name { font-family: var(--sans); font-size: 13px; font-weight: 700; }
+  .row .c { font-size: 11.5px; font-weight: 600; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .row.dim { opacity: .38; }
+  .fd { width: 8px; height: 8px; border-radius: 50%; flex: none; margin: 0 1px; }
+  .marks { display: inline-flex; gap: 6px; align-items: center; font-size: 11px; font-weight: 700; }
+  .marks span { display: inline-flex; align-items: center; gap: 2px; }
+  .ok { color: var(--green); } .no { color: var(--red); }
+  svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .marks svg { width: 12px; height: 12px; }
+  .menu { margin-top: 6px; margin-left: auto; width: 250px; background: var(--paper); border: 1px solid var(--ink); border-radius: 10px; padding: 6px; box-shadow: 3px 3px 0 var(--ink); font-size: 13px; }
+  .menu .lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); padding: 6px 8px 4px; }
+  .mi { display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 8px; border-radius: 6px; font-weight: 500; }
+  .mi.hl { background: var(--hover); }
+  .cb { width: 15px; height: 15px; border: 1.5px solid var(--ink); border-radius: 4px; display: grid; place-items: center; flex: none; }
+  .cb.on { background: var(--ink); color: var(--paper); }
+  .cb svg { width: 11px; height: 11px; stroke-width: 3.5; }
+  .mi .n { margin-left: auto; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .sep { height: 1px; background: var(--line); margin: 4px 0; }
+  .note { font-size: 12px; color: var(--ink-muted); margin-top: 10px; line-height: 1.45; }
+  .note b { color: var(--ink); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 4px 0 8px; border-radius: 99px; background: var(--ink); color: var(--paper); font-size: 11.5px; font-weight: 600; }
+  .chip svg { width: 12px; height: 12px; }
+  .chips { display: flex; gap: 4px; padding-bottom: 8px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<svg style="display:none">
+  <symbol id="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+  <symbol id="msg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="text" viewBox="0 0 24 24"><path d="M21 6H3M10 12H3M10 18H3"/><circle cx="17" cy="15" r="3"/><path d="m21 19-1.9-1.9"/></symbol>
+  <symbol id="funnel" viewBox="0 0 24 24"><path d="M10 20a1 1 0 0 0 .55.9l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .52-1.34L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.74 1.67l7.22 7.99A2 2 0 0 1 10 14z"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="expand" viewBox="0 0 24 24"><path d="m7 15 5 5 5-5M7 9l5-5 5 5"/></symbol>
+  <symbol id="gh" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7M6 9v12"/></symbol>
+</svg>
+
+<h1>Show only commented files</h1>
+<p class="lede">Three ways to narrow the Files rail to files that carry your open comments. Each is shown off and on, at the rail's 296px minimum. Sample session: 14 files, 3 with comments.</p>
+
+<div class="grid">
+
+  <!-- A -->
+  <section class="opt">
+    <h2>A · Pills row</h2>
+    <p>A one-line "All / Commented" switch above the search. Absorbs today's "GitHub comments" pill as a third option when the session has a PR. Most visible; costs a row.</p>
+    <div class="state">Off</div>
+    <div class="rail">
+      <div class="hdr"><span class="ib first"><svg><use href="#chev"/></svg></span><strong>Files</strong><span class="badge">14</span><span class="ib"><svg><use href="#expand"/></svg></span></div>
+      <div class="pills">
+        <span class="pill on">All <span class="n">14</span></span>
+        <span class="pill"><svg style="width:13px;height:13px"><use href="#msg"/></svg>Commented <span class="n">3</span></span>
+        <span class="pill"><svg style="width:13px;height:13px"><use href="#gh"/></svg>GitHub <span class="n">2</span></span>
+      </div>
+      <div class="search"><div class="input"><svg><use href="#search"/></svg>Filter files…</div><span class="sq"><svg><use href="#text"/></svg></span></div>
+      <div class="tree" data-tree="full"></div>
+    </div>
+    <div class="state">On</div>
+    <div class="rail">
+      <div class="hdr"><span class="ib first"><svg><use href="#chev"/></svg></span><strong>Files</strong><span class="badge">14</span><span class="ib"><svg><use href="#expand"/></svg></span></div>
+      <div class="pills">
+        <span class="pill">All <span class="n">14</span></span>
+        <span class="pill on"><svg style="width:13px;height:13px"><use href="#msg"/></svg>Commented <span class="n">3</span></span>
+        <span class="pill"><svg style="width:13px;height:13px"><use href="#gh"/></svg>GitHub <span class="n">2</span></span>
+      </div>
+      <div class="search"><div class="input"><svg><use href="#search"/></svg>Filter files…</div><span class="sq"><svg><use href="#text"/></svg></span></div>
+      <div class="tree" data-tree="commented"></div>
+    </div>
+    <p class="note"><b>+</b> obvious, one click, counts visible. <b>−</b> takes 36px of tree height; three pills just fit at 296px.</p>
+  </section>
+
+  <!-- B -->
+  <section class="opt">
+    <h2>B · Toggle beside search</h2>
+    <p>A comment-bubble button next to the existing "search contents" button, wearing the count. Pressed = only commented files. No new row.</p>
+    <div class="state">Off</div>
+    <div class="rail">
+      <div class="hdr"><span class="ib first"><svg><use href="#chev"/></svg></span><strong>Files</strong><span class="badge">14</span><span class="ib"><svg><use href="#expand"/></svg></span></div>
+      <div class="search"><div class="input"><svg><use href="#search"/></svg>Filter files…</div><span class="sq"><svg><use href="#msg"/></svg><span class="dot">3</span></span><span class="sq"><svg><use href="#text"/></svg></span></div>
+      <div class="tree" data-tree="full"></div>
+    </div>
+    <div class="state">On</div>
+    <div class="rail">
+      <div class="hdr"><span class="ib first"><svg><use href="#chev"/></svg></span><strong>Files</strong><span class="badge">3 of 14</span><span class="ib"><svg><use href="#expand"/></svg></span></div>
+      <div class="search"><div class="input"><svg><use href="#search"/></svg>Filter commented…</div><span class="sq on"><svg><use href="#msg"/></svg><span class="dot">3</span></span><span class="sq"><svg><use href="#text"/></svg></span></div>
+      <div class="tree" data-tree="commented"></div>
+    </div>
+    <p class="note"><b>+</b> zero extra height, combines with typing a name. <b>−</b> icon-only, needs the tooltip; a GitHub filter would need a second button.</p>
+  </section>
+
+  <!-- C -->
+  <section class="opt">
+    <h2>C · Filter menu</h2>
+    <p>One funnel button beside search opens a checklist: Commented, GitHub threads, Not reviewed, Changes requested. Active filters show as removable chips.</p>
+    <div class="state">Menu open</div>
+    <div class="rail">
+      <div class="hdr"><span class="ib first"><svg><use href="#chev"/></svg></span><strong>Files</strong><span class="badge">14</span><span class="ib"><svg><use href="#expand"/></svg></span></div>
+      <div class="search"><div class="input"><svg><use href="#search"/></svg>Filter files…</div><span class="sq on"><svg><use href="#funnel"/></svg></span><span class="sq"><svg><use href="#text"/></svg></span></div>
+      <div class="menu">
+        <div class="lbl">Show only</div>
+        <div class="mi hl"><span class="cb on"><svg><use href="#check"/></svg></span>With my comments<span class="n">3</span></div>
+        <div class="mi"><span class="cb"></span>GitHub threads<span class="n">2</span></div>
+        <div class="mi"><span class="cb"></span>Not reviewed<span class="n">9</span></div>
+        <div class="mi"><span class="cb"></span>Changes requested<span class="n">1</span></div>
+        <div class="sep"></div>
+        <div class="mi" style="color:var(--ink-muted)">Clear</div>
+      </div>
+    </div>
+    <div class="state">On</div>
+    <div class="rail">
+      <div class="hdr"><span class="ib first"><svg><use href="#chev"/></svg></span><strong>Files</strong><span class="badge">3 of 14</span><span class="ib"><svg><use href="#expand"/></svg></span></div>
+      <div class="search"><div class="input"><svg><use href="#search"/></svg>Filter files…</div><span class="sq on"><svg><use href="#funnel"/></svg><span class="dot">1</span></span><span class="sq"><svg><use href="#text"/></svg></span></div>
+      <div class="chips"><span class="chip">With my comments <svg><use href="#x"/></svg></span></div>
+      <div class="tree" data-tree="commented"></div>
+    </div>
+    <p class="note"><b>+</b> room to grow (reviewed state, verdicts), replaces the GitHub pill. <b>−</b> two clicks; the filter hides behind a menu until set.</p>
+  </section>
+
+</div>
+
+<script>
+  const C = { ts: '#3178C6', css: '#C2418A', json: '#B08900', md: '#6B6B6B' }
+  const rows = [
+    { f: 1, d: 0, n: 'src', c: '2/8' },
+    { f: 1, d: 1, n: 'components', c: '1/5' },
+    { d: 2, n: 'TrialBar.tsx', t: 'ts', m: 2, v: 'ok', k: 1, cur: 1 },
+    { d: 2, n: 'TrialBadge.tsx', t: 'ts' },
+    { d: 2, n: 'trial-bar.css', t: 'css', m: 1, k: 1 },
+    { d: 2, n: 'Countdown.tsx', t: 'ts', v: 'ok' },
+    { d: 2, n: 'index.ts', t: 'ts' },
+    { f: 1, d: 1, n: 'lib', c: '1/3' },
+    { d: 2, n: 'trial.ts', t: 'ts', m: 1, v: 'no', k: 1 },
+    { d: 2, n: 'dates.ts', t: 'ts' },
+    { d: 2, n: 'flags.json', t: 'json' },
+    { f: 1, d: 0, n: 'docs', c: '0/2' },
+    { d: 1, n: 'trial.md', t: 'md' },
+  ]
+  const kept = new Set(['src', 'components', 'lib'])
+  function row(r) {
+    const pad = 8 + r.d * 18
+    if (r.f) return `<div class="row folder" style="padding-left:${pad}px"><svg style="width:13px;height:13px"><use href="#chev"/></svg><svg><use href="#folder"/></svg><span class="name">${r.n}</span><span class="c">${r.c}</span></div>`
+    const marks = [
+      r.m ? `<span><svg><use href="#msg"/></svg>${r.m}</span>` : '',
+      r.v === 'ok' ? `<span class="ok"><svg style="stroke-width:3"><use href="#check"/></svg></span>` : '',
+      r.v === 'no' ? `<span class="no"><svg style="stroke-width:3"><use href="#x"/></svg></span>` : '',
+    ].join('')
+    return `<div class="row${r.cur ? ' cur' : ''}" style="padding-left:${pad}px"><span class="fd" style="background:${C[r.t]}"></span><span class="name">${r.n}</span><span class="marks">${marks}</span></div>`
+  }
+  for (const el of document.querySelectorAll('[data-tree]')) {
+    const list = el.dataset.tree === 'commented' ? rows.filter((r) => r.k || (r.f && kept.has(r.n))).map((r) => r.f ? { ...r, c: r.n === 'src' ? '2/3' : r.n === 'components' ? '1/2' : '1/1' } : r) : rows
+    el.innerHTML = list.map(row).join('')
+  }
+</script>
+</body>
+</html>

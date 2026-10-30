@@ -1,4 +1,5 @@
 import { Search, TextSearch, X } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
@@ -10,13 +11,15 @@ interface FileTreeFilterProps {
   /** Searching file contents instead of filtering names. */
   contents?: boolean
   onToggleContents?: () => void
+  /** The "only commented" toggle, drawn before the contents toggle. */
+  commented?: ReactNode
 }
 
 /**
  * The tree's search box: Esc or the cross clears it; the match count is announced beside it.
  * The toggle beside it switches from filtering names to searching the changes' contents.
  */
-export function FileTreeFilter({ query, onChange, matches, contents = false, onToggleContents }: FileTreeFilterProps) {
+export function FileTreeFilter({ query, onChange, matches, contents = false, onToggleContents, commented }: FileTreeFilterProps) {
   const label = contents ? 'Search in changes' : 'Filter files'
   return (
     <div className="flex shrink-0 items-center gap-2 pb-2">
@@ -49,6 +52,7 @@ export function FileTreeFilter({ query, onChange, matches, contents = false, onT
           </button>
         )}
       </div>
+      {commented}
       {onToggleContents && (
         <button
           type="button"

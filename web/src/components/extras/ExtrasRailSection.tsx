@@ -1,4 +1,6 @@
 import type { ExtraItem } from '@scout/shared'
+import { useCommentedOnlyFilter, useOpenCommentRefs } from '@/components/layout/commented-only'
+import { CommentedOnlyToggle } from '@/components/layout/CommentedOnlyToggle'
 import { RailSection } from '@/components/layout/RailSlot'
 import { EXTRA_KIND } from '@/components/spec/item-kinds'
 import { RailBlock, RailItem } from '@/components/spec/RailItem'
@@ -30,10 +32,17 @@ function ExtraRow({ item, current, onSelect }: { item: ExtraItem; current: boole
 export function ExtrasRailSection({ extras }: { extras: readonly ExtraItem[] }) {
   const [active, select] = useActiveTarget(extras.map((item) => item.path))
   const current = active ?? extras[0]?.path ?? null
+  const openRefs = useOpenCommentRefs('extra')
+  const commented = useCommentedOnlyFilter(extras, (item) => openRefs.has(item.path))
   return (
     <RailSection>
-      <RailBlock title="Extras" count={extras.length}>
-        {extras.map((item) => (
+      <RailBlock
+        title="Extras"
+        count={extras.length}
+        shown={commented.active ? commented.items.length : undefined}
+        action={<CommentedOnlyToggle size="sm" count={commented.count} active={commented.active} onToggle={commented.toggle} />}
+      >
+        {commented.items.map((item) => (
           <ExtraRow key={item.path} item={item} current={item.path === current} onSelect={select} />
         ))}
       </RailBlock>

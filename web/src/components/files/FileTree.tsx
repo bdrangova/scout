@@ -6,6 +6,8 @@ import { useReview } from '@/state/review-context'
 import { useCurrentPrReport } from '@/components/prreview/pr-review-context'
 import { usePrComments } from '@/state/pr-comments-context'
 import { useSessionContext } from '@/lib/session-context'
+import { useCommentedOnlyFilter } from '@/components/layout/commented-only'
+import { CommentedOnlyToggle } from '@/components/layout/CommentedOnlyToggle'
 import { ContentSearch } from './ContentSearch'
 import { FileTreeFilter } from './FileTreeFilter'
 import { FileTreeHeader } from './FileTreeHeader'
@@ -34,12 +36,6 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
   const listRef = useRef<HTMLDivElement>(null)
   const { fileCounts } = usePrComments()
   const { report } = useCurrentPrReport()
-  const prFilter = usePrFileFilter(files)
-  const state = useFileTreeState(prFilter.files, currentPath, onSelect, listRef)
-  const reviewByPath = useMemo(() => indexByPath(reviewFiles), [reviewFiles])
-  const { sessionId } = useSessionContext()
-  const [contentMode, setContentMode] = useState(false)
-  const diffPaths = useMemo(() => new Set(files.map((f) => f.path)), [files])
   const openCommentsByPath = useMemo(() => {
     const counts = new Map<string, number>()
     for (const comment of comments) {
@@ -48,6 +44,13 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
     }
     return counts
   }, [comments])
+  const prFilter = usePrFileFilter(files)
+  const commented = useCommentedOnlyFilter(prFilter.files, (file) => openCommentsByPath.has(file.path))
+  const state = useFileTreeState(commented.items, currentPath, onSelect, listRef)
+  const reviewByPath = useMemo(() => indexByPath(reviewFiles), [reviewFiles])
+  const { sessionId } = useSessionContext()
+  const [contentMode, setContentMode] = useState(false)
+  const diffPaths = useMemo(() => new Set(files.map((f) => f.path)), [files])
 
   function isReviewed(path: string): boolean {
     const file = reviewByPath.get(path)
@@ -73,6 +76,7 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
     <div className="flex min-h-0 flex-1 flex-col">
       <FileTreeHeader
         count={files.length}
+        shown={commented.active ? commented.items.length : undefined}
         allExpanded={state.allExpanded}
         disabled={state.filtering}
         collapsed={collapsed}
@@ -88,9 +92,10 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
           <FileTreeFilter
             query={state.query}
             onChange={state.setQuery}
-            matches={state.filtering && !contentMode ? { shown: state.matchCount, total: prFilter.files.length } : undefined}
+            matches={state.filtering && !contentMode ? { shown: state.matchCount, total: commented.items.length } : undefined}
             contents={contentMode}
             onToggleContents={() => setContentMode((on) => !on)}
+            commented={contentMode ? undefined : <CommentedOnlyToggle count={commented.count} active={commented.active} onToggle={commented.toggle} />}
           />
           {contentMode ? <ContentSearch sessionId={sessionId} query={state.query.trim()} diffPaths={diffPaths} onSelect={onSelect} /> : <div ref={listRef} role="tree" aria-label="Changed files" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto py-0.5">
             {files.length === 0 && <p className="m-0 px-2 py-3 text-xs font-medium text-ink-muted">No files changed.</p>}

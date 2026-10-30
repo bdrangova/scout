@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 
 interface FileTreeHeaderProps {
   count: number
+  /** Files listed while a filter narrows the tree: the badge reads `shown of count`. */
+  shown?: number
   /** Every folder is open, so the one toggle offers to collapse; otherwise it expands everything. */
   allExpanded: boolean
   /** Disabled while filtering (the matches decide what is open). */
@@ -16,7 +18,7 @@ interface FileTreeHeaderProps {
 }
 
 /** The block's fold chevron (front), `Files · 12` and the single expand/collapse-all toggle (hidden while folded). */
-export function FileTreeHeader({ count, allExpanded, disabled = false, collapsed, onToggleCollapsed, onExpandAll, onCollapseAll }: FileTreeHeaderProps) {
+export function FileTreeHeader({ count, shown, allExpanded, disabled = false, collapsed, onToggleCollapsed, onExpandAll, onCollapseAll }: FileTreeHeaderProps) {
   const label = allExpanded ? 'Collapse all' : 'Expand all'
   const Icon = allExpanded ? ChevronsDownUp : ChevronsUpDown
   const foldLabel = collapsed ? 'Expand files' : 'Collapse files'
@@ -35,7 +37,7 @@ export function FileTreeHeader({ count, allExpanded, disabled = false, collapsed
         <FoldIcon aria-hidden className="size-3.5" />
       </Button>
       <strong className="text-[15px] font-bold">Files</strong>
-      <Badge>{count}</Badge>
+      <Badge>{shown === undefined ? count : `${shown} of ${count}`}</Badge>
       {!collapsed && (
         <Button
           variant="ghost"

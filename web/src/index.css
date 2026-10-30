@@ -467,3 +467,6 @@ main { scroll-margin-top: var(--shell-h); }
 
 /* Theme the artwork without changing the app palette or the animation timing. */
 .scout-art { filter: var(--scout-art-filter); }
+
+/* While the rail is being dragged wider or narrower: keep the resize cursor and stop text selection everywhere. */
+body.rail-resizing { cursor: col-resize; user-select: none; }

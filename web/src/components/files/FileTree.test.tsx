@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState, type ReactNode } from 'react'
 import { afterAll, describe, expect, it, vi } from 'vitest'
+import { CommentedOnlyContext } from '@/components/layout/commented-only'
 import { SessionContext } from '@/lib/session-context'
 import { ReviewProvider } from '@/state/ReviewProvider'
 import { commentFixture, makeTreeFile, reviewFixture, reviewResponseFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
@@ -207,5 +209,36 @@ describe('FileTree', () => {
     expect(assets).toHaveFocus()
     fireEvent.keyDown(assets, { key: 'ArrowUp' })
     expect(client).toHaveFocus()
+  })
+})
+
+describe('FileTree only commented', () => {
+  function Shell({ children }: { children: ReactNode }) {
+    const [on, setOn] = useState(false)
+    return <CommentedOnlyContext.Provider value={{ on, toggle: () => setOn((value) => !value) }}>{children}</CommentedOnlyContext.Provider>
+  }
+
+  it('narrows the tree to the files with open comments, and back', async () => {
+    const review = reviewFixture({ comments: [commentFixture('c1', { kind: 'file', ref: P1 }, 'Check the hook deps')], nextCommentId: 2 })
+    mockReviewApi(reviewResponseFixture(review))
+    render(
+      <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
+        <ReviewProvider>
+          <Shell>
+            <FileTree files={files} currentPath={null} onSelect={() => {}} />
+          </Shell>
+        </ReviewProvider>
+      </SessionContext.Provider>,
+    )
+    await tree()
+    const toggle = await screen.findByRole('button', { name: /only commented/i })
+    await waitFor(() => expect(toggle).toBeEnabled())
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    const fileRows = screen.getAllByRole('treeitem').filter((row) => row.getAttribute('aria-selected') !== null)
+    expect(fileRows.map((row) => row.dataset['id'])).toEqual([P1])
+    expect(screen.getByText(`1 of ${files.length}`)).toBeInTheDocument()
+    await userEvent.click(toggle)
+    expect(screen.getAllByRole('treeitem').filter((row) => row.getAttribute('aria-selected') !== null)).toHaveLength(files.length)
   })
 })

@@ -1,5 +1,7 @@
 import type { SpecItem } from '@scout/shared'
 import { useMemo, useState } from 'react'
+import { useCommentedOnlyFilter, useOpenCommentRefs } from '@/components/layout/commented-only'
+import { CommentedOnlyToggle } from '@/components/layout/CommentedOnlyToggle'
 import { RailSection } from '@/components/layout/RailSlot'
 import { splitPath } from '@/lib/paths'
 import { useContent } from '@/lib/useContent'
@@ -69,10 +71,18 @@ export interface SpecRailSectionProps {
 export function SpecRailSection({ spec, sessionId }: SpecRailSectionProps) {
   const [active, select] = useActiveTarget(spec.map((item) => item.path))
   const current = active ?? spec[0]?.path ?? null
+  const openRefs = useOpenCommentRefs('spec')
+  const commented = useCommentedOnlyFilter(spec, (item) => openRefs.has(item.path))
   return (
     <RailSection>
-      <RailBlock title="Spec" count={spec.length} hint="sources">
-        {spec.map((item) => (
+      <RailBlock
+        title="Spec"
+        count={spec.length}
+        shown={commented.active ? commented.items.length : undefined}
+        hint="sources"
+        action={<CommentedOnlyToggle size="sm" count={commented.count} active={commented.active} onToggle={commented.toggle} />}
+      >
+        {commented.items.map((item) => (
           <SpecSourceRow key={item.path} item={item} sessionId={sessionId} current={item.path === current} onSelect={select} />
         ))}
       </RailBlock>

@@ -6,8 +6,12 @@ export interface RunRailSectionProps {
   /** The list's name: `Scenarios`, `Logs`. */
   heading: string;
   count?: number;
+  /** Items listed while a filter narrows the list: reads `shown of count`. */
+  shown?: number;
   /** Filters and pickers of the page (Find, Failures); they live here, not in the page header. */
   picker?: ReactNode;
+  /** A control at the right of the heading (the "only commented" toggle). */
+  action?: ReactNode;
   /** The list. */
   children: ReactNode;
 }
@@ -16,7 +20,7 @@ export interface RunRailSectionProps {
  * A test-run page's block in the session rail: its heading, pickers, and scrolling list.
  * The Swipe | Grid toggle lives in the shared session header.
  */
-export function RunRailSection({ heading, count, picker, children }: RunRailSectionProps) {
+export function RunRailSection({ heading, count, shown, picker, action, children }: RunRailSectionProps) {
   return (
     <RailSection>
       <TooltipProvider delay={150}>
@@ -25,8 +29,9 @@ export function RunRailSection({ heading, count, picker, children }: RunRailSect
             <div className="flex items-center gap-2">
               <h2 className="m-0 text-[13px] font-bold">{heading}</h2>
               {count !== undefined && (
-                <span className="text-xs font-semibold text-ink-muted tabular-nums">{count}</span>
+                <span className="text-xs font-semibold text-ink-muted tabular-nums">{shown === undefined ? count : `${shown} of ${count}`}</span>
               )}
+              {action && <span className="ml-auto">{action}</span>}
             </div>
             {picker}
           </div>

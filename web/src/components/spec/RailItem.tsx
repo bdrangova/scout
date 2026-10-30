@@ -95,17 +95,22 @@ export interface RailBlockProps {
   count: number
   /** The eyebrow at the right of the header (`sources`). */
   hint?: string
+  /** Items listed while a filter narrows the block: the badge reads `shown of count`. */
+  shown?: number
+  /** A control at the right of the header (the "only commented" toggle). */
+  action?: ReactNode
   children: ReactNode
 }
 
-/** The page block of the rail: a header (title, count, hint) over a scrolling list. */
-export function RailBlock({ title, count, hint, children }: RailBlockProps) {
+/** The page block of the rail: a header (title, count, hint, an optional control) over a scrolling list. */
+export function RailBlock({ title, count, hint, shown, action, children }: RailBlockProps) {
   return (
     <section aria-label={title} className="flex min-h-0 flex-1 flex-col px-2.5 pt-3">
       <div className="flex shrink-0 items-center gap-2 px-1.5 pb-2.5">
         <h2 className="m-0 text-[15px] font-bold">{title}</h2>
-        <span className="inline-flex min-w-5 items-center justify-center rounded-full border-fine border-line px-1.5 text-[11px] font-bold tabular-nums">{count}</span>
+        <span className="inline-flex min-w-5 items-center justify-center rounded-full border-fine border-line px-1.5 text-[11px] font-bold tabular-nums">{shown === undefined ? count : `${shown} of ${count}`}</span>
         {hint && <span className="ml-auto text-[11px] font-bold tracking-[.08em] text-ink-muted uppercase">{hint}</span>}
+        {action && <span className={hint ? 'ml-1' : 'ml-auto'}>{action}</span>}
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-3">{children}</div>
     </section>
