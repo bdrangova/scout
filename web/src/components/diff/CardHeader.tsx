@@ -1,10 +1,11 @@
 import type { TreeFile } from '@scout/shared'
-import { Columns2, Eye, Files, MessageSquare, MessageSquareOff, Rows3, type LucideIcon } from 'lucide-react'
+import { Columns2, Contrast, Eye, Files, FoldVertical, MessageSquare, MessageSquareOff, Rows3, UnfoldVertical, type LucideIcon } from 'lucide-react'
 import type { PointerEvent } from 'react'
 import { PrCardChip } from '@/components/prcomments/PrCardChip'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { PrFileCounts } from '@/lib/pr-threads'
+import { toggleCodeContrast, useCodeContrast } from '@/lib/code-prefs'
 import { formatAdditions, formatDeletions } from '@/lib/format'
 import { splitPath } from '@/lib/paths'
 import { cn } from '@/lib/utils'
@@ -34,6 +35,11 @@ export interface CardHeaderProps {
   /** The view-only "hide comments" switch; the button is left out when absent. */
   commentsHidden?: boolean
   onCommentsHiddenChange?: (hidden: boolean) => void
+  /** The view-only "whole file" switch; the button is left out when absent (nothing hidden to show). */
+  wholeFile?: boolean
+  onWholeFileChange?: (wholeFile: boolean) => void
+  /** Shows the high-contrast code switch (shared by every card, remembered). */
+  contrastToggle?: boolean
   /** Swipe mode starts the drag from the header. */
   onPointerDown?: (event: PointerEvent<HTMLDivElement>) => void
 }
@@ -43,7 +49,7 @@ export interface CardHeaderProps {
  * below, "renamed from" under), then the delta, the position and the layout chooser. The strip's
  * background is the file type's colour (`bg-ft` from the `ft-*` class on the card), with ink text.
  */
-export function CardHeader({ file, position, updated, prComments, changedJustNow, view, views, onViewChange, commentsHidden = false, onCommentsHiddenChange, onPointerDown }: CardHeaderProps) {
+export function CardHeader({ file, position, updated, prComments, changedJustNow, view, views, onViewChange, commentsHidden = false, onCommentsHiddenChange, wholeFile = false, onWholeFileChange, contrastToggle = false, onPointerDown }: CardHeaderProps) {
   const { dir, name } = splitPath(file.path)
   const renamedFrom = file.oldPath !== null && file.oldPath !== file.path ? file.oldPath : null
 
@@ -84,6 +90,22 @@ export function CardHeader({ file, position, updated, prComments, changedJustNow
         </span>
         {position && <Position index={position.index} total={position.total} />}
         {onCommentsHiddenChange && <CommentsToggle hidden={commentsHidden} onChange={onCommentsHiddenChange} />}
+        {/* Two separate switches, each in its own frame so they don't read as one either/or choice. */}
+        {onWholeFileChange && (
+          <Segmented aria-label="Whole file" className="bg-surface">
+            <IconToggle
+              pressed={wholeFile}
+              onClick={() => onWholeFileChange(!wholeFile)}
+              label={wholeFile ? 'Show changes only' : 'Show whole file'}
+              icon={wholeFile ? FoldVertical : UnfoldVertical}
+            />
+          </Segmented>
+        )}
+        {contrastToggle && (
+          <Segmented aria-label="Code contrast" className="bg-surface">
+            <ContrastToggle />
+          </Segmented>
+        )}
         {views.length > 0 && (
           <Segmented aria-label="Diff layout" className="bg-surface">
             {views.map((option) => {
@@ -118,6 +140,24 @@ function CommentsToggle({ hidden, onChange }: { hidden: boolean; onChange: (hidd
       </Tooltip>
     </Segmented>
   )
+}
+
+/** An icon-only segmented button with a tooltip naming what it does next. */
+function IconToggle({ pressed, onClick, label, icon: Icon }: { pressed: boolean; onClick: () => void; label: string; icon: LucideIcon }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<SegmentedItem pressed={pressed} onClick={onClick} aria-label={label} />}>
+        <Icon aria-hidden />
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+/** High-contrast code: one switch for every diff, remembered across reloads. */
+function ContrastToggle() {
+  const on = useCodeContrast()
+  return <IconToggle pressed={on} onClick={toggleCodeContrast} label={on ? 'Normal contrast code' : 'High contrast code'} icon={Contrast} />
 }
 
 /** `8 / 12` with a files icon; screen readers get "file 8 of 12". */

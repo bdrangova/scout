@@ -2,6 +2,7 @@
 // the server and the CLI import it as `@scout/shared/git/<file>`.
 export * from './constants.ts'
 export * from './schemas/manifest.ts'
+export * from './schemas/change-tags.ts'
 export * from './schemas/pr-review.ts'
 export * from './review/pr-review.ts'
 export * from './schemas/artifacts.ts'

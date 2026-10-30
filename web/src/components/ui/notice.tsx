@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 
 /** Informational, not clickable: tinted fill, half-strength border, a round solid icon. */
 const noticeVariants = cva(
-  'inline-flex min-h-[30px] items-center gap-2 rounded-md border py-[3px] pr-3 pl-1 text-[12.5px] font-semibold text-ink',
+  'inline-flex min-h-fit items-center gap-2 rounded-md border py-[3px] pr-3 pl-1 text-[12.5px] font-semibold text-ink',
   {
     variants: {
       tone: {

@@ -21,6 +21,7 @@ import { useCurrentPrReport } from '@/components/prreview/pr-review-context'
 import { CardActions } from './CardActions'
 import { CardHeader, type CardView } from './CardHeader'
 import { JournalAnnotationsContext, type JournalAnnotationsValue } from './journal-annotations'
+import { canExpandContext } from './expand-context'
 import { LargeFileGate } from './LargeFileGate'
 import { CommentsHiddenContext, LineCommentsContext, type LineCommentsValue } from './line-comments'
 import { MarkdownPreview } from './MarkdownPreview'
@@ -76,6 +77,8 @@ export function FileReviewCard({
   const [view, setView] = useState<CardView>('unified')
   // A view-only switch, never saved: leaving the card (it stops being the current one) shows comments again.
   const [commentsHidden, setCommentsHidden] = useState(false)
+  // Whole file instead of the hunks: off by default, never saved.
+  const [wholeFile, setWholeFile] = useState(false)
   const [wasActive, setWasActive] = useState(active)
   if (wasActive !== active) {
     setWasActive(active)
@@ -130,6 +133,9 @@ export function FileReviewCard({
   const previewable = isMarkdownPath(file.path) && !file.binary && !file.omitted
   // No layout to choose for a file with no text diff (binary, omitted).
   const views = previewable ? MARKDOWN_VIEWS : file.binary || file.omitted ? NO_VIEWS : DIFF_VIEWS
+  const textDiff = view !== 'preview' && views.length > 0
+  // Only a modified file has unchanged lines the patch leaves out (added and deleted ones show whole already).
+  const wholeFileOffered = textDiff && canExpandContext(file)
 
   // The file's content moved on disk while this card was mounted: pulse the header briefly
   // (the diff itself refetches through the fingerprint in `useFilePatch`'s key).
@@ -199,6 +205,9 @@ export function FileReviewCard({
         onViewChange={setView}
         commentsHidden={commentsHidden}
         onCommentsHiddenChange={setCommentsHidden}
+        wholeFile={wholeFile}
+        onWholeFileChange={wholeFileOffered ? setWholeFile : undefined}
+        contrastToggle={textDiff}
         onPointerDown={onHeaderPointerDown}
       />
 
@@ -223,6 +232,7 @@ export function FileReviewCard({
                 sessionId={sessionId}
                 scope={scope?.scope ?? null}
                 diffStyle={view === 'preview' ? 'unified' : view}
+                wholeFile={wholeFileOffered && wholeFile}
                 onApprove={reviewable ? () => setVerdict('approved') : undefined}
               />
               </ProposalAnnotationsContext.Provider>

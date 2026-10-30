@@ -1,6 +1,7 @@
 import { anchorInPatch, anchorLabel, parsePatchLines, relocateJournalAnchor, type JournalEntry, type LineAnchor } from '@scout/shared'
 import { PatchDiff, type PatchDiffProps } from '@pierre/diffs/react'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useCodeContrast } from '@/lib/code-prefs'
 import { useJournalInlineVisible } from '@/lib/journal-prefs'
 import { findDiffRow, useLineJump } from '@/lib/line-jump'
 import { placePrThreads } from '@/lib/pr-threads'
@@ -77,6 +78,21 @@ const THEME_CSS = `
 [data-column-number] { cursor: pointer; }
 `
 
+/**
+ * The high-contrast code mode: a size and weight up, darker (light) or brighter (dark) text and
+ * line numbers. The syntax colours switch on the worker pool (`DiffWorkerProvider`).
+ */
+const HIGH_CONTRAST_CSS = `
+:host {
+  --diffs-font-size: 13.5px;
+  --diffs-line-height: 23px;
+  --diffs-fg-number-override: var(--ink);
+  --diffs-light: #15141A;
+  --diffs-dark: #FFFFFF;
+}
+pre, code { font-weight: 500; }
+`
+
 // The card header shows the path, so the library's own file header is off; lines never wrap
 // (horizontal scroll instead). The hunk separators reveal hidden lines 10 at a time.
 const BASE_OPTIONS: DiffOptions = {
@@ -99,6 +115,8 @@ interface FileDiffViewProps {
   loadSides?: () => Promise<FileSides>
   /** The file's path: a content-search jump to one of its lines scrolls there and highlights it. */
   path?: string
+  /** Show every line of the file (both sides loaded through `loadSides`), not only the hunks. */
+  wholeFile?: boolean
 }
 
 /**
@@ -108,7 +126,7 @@ interface FileDiffViewProps {
  * The wrapper is focusable: ↑/↓ move a cursor over the lines (Shift extends it), Enter comments there.
  * The diff follows the app theme (never the OS scheme on its own).
  */
-export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffViewProps) {
+export function FileDiffView({ patch, diffStyle, loadSides, path, wholeFile = false }: FileDiffViewProps) {
   const lineComments = useLineComments()
   const prAnnotations = usePrAnnotations()
   const journal = useJournalAnnotations()
@@ -116,6 +134,7 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
   const commentsHidden = useContext(CommentsHiddenContext)
   // Read without `useTheme()` so a diff rendered outside the provider (tests) still works, as light.
   const themeType = useContext(ThemeContext)?.resolved ?? 'light'
+  const highContrast = useCodeContrast()
   const [draft, setDraft] = useState<LineDraft | null>(null)
   const [cursor, setCursor] = useState<RowCursor | null>(null)
   // The loaded sides (once revealed), or `null` after a failed load: the offer is withdrawn.
@@ -162,13 +181,18 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
     setDraft({ anchor: anchorFromRange({ start: props.lineNumber, end: props.lineNumber, side: props.annotationSide }) })
   }, [])
 
-  const options = useMemo<DiffOptions>(
-    () =>
-      lineComments
-        ? { ...BASE_OPTIONS, themeType, diffStyle, loadDiffFiles, enableGutterUtility: true, onGutterUtilityClick, onLineNumberClick }
-        : { ...BASE_OPTIONS, themeType, diffStyle, loadDiffFiles },
-    [themeType, diffStyle, lineComments, loadDiffFiles, onGutterUtilityClick, onLineNumberClick],
-  )
+  const options = useMemo<DiffOptions>(() => {
+    // Expanding everything needs the full sides; without a loader the library would throw.
+    const base: DiffOptions = {
+      ...BASE_OPTIONS,
+      ...(highContrast && { unsafeCSS: THEME_CSS + HIGH_CONTRAST_CSS }),
+      themeType,
+      diffStyle,
+      loadDiffFiles,
+      expandUnchanged: wholeFile && loadDiffFiles !== undefined,
+    }
+    return lineComments ? { ...base, enableGutterUtility: true, onGutterUtilityClick, onLineNumberClick } : base
+  }, [themeType, diffStyle, lineComments, loadDiffFiles, onGutterUtilityClick, onLineNumberClick, highContrast, wholeFile])
   // GitHub threads whose line is in the diff hang under it; the card lists the others in its footer.
   const prThreads = prAnnotations?.threads
   const prPlacement = useMemo(() => placePrThreads(anchorRows, prThreads ?? []), [anchorRows, prThreads])
@@ -311,7 +335,7 @@ export function FileDiffView({ patch, diffStyle, loadSides, path }: FileDiffView
   return (
     <div
       ref={hostRef}
-      className={cn('bg-code text-[12.5px]', lineComments && 'outline-none focus-visible:outline-focus focus-visible:-outline-offset-[3px]')}
+      className={cn('bg-code', highContrast ? 'text-[13.5px]' : 'text-[12.5px]', lineComments && 'outline-none focus-visible:outline-focus focus-visible:-outline-offset-[3px]')}
       style={{ overflowAnchor: 'none' }}
       data-diff-style={diffStyle}
       data-theme={themeType}

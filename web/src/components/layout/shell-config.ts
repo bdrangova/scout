@@ -93,12 +93,12 @@ export const TEST_RUN_SHELL: ShellConfig = {
   hotkeys: { modes: true },
 }
 
-/** Review (the diff), Evidence (each finding's reproduction and what was said about it), Submit. */
-const PR_REVIEW_SECTIONS = ['files', 'evidence', 'submit'] as const
+/** Summary (what the PR is), Review (the diff), Evidence (each finding's reproduction and what was said about it), Submit. */
+const PR_REVIEW_SECTIONS = ['summary', 'files', 'evidence', 'submit'] as const
 
 export const PR_REVIEW_SHELL: ShellConfig = {
   ...CODE_REVIEW_SHELL, kind: 'pr-review', sections: PR_REVIEW_SECTIONS, visibleSections: () => PR_REVIEW_SECTIONS,
-  sectionLabel: (section) => section === 'files' ? 'Review' : CODE_REVIEW_SHELL.sectionLabel(section),
+  sectionLabel: (section) => section === 'summary' ? 'Summary' : section === 'files' ? 'Review' : CODE_REVIEW_SHELL.sectionLabel(section),
   sectionCount: (section, detail) => {
     if (section !== 'evidence') return CODE_REVIEW_SHELL.sectionCount?.(section, detail)
     return isTestRunDetail(detail) ? undefined : (detail.prReview?.findings.length ?? 0)

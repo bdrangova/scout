@@ -50,8 +50,8 @@ export function SessionBar({ onHelp }: SessionBarProps) {
   const onModes = kind === 'test-run' ? ['review', 'gaps', 'logs', 'data-setup'].includes(section ?? '') : section === 'files'
   // A PR review's Evidence page has its own swipe and grid.
   const onPrEvidence = kind === 'pr-review' && section === 'evidence'
-  // Spec and Extras switch between their stacked cards and a grid of tiles, on their own route.
-  const onPageModes = kind !== 'test-run' && (section === 'spec' || section === 'extras')
+  // Spec, Extras and a PR review's Summary switch between their stacked cards and a grid of tiles, on their own route.
+  const onPageModes = kind !== 'test-run' && (section === 'spec' || section === 'extras' || section === 'summary')
   const saveText = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Not saved' : ''
 
   return (

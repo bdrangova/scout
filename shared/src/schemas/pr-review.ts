@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { FINGERPRINT_RE } from '../constants.ts'
+import { ChangeTagSchema } from './change-tags.ts'
 import { LineAnchorSchema } from './review.ts'
 
 /** Report paths are portable repository/session-relative names, never filesystem capabilities. */
@@ -37,6 +38,28 @@ export const PrFindingSchema = z.object({
 })
 export type PrFinding = z.infer<typeof PrFindingSchema>
 
+export const JiraKeySchema = z.string().regex(/^[A-Z][A-Z0-9]+-\d+$/)
+
+/** What the PR is, for the Summary page: the skill's plain-language digest, its tags, and the PR's own metadata. */
+export const PrOverviewSchema = z.object({
+  /** Two to six short sentences a person who has not read the code follows. */
+  summary: z.array(z.string().trim().min(1)).min(1).max(8),
+  tags: z.array(ChangeTagSchema).max(8).refine((tags) => new Set(tags).size === tags.length, 'duplicate tags'),
+  title: z.string().min(1),
+  /** The PR description as Markdown; empty when the author wrote none. */
+  description: z.string(),
+  author: z.string().min(1),
+  headRef: z.string().min(1),
+  baseRef: z.string().min(1),
+  labels: z.array(z.string().min(1)),
+  draft: z.boolean(),
+  openedAt: date,
+  commits: z.number().int().nonnegative(),
+  /** Tickets the PR names; their snapshots are spec files of the session. */
+  tickets: z.array(z.object({ key: JiraKeySchema, title: z.string().min(1).nullable(), url: z.url().nullable() })),
+})
+export type PrOverview = z.infer<typeof PrOverviewSchema>
+
 /** Adapter boundary: one skill or a session-composed chain produces this same report. */
 export const PrReviewReportSchema = z.object({
   schemaVersion: z.literal(1),
@@ -49,6 +72,8 @@ export const PrReviewReportSchema = z.object({
   /** Complete changed-file set, including files with zero findings. */
   files: z.array(z.object({ path: PrReviewPathSchema, fingerprint: z.string().regex(FINGERPRINT_RE) })),
   findings: z.array(PrFindingSchema),
+  /** Absent from reports of skills that predate the Summary page. */
+  overview: PrOverviewSchema.optional(),
 }).superRefine((report, ctx) => {
   const unique = (values: string[], path: (string | number)[]) => {
     if (new Set(values).size !== values.length) ctx.addIssue({ code: 'custom', message: 'duplicate identifiers', path })

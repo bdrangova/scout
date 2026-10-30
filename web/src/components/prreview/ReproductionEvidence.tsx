@@ -6,6 +6,7 @@ import { Tag } from '@/components/ui/tag'
 import { Notice } from '@/components/ui/notice'
 import { useCurrentPrReport } from './pr-review-context'
 import { EvidenceLog } from './EvidenceLog'
+import { ExpectedActual } from './ExpectedActual'
 import { useEvidenceSrc } from './finding-comments'
 import { ReproductionFocus } from './ReproductionFocus'
 import { orderedEvidence, type EvidenceItem } from './reproduction-evidence'
@@ -41,7 +42,7 @@ function FindingReproduction({ finding, srcOf }: { finding: PrFinding; srcOf: (i
     <p className="m-0 text-xs text-ink-muted">{r.environment} · revision <code>{r.revision.slice(0, 12)}</code></p>
     {r.prerequisites.length > 0 && <ul className="list-disc pl-5">{r.prerequisites.map((p, i) => <li key={i}>{p}</li>)}</ul>}
     <ol className="list-decimal pl-5">{r.steps.map((step) => <li key={step.id}>{step.instruction}</li>)}</ol>
-    <p className="m-0"><strong>Expected:</strong> {r.expected}</p><p className="m-0"><strong>Actual:</strong> {r.actual}</p>
+    <ExpectedActual reproduction={r} />
     {r.limitation && <Notice tone="warn">{r.limitation}</Notice>}
     <ul className="m-0 flex list-none flex-col gap-2 border-t-fine border-line p-0 pt-2">{items.map((e, i) => <EvidenceRow key={e.path} src={srcOf(e)} item={e} onOpen={() => setFocus(i)} />)}</ul>
     <ReproductionFocus finding={finding} items={items} srcOf={srcOf} index={focus} onIndexChange={setFocus} />

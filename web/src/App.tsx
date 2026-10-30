@@ -7,6 +7,7 @@ import { EvidencePage } from './pages/EvidencePage'
 import { ExtrasPage } from './pages/ExtrasPage'
 import { FilesPage } from './pages/FilesPage'
 import { JournalPage } from './pages/JournalPage'
+import { PrSummaryPage } from './pages/PrSummaryPage'
 import { SessionLayout } from './pages/SessionLayout'
 import { SessionListPage } from './pages/SessionListPage'
 import { SpecPage } from './pages/SpecPage'
@@ -23,6 +24,7 @@ import { TestRunSubmitPage } from './pages/testrun/TestRunSubmitPage'
 
 // Web routes from the contract: `/` (worktrees), `/d` (development sessions), `/s/:id/files`, `/s/:id/files/*path`,
 // `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/journal`, `/s/:id/submit`.
+// A PR review also has `/s/:id/summary`, where it opens.
 // `/s/:id` itself redirects to the step the review should open on (lib/landing-section.ts).
 // Test runs: `/t` (list), `/t/:id/{overview,review,review/:scenarioId,gaps,data-setup,logs,submit}`; `/t/:id` redirects like `/s/:id`.
 // Worktrees: `/` (list; the old `/w` redirects there), `/w/:id` (detail).
@@ -42,6 +44,7 @@ const router = createBrowserRouter([
     Component: SessionLayout,
     children: [
       { index: true, Component: SessionIndexRedirect },
+      { path: 'summary', Component: PrSummaryPage },
       { path: 'files', Component: FilesPage },
       { path: 'files/*', Component: FilesPage },
       { path: 'evidence', Component: EvidencePage },

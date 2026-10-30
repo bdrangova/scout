@@ -10,5 +10,5 @@ import { useReview } from '@/state/review-context'
 export function SessionIndexRedirect() {
   const detail = useCodeReviewDetail()
   const { state, resolutions } = useReview()
-  return <Navigate to={detail.manifest.kind === 'pr-review' ? 'files' : landingSection(detail, state.review, resolutions)} replace />
+  return <Navigate to={detail.manifest.kind === 'pr-review' ? 'summary' : landingSection(detail, state.review, resolutions)} replace />
 }

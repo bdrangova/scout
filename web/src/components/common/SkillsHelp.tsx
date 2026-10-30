@@ -35,7 +35,7 @@ const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string
   },
   {
     title: 'PR reviews',
-    skills: [{ command: '/publish-pr-review <PR url>', when: 'Asks: new worktree or here. Findings + repro. Nothing posted to GitHub.' }],
+    skills: [{ command: '/publish-pr-review <PR url>', when: 'Asks: new worktree or here. Summary, tags, Jira, findings + repro. Nothing posted to GitHub.' }],
   },
 ]
 

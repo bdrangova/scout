@@ -1,15 +1,17 @@
 import { anchorLabel, type PrFinding } from '@scout/shared'
-import { Code2, FileText, GripVertical, ListChecks, Play } from 'lucide-react'
+import { Code2, FileText, Focus, GripVertical, ListChecks, Play } from 'lucide-react'
 import { useState, type PointerEvent } from 'react'
 import { Link } from 'react-router'
 import { CommentList } from '@/components/common/CommentList'
 import { PrThreadList } from '@/components/prcomments/PrThreadList'
+import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
 import { Tag } from '@/components/ui/tag'
 import { fileRoute, splitPath } from '@/lib/paths'
 import { cn } from '@/lib/utils'
 import { useCommentActions } from '@/state/useCommentActions'
 import { useCurrentPrReport } from './pr-review-context'
+import { ExpectedActual } from './ExpectedActual'
 import { ProposalCard } from './ProposalCard'
 import { ReproductionFocus } from './ReproductionFocus'
 import { orderedEvidence, type EvidenceItem } from './reproduction-evidence'
@@ -94,6 +96,12 @@ export function FindingCard({ finding, position, onHeaderPointerDown, className 
             <span>· {finding.sources.join(' → ')}</span>
           </span>
         </div>
+        {items.length > 0 && (
+          // Stops the header's drag (swipe mode) so the click opens the evidence instead.
+          <Button size="sm" className="shrink-0" title="Step through the evidence full screen" onPointerDown={(event) => event.stopPropagation()} onClick={() => setFocus(0)}>
+            <Focus aria-hidden />Focus
+          </Button>
+        )}
         {position && (
           <span className="inline-flex shrink-0 items-center gap-1.5 pt-0.5 text-[12.5px] font-semibold whitespace-nowrap tabular-nums" title={`Finding ${position.index + 1} of ${position.total}`}>
             <ListChecks aria-hidden className="size-[13px]" />
@@ -130,10 +138,7 @@ export function FindingCard({ finding, position, onHeaderPointerDown, className 
             })}
           </ol>
         )}
-        <div className="grid gap-2.5 sm:grid-cols-2">
-          <div className="rounded-lg border-fine border-line px-3 py-2"><strong className="block text-[10.5px] tracking-[.08em] text-ink-muted uppercase">Expected</strong>{r.expected}</div>
-          <div className="rounded-lg border-fine border-line px-3 py-2"><strong className="block text-[10.5px] tracking-[.08em] text-ink-muted uppercase">Actual</strong>{r.actual}</div>
-        </div>
+        <ExpectedActual reproduction={r} />
         {r.limitation && <Notice tone="warn">{r.limitation}</Notice>}
         {items.length === 0 && <p className="m-0 text-xs text-ink-muted">No evidence captured.</p>}
       </div>

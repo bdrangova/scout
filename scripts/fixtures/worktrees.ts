@@ -84,13 +84,37 @@ export async function writeWorktrees(main: string, origin: string): Promise<Work
     createdAt: '2026-10-26T10:00:00.000Z',
     tickets: [{ key: 'QI-15531', url: null }],
   }), kind: 'pr-review' as const }
-  const prDir = await writeSessionFolder(prReview, {})
+  const prDir = await writeSessionFolder(prReview, {
+    spec: {
+      files: [{ file: 'jira-QI-15531.md', text: '# QI-15531: Trial bar polish\n\n- **Type:** Story · **Status:** In Review · **Assignee:** Mira Chen\n\nShow trial users how long they have left, and let them upgrade from the bar.\n\n## Acceptance criteria\n\n- The bar shows the date the trial ends.\n- An expired trial cannot be dismissed.\n' }],
+      index: { items: [{ file: 'jira-QI-15531.md', type: 'jira', title: 'QI-15531: Trial bar polish', url: 'https://example.atlassian.net/browse/QI-15531' }] },
+    },
+  })
   const { tree, patches } = await computeWorkingTree({ repo: polish, baseRef: BASE_REF })
   const report = makePrReport(tree)
   report.id = 'trial-bar-polish-review'
   report.findings[0]!.path = 'src/components/TrialBar.tsx'
   report.findings[0]!.title = 'The trial bar hides its end date'
   report.findings[0]!.body = 'Show the date the trial ends next to "Trial ends soon".'
+  report.overview = {
+    summary: [
+      'Trial users now see a bar at the top of every page saying their trial ends soon, with an Upgrade button.',
+      'Once the trial has expired the bar turns red and cannot be dismissed.',
+      'The upgrade request now waits for the payment to confirm before showing the plan as active.',
+      'One finding: the bar never says when the trial ends, so "soon" can mean today or next month.',
+    ],
+    tags: ['feature', 'frontend', 'backend'],
+    title: 'Trial bar polish',
+    description: '## What\n\nPolishes the trial bar from QI-15531.\n\n- Adds the expired state\n- Waits for the payment before switching plans\n\n## Testing\n\nChecked by hand on a trial account.',
+    author: 'mira-chen',
+    headRef: 'qi-15531-trial-bar-polish',
+    baseRef: 'master',
+    labels: ['trial', 'ui'],
+    draft: false,
+    openedAt: '2026-10-25T14:20:00.000Z',
+    commits: 2,
+    tickets: [{ key: 'QI-15531', title: 'Trial bar polish', url: 'https://example.atlassian.net/browse/QI-15531' }],
+  }
   await publishReport(prDir, report, prDir, tree, patches)
 
   await writeJsonAtomic(path.join(storeDir, CONFIG_FILE), { worktreeFolders: [worktreesDir] })

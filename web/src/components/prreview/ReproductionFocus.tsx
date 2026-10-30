@@ -10,6 +10,7 @@ import { Notice } from '@/components/ui/notice'
 import { Tag } from '@/components/ui/tag'
 
 import { EvidenceLog } from './EvidenceLog'
+import { ExpectedActual } from './ExpectedActual'
 import { type EvidenceItem } from './reproduction-evidence'
 
 /** A reproduction video: the shared player without comment markers; it stops when you move to another item. */
@@ -76,8 +77,7 @@ export function ReproductionFocus({ finding, items, srcOf, index, onIndexChange 
             </Button>
           </div>
           {details && <div className="flex max-h-[35dvh] flex-col gap-1.5 overflow-auto border-t-fine border-line pt-2 text-xs">
-            <p className="m-0"><strong>Expected:</strong> {r.expected}</p>
-            <p className="m-0"><strong>Actual:</strong> {r.actual}</p>
+            <ExpectedActual reproduction={r} />
             {r.limitation && <Notice tone="warn">{r.limitation}</Notice>}
             <p className="m-0 text-ink-muted">{r.environment} · revision <code>{r.revision.slice(0, 12)}</code></p>
           </div>}

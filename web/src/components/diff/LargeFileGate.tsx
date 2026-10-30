@@ -17,6 +17,8 @@ interface LargeFileGateProps {
   /** Read the patch and the contents from the scope's routes instead of the full diff's. */
   scope?: Scope | null
   diffStyle: DiffStyle
+  /** Show the whole file instead of only the changed hunks (where the file's sides can be loaded). */
+  wholeFile?: boolean
   /** When given, collapsed and omitted files offer "Approve without viewing". */
   onApprove?: () => void
 }
@@ -27,7 +29,7 @@ interface LargeFileGateProps {
  * the omission reason (never a "show anyway": the server has no patch for an omitted file, 410).
  * The patch is refetched whenever the file's fingerprint moves.
  */
-export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onApprove }: LargeFileGateProps) {
+export function LargeFileGate({ file, sessionId, scope = null, diffStyle, wholeFile = false, onApprove }: LargeFileGateProps) {
   const [force, setForce] = useState(false)
   const gated = file.collapsed && !force
   const enabled = !file.omitted && !file.binary && !gated
@@ -115,7 +117,7 @@ export function LargeFileGate({ file, sessionId, scope = null, diffStyle, onAppr
     return <BodyNotice title="No textual changes">Contents unchanged.</BodyNotice>
   }
 
-  return <FileDiffView patch={patch} diffStyle={diffStyle} loadSides={loadSides} path={file.path} />
+  return <FileDiffView patch={patch} diffStyle={diffStyle} loadSides={loadSides} path={file.path} wholeFile={wholeFile} />
 }
 
 /** `+2,400 −1,800 · 4,200 changed lines` */
