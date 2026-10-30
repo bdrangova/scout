@@ -34,6 +34,9 @@ export function modeSearch(params: URLSearchParams, mode: Mode): string {
 /** The Spec and Extras pages: their full cards stacked (scroll) or a tile per item (grid). */
 export type PageMode = Extract<Mode, 'scroll' | 'grid'>
 
+/** Pages with cards but no scroll view (a PR review's Evidence page): Swipe | Grid. */
+export const SWIPE_GRID_MODES: readonly Mode[] = ['swipe', 'grid']
+
 export const PAGE_MODES: readonly PageMode[] = ['scroll', 'grid']
 
 /** `?mode=` on the Spec and Extras pages: grid, else scroll. */

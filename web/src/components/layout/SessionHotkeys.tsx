@@ -4,6 +4,7 @@ import {
   MODE_PARAM,
   modeSearch,
   parseMode,
+  parseRunMode,
   parsePageMode,
   toggledCardMode,
   type PageMode,
@@ -65,12 +66,19 @@ export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
     section6: section(5),
     altHelp: onToggleHelp,
   };
+  // A PR review's Evidence page: `S` is swipe, `G` flips the grid, both on the page itself.
+  const onPrEvidence = config.kind === "pr-review" && new RegExp(`^${base}/evidence(/|$)`).test(location.pathname);
+
   function switchPageMode(next: (current: PageMode) => PageMode) {
     const mode = next(parsePageMode(searchParams.get(MODE_PARAM)));
     navigate({ pathname: location.pathname, search: modeSearch(searchParams, mode) }, { replace: true });
   }
 
-  if (config.hotkeys.modes && onPageModes) {
+  if (config.hotkeys.modes && onPrEvidence) {
+    handlers.toggleMode = () => navigate({ pathname: location.pathname, search: modeSearch(searchParams, "swipe") }, { replace: true });
+    handlers.toggleGrid = () =>
+      navigate({ pathname: location.pathname, search: modeSearch(searchParams, parseRunMode(searchParams.get(MODE_PARAM)) === "grid" ? "swipe" : "grid") }, { replace: true });
+  } else if (config.hotkeys.modes && onPageModes) {
     handlers.toggleMode = () => switchPageMode(() => "scroll");
     handlers.toggleGrid = () => switchPageMode((current) => (current === "grid" ? "scroll" : "grid"));
   } else if (config.hotkeys.modes) {

@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import type { PrFinding } from '@scout/shared'
-import { hashPrBody } from '@scout/shared'
 import { ChevronRight, Focus, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tag } from '@/components/ui/tag'
 import { Notice } from '@/components/ui/notice'
-import { encodePath } from '@/lib/paths'
-import { useSessionContext } from '@/lib/session-context'
 import { useCurrentPrReport } from './pr-review-context'
 import { EvidenceLog } from './EvidenceLog'
+import { useEvidenceSrc } from './finding-comments'
 import { ReproductionFocus } from './ReproductionFocus'
 import { orderedEvidence, type EvidenceItem } from './reproduction-evidence'
 
@@ -51,11 +49,9 @@ function FindingReproduction({ finding, srcOf }: { finding: PrFinding; srcOf: (i
 }
 
 export function ReproductionEvidence({ findings }: { findings: readonly PrFinding[] }) {
-  const { sessionId } = useSessionContext()
   const { report } = useCurrentPrReport()
+  const srcOf = useEvidenceSrc()
   if (!report || findings.length === 0) return null
-  const revision = hashPrBody(JSON.stringify(report))
-  const srcOf = (e: EvidenceItem) => `/api/sessions/${encodeURIComponent(sessionId)}/pr-review/media/${encodePath(e.path)}?revision=${revision}`
   return <section aria-label="Reproduction and evidence" className="flex flex-col gap-4 border-t-fine border-line bg-surface p-4 font-sans text-sm text-ink">
     <h3 className="m-0 font-bold">Reproduction & evidence</h3>
     {findings.map((f) => <FindingReproduction key={f.id} finding={f} srcOf={srcOf} />)}

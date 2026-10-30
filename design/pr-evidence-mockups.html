@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PR review Evidence page</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap">
+<style>
+  :root {
+    --paper: #FBF6E9; --paper-2: #F1E9DB; --surface: #FFFDF7; --sunken: #E8DFCF; --ink: #2B2A33; --ink-muted: #5E5A58;
+    --line: rgba(43,42,51,.34); --hover: rgba(43,42,51,.08); --yellow: #F6B21E; --hdr: #F6B21E;
+    --red: #B8341F; --green: #2A7A58; --warn: #B7791F; --blue: #3B6FD6; --purple: #7A4FC9;
+    --sans: 'Space Grotesk', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); padding: 28px 16px 60px; font-size: 13px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .lede { color: var(--ink-muted); margin: 0 0 8px; font-size: 14px; max-width: 900px; line-height: 1.5; }
+  .opt { margin: 36px 0 0; }
+  .opt > h2 { font-size: 17px; margin: 0 0 4px; }
+  .opt > p { color: var(--ink-muted); margin: 0 0 12px; max-width: 900px; line-height: 1.5; }
+  .pros { font-size: 12.5px; color: var(--ink-muted); margin-top: 10px; max-width: 900px; line-height: 1.5; }
+  .pros b { color: var(--ink); }
+  .frame { border: 1px solid var(--ink); border-radius: 12px; overflow-x: auto; box-shadow: 4px 4px 0 var(--ink); background: var(--paper); max-width: 1240px; }
+  .bar { height: 46px; background: var(--hdr); border-bottom: 1px solid var(--ink); display: flex; align-items: center; gap: 6px; padding: 0 12px; }
+  .tab { height: 28px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--ink); background: var(--paper); display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; }
+  .tab.on { background: var(--ink); color: var(--paper); }
+  .tab .n { font-size: 11px; opacity: .7; }
+  .tab.new { outline: 2px dashed var(--ink); outline-offset: 2px; }
+  .sq { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--ink); background: var(--paper); display: grid; place-items: center; }
+  .body { display: flex; min-height: 560px; min-width: 1180px; }
+  .bar { min-width: 1180px; }
+  .rail { width: 296px; flex: none; background: var(--paper-2); border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+  .ident { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .ident strong { font-size: 14px; }
+  .ident .m { font-family: var(--mono); font-size: 11.5px; color: var(--ink-muted); margin-top: 4px; }
+  .blk { padding: 12px 10px; flex: 1; display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+  .blkh { display: flex; align-items: center; gap: 8px; padding: 0 4px 10px; }
+  .blkh h3 { margin: 0; font-size: 15px; }
+  .badge { display: inline-grid; place-items: center; min-width: 20px; height: 18px; padding: 0 6px; border-radius: 99px; border: 1px solid var(--line); font-size: 11px; font-weight: 700; background: var(--paper); }
+  .grp { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); padding: 10px 6px 4px; display: flex; gap: 6px; align-items: center; }
+  .ri { display: flex; align-items: center; gap: 9px; padding: 5px 8px; border-radius: 10px; border: 1px solid transparent; min-height: 40px; }
+  .ri.cur { background: var(--yellow); border-color: var(--line); }
+  .ri .t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .ri .t b { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ri .t span { font-size: 11px; color: var(--ink-muted); font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ri.cur .t span { color: var(--ink); opacity: .8; }
+  .thumb { width: 44px; height: 30px; border-radius: 6px; border: 1px solid var(--line); flex: none; background: linear-gradient(135deg,#d9e2f5,#f4ecd9); position: relative; }
+  .thumb.v::after { content: '▶'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 10px; color: var(--ink); }
+  .thumb.log { background: #2B2A33; }
+  .cc { display: inline-flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 700; }
+  .rev { margin-top: auto; border-top: 1px solid var(--line); padding: 10px 14px; display: flex; gap: 10px; align-items: center; font-weight: 700; }
+  .vbar { flex: 1; height: 8px; border-radius: 99px; border: 1px solid var(--ink); background: linear-gradient(90deg, var(--green) 0 40%, var(--red) 40% 55%, var(--paper) 55%); }
+  .main { flex: 1; min-width: 0; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .ph { display: flex; align-items: center; gap: 12px; }
+  .ph h2 { margin: 0; font-size: 22px; }
+  .ph .sum { display: flex; gap: 12px; color: var(--ink-muted); font-size: 12.5px; font-weight: 600; }
+  .ph .nav { margin-left: auto; display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600; }
+  .card { border: 1px solid var(--ink); border-radius: 14px; background: var(--surface); box-shadow: 3px 3px 0 var(--ink); }
+  .ch { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .ch .title { font-weight: 700; font-size: 14px; }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .tag { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 6px; border: 1px solid currentColor; font-size: 11px; font-weight: 700; }
+  .t-high { color: var(--red); } .t-med { color: var(--warn); } .t-low { color: var(--ink-muted); } .t-ok { color: var(--green); } .t-warn { color: var(--warn); }
+  .sev { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .viewer { margin: 12px 14px; height: 250px; border: 1px solid var(--line); border-radius: 10px; background: repeating-conic-gradient(var(--sunken) 0 25%, var(--paper-2) 0 50%) 0 0/16px 16px; display: grid; place-items: center; position: relative; }
+  .shot { width: 72%; height: 70%; background: #fff; border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.08); padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .shot .b { height: 14px; border-radius: 3px; background: #F6D78A; }
+  .shot .l { height: 7px; border-radius: 3px; background: #e6e1d6; }
+  .shot .hl { outline: 2px solid var(--red); outline-offset: 2px; }
+  .cap { margin: 0 14px 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 12.5px; display: flex; gap: 8px; align-items: center; }
+  .side { width: 300px; flex: none; border-left: 1px solid var(--line); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: var(--paper); }
+  .side h4 { margin: 0; font-size: 13px; display: flex; gap: 6px; align-items: center; }
+  .cmt { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface); font-size: 12.5px; line-height: 1.45; display: flex; flex-direction: column; gap: 6px; }
+  .cmt .who { display: flex; gap: 6px; align-items: center; font-size: 11.5px; font-weight: 700; color: var(--ink-muted); }
+  .av { width: 18px; height: 18px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font-size: 9px; font-weight: 700; flex: none; }
+  .av.ai { background: var(--purple); }
+  .av.gh { background: #24292f; }
+  .acts { display: flex; gap: 6px; }
+  .btn { height: 26px; padding: 0 9px; border-radius: 7px; border: 1px solid var(--ink); background: var(--paper); font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+  .btn.ok { background: var(--green); color: #fff; } .btn.no { color: var(--red); }
+  .btn.y { background: var(--yellow); }
+  .box { border: 1px solid var(--line); border-radius: 8px; height: 32px; padding: 0 10px; display: flex; align-items: center; color: var(--ink-muted); font-size: 12.5px; background: var(--surface); }
+  .note { border-left: 3px solid var(--purple); }
+  .steps { margin: 0; padding: 0 14px; display: flex; flex-direction: column; gap: 0; }
+  .step { display: grid; grid-template-columns: 28px 1fr 120px; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); align-items: center; }
+  .step:first-child { border-top: none; }
+  .step .num { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--ink); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+  .step .ev { height: 54px; border-radius: 6px; border: 1px solid var(--line); background: linear-gradient(135deg,#d9e2f5,#f4ecd9); position: relative; }
+  .step .ev.none { background: none; border-style: dashed; display: grid; place-items: center; color: var(--ink-muted); font-size: 11px; }
+  .ea { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 14px; }
+  .ea div { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.4; }
+  .ea b { display: block; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 3px; }
+  .foot { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .fa { display: flex; gap: 8px; justify-content: flex-end; }
+  .deck { position: relative; }
+  .deck::before, .deck::after { content: ''; position: absolute; left: 14px; right: 14px; height: 100%; border: 1px solid var(--ink); border-radius: 14px; background: var(--paper-2); z-index: -1; }
+  .deck::before { top: -6px; left: 8px; right: 8px; } .deck::after { top: -12px; left: 16px; right: 16px; opacity: .6; }
+  .report { display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+  .fsec { border: 1px solid var(--ink); border-radius: 14px; background: var(--surface); overflow: hidden; }
+  .strip { display: flex; gap: 8px; padding: 10px 14px; overflow: hidden; }
+  .strip .s { width: 132px; flex: none; display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--ink-muted); }
+  .strip .s .im { height: 80px; border-radius: 7px; border: 1px solid var(--line); background: linear-gradient(135deg,#d9e2f5,#f4ecd9); position: relative; }
+  .strip .s .im.v::after { content: '▶'; position: absolute; inset: 0; display: grid; place-items: center; }
+  .strip .s .im.log { background: #2B2A33; color: #cfc8b8; font-family: var(--mono); font-size: 8px; padding: 6px; line-height: 1.3; }
+  .strip .s .im .k { position: absolute; top: 4px; right: 4px; background: var(--ink); color: var(--paper); border-radius: 99px; font-size: 9.5px; font-weight: 700; padding: 1px 5px; }
+  .thread { padding: 0 14px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { height: 26px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--paper); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+  .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .annot { position: absolute; top: 12px; right: 12px; display: flex; gap: 4px; }
+  .pin { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: var(--yellow); border: 1.5px solid var(--ink); display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+</style>
+</head>
+<body>
+<svg style="display:none">
+  <symbol id="msg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="img" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+  <symbol id="film" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></symbol>
+  <symbol id="term" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6M12 19h8"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="ext" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="focus" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="gh" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7M6 9v12"/></symbol>
+  <symbol id="code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></symbol>
+</svg>
+
+<h1>PR review · Evidence page</h1>
+<p class="lede">A third tab, <b>Files · Evidence · Submit</b>, that pulls together everything the review skills reproduced (screenshots, videos, logs, tests) and every comment on it: the proposed PR comment, your private note, your own comments, and any GitHub threads on the same lines. Today this lives under each diff card, so you have to open each file to find it. Sample data: 4 findings, 9 evidence items, 6 comments.</p>
+
+<!-- ================= A ================= -->
+<section class="opt">
+  <h2>A · Gallery with a comment panel (like today's Evidence page)</h2>
+  <p>Built from the code-review Evidence page. The sidebar lists every evidence item, grouped under its finding. The middle shows one large item with zoom and video controls. The right panel shows the finding's comments: the proposed comment with Approve and Reject, your note, your comments and GitHub threads. Arrow keys step through every item across all findings.</p>
+  <div class="frame">
+    <div class="bar">
+      <span class="sq"><svg><use href="#left"/></svg></span>
+      <span class="tab">Files <span class="n">14</span></span>
+      <span class="tab on new"><svg><use href="#img"/></svg>Evidence <span class="n">9</span></span>
+      <span class="tab"><svg><use href="#check"/></svg>Submit</span>
+    </div>
+    <div class="body">
+      <aside class="rail">
+        <div class="ident"><strong>#482 · Trial bar polish</strong><div class="m">acme/console · 4 findings</div></div>
+        <div class="blk">
+          <div class="blkh"><h3>Evidence</h3><span class="badge">9</span><span style="margin-left:auto;font-size:11px;color:var(--ink-muted);font-weight:600">6 img · 1 video · 2 logs</span></div>
+          <div class="grp"><span class="sev" style="background:var(--red)"></span>Hides end date · high</div>
+          <div class="ri cur"><span class="thumb"></span><span class="t"><b>Step 2 · bar collapsed</b><span>TrialBar.tsx:48</span></span><span class="cc"><svg style="width:12px;height:12px"><use href="#msg"/></svg>3</span></div>
+          <div class="ri"><span class="thumb v"></span><span class="t"><b>Step 3 · resize to 1024</b><span>recording.webm</span></span></div>
+          <div class="ri"><span class="thumb log"></span><span class="t"><b>Step 3 · console</b><span>console.log</span></span></div>
+          <div class="grp"><span class="sev" style="background:var(--warn)"></span>Upgrade misaligned · medium</div>
+          <div class="ri"><span class="thumb"></span><span class="t"><b>Step 1 · 2px offset</b><span>trial-bar.css:12</span></span><span class="cc"><svg style="width:12px;height:12px"><use href="#msg"/></svg>1</span></div>
+          <div class="ri"><span class="thumb"></span><span class="t"><b>Step 2 · dark theme</b><span>trial-bar.css:12</span></span></div>
+          <div class="grp"><span class="sev" style="background:var(--ink-muted)"></span>Countdown off by one · low</div>
+          <div class="ri"><span class="thumb log"></span><span class="t"><b>Test · countdown.test</b><span>Countdown.tsx:21</span></span><span class="cc"><svg style="width:12px;height:12px"><use href="#msg"/></svg>2</span></div>
+        </div>
+        <div class="rev">3/4 <span class="vbar"></span></div>
+      </aside>
+      <div class="main">
+        <div class="ph"><h2>Evidence</h2><span class="sum"><span>6 screenshots</span><span>1 recording</span><span>2 logs</span><span>6 comments</span></span><span class="nav"><span class="sq"><svg><use href="#left"/></svg></span>1 / 9<span class="sq"><svg><use href="#right"/></svg></span></span></div>
+        <div class="card" style="display:flex;flex-direction:column">
+          <div class="ch"><span class="sev" style="background:var(--red)"></span><span class="title">The trial bar hides its end date</span><span class="tag t-high">high</span><span class="tag t-ok">reproduced</span><span class="mono" style="margin-left:auto;color:var(--ink-muted)">TrialBar.tsx:48–52</span><span class="btn"><svg><use href="#code"/></svg>Open in diff</span></div>
+          <div class="viewer"><div class="shot"><div class="b hl"></div><div class="l" style="width:60%"></div><div class="l" style="width:80%"></div><div class="l" style="width:45%"></div></div>
+            <span class="annot"><span class="btn">50%</span><span class="btn">−</span><span class="btn">+</span><span class="btn"><svg><use href="#focus"/></svg></span></span></div>
+          <div class="cap"><b class="mono">Step 2</b> Collapse the bar at 1280px · end date disappears · 26 Oct, 09:12</div>
+        </div>
+      </div>
+      <aside class="side">
+        <h4><svg><use href="#msg"/></svg>Comments <span class="badge">3</span></h4>
+        <div class="cmt"><div class="who"><span class="av ai">AI</span>Proposed PR comment<span class="tag t-warn" style="margin-left:auto">pending</span></div>
+          When the bar collapses the end date is hidden, so free-plan users lose the one thing the bar is for. Keep the date visible in the collapsed state.
+          <div class="acts"><span class="btn ok"><svg><use href="#check"/></svg>Approve</span><span class="btn no"><svg><use href="#x"/></svg>Reject</span><span class="btn">Edit</span></div></div>
+        <div class="cmt note"><div class="who"><span class="av">BD</span>Your private note <svg style="width:12px;height:12px"><use href="#lock"/></svg></div>Check with design whether the date can wrap instead.</div>
+        <div class="cmt"><div class="who"><span class="av gh">GH</span>GitHub · alex-r · line 50</div>Same thing on Safari, fwiw.</div>
+        <div class="box">Leave a comment…</div>
+      </aside>
+    </div>
+  </div>
+  <p class="pros"><b>+</b> Reuses the most code: the sidebar list, the viewer and the comment panel already exist. Best for looking closely at screenshots and videos. <b>−</b> Steps, expected and actual are hidden behind the item, and logs get little space in a viewer built for images. A finding with no evidence (blocked or not reproduced) doesn't show up at all.</p>
+</section>
+
+<!-- ================= B ================= -->
+<section class="opt">
+  <h2>B · One card per finding (like test-run scenarios)</h2>
+  <p>Built from the test-run Review page. The sidebar lists the findings with severity, reproduction status and your decision. Each card retells one reproduction: the steps with the evidence beside each step, then expected and actual, then the comments in the footer. You swipe or grid through the findings the same way you review scenarios.</p>
+  <div class="frame">
+    <div class="bar">
+      <span class="sq"><svg><use href="#left"/></svg></span>
+      <span class="tab">Files <span class="n">14</span></span>
+      <span class="tab on new"><svg><use href="#img"/></svg>Evidence <span class="n">4</span></span>
+      <span class="tab"><svg><use href="#check"/></svg>Submit</span>
+      <span style="margin-left:auto" class="tab on">Swipe</span><span class="tab">Grid</span>
+    </div>
+    <div class="body">
+      <aside class="rail">
+        <div class="ident"><strong>#482 · Trial bar polish</strong><div class="m">acme/console · 4 findings</div></div>
+        <div class="blk">
+          <div class="blkh"><h3>Findings</h3><span class="badge">4</span></div>
+          <div class="ri cur"><span class="sev" style="background:var(--red)"></span><span class="t"><b>Hides its end date</b><span>TrialBar.tsx:48</span></span><span class="cc"><svg style="width:12px;height:12px"><use href="#msg"/></svg>3</span></div>
+          <div class="ri"><span class="sev" style="background:var(--warn)"></span><span class="t"><b>Upgrade misaligned</b><span>trial-bar.css:12</span></span><span class="cc" style="color:var(--green)"><svg style="width:13px;height:13px;stroke-width:3"><use href="#check"/></svg></span></div>
+          <div class="ri"><span class="sev" style="background:var(--warn)"></span><span class="t"><b>Flag read before load</b><span>flags.ts:7 · blocked</span></span><span class="cc" style="color:var(--red)"><svg style="width:13px;height:13px;stroke-width:3"><use href="#x"/></svg></span></div>
+          <div class="ri"><span class="sev" style="background:var(--ink-muted)"></span><span class="t"><b>Countdown off by one</b><span>Countdown.tsx:21 · test</span></span><span class="cc"><svg style="width:12px;height:12px"><use href="#msg"/></svg>2</span></div>
+        </div>
+        <div class="rev">2/4 <span class="vbar"></span></div>
+      </aside>
+      <div class="main" style="padding-top:26px">
+        <div class="card deck" style="z-index:0">
+          <div class="ch"><span class="sev" style="background:var(--red)"></span><span class="title">The trial bar hides its end date</span><span class="tag t-high">high</span><span class="tag t-ok">reproduced</span><span class="mono" style="color:var(--ink-muted)">TrialBar.tsx:48–52</span><span style="margin-left:auto;font-size:12px;font-weight:600;color:var(--ink-muted)">1 / 4</span></div>
+          <div style="padding:8px 14px 0;font-size:12px;color:var(--ink-muted)">Chrome 130 · 1280×800 · revision <span class="mono">a3f91c2e07b4</span> · <b>Prerequisite:</b> free-plan workspace with 7 days left</div>
+          <div class="steps" style="margin-top:6px">
+            <div class="step"><span class="num">1</span><span>Sign in to a free-plan workspace and open the dashboard.</span><span class="ev"></span></div>
+            <div class="step"><span class="num">2</span><span>Click the chevron to collapse the trial bar. <b>End date disappears.</b></span><span class="ev" style="outline:2px solid var(--yellow);outline-offset:1px"><span class="pin" style="top:-8px;right:-8px">2</span></span></div>
+            <div class="step"><span class="num">3</span><span>Resize to 1024px and expand again.</span><span class="ev" style="display:grid;place-items:center">▶</span></div>
+          </div>
+          <div class="ea"><div><b>Expected</b>Collapsed bar still shows "Ends 2 Nov".</div><div><b>Actual</b>Only the Upgrade button is left.</div></div>
+          <div class="foot">
+            <div class="thread" style="padding:0">
+              <div class="cmt"><div class="who"><span class="av ai">AI</span>Proposed PR comment<span class="tag t-warn" style="margin-left:auto">pending</span></div>When the bar collapses the end date is hidden. Keep it visible in the collapsed state.</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="cmt note"><div class="who"><span class="av">BD</span>Private note <svg style="width:12px;height:12px"><use href="#lock"/></svg></div>Ask design about wrapping.</div>
+                <div class="cmt"><div class="who"><span class="av gh">GH</span>alex-r · line 50</div>Same on Safari.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center"><div class="box" style="flex:1">Leave a comment…</div><span class="btn no"><svg><use href="#x"/></svg>Reject <span class="mono">X</span></span><span class="btn ok"><svg><use href="#check"/></svg>Approve <span class="mono">A</span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="pros"><b>+</b> Tells each bug as a story: what was done, what was seen, and the proof next to each step. A finding with no evidence still gets a card that explains why. Approve or reject right here, with the same keys as scenarios. <b>−</b> Screenshots show small inside the step list (click one for the full-screen view), and it means building a new card.</p>
+</section>
+
+<!-- ================= C ================= -->
+<section class="opt">
+  <h2>C · One scrolling report</h2>
+  <p>Everything on one page, one section per finding: a header, a strip of evidence thumbnails, and the comments side by side. Chips at the top filter by severity, status or "has my comments". The sidebar is a table of contents that jumps to each section. It's closest to how the Submit page reads.</p>
+  <div class="frame">
+    <div class="bar">
+      <span class="sq"><svg><use href="#left"/></svg></span>
+      <span class="tab">Files <span class="n">14</span></span>
+      <span class="tab on new"><svg><use href="#img"/></svg>Evidence <span class="n">4</span></span>
+      <span class="tab"><svg><use href="#check"/></svg>Submit</span>
+    </div>
+    <div class="body">
+      <aside class="rail">
+        <div class="ident"><strong>#482 · Trial bar polish</strong><div class="m">acme/console · 4 findings</div></div>
+        <div class="blk">
+          <div class="blkh"><h3>Findings</h3><span class="badge">4</span></div>
+          <div class="ri cur"><span class="sev" style="background:var(--red)"></span><span class="t"><b>Hides its end date</b><span>3 evidence · 3 comments</span></span></div>
+          <div class="ri"><span class="sev" style="background:var(--warn)"></span><span class="t"><b>Upgrade misaligned</b><span>2 evidence · 1 comment</span></span></div>
+          <div class="ri"><span class="sev" style="background:var(--warn)"></span><span class="t"><b>Flag read before load</b><span>blocked · no evidence</span></span></div>
+          <div class="ri"><span class="sev" style="background:var(--ink-muted)"></span><span class="t"><b>Countdown off by one</b><span>1 test · 2 comments</span></span></div>
+        </div>
+        <div class="rev">2/4 <span class="vbar"></span></div>
+      </aside>
+      <div class="main">
+        <div class="ph"><h2>Evidence</h2><span class="sum"><span>9 items</span><span>6 comments</span></span></div>
+        <div class="chips"><span class="chip on">All 4</span><span class="chip">High 1</span><span class="chip">Medium 2</span><span class="chip">Low 1</span><span class="chip"><svg><use href="#msg"/></svg>With comments 3</span><span class="chip">Not reproduced 1</span></div>
+        <div class="report">
+          <div class="fsec">
+            <div class="ch"><span class="sev" style="background:var(--red)"></span><span class="title">The trial bar hides its end date</span><span class="tag t-high">high</span><span class="tag t-ok">reproduced</span><span class="mono" style="color:var(--ink-muted)">TrialBar.tsx:48–52</span><span class="btn" style="margin-left:auto"><svg><use href="#focus"/></svg>Focus</span></div>
+            <div class="strip">
+              <div class="s"><div class="im"><span class="k">1</span></div>Step 1 · dashboard</div>
+              <div class="s"><div class="im" style="outline:2px solid var(--yellow)"><span class="k">2</span></div>Step 2 · collapsed</div>
+              <div class="s"><div class="im v"><span class="k">3</span></div>Step 3 · resize</div>
+              <div class="s"><div class="im log">[warn] TrialBar: date<br>hidden at width 1024<br>[info] collapsed=true<span class="k">3</span></div>Step 3 · console</div>
+            </div>
+            <div class="thread">
+              <div class="cmt"><div class="who"><span class="av ai">AI</span>Proposed PR comment<span class="tag t-warn" style="margin-left:auto">pending</span></div>When the bar collapses the end date is hidden. Keep it visible.<div class="acts"><span class="btn ok"><svg><use href="#check"/></svg>Approve</span><span class="btn no"><svg><use href="#x"/></svg>Reject</span></div></div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="cmt note"><div class="who"><span class="av">BD</span>Private note <svg style="width:12px;height:12px"><use href="#lock"/></svg></div>Ask design about wrapping.</div>
+                <div class="cmt"><div class="who"><span class="av gh">GH</span>alex-r · line 50</div>Same on Safari.</div>
+              </div>
+            </div>
+          </div>
+          <div class="fsec">
+            <div class="ch"><span class="sev" style="background:var(--warn)"></span><span class="title">Feature flag read before it loads</span><span class="tag t-med">medium</span><span class="tag t-warn">blocked</span><span class="mono" style="color:var(--ink-muted)">flags.ts:7</span></div>
+            <div style="padding:10px 14px;font-size:12.5px;color:var(--ink-muted)">Not reproduced: the staging environment had no free-plan workspace. No evidence.</div>
+            <div class="thread"><div class="cmt"><div class="who"><span class="av ai">AI</span>Proposed PR comment<span class="tag t-high" style="margin-left:auto">rejected</span></div>The flag is read before the config request resolves…</div><div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="pros"><b>+</b> See the whole PR at a glance, scan it quickly, and filter it. Blocked findings explain themselves. Feels like a read-through before you Submit. <b>−</b> Long PRs make a long page. Screenshots are thumbnails until you click Focus, and there's no swiping.</p>
+</section>
+</body>
+</html>

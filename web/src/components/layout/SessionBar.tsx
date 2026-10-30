@@ -5,7 +5,7 @@ import { SkillsHelp } from '@/components/common/SkillsHelp'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
-import { PAGE_MODES } from '@/lib/mode'
+import { PAGE_MODES, SWIPE_GRID_MODES } from '@/lib/mode'
 import { useHotkeys } from '@/lib/useHotkeys'
 import { sessionListRoute } from '@/lib/paths'
 import { useSessionContext } from '@/lib/session-context'
@@ -48,6 +48,8 @@ export function SessionBar({ onHelp }: SessionBarProps) {
   const { pathname } = useLocation()
   const section = useCurrentSection()
   const onModes = kind === 'test-run' ? ['review', 'gaps', 'logs', 'data-setup'].includes(section ?? '') : section === 'files'
+  // A PR review's Evidence page has its own swipe and grid.
+  const onPrEvidence = kind === 'pr-review' && section === 'evidence'
   // Spec and Extras switch between their stacked cards and a grid of tiles, on their own route.
   const onPageModes = kind !== 'test-run' && (section === 'spec' || section === 'extras')
   const saveText = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Not saved' : ''
@@ -82,6 +84,7 @@ export function SessionBar({ onHelp }: SessionBarProps) {
             </span>
           )}
           {onModes && <ModeToggle pathname={kind === 'test-run' ? pathname : undefined} />}
+          {onPrEvidence && <ModeToggle pathname={pathname} modes={SWIPE_GRID_MODES} />}
           {onPageModes && <ModeToggle pathname={pathname} modes={PAGE_MODES} />}
           <Tooltip>
             <TooltipTrigger render={<Button size="sm" aria-label="Skills" onClick={() => setSkillsOpen(true)} className={cn(ICON_CHIP, 'max-lg:hidden')} />}>

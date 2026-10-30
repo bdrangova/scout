@@ -12,16 +12,23 @@ import { useEvidenceNav } from '@/components/evidence/useEvidenceNav'
 import { Kbd } from '@/components/ui/kbd'
 import { pluralize } from '@/lib/format'
 import { evidenceRoute } from '@/lib/paths'
-import { useCodeReviewDetail } from '@/lib/detail-kind'
+import { isTestRunDetail, useCodeReviewDetail } from '@/lib/detail-kind'
 import { useSessionContext } from '@/lib/session-context'
 import { useHotkeys } from '@/lib/useHotkeys'
 import { useOpenCommentCount } from '@/lib/useOpenCommentCount'
+import { PrEvidencePage } from './PrEvidencePage'
 
 /** The page column: the viewport minus the bar, so the card (and its viewer) fit without page scroll. */
 const COLUMN = 'mx-auto flex h-[calc(100dvh-var(--shell-h))] w-full max-w-[1400px] flex-col gap-4 overflow-y-auto px-6 py-4'
 
-/** `/s/:id/evidence/*path?`: the URL names the current item by its path in `evidence/` (default: the first). The list is in the rail. */
+/** `/s/:id/evidence/*`: a PR review's findings (`PrEvidencePage`), else the session's evidence folder. */
 export function EvidencePage() {
+  const { detail } = useSessionContext()
+  return !isTestRunDetail(detail) && detail.manifest.kind === 'pr-review' ? <PrEvidencePage /> : <CodeReviewEvidencePage />
+}
+
+/** `/s/:id/evidence/*path?`: the URL names the current item by its path in `evidence/` (default: the first). The list is in the rail. */
+function CodeReviewEvidencePage() {
   const { sessionId } = useSessionContext()
   const detail = useCodeReviewDetail()
   const params = useParams()
