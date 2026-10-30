@@ -1,10 +1,11 @@
-import { effectiveVerdict, fileIsUpdated, type TreeFile } from '@scout/shared'
+import { effectiveVerdict, fileIsUpdated, journalLineNotesByFile, type TreeFile } from '@scout/shared'
 import { useMemo, useRef, useState } from 'react'
 import { countReviewed } from '@/lib/file-tree'
 import { indexByPath } from '@/lib/scope'
 import { useReview } from '@/state/review-context'
 import { useCurrentPrReport } from '@/components/prreview/pr-review-context'
 import { usePrComments } from '@/state/pr-comments-context'
+import { useJournalState } from '@/state/journal-context'
 import { useSessionContext } from '@/lib/session-context'
 import { useCommentedOnlyFilter } from '@/components/layout/commented-only'
 import { CommentedOnlyToggle } from '@/components/layout/CommentedOnlyToggle'
@@ -44,8 +45,10 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
     }
     return counts
   }, [comments])
+  const { journal } = useJournalState()
+  const notesByPath = useMemo(() => journalLineNotesByFile(journal), [journal])
   const prFilter = usePrFileFilter(files)
-  const commented = useCommentedOnlyFilter(prFilter.files, (file) => openCommentsByPath.has(file.path))
+  const commented = useCommentedOnlyFilter(prFilter.files, (file) => openCommentsByPath.has(file.path) || notesByPath.has(file.path))
   const state = useFileTreeState(commented.items, currentPath, onSelect, listRef)
   const reviewByPath = useMemo(() => indexByPath(reviewFiles), [reviewFiles])
   const { sessionId } = useSessionContext()
@@ -66,6 +69,7 @@ export function FileTree({ files, reviewFiles = files, currentPath, onSelect, co
       openComments: openCommentsByPath.get(file.path) ?? 0,
       updated: reviewFile !== undefined && fileIsUpdated(review, reviewFile),
       prComments: fileCounts.get(file.path),
+      scoutNotes: notesByPath.get(file.path),
       proposals: report?.findings.filter((f) => f.path === file.path).length,
     }
   }

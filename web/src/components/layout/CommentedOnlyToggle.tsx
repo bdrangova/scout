@@ -11,9 +11,9 @@ interface CommentedOnlyToggleProps {
   className?: string
 }
 
-/** The rail's comment-bubble switch: pressed, the list shows only the items carrying open comments. */
+/** The rail's comment-bubble switch: pressed, the list shows only the items carrying comments. */
 export function CommentedOnlyToggle({ count, active, onToggle, size = 'md', className }: CommentedOnlyToggleProps) {
-  const label = active ? 'Show all items' : count === 0 ? 'No items with open comments' : 'Show only items with open comments'
+  const label = active ? 'Show all items' : count === 0 ? 'No items with comments' : 'Show only items with comments'
   return (
     <button
       type="button"
@@ -38,7 +38,7 @@ export function CommentedOnlyToggle({ count, active, onToggle, size = 'md', clas
           {count}
         </span>
       )}
-      <span className="sr-only">, {count} with open comments</span>
+      <span className="sr-only">, {count} with comments</span>
     </button>
   )
 }

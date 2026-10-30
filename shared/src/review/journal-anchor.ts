@@ -44,6 +44,15 @@ export function entriesForFile(journal: Journal | null, path: string): JournalEn
   return liveEntries(journal).filter((entry) => entry.file === path)
 }
 
+/** Live line-anchored entry count per file (the file tree's Scout mark); file-level notes don't count. */
+export function journalLineNotesByFile(journal: Journal | null): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const entry of liveEntries(journal)) {
+    if (entry.file !== null && entry.anchor !== undefined) counts.set(entry.file, (counts.get(entry.file) ?? 0) + 1)
+  }
+  return counts
+}
+
 /** Live entry count (the nav badge). */
 export function journalCount(journal: Journal | null): number {
   return liveEntries(journal).length

@@ -4,8 +4,10 @@ import { useState, type ReactNode } from 'react'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import { CommentedOnlyContext } from '@/components/layout/commented-only'
 import { SessionContext } from '@/lib/session-context'
+import { JournalContext } from '@/state/journal-context'
 import { ReviewProvider } from '@/state/ReviewProvider'
 import { commentFixture, makeTreeFile, reviewFixture, reviewResponseFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
+import { makeEntry, makeJournal } from '@/test/journal'
 import { mockReviewApi } from '@/test/mock-api'
 import { FileTree } from './FileTree'
 
@@ -240,5 +242,41 @@ describe('FileTree only commented', () => {
     expect(screen.getByText(`1 of ${files.length}`)).toBeInTheDocument()
     await userEvent.click(toggle)
     expect(screen.getAllByRole('treeitem').filter((row) => row.getAttribute('aria-selected') !== null)).toHaveLength(files.length)
+  })
+
+  it('marks the files Scout left line notes on, and keeps them in the commented-only list', async () => {
+    mockReviewApi(reviewResponseFixture(reviewFixture()))
+    const anchor = { side: 'new' as const, line: 1, snippet: 'x' }
+    const journal = makeJournal([
+      makeEntry('j1', { kind: 'summary', file: P0 }),
+      makeEntry('j2', { file: P0, anchor }),
+      makeEntry('j3', { file: P0, anchor }),
+      makeEntry('j4', { file: P1 }),
+      makeEntry('j5', { file: P3, anchor, supersededBy: 'j6' }),
+    ])
+    function Shell({ children }: { children: ReactNode }) {
+      const [on, setOn] = useState(false)
+      return <CommentedOnlyContext.Provider value={{ on, toggle: () => setOn((v) => !v) }}>{children}</CommentedOnlyContext.Provider>
+    }
+    render(
+      <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
+        <ReviewProvider>
+          <JournalContext.Provider value={{ journal, loading: false, error: null, reload: () => {} }}>
+            <Shell>
+              <FileTree files={files} currentPath={null} onSelect={() => {}} />
+            </Shell>
+          </JournalContext.Provider>
+        </ReviewProvider>
+      </SessionContext.Provider>,
+    )
+    const marks = await screen.findAllByTitle(/Scout notes?$/)
+    expect(marks).toHaveLength(1)
+    expect(marks[0]?.closest('[role="treeitem"]')?.getAttribute('data-id')).toBe(P0)
+    expect(marks[0]).toHaveAttribute('title', '2 Scout notes')
+    const toggle = screen.getByRole('button', { name: /only commented/i })
+    await waitFor(() => expect(toggle).toBeEnabled())
+    await userEvent.click(toggle)
+    const fileRows = screen.getAllByRole('treeitem').filter((row) => row.getAttribute('aria-selected') !== null)
+    expect(fileRows.map((row) => row.dataset['id'])).toEqual([P0])
   })
 })
