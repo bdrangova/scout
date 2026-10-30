@@ -4,6 +4,19 @@ PR review is the third session tab, at `/pr`. It reuses the Development session 
 
 `ai-review install --repo <path>` installs `publish-pr-review` for Claude (`.claude/skills`) and Codex (`.agents/skills`). Ask for a PR review in that session, optionally naming an ordered skill chain. The default skill reviews correctness and verifies actionable findings. The dashboard only consumes the report; it does not choose or run skills.
 
+## Summary page
+
+A PR review opens on Summary. At the top a card sums the PR up in a few plain bullets, with badges for the kind of
+change (feature, fix, refactor, chore, docs, tests) and the areas it touches (security, frontend, backend, database,
+infra, build, dependencies). The badges are one shared set so other modules can show the same ones. The card also
+lists author, branches, commit count, size, labels and the linked Jira tickets. Below it come the PR description
+and the changed files (each opens that file on the Review page), in scroll or grid, each card collapsible. A ticket
+saved by `/jira-snapshot` shows in full; a ticket link only accepts http(s) addresses.
+
+`ai-review pr-report facts <PR>` gathers the facts from GitHub (title, description, author, branches, labels,
+commits, ticket keys from the title, branch and description); the skill adds the bullets and badges and stores them in the
+report's optional overview. A report without one shows a short note instead of the card.
+
 ## Agent/adapter interface
 
 1. Check out the PR head cleanly in a dedicated checkout when necessary. Do not change the user's dirty checkout.

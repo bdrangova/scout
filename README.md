@@ -12,7 +12,7 @@ the repository's working tree live, so nothing needs republishing.
 |---|---|
 | `/` Worktrees | Git worktrees in the folders picked in Settings, with branch, changes, PR and linked sessions |
 | `/d` Development | Reviews of an agent's work on a branch |
-| `/pr` PR review | An agent's findings on a pull request, which you edit before they become PR comments |
+| `/pr` PR review | A pull request's summary, tickets and description, plus an agent's findings you edit before they become PR comments |
 | `/t` Test runs | Feature-test runs: plan, data setup, videos, bugs and logs |
 
 Press `?` for the skills, `Ctrl+?` for keyboard shortcuts.
@@ -58,6 +58,11 @@ Stop it before `npm run dev`, which needs the same port.
 | `/reproduce` | Reproduces one reported problem against the running app |
 | `/run-app` | Makes sure this checkout's app is running |
 | `/snapshot-db` | Saves and restores this checkout's local database around a data setup |
+| `/jira-snapshot` | Saves Jira tickets into a session so they sit next to the change |
+
+The skills share a writing guide (`write-for-reviewers`, loaded by them, not run by you) and leave the
+bookkeeping (adding evidence, tracking what changed since the last publish, merging run indexes, checking the app
+is up, database snapshots) to `ai-review` commands, so the same step works the same way every time.
 
 ## How a review works
 
