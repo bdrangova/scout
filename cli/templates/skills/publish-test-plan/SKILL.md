@@ -2,7 +2,7 @@
 name: publish-test-plan
 description: Publish the test plan of a feature-test run to the Scout dashboard (/t/<id>) by writing the plan's part of the run's test-run.json index (title, feature, area, scenario skeleton with steps, plan summary and test-split panels). Use when the user runs /publish-test-plan, or says "publish the test plan" for a folder under a plans/**/test-runs/ run.
 argument-hint: "<run-folder> [--auto]"
-allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Bash(wc *) Bash(shasum *) Bash(mv *) Read Glob Grep Write AskUserQuestion
+allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Read Glob Grep Write AskUserQuestion
 ---
 # Publish the test plan: $0
 
@@ -16,24 +16,15 @@ A feature-test run is a folder (`<feature>/<area>/test-runs/<run>/`). The dashbo
 Paths inside the index are refs, `alias:relative/path`, where the alias is a key of `roots`. Standard roots: `{ "run": ".", "plan": "../..", "bugs": "../../bugs" }` (relative to the run folder: `plan` is the folder holding `test-plan.md`, `bugs` the sibling `bugs/` folder). Adjust `plan` when the plan lives elsewhere. `..` is allowed only as a leading chain in a root, never inside a ref.
 
 ## Rules
-- Resolve `$0` to an absolute run folder first (relative to the current directory). The only file you write is `<run>/test-run.json`, through `<run>/test-run.json.tmp` and `mv`. Never write any other file in the run folder, never commit or stage anything, never touch application code.
-- Merge, never overwrite: read the existing `<run>/test-run.json` (if any), change only the keys this skill owns (below), keep every other key and every unknown field as it is.
+- Resolve `$0` to an absolute run folder first (relative to the current directory).
+- Write the index only with `ai-review run-index merge "<run>" --owner plan --from <patch.json>` (the patch in your scratch folder, never in the run folder). It creates the index when there is none, keeps every key this skill does not own, refuses keys it does not own, sets `updatedAt` and `publishedBy.plan`, validates, and writes nothing when there are errors. Never edit `test-run.json` by hand, never write any other file in the run folder, never commit or stage anything, never touch application code.
 - With `--auto` in the arguments or `AI_REVIEW_HEADLESS=1` set, never wait for user input: skip step 0 and take your recommendations.
 - Do not invent content. Step text comes from the plan; a scenario the plan does not list is not added.
 
-## Keys this skill owns
-- `title`, `feature`, `area` (set `title` only when the index has none or the plan heading changed; keep a title the user edited otherwise), `updatedAt`, `roots.plan`, `roots.run` (always `"."`).
-- `scenarios[]`: `id`, `title`, `order` and the planned `steps` of every scenario in the plan. `status: "planned"` only for a scenario that is new to the index; never change the status, `layers`, `evidence`, `logs`, `links` or `notes` of an existing scenario. When an existing scenario already has steps with `observed`/`result` (written by `/publish-test-run`), update only `action`/`expected` of the steps with the same position and keep `observed`/`result`.
-- `overview` panels titled `Plan summary` and `Test split` (replace those two by title, keep every other panel; keep the order `Plan summary`, `Test split`, then the panels of the other skills).
-- `publishedBy.plan` = `{ "at": "<ISO now>", "hashes": { "<plan file ref>": "<first 16 hex of shasum -a 256>" } }`.
-
-## Index skeleton (when no `test-run.json` exists)
-```json
-{ "schemaVersion": 1, "runId": "<run folder name>", "title": "<plan title>", "feature": "<feature>", "area": "<area>",
-  "createdAt": "<ISO now>", "updatedAt": "<ISO now>", "publishedBy": {},
-  "roots": { "run": ".", "plan": "../.." }, "pages": [], "overview": [], "scenarios": [] }
-```
-`feature` and `area` are the two folder names above `test-runs/` (`change-summary/diffing/test-runs/2026-10-21-diffing` gives `change-summary` and `diffing`), or `null` when the path has no such shape.
+## The patch
+`{ "title", "feature", "area", "roots": { "plan": "../.." }, "scenarios": [{ "id", "title", "order", "steps" }], "overview": [<Plan summary>, <Plan>, <Test split>], "removePanels": [], "hashes": { "plan:test-plan.md": "<from ai-review run-index scan --owner plan>" } }`
+- `title` only when the index has none or the plan heading changed (keep a title the user edited). `feature`/`area`: the two folder names above `test-runs/` (`change-summary/diffing/test-runs/2026-10-21-diffing` gives `change-summary` and `diffing`), or `null`.
+- The merge keeps everything `/publish-test-run` wrote: a new scenario starts `planned`, an existing one keeps its status and evidence, and a step that already has a result only takes your new `action`/`expected`.
 
 ## Steps
 0. **Choices.** Skip with `--auto` or `AI_REVIEW_HEADLESS=1`. Otherwise find the plan first (step 2) and ask once with AskUserQuestion: "Use these recommendations?" with options "Accept all (Recommended)" and "Let me choose", both with a `preview` listing the plan file, the `plan` root, the scenario ids you found, and the panels you would write. On "Let me choose", ask only about what is unclear: the plan file when there are several candidates, the `plan` root, scenario ids to leave out.
@@ -45,6 +36,5 @@ Paths inside the index are refs, `alias:relative/path`, where the alias is a key
 4. **Panels.**
    - `Plan summary`: `{ "type": "markdown", "title": "Plan summary", "span": 2, "markdown": "<the plan's Summary section as written, trimmed to what fits on one screen; end with: Source: plan:test-plan.md>" }`. Also add `{ "type": "links", "title": "Plan", "items": [{ "label": "Test plan", "ref": "plan:test-plan.md" }] }` after it when the dashboard should link the file.
    - `Test split`: when the plan has a table of layers or the test split, `{ "type": "table", "title": "Test split", "span": 2, "columns": [...], "rows": [[...]] }` copied from it (numbers and text only). Skip the panel when there is no such table, and remove an old `Test split` panel then.
-5. **Write.** Merge into the existing index (or the skeleton) as described, then write the whole object, 2-space indented, to `<run>/test-run.json.tmp` and `mv <run>/test-run.json.tmp <run>/test-run.json`.
-6. **Validate.** Run `ai-review run-index validate "<run>"`. On errors, fix the file (same temp file and `mv`) and run it again. Missing-file warnings for evidence that the run has not produced yet are fine; mention them.
-7. **Report.** Print the dashboard URL `/t/<id>` (from step 1) and a short table: scenario id, title, number of steps, status (new, kept). Say which keys changed and that nothing else was touched.
+5. **Write.** `ai-review run-index scan "<run>" --owner plan --json` for the plan's hash, put it in the patch, then `ai-review run-index merge "<run>" --owner plan --from <patch.json>`. On errors, fix the patch and run it again. Missing-file warnings for evidence the run has not produced yet are fine; mention them. No `Test split` table in the plan: list `Test split` in `removePanels`.
+6. **Report.** Print the dashboard URL `/t/<id>` (from step 1) and a short table: scenario id, title, number of steps, status (new, kept). Say which keys changed and that nothing else was touched.

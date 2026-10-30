@@ -7,15 +7,14 @@ resolves, a feature branch and the change set left uncommitted) and the Contract
 (`FIXTURE_OUT`). The script prints a summary of every session and its computed tree at the end.
 
 Inputs: `src/` (spec, extras and PR description of the trial-bar sessions), `media/` (screenshots and a recording
-rendered once with Playwright and cached; delete a file to re-render it), `agent-run.sample.jsonl` (a real
-`claude -p --output-format stream-json` transcript, used by the active-run session and the stream parser tests).
+rendered once with Playwright and cached; delete a file to re-render it)).
 
 ## Repos
 
 | Repo | Content |
 | --- | --- |
 | `trial-app` | 12 changed files: staged renames/deletes/adds, two unstaged edits, one untracked test, a binary, a collapsed lockfile and a collapsed 2,000-line generated file. Shared by every session that only reads it. |
-| `trial-app-2`, `trial-app-all-verdicts`, `trial-app-runs`, `trial-app-long` | Copies of `trial-app` for sessions whose fixture edits the tree, pins verdicts to it or renames the branch. |
+| `trial-app-2`, `trial-app-all-verdicts`, `trial-app-long` | Copies of `trial-app` for sessions whose fixture edits the tree, pins verdicts to it or renames the branch. |
 | `variety-app` | 26 changed files: at least two each of `.ts .tsx .js .jsx .yaml/.yml .json .css .md`, one `.png`; added, modified, deleted, renamed-with-edits and untracked; `src/data/countries.ts` (2,100 added lines → collapsed, `too-many-changed-lines`, the 413 large-file gate) and `package-lock.json` (collapsed, generated). |
 | `clean-app` | The trial-app base commit with a feature branch and no changes at all. Also the main checkout of the fixture worktrees. |
 | `worktrees/*` | Linked worktrees of `clean-app` in `store/worktrees/` (and `store/config.json` with `worktreeFolders` pointing there; a plain `notes/` folder is ignored): `qi-15500-export-filters` (clean, 2 commits ahead), `qi-15512-bulk-archive` (1 commit ahead, one modified and one untracked file: delete refused as dirty), `qi-15531-trial-bar-polish` (clean, 2 ahead, linked to the three sessions below: delete refused). For the Worktrees page (`GET /worktrees`). |
@@ -32,8 +31,6 @@ Ids are constants in `scripts/fixtures/ids.ts`. The first two are what `e2e/smok
 | `20261001-0930-qi-15490-hotfix-no-notes-e5e0` | empty-spec-extras | A diff but no `spec/`, `extras/`, `evidence/` or `pr-description.md`: the empty state of every tab. |
 | `20261001-1000-var-201-comments-rich-spec-c3d4` | rich-spec | Spec: Jira card, markdown plan with a mermaid block, HTML artifact, plus an unindexed markdown file. Extras: `.md` (with mermaid), `.html`, `.mmd`, `.mermaid`, plus an unindexed note (title from its heading). Evidence: five images (one in a nested folder, one unindexed), a video, a 180-character caption and a 400-character description. Two ticket chips. |
 | `20261001-1030-qi-15472-trial-bar-all-verdicts-a11e` | all-verdicts | Every file approved, rejected (with a file comment) or commented (verdict `none` + file comment); three line comments (`new` range, `new` single line, `old` side on a deleted file); evidence and spec comments; an overall comment drafted with the decision still `undecided` and nothing sent: the Review-Complete screen. |
-| `20261001-1100-qi-15472-trial-bar-failed-run-f41d` | failed-run | Sent back as "request changes"; `review/runs/` holds an earlier succeeded run (cost, turns, result text, resolved c1) and the latest run `failed` with exit code 1, an `error` and stderr lines in its `.jsonl`. |
-| `20261001-1115-qi-15472-trial-bar-active-run-ac71` | active-run | Sent back; the run record says `running` with a pid, so the list shows the review state (Changes sent) plus an "Agent working" chip (`status` is `agent-working`). Its log starts with real stream-json lines from `agent-run.sample.jsonl`. The server marks runs left `running` by a previous process as failed the first time `GET /sessions/:id/runs` is hit (the Submit tab), so the state survives only until then; `npm run fixture` restores it. |
 | `20260920-0800-qi-15301-workspace-export-a7c1` | archived | Lives under `store/archive/<id>/` with `archived.json`; approved and sent before archiving. Listed by `GET /sessions/archived`, never computed. |
 | `20261001-1130-qi-15472-trial-bar-branch-changed-b7c0` | branch-changed | The manifest says `feature/trial-bar-v1`, the shared `trial-app` repo has `feature/trial-bar` checked out: the "Branch changed" pill (`repo.branch` ≠ `repo.sessionBranch`). |
 | `20261001-1145-ops-7-rotate-signing-key-0c0c` | no-changes | `clean-app`: zero files in the tree, `dirty: false`, progress 0/0; a spec without `index.json` and a ticket without a URL. |
@@ -57,4 +54,4 @@ Ids are constants in `scripts/fixtures/ids.ts`. The first two are what `e2e/smok
 The four `pr-*` sessions (`scripts/fixtures/pr-sessions.ts`) write `review/pr-comments.json` and `review/pr-resolutions.json` directly, as `ai-review pr-sync` / `pr-resolve` would; `pr-mixed` shares `variety-app`, the others `trial-app`.
 
 Three sessions (`empty-spec-extras`, `branch-changed`, `archived`) and the first session share the `trial-app` repo;
-`types-variety` and `rich-spec` share `variety-app`; `failed-run` and `active-run` share `trial-app-runs`.
+`types-variety` and `rich-spec` share `variety-app`.

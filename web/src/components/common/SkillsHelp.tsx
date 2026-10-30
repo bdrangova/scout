@@ -22,6 +22,7 @@ const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string
       { command: '/apply-review <id>', when: 'After Submit. Fixes code, answers comments.' },
       { command: '/address-pr-comments', when: 'GitHub PR comments to handle.' },
       { command: '/run-app', when: 'Needs the app up. The skills call it too.' },
+      { command: '/jira-snapshot <KEY>', when: 'Ticket into the session spec. The publish skills call it too.' },
     ],
   },
   {

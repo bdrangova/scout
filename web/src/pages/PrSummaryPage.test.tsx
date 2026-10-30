@@ -89,6 +89,7 @@ describe('PR review Summary page', () => {
   it('rejects tags outside the shared list and duplicate tags', () => {
     expect(PrReviewReportSchema.safeParse({ ...base, overview: { ...overview, tags: ['urgent'] } }).success).toBe(false)
     expect(PrReviewReportSchema.safeParse({ ...base, overview: { ...overview, tags: ['fix', 'fix'] } }).success).toBe(false)
+    expect(PrReviewReportSchema.safeParse({ ...base, overview: { ...overview, tickets: [{ key: 'QI-1', title: null, url: 'javascript:alert(1)' }] } }).success).toBe(false)
     expect(PrReviewReportSchema.safeParse({ ...base, overview }).success).toBe(true)
   })
 })

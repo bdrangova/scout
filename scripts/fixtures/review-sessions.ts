@@ -1,10 +1,7 @@
-// Review-state sessions on copies of trial-app: `all-verdicts` (the Review-Complete screen),
-// `failed-run` (sent back, the agent run failed) and `active-run` (sent back, a run still running).
-import { readFile, mkdir, writeFile } from 'node:fs/promises'
+// Review-state sessions on copies of trial-app: `all-verdicts` (the Review-Complete screen) and the sent-back ones.
+import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import {
-  AgentRunEventSchema,
-  AgentRunSchema,
   ReviewSchema,
   anchorInPatch,
   buildSentSnapshot,
@@ -13,8 +10,6 @@ import {
   renderSentMarkdown,
   sentFileStem,
   stampSent,
-  type AgentRun,
-  type AgentRunEvent,
   type Comment,
   type Decision,
   type LineAnchor,
@@ -24,8 +19,8 @@ import {
 } from '@scout/shared'
 import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { writeJsonAtomic } from '../../cli/src/store.ts'
-import { BASE_REF, DASHBOARD_ORIGIN, fixturesDir, judged, makeComment, writeSessionFolder } from './common.ts'
-import { ACTIVE_RUN_SESSION_ID, ALL_VERDICTS_SESSION_ID, APPROVED_SESSION_ID, CHANGES_SENT_SESSION_ID, FAILED_RUN_SESSION_ID, IN_PROGRESS_SESSION_ID } from './ids.ts'
+import { BASE_REF, DASHBOARD_ORIGIN, judged, makeComment, writeSessionFolder } from './common.ts'
+import { ALL_VERDICTS_SESSION_ID, APPROVED_SESSION_ID, CHANGES_SENT_SESSION_ID, IN_PROGRESS_SESSION_ID } from './ids.ts'
 import type { Media } from './media.ts'
 import { trialArtifacts, trialManifest, trialRenderContext } from './trial-sessions.ts'
 
@@ -158,150 +153,4 @@ export function writeChangesSentSession(repo: string, origin: string, media: Med
 
 export function writeApprovedSession(repo: string, origin: string, media: Media): Promise<WorkingTree> {
   return writeAllApprovedSent(APPROVED_SESSION_ID, 'approve', repo, origin, media, 'claude-session-a99d')
-}
-
-// ---------------------------------------------------------------------------------------------
-// Agent runs
-
-function runRecord(sessionId: string, id: string, sentAt: string, startedAt: string, overrides: Partial<AgentRun>): AgentRun {
-  return AgentRunSchema.parse({
-    id,
-    sessionId,
-    sentAt,
-    adapter: 'claude-code',
-    status: 'running',
-    pid: null,
-    argv: ['claude', '-p', '--output-format', 'stream-json', '--verbose', '--resume', 'claude-session-f41d'],
-    startedAt,
-    endedAt: null,
-    exitCode: null,
-    agentSessionId: null,
-    numTurns: null,
-    costUsd: null,
-    resultText: null,
-    error: null,
-    resolvedComments: [],
-    ...overrides,
-  })
-}
-
-/** An event without its `seq`/`at`, keeping the union discriminated (a plain `Omit` would flatten it). */
-type EventBody = AgentRunEvent extends infer E ? (E extends AgentRunEvent ? Omit<E, 'seq' | 'at'> : never) : never
-
-function eventLines(at: string, events: EventBody[]): string {
-  return `${events.map((event, i) => JSON.stringify(AgentRunEventSchema.parse({ seq: i + 1, at, ...event }))).join('\n')}\n`
-}
-
-async function writeRun(dir: string, run: AgentRun, log: string): Promise<void> {
-  const runs = path.join(dir, 'review', 'runs')
-  await mkdir(runs, { recursive: true })
-  await writeJsonAtomic(path.join(runs, `${run.id}.json`), run)
-  await writeFile(path.join(runs, `${run.id}.jsonl`), log)
-}
-
-const RUN_CREATED_AT = '2026-10-01T11:00:00.000Z'
-const RUN_REVIEWED_AT = '2026-10-01T11:05:00.000Z'
-const RUN_SENT_AT = '2026-10-01T11:10:00.000Z'
-
-/** A review with one reject + file comment and an overall comment, sent back as "request changes". */
-async function reviewedAndSent(id: string, repo: string, origin: string, media: Media, agentSessionId: string): Promise<{ dir: string; manifest: Manifest; tree: WorkingTree }> {
-  const manifest = trialManifest(id, repo, origin, RUN_CREATED_AT, agentSessionId)
-  const dir = await writeSessionFolder(manifest, trialArtifacts(media))
-  const { tree, patches } = await computeWorkingTree({ repo, baseRef: BASE_REF, now: () => new Date(RUN_REVIEWED_AT) })
-  const drafted: Review = {
-    ...emptyReview(manifest.id, RUN_REVIEWED_AT),
-    files: {
-      'README.md': judged(tree, 'README.md', 'approved'),
-      'src/app.ts': judged(tree, 'src/app.ts', 'rejected'),
-    },
-    comments: [
-      makeComment('c1', { kind: 'file', ref: 'src/app.ts' }, 'dismissTrialBar re-renders the whole root; only the bar needs to go away.', RUN_REVIEWED_AT),
-      makeComment('c2', { kind: 'overall', ref: null }, 'Please also run the full test suite before resolving.', RUN_REVIEWED_AT),
-    ],
-    nextCommentId: 3,
-    overall: { decision: 'request-changes' },
-    ui: { mode: 'swipe', currentFile: 'src/app.ts', section: 'submit' },
-  }
-  await sendBack(dir, manifest, drafted, tree, patches, 'request-changes', RUN_SENT_AT)
-  return { dir, manifest, tree }
-}
-
-/**
- * Sent back twice. The first run (an hour earlier, on a previous send) succeeded; the second started
- * right after this send and failed: the CLI logged to stderr and exited 1. Both logs replay through
- * the server's run reader.
- */
-export async function writeFailedRunSession(repo: string, origin: string, media: Media): Promise<WorkingTree> {
-  const { dir, tree } = await reviewedAndSent(FAILED_RUN_SESSION_ID, repo, origin, media, 'claude-session-f41d')
-  const earlierStart = '2026-10-01T10:10:05.000Z'
-  const earlier = runRecord(FAILED_RUN_SESSION_ID, 'run-20261001101005-0a1b', '2026-10-01T10:10:00.000Z', earlierStart, {
-    status: 'succeeded',
-    pid: 48101,
-    endedAt: '2026-10-01T10:14:40.000Z',
-    exitCode: 0,
-    agentSessionId: 'claude-session-f41d',
-    numTurns: 6,
-    costUsd: 0.37,
-    resultText: 'Resolved c1: the lockfile change only adds the three new packages. No other edits.',
-    resolvedComments: ['c1'],
-  })
-  await writeRun(
-    dir,
-    earlier,
-    eventLines(earlierStart, [
-      { type: 'status', status: 'running' },
-      { type: 'init', model: 'claude-sonnet-5', sessionId: 'claude-session-f41d' },
-      { type: 'assistant_text', text: 'Reading the feedback in review/sent and the diff.' },
-      { type: 'tool_use', id: 'toolu_01', name: 'Bash', input: { command: 'ai-review resolve 20261001-1100-qi-15472-trial-bar-failed-run-f41d --comment c1 --note "lockfile only adds the new packages"' } },
-      { type: 'tool_result', toolUseId: 'toolu_01', text: 'resolved c1', isError: false },
-      { type: 'result', isError: false, text: earlier.resultText ?? '', costUsd: 0.37, numTurns: 6, durationMs: 275_000 },
-      { type: 'status', status: 'succeeded' },
-    ]),
-  )
-
-  const failedStart = '2026-10-01T11:10:04.000Z'
-  const failed = runRecord(FAILED_RUN_SESSION_ID, 'run-20261001111004-f41d', RUN_SENT_AT, failedStart, {
-    status: 'failed',
-    pid: 48213,
-    endedAt: '2026-10-01T11:10:41.000Z',
-    exitCode: 1,
-    agentSessionId: 'claude-session-f41d',
-    numTurns: 2,
-    costUsd: 0.04,
-    error: 'claude exited with code 1: Error: Session claude-session-f41d could not be resumed (workspace trust check failed)',
-  })
-  await writeRun(
-    dir,
-    failed,
-    eventLines(failedStart, [
-      { type: 'status', status: 'running' },
-      { type: 'init', model: 'claude-sonnet-5', sessionId: 'claude-session-f41d' },
-      { type: 'assistant_text', text: 'Resuming the session to apply the two comments.' },
-      { type: 'tool_use', id: 'toolu_02', name: 'Read', input: { file_path: `${repo}/src/app.ts` } },
-      { type: 'tool_result', toolUseId: 'toolu_02', text: 'EACCES: permission denied, open src/app.ts', isError: true },
-      { type: 'stderr', line: 'Error: Session claude-session-f41d could not be resumed (workspace trust check failed)' },
-      { type: 'stderr', line: '    at resumeSession (file:///usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js:4121:19)' },
-      { type: 'stderr', line: '    at async main (file:///usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js:9:3)' },
-      { type: 'stderr', line: 'Hint: run `claude` once in the repository to trust the workspace, then resend.' },
-      { type: 'error', message: failed.error ?? '' },
-      { type: 'status', status: 'failed' },
-    ]),
-  )
-  return tree
-}
-
-/**
- * Sent back; the run record still says `running` with a pid. Its log starts with the real
- * stream-json lines of `fixtures/agent-run.sample.jsonl` (parsed on replay) and ends mid-turn.
- * Note: `GET /sessions/:id/runs` (the Submit tab) marks runs left `running` by a previous server
- * process as failed, so this one shows as active in the list until the Submit tab is opened.
- */
-export async function writeActiveRunSession(repo: string, origin: string, media: Media): Promise<WorkingTree> {
-  const { dir, tree } = await reviewedAndSent(ACTIVE_RUN_SESSION_ID, repo, origin, media, 'claude-session-ac71')
-  const startedAt = '2026-10-01T11:25:03.000Z'
-  const run = runRecord(ACTIVE_RUN_SESSION_ID, 'run-20261001112503-ac71', RUN_SENT_AT, startedAt, { pid: 48377, agentSessionId: 'claude-session-ac71' })
-  const sample = await readFile(path.join(fixturesDir, 'agent-run.sample.jsonl'), 'utf8')
-  const rawLines = sample.split('\n').filter((line) => line.trim() !== '').slice(0, 19)
-  await writeRun(dir, run, `${eventLines(startedAt, [{ type: 'status', status: 'running' }])}${rawLines.join('\n')}\n`)
-  return tree
 }

@@ -56,7 +56,7 @@ export const PrOverviewSchema = z.object({
   openedAt: date,
   commits: z.number().int().nonnegative(),
   /** Tickets the PR names; their snapshots are spec files of the session. */
-  tickets: z.array(z.object({ key: JiraKeySchema, title: z.string().min(1).nullable(), url: z.url().nullable() })),
+  tickets: z.array(z.object({ key: JiraKeySchema, title: z.string().min(1).nullable(), url: z.url({ protocol: /^https?$/ }).nullable() })),
 })
 export type PrOverview = z.infer<typeof PrOverviewSchema>
 

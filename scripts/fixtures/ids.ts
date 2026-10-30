@@ -14,10 +14,6 @@ export const EMPTY_SPEC_EXTRAS_SESSION_ID = '20261001-0930-qi-15490-hotfix-no-no
 export const RICH_SPEC_SESSION_ID = '20261001-1000-var-201-comments-rich-spec-c3d4'
 /** Every file judged or commented, line comments, overall comment drafted, nothing sent yet. */
 export const ALL_VERDICTS_SESSION_ID = '20261001-1030-qi-15472-trial-bar-all-verdicts-a11e'
-/** Sent back; the latest agent run failed with error output in its log. */
-export const FAILED_RUN_SESSION_ID = '20261001-1100-qi-15472-trial-bar-failed-run-f41d'
-/** Sent back; an agent run is recorded as still running. */
-export const ACTIVE_RUN_SESSION_ID = '20261001-1115-qi-15472-trial-bar-active-run-ac71'
 /** Lives under `archive/<id>` with `archived.json`. */
 export const ARCHIVED_SESSION_ID = '20260920-0800-qi-15301-workspace-export-a7c1'
 /** The manifest says one branch, the repo has another checked out. */

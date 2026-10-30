@@ -17,14 +17,12 @@ import {
   NO_CHANGES_BRANCH,
 } from './fixtures/edge-sessions.ts'
 import {
-  ACTIVE_RUN_SESSION_ID,
   ALL_VERDICTS_SESSION_ID,
   ARCHIVED_SESSION_ID,
   BRANCH_CHANGED_SESSION_ID,
   EMPTY_SPEC_EXTRAS_SESSION_ID,
   APPROVED_SESSION_ID,
   CHANGES_SENT_SESSION_ID,
-  FAILED_RUN_SESSION_ID,
   IN_PROGRESS_SESSION_ID,
   FIXTURE_SESSION_ID,
   LONG_TITLE_SESSION_ID,
@@ -39,7 +37,7 @@ import {
 } from './fixtures/ids.ts'
 import { ensureMedia } from './fixtures/media.ts'
 import { writePrFreshSession, writePrMergedSession, writePrMixedSession, writePrNoCommentsSession } from './fixtures/pr-sessions.ts'
-import { writeActiveRunSession, writeAllVerdictsSession, writeApprovedSession, writeChangesSentSession, writeFailedRunSession, writeInProgressSession } from './fixtures/review-sessions.ts'
+import { writeAllVerdictsSession, writeApprovedSession, writeChangesSentSession, writeInProgressSession } from './fixtures/review-sessions.ts'
 import { writeWorktrees } from './fixtures/worktrees.ts'
 import { writeTestRunSessions } from './fixtures/test-run-session.ts'
 import { buildCleanRepo, buildTrialRepo } from './fixtures/trial-app.ts'
@@ -88,12 +86,6 @@ async function main(): Promise<void> {
   const trial3 = await copyRepo(trial, 'trial-app-all-verdicts')
   const tree3 = await writeAllVerdictsSession(trial3, trialOrigin, media)
   reports.push({ id: ALL_VERDICTS_SESSION_ID, title: TRIAL_TITLE, covers: 'every file approved/rejected/commented, 3 line comments, overall comment drafted, not sent', repo: trial3, tree: tree3 })
-
-  const trialRuns = await copyRepo(trial, 'trial-app-runs')
-  const treeRuns = await writeFailedRunSession(trialRuns, trialOrigin, media)
-  reports.push({ id: FAILED_RUN_SESSION_ID, title: TRIAL_TITLE, covers: 'sent back; one earlier succeeded run, latest run failed with stderr in its log', repo: trialRuns, tree: treeRuns })
-  await writeActiveRunSession(trialRuns, trialOrigin, media)
-  reports.push({ id: ACTIVE_RUN_SESSION_ID, title: TRIAL_TITLE, covers: 'sent back; run record still running (agent-working status)', repo: trialRuns, tree: treeRuns })
 
   const trialSent = await copyRepo(trial, 'trial-app-sent')
   const treeSent = await writeChangesSentSession(trialSent, trialOrigin, media)

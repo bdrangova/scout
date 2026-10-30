@@ -237,7 +237,8 @@ describe('install of the test-review skills', () => {
       const text = await readFile(path.join(repo, '.claude', 'skills', name, 'SKILL.md'), 'utf8')
       expect(text).toContain('argument-hint: "<run-folder> [--auto]"')
       expect(text).toContain('ai-review init --kind test-run --run')
-      expect(text).toContain('ai-review run-index validate')
+      expect(text).toContain('ai-review run-index merge "<run>"')
+      expect(text).toContain('ai-review run-index scan')
     }
     const apply = await readFile(path.join(repo, '.claude', 'skills', 'apply-test-review', 'SKILL.md'), 'utf8')
     expect(apply).toContain('!`ai-review feedback $0 --format markdown`')

@@ -7,6 +7,7 @@ import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { readReport, publishReport, validateReportTree } from '@scout/shared/pr-review/report'
 import { readReview } from '../sessions.ts'
 import { readManifest, resolveHome, sessionDir } from '../store.ts'
+import { fetchPrFacts } from './pr-facts.ts'
 
 export function registerPrReport(program: Command): void {
   const command = program.command('pr-report').description('Exchange review reports with a review skill')
@@ -15,6 +16,11 @@ export function registerPrReport(program: Command): void {
     const dir = sessionDir(resolveHome(), id)
     console.log(JSON.stringify({ report: await readReport(dir), review: await readReview(dir) }, null, 2))
   })
+  command.command('facts').argument('<pr>', 'PR URL or number').option('--repo <checkout>', 'repository checkout to run gh in (default: the current directory)')
+    .description('Print the PR facts of the Summary overview (title, description, author, refs, labels, draft, openedAt, commits, tickets) as JSON')
+    .action(async (pr: string, flags: { repo?: string }) => {
+      console.log(JSON.stringify(await fetchPrFacts({ pr, cwd: path.resolve(flags.repo ?? '.') }), null, 2))
+    })
   command.command('schema').description('Print the report JSON schema').action(() => console.log(JSON.stringify(z.toJSONSchema(PrReviewReportSchema), null, 2)))
   command.command('template').argument('<sessionId>').requiredOption('--pr <url>').requiredOption('--number <number>').requiredOption('--repository <owner/repo>')
     .description('Print a report template with current file fingerprints')

@@ -2,6 +2,8 @@
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
+import { INDEX_OWNERS, mergeRunIndex, readIndexFile, writeIndexFile, type IndexOwner } from './run-index-merge.ts'
+import { formatScan, scanRun } from './run-index-scan.ts'
 import { parseRunRef, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type TestRunIndex } from '@scout/shared'
 
 export interface RunIndexReport {
@@ -13,6 +15,10 @@ export interface RunIndexReport {
   refs: number
   missing: number
   index: TestRunIndex | null
+}
+
+function emptyReport(): RunIndexReport {
+  return { errors: [], warnings: [], scenarios: 0, refs: 0, missing: 0, index: null }
 }
 
 function zodIssueLines(error: { issues: readonly { path: readonly PropertyKey[]; message: string }[] }): string[] {
@@ -76,7 +82,7 @@ async function isFile(file: string): Promise<boolean> {
 /** Parses the index and checks aliases and files; never throws for a bad index (see `errors`). */
 export async function checkRunIndex(runPath: string): Promise<RunIndexReport> {
   const file = path.join(runPath, TEST_RUN_INDEX_FILE)
-  const report: RunIndexReport = { errors: [], warnings: [], scenarios: 0, refs: 0, missing: 0, index: null }
+  const report = emptyReport()
   let json: unknown
   try {
     json = JSON.parse(await readFile(file, 'utf8'))
@@ -84,6 +90,11 @@ export async function checkRunIndex(runPath: string): Promise<RunIndexReport> {
     report.errors.push(error instanceof SyntaxError ? `${file}: invalid JSON (${error.message})` : `${file}: cannot read (${(error as { code?: string }).code ?? String(error)})`)
     return report
   }
+  return checkRunIndexJson(runPath, json, report)
+}
+
+/** Validates an already parsed index object as `checkRunIndex` does the file. */
+export async function checkRunIndexJson(runPath: string, json: unknown, report: RunIndexReport = emptyReport()): Promise<RunIndexReport> {
   const parsed = TestRunIndexSchema.safeParse(json)
   if (!parsed.success) {
     report.errors.push(...zodIssueLines(parsed.error))
@@ -133,6 +144,57 @@ interface ShowFlags {
   format: string
 }
 
+interface MergeFlags {
+  owner: string
+  from: string
+  json?: boolean
+}
+
+interface ScanFlags {
+  owner?: string
+  json?: boolean
+}
+
+function parseOwner(value: string): IndexOwner {
+  const owner = INDEX_OWNERS.find((candidate) => candidate === value)
+  if (owner === undefined) throw new Error(`--owner must be one of ${INDEX_OWNERS.join(', ')}, got "${value}"`)
+  return owner
+}
+
+/** Merge a patch into the index; validate first and write nothing on any error. Returns the process exit code. */
+export async function runMerge(runPath: string, flags: MergeFlags): Promise<number> {
+  const owner = parseOwner(flags.owner)
+  const run = path.resolve(runPath)
+  const fail = (errors: string[], warnings: string[] = []): number => {
+    if (flags.json === true) console.log(JSON.stringify({ ok: false, errors, warnings }, null, 2))
+    else {
+      for (const warning of warnings) console.error(`warning: ${warning}`)
+      for (const error of errors) console.error(`error: ${error}`)
+    }
+    return 1
+  }
+  let patch: unknown
+  try {
+    patch = JSON.parse(await readFile(path.resolve(flags.from), 'utf8'))
+  } catch (error) {
+    return fail([`${flags.from}: cannot read the patch (${error instanceof Error ? error.message : String(error)})`])
+  }
+  const existing = await readIndexFile(run)
+  if (existing.error !== null) return fail([existing.error])
+  const merged = mergeRunIndex({ runPath: run, owner, existing: existing.index, patch, now: new Date() })
+  if (merged.index === null) return fail(merged.errors)
+  const report = await checkRunIndexJson(run, merged.index)
+  if (report.errors.length > 0) return fail(report.errors, report.warnings)
+  await writeIndexFile(run, merged.index)
+  if (flags.json === true) {
+    console.log(JSON.stringify({ ok: true, errors: [], warnings: report.warnings, scenarios: report.scenarios, refs: report.refs, missing: report.missing }, null, 2))
+  } else {
+    for (const warning of report.warnings) console.error(`warning: ${warning}`)
+    console.log(`merged as ${owner}: ${report.scenarios} scenarios, ${report.refs} refs, ${report.missing} missing`)
+  }
+  return 0
+}
+
 export function registerRunIndex(program: Command): void {
   const command = program.command('run-index').description('Check or show the test-run index')
 
@@ -165,5 +227,28 @@ export function registerRunIndex(program: Command): void {
         return
       }
       console.log(flags.format === 'json' ? JSON.stringify(report.index, null, 2) : `${report.index.title} (${report.index.runId})\n${formatScenarioTable(report.index)}`)
+    })
+
+  command
+    .command('merge')
+    .argument('<runPath>', 'the run folder')
+    .requiredOption('--owner <owner>', 'the skill that owns the patch: plan | data-setup | run')
+    .requiredOption('--from <patch.json>', 'the patch file')
+    .option('--json', 'print the result as json')
+    .description('Merge a patch into <runPath>/test-run.json, only touching the keys the owner owns; nothing is written on errors')
+    .action(async (runPath: string, flags: MergeFlags) => {
+      process.exitCode = await runMerge(runPath, flags)
+    })
+
+  command
+    .command('scan')
+    .argument('<runPath>', 'the run folder')
+    .option('--owner <owner>', 'also diff the source hashes against publishedBy.<owner>: plan | data-setup | run')
+    .option('--json', 'print the scan as json')
+    .description('Read the run folder: scenario folders, evidence, log excerpts, data-setup media and source hashes')
+    .action(async (runPath: string, flags: ScanFlags) => {
+      const owner = flags.owner === undefined ? null : parseOwner(flags.owner)
+      const scan = await scanRun(runPath, owner)
+      console.log(flags.json === true ? JSON.stringify(scan, null, 2) : formatScan(scan))
     })
 }

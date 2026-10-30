@@ -33,13 +33,7 @@ Arguments: $ARGUMENTS
 7. **Clean up.** Leave the app running. Restore the checkpoint when another reproduction with the same key follows, so one run's writes never leak into the next.
 
 ## Writing the record
-A reviewer reads the record on a card, often without opening the code. Write every text field for that person:
-- Plain words about what the user or the data sees, not how the code works. "The new record is saved with no type" beats "the form-change callback was never called". Name code (functions, files, props) only when there is no other way to say where the problem is, and then once, in brackets.
-- Short sentences, one idea each. No semicolons chaining facts, no internal shorthand ("PR 6/6", "component-level only", "base not rerun") without saying what it means.
-- `expected` and `actual` mirror each other: same subject, same moment, so the difference jumps out. "Expected: the new equipment is saved as Physical, like the old dropdown did." / "Actual: the field shows Physical, but the equipment is saved with no type."
-- `steps`: one action a person could repeat, in the app's own words ("Open Library → Equipment → New", not "navigate to /library/new").
-- `limitation`: start with what it means for the reviewer, then why, in two or three short sentences. "Only checked in isolation: no screen in this PR uses these fields yet, so saving was not run end to end. The screenshot shows the default; the missing save shows in the test output."
-- `caption`: what the evidence shows, in a few words ("Type shows Physical before saving").
+A reviewer reads the record on a card, often without opening the code. Load `/write-for-reviewers` (Skill tool) before you write it and follow it for every text field: `expected` and `actual` mirror each other, each step is one action in the app's own words, a `limitation` starts with what it means for the reviewer, a `caption` says what the evidence shows in a few words.
 
 ## Evidence
 - Folder: `--evidence <dir>`, else `$(ai-review path <id> evidence)` with `--session`, else `<scratch>/evidence/` with `scratch` from `ai-review env` (outside the checkout, so a removed worktree keeps its evidence).

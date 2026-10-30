@@ -1,7 +1,10 @@
 import { Command } from 'commander'
 import { SCHEMA_VERSION } from '@scout/shared'
 import pkg from '../package.json' with { type: 'json' }
+import { registerAppStatus } from './commands/app-status.ts'
 import { registerArchive } from './commands/archive.ts'
+import { registerArtifact } from './commands/artifact.ts'
+import { registerCheckpoint } from './commands/checkpoint.ts'
 import { registerEnv } from './commands/env.ts'
 import { registerFeedback } from './commands/feedback.ts'
 import { registerInit } from './commands/init.ts'
@@ -9,6 +12,7 @@ import { registerInstall } from './commands/install.ts'
 import { registerJournal } from './commands/journal.ts'
 import { registerOpen } from './commands/open.ts'
 import { registerPath } from './commands/path.ts'
+import { registerPublishLog } from './commands/publish-log.ts'
 import { registerPrComments } from './commands/pr-comments.ts'
 import { registerPrTrust } from './commands/pr-trust.ts'
 import { registerPrLink } from './commands/pr-link.ts'
@@ -31,7 +35,11 @@ program
 
 registerInit(program)
 registerPath(program)
+registerArtifact(program)
+registerPublishLog(program)
 registerEnv(program)
+registerAppStatus(program)
+registerCheckpoint(program)
 registerFeedback(program)
 registerResolve(program)
 registerJournal(program)

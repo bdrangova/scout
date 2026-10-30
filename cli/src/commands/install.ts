@@ -35,6 +35,10 @@ const TEMPLATE_FILES = [
   { from: 'skills/reproduce/SKILL.md', to: '.agents/skills/reproduce/SKILL.md', mode: 0o644 },
   { from: 'skills/journal/SKILL.md', to: '.claude/skills/journal/SKILL.md', mode: 0o644 },
   { from: 'skills/journal/SKILL.md', to: '.agents/skills/journal/SKILL.md', mode: 0o644 },
+  { from: 'skills/jira-snapshot/SKILL.md', to: '.claude/skills/jira-snapshot/SKILL.md', mode: 0o644 },
+  { from: 'skills/jira-snapshot/SKILL.md', to: '.agents/skills/jira-snapshot/SKILL.md', mode: 0o644 },
+  { from: 'skills/write-for-reviewers/SKILL.md', to: '.claude/skills/write-for-reviewers/SKILL.md', mode: 0o644 },
+  { from: 'skills/write-for-reviewers/SKILL.md', to: '.agents/skills/write-for-reviewers/SKILL.md', mode: 0o644 },
   { from: `hooks/${PENDING_HOOK}`, to: `.claude/hooks/${PENDING_HOOK}`, mode: 0o755 },
 ] as const
 
