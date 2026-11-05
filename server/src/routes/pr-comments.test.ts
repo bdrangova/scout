@@ -90,7 +90,7 @@ describe('GET /sessions/:id/pr-comments', () => {
     const md = fs.readFileSync(path.join(sentDir, fs.readdirSync(sentDir).find((n) => n.endsWith('.md')) ?? ''), 'utf8')
     expect(md).toContain('## GitHub PR comments (#482, acme/app: 2 open)')
     expect(md).toContain('[rc2] src/a.tsx:30')
-    // Untrusted bodies never reach what the (headless) agent reads: the run is `/apply-review <id>`, which prints this file.
+    // Untrusted bodies never reach what the (headless) agent reads: the run is `/scout-apply-review <id>`, which prints this file.
     expect(md).not.toContain('SECRET-UNTRUSTED')
     expect(md).toContain('1 comment from untrusted authors was not included')
   })

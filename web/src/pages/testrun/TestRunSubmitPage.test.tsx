@@ -218,7 +218,7 @@ describe("TestRunSubmitPage", () => {
     );
   });
 
-  it("sends, and a Desktop session gets the apply-test-review link on the checkout", async () => {
+  it("sends, and a Desktop session gets the scout-apply-test-review link on the checkout", async () => {
     const sent = {
       schemaVersion: 2,
       kind: "test-run",
@@ -249,7 +249,7 @@ describe("TestRunSubmitPage", () => {
     );
     expect(
       await screen.findByRole("region", { name: "Feedback pending" }),
-    ).toHaveTextContent(`/apply-test-review ${SESSION_ID}`);
-    expect(writeText).toHaveBeenCalledWith(`/apply-test-review ${SESSION_ID}`);
+    ).toHaveTextContent(`/scout-apply-test-review ${SESSION_ID}`);
+    expect(writeText).toHaveBeenCalledWith(`/scout-apply-test-review ${SESSION_ID}`);
   });
 });

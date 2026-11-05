@@ -33,7 +33,7 @@ export function pendingMessage(sessions: PendingSession[]): string {
     .map(
       (s) =>
         `The review dashboard has ${s.openComments} open comment${s.openComments === 1 ? '' : 's'}${s.openPrComments > 0 ? ` and ${s.openPrComments} open GitHub PR comment${s.openPrComments === 1 ? '' : 's'}` : ''} on session ${s.id} ("${s.title}", sent ${s.sentAt}). ` +
-        `Run /${s.kind === 'test-run' ? 'apply-test-review' : 'apply-review'} ${s.id} when appropriate: ${s.url}`,
+        `Run /${s.kind === 'test-run' ? 'scout-apply-test-review' : 'scout-apply-review'} ${s.id} when appropriate: ${s.url}`,
     )
     .join('\n')
 }

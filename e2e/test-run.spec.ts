@@ -6,7 +6,7 @@ import { E2E_STORE } from './store.ts'
 /**
  * The test-run module end to end on the throwaway fixture store (see
  * `playwright.config.ts`): toggle the list to Test runs → open the demo run → the overview → the Review page →
- * Submit with "Changes requested" and an overall note → the feedback is saved and the page shows the `/apply-review` command.
+ * Submit with "Changes requested" and an overall note → the feedback is saved and the page shows the `/scout-apply-review` command.
  * Verdicts on scenarios are not driven here: they belong to the storyboard (M4b) and join this spec when it lands.
  */
 
@@ -89,7 +89,7 @@ test.describe('test-run session', () => {
 
     const pending = page.getByRole('region', { name: 'Feedback pending' })
     await expect(pending).toBeVisible()
-    await expect(pending.getByText('/apply-review').first()).toBeVisible()
+    await expect(pending.getByText('/scout-apply-review').first()).toBeVisible()
   })
 
   test('wrote the test-run snapshot and its markdown to disk', async () => {

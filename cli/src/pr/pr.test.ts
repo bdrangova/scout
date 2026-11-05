@@ -248,13 +248,13 @@ describe('trust and the text an agent can read', () => {
 
   it('install rewrites an old copy of the skill, and the skills carry no broad wildcards PR content could abuse', async () => {
     const target = path.join(home, 'target')
-    await mkdir(path.join(target, '.claude', 'skills', 'address-pr-comments'), { recursive: true })
+    await mkdir(path.join(target, '.claude', 'skills', 'scout-pr-comments'), { recursive: true })
     await gitText(home, ['init', '-q', '-b', 'main', target])
-    const skillFile = path.join(target, '.claude', 'skills', 'address-pr-comments', 'SKILL.md')
+    const skillFile = path.join(target, '.claude', 'skills', 'scout-pr-comments', 'SKILL.md')
     await writeFile(skillFile, '---\nallowed-tools: Bash(gh api *) Bash(npm run *) Bash(npx *)\n---\nold\n')
     const result = await installIntoRepo({ home, repo: target, claudeBin: null, pathDir: null, cliBundle: '/x/index.js', nodeBin: '/x/node' })
-    expect(result.changes.find((c) => c.path === '.claude/skills/address-pr-comments/SKILL.md')?.action).toBe('updated')
-    for (const file of [skillFile, path.join(target, '.claude', 'skills', 'apply-review', 'SKILL.md')]) {
+    expect(result.changes.find((c) => c.path === '.claude/skills/scout-pr-comments/SKILL.md')?.action).toBe('updated')
+    for (const file of [skillFile, path.join(target, '.claude', 'skills', 'scout-apply-review', 'SKILL.md')]) {
       const tools = /^allowed-tools: (.*)$/m.exec(await readFile(file, 'utf8'))?.[1] ?? ''
       expect(tools).not.toContain('gh api')
     }

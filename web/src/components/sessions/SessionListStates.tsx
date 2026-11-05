@@ -19,7 +19,7 @@ export function ListNote({ children }: { children: ReactNode }) {
 
 /** No sessions at all: how to start one. */
 export function EmptyState({ kind = 'code-review' }: { kind?: SessionKind }) {
-  const command = kind === 'pr-review' ? '/publish-pr-review <PR-URL>' : kind === 'test-run' ? '/publish-test-run <run-folder>' : '/publish-review'
+  const command = kind === 'pr-review' ? '/scout-pr-review <PR-URL>' : kind === 'test-run' ? '/scout-test-run <run-folder>' : '/scout-development-review'
   return (
     <Panel className="items-center gap-2 border-dashed px-6 py-14 text-center">
       <ScoutMascot />

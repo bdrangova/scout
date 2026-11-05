@@ -207,7 +207,7 @@ describe('test-run sessions', () => {
     it('refuses to send nothing', async () => {
       const dir = store.testRun?.dir ?? ''
       const before = fs.readdirSync(path.join(dir, 'review', 'sent')).length
-      // The only comment gets resolved (as `/apply-review` would record it): no open comments and no decision leaves nothing to send.
+      // The only comment gets resolved (as `/scout-apply-review` would record it): no open comments and no decision leaves nothing to send.
       const resolutions: Resolutions = {
         schemaVersion: SCHEMA_VERSION,
         sessionId: TEST_RUN_SESSION_ID,

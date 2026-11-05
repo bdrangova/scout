@@ -15,7 +15,7 @@ export function prSessionRoute(session: { id: string; state: 'live' | 'pending' 
 
 /** The command that turns a placeholder into a live review. */
 export function publishPrReviewCommand(prUrl: string): string {
-  return `/publish-pr-review ${prUrl}`
+  return `/scout-pr-review ${prUrl}`
 }
 
 export function fetchAssignedPrs(refresh: boolean): Promise<AssignedPrsResponse> {

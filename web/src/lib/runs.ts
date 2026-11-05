@@ -43,10 +43,10 @@ export function sendReview(sessionId: string, decision: Decision): Promise<SendR
   return apiPost<SendResponse>(`${sessionPath(sessionId)}/review/send`, { decision })
 }
 
-/** The slash command that applies sent feedback: `/apply-review` for a code review, `/apply-test-review` for a test run. */
-export type ReviewCommand = '/apply-review' | '/apply-test-review'
+/** The slash command that applies sent feedback: `/scout-apply-review` for a code review, `/scout-apply-test-review` for a test run. */
+export type ReviewCommand = '/scout-apply-review' | '/scout-apply-test-review'
 
-export function applyReviewCommand(sessionId: string, command: ReviewCommand = '/apply-review'): string {
+export function applyReviewCommand(sessionId: string, command: ReviewCommand = '/scout-apply-review'): string {
   return `${command} ${sessionId}`
 }
 
@@ -56,7 +56,7 @@ export function desktopDeepLink(folder: string, prompt: string): string {
 }
 
 /** The deep link with the apply command prefilled. */
-export function desktopNewSessionUrl(repoPath: string, sessionId: string, command: ReviewCommand = '/apply-review'): string {
+export function desktopNewSessionUrl(repoPath: string, sessionId: string, command: ReviewCommand = '/scout-apply-review'): string {
   return desktopDeepLink(repoPath, applyReviewCommand(sessionId, command))
 }
 

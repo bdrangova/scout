@@ -43,7 +43,7 @@ describe('WorktreeDetailPage', () => {
     expect(screen.getByText('QI-15472')).toBeInTheDocument()
     expect(screen.getByText('3 ahead · 1 behind')).toBeInTheDocument()
     expect(screen.getByText('No sessions for this worktree yet.')).toBeInTheDocument()
-    const commands = { Development: '/publish-review', 'PR review': '/publish-pr-review <PR-URL>', 'Test run': '/publish-test-run <run-folder>' }
+    const commands = { Development: '/scout-development-review', 'PR review': '/scout-pr-review <PR-URL>', 'Test run': '/scout-test-run <run-folder>' }
     for (const [title, command] of Object.entries(commands)) {
       const panel = screen.getByRole('group', { name: title })
       expect(within(panel).getByText('Open a new Claude Code session in the folder above, then run:')).toBeInTheDocument()
@@ -52,7 +52,7 @@ describe('WorktreeDetailPage', () => {
     }
     const test = screen.getByRole('group', { name: 'Test run' })
     await user.click(within(test).getByRole('button', { name: 'Copy command' }))
-    expect(await navigator.clipboard.readText()).toBe('/publish-test-run <run-folder>')
+    expect(await navigator.clipboard.readText()).toBe('/scout-test-run <run-folder>')
     await user.click(screen.getByRole('button', { name: 'Copy path' }))
     expect(await navigator.clipboard.readText()).toBe(PATH)
     expect(calls(fetchMock)).toEqual([`GET /api/worktrees/${ID}`])

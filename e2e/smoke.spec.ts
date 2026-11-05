@@ -8,7 +8,7 @@ import { E2E_STORE } from './store.ts'
  * `E2E_STORE` by `global-setup.ts`; a live git working tree in `<store>/repos/trial-app`), on the
  * test's own servers (see `playwright.config.ts`):
  * list → approve → reject with a comment → autosave survives a reload → a file edited on disk shows
- * up live → submit → the feedback is saved and the page shows the `/apply-review` command (Scout starts
+ * up live → submit → the feedback is saved and the page shows the `/scout-apply-review` command (Scout starts
  * no agent). It resets the f1a0 session's review state first and restores `src/app.ts` afterwards.
  * `fixtures/store` is never touched.
  */
@@ -174,7 +174,7 @@ test.describe('review loop smoke', () => {
 
     const pending = page.getByRole('region', { name: 'Feedback pending' })
     await expect(pending).toBeVisible()
-    await expect(pending.getByText('/apply-review').first()).toBeVisible()
+    await expect(pending.getByText('/scout-apply-review').first()).toBeVisible()
   })
 
   test('wrote the sent snapshot and stamped the comment as sent', async () => {

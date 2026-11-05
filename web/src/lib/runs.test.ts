@@ -12,7 +12,7 @@ describe('handoff helpers', () => {
 
   it('builds the Desktop deep link with the command and folder encoded', () => {
     expect(desktopNewSessionUrl('/Users/b/My Projects/app&co', '20260926-1200-qi-15472-trial-bar-f1a0')).toBe(
-      'claude://code/new?q=%2Fapply-review%2020260926-1200-qi-15472-trial-bar-f1a0&folder=%2FUsers%2Fb%2FMy%20Projects%2Fapp%26co',
+      'claude://code/new?q=%2Fscout-apply-review%2020260926-1200-qi-15472-trial-bar-f1a0&folder=%2FUsers%2Fb%2FMy%20Projects%2Fapp%26co',
     )
   })
 })

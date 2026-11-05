@@ -2,9 +2,9 @@ import { CopyButton } from '@/components/common/CopyButton'
 import { Panel, PanelBody, PanelHeader, PanelTitle } from '@/components/ui/panel'
 
 const STARTS: readonly { title: string; command: string }[] = [
-  { title: 'Development', command: '/publish-review' },
-  { title: 'PR review', command: '/publish-pr-review <PR-URL>' },
-  { title: 'Test run', command: '/publish-test-run <run-folder>' },
+  { title: 'Development', command: '/scout-development-review' },
+  { title: 'PR review', command: '/scout-pr-review <PR-URL>' },
+  { title: 'Test run', command: '/scout-test-run <run-folder>' },
 ]
 
 function CopyLine({ value, label }: { value: string; label: string }) {

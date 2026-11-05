@@ -1,6 +1,6 @@
 ---
-name: publish-pr-review
-description: Publish a pull request review to Scout with a plain-language summary, change tags, the PR description, its Jira tickets, and findings with reproduction evidence generated in the current Claude or Codex session. Use when the user runs /publish-pr-review, requests a PR review dashboard, or names a review skill chain to publish.
+name: scout-pr-review
+description: Publish a pull request review to Scout with a plain-language summary, change tags, the PR description, its Jira tickets, and findings with reproduction evidence generated in the current Claude or Codex session. Use when the user runs /scout-pr-review, requests a PR review dashboard, or names a review skill chain to publish.
 argument-hint: "<PR url> [review skills…] [--record video|screenshots|none] [--auto]"
 ---
 # Publish a PR review to Scout

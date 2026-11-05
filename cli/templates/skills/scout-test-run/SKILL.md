@@ -1,6 +1,6 @@
 ---
-name: publish-test-run
-description: Publish the results of a feature-test run to the Scout dashboard (/t/<id>) by writing the run's part of test-run.json (per-scenario status, layers, steps, video and screenshot evidence, log excerpts, gaps, bugs, run-level overview panels). Rerunning refreshes only the scenarios whose sources changed and reports which verdicts are now stale. Use when the user runs /publish-test-run, or after /feature-test finished, to review the run in the dashboard.
+name: scout-test-run
+description: Publish the results of a feature-test run to the Scout dashboard (/t/<id>) by writing the run's part of test-run.json (per-scenario status, layers, steps, video and screenshot evidence, log excerpts, gaps, bugs, run-level overview panels). Rerunning refreshes only the scenarios whose sources changed and reports which verdicts are now stale. Use when the user runs /scout-test-run, or after /feature-test finished, to review the run in the dashboard.
 argument-hint: "<run-folder> [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Read Glob Grep Write AskUserQuestion
 ---
@@ -11,7 +11,7 @@ Arguments: $ARGUMENTS
 Run folder state: !`ls -1 "$0"`
 
 ## How the dashboard works
-A feature-test run is a folder (`<feature>/<area>/test-runs/<run>/` with `steps.md`, `logs/`, `scenarios/s<N>-<slug>/{videos,screenshots,data}`, `data-setup/`, optional `db-snapshots/`), next to `../../test-plan.md` and `../../bugs/<slug>/`. The dashboard shows it from one index file, `<run>/test-run.json`, that three skills fill in together: `/publish-test-plan`, `/publish-data-setup` and `/publish-test-run` (this one). Each skill owns some keys and leaves all other keys exactly as they are. The dashboard reads the run folder live (a reviewer's verdict on a scenario is pinned to its evidence list and step text, so changed evidence shows as "updated since your verdict"); there is nothing to upload and nothing to commit.
+A feature-test run is a folder (`<feature>/<area>/test-runs/<run>/` with `steps.md`, `logs/`, `scenarios/s<N>-<slug>/{videos,screenshots,data}`, `data-setup/`, optional `db-snapshots/`), next to `../../test-plan.md` and `../../bugs/<slug>/`. The dashboard shows it from one index file, `<run>/test-run.json`, that three skills fill in together: `/scout-test-plan`, `/scout-data-setup` and `/scout-test-run` (this one). Each skill owns some keys and leaves all other keys exactly as they are. The dashboard reads the run folder live (a reviewer's verdict on a scenario is pinned to its evidence list and step text, so changed evidence shows as "updated since your verdict"); there is nothing to upload and nothing to commit.
 
 Paths inside the index are refs, `alias:relative/path` with the alias a key of `roots`, no leading `/`, no `..` segment. Standard roots: `{ "run": ".", "plan": "../..", "bugs": "../../bugs" }` (relative to the run folder). Adjust them when the plan or the bugs live elsewhere (ask unless `--auto`). Examples: `run:scenarios/s1-truncation/videos/e2e-test-1-truncation-1.mp4`, `bugs:change-summary-contact-risk-raw-json/change-summary-contact-risk-raw-json.md`.
 
@@ -23,7 +23,7 @@ Paths inside the index are refs, `alias:relative/path` with the alias a key of `
 
 ## The patch
 `{ "scenarios": [{ "id", "status", "layers", "steps", "evidence", "logs", "links", "notes" }], "gaps": [], "bugs": [], "logs": [], "roots": { "bugs": "../../bugs" }, "pages": ["gaps", "logs"], "overview": [<Results>, <Layer results>, <Run notes and deviations>, <Scenarios>], "removePanels": [], "hashes": { … } }`
-- Only the scenarios you change. A scenario new to the index also takes `title` and `order` (from the scenario table of `steps.md`); suggest `/publish-test-plan` for the step text when there was no plan-published index.
+- Only the scenarios you change. A scenario new to the index also takes `title` and `order` (from the scenario table of `steps.md`); suggest `/scout-test-plan` for the step text when there was no plan-published index.
 - `pages`: `gaps` when there are gaps or bugs, `logs` when there are logs (the scan's `logs`). The merge never drops the others.
 - Steps merge by position over the plan's: send `observed`/`result` (and the run's own `action`/`expected` when its steps differ).
 

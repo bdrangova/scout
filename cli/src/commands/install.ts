@@ -1,6 +1,6 @@
 // `ai-review install --repo <path>`: skills, the pending-feedback hook, settings merge, Playwright MCP, launcher, config.
 import { execFile } from 'node:child_process'
-import { access, chmod, constants, lstat, mkdir, readdir, readFile, readlink, stat, symlink, writeFile } from 'node:fs/promises'
+import { access, chmod, constants, lstat, mkdir, readdir, readFile, readlink, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -18,15 +18,15 @@ const MCP_RECORD = 'claude mcp (user)'
 export const MCP_ADD_ARGS = ['mcp', 'add', '--scope', 'user', 'playwright', '--', 'npx', '@playwright/mcp@latest', '--caps=devtools']
 
 const TEMPLATE_FILES = [
-  { from: 'skills/publish-pr-review/SKILL.md', to: '.claude/skills/publish-pr-review/SKILL.md', mode: 0o644 },
-  { from: 'skills/publish-pr-review/SKILL.md', to: '.agents/skills/publish-pr-review/SKILL.md', mode: 0o644 },
-  { from: 'skills/publish-review/SKILL.md', to: '.claude/skills/publish-review/SKILL.md', mode: 0o644 },
-  { from: 'skills/apply-review/SKILL.md', to: '.claude/skills/apply-review/SKILL.md', mode: 0o644 },
-  { from: 'skills/address-pr-comments/SKILL.md', to: '.claude/skills/address-pr-comments/SKILL.md', mode: 0o644 },
-  { from: 'skills/publish-test-plan/SKILL.md', to: '.claude/skills/publish-test-plan/SKILL.md', mode: 0o644 },
-  { from: 'skills/publish-data-setup/SKILL.md', to: '.claude/skills/publish-data-setup/SKILL.md', mode: 0o644 },
-  { from: 'skills/publish-test-run/SKILL.md', to: '.claude/skills/publish-test-run/SKILL.md', mode: 0o644 },
-  { from: 'skills/apply-test-review/SKILL.md', to: '.claude/skills/apply-test-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-pr-review/SKILL.md', to: '.claude/skills/scout-pr-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-pr-review/SKILL.md', to: '.agents/skills/scout-pr-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-development-review/SKILL.md', to: '.claude/skills/scout-development-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-apply-review/SKILL.md', to: '.claude/skills/scout-apply-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-pr-comments/SKILL.md', to: '.claude/skills/scout-pr-comments/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-test-plan/SKILL.md', to: '.claude/skills/scout-test-plan/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-data-setup/SKILL.md', to: '.claude/skills/scout-data-setup/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-test-run/SKILL.md', to: '.claude/skills/scout-test-run/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-apply-test-review/SKILL.md', to: '.claude/skills/scout-apply-test-review/SKILL.md', mode: 0o644 },
   { from: 'skills/run-app/SKILL.md', to: '.claude/skills/run-app/SKILL.md', mode: 0o644 },
   { from: 'skills/run-app/SKILL.md', to: '.agents/skills/run-app/SKILL.md', mode: 0o644 },
   { from: 'skills/snapshot-db/SKILL.md', to: '.claude/skills/snapshot-db/SKILL.md', mode: 0o644 },
@@ -40,6 +40,18 @@ const TEMPLATE_FILES = [
   { from: 'skills/write-for-reviewers/SKILL.md', to: '.claude/skills/write-for-reviewers/SKILL.md', mode: 0o644 },
   { from: 'skills/write-for-reviewers/SKILL.md', to: '.agents/skills/write-for-reviewers/SKILL.md', mode: 0o644 },
   { from: `hooks/${PENDING_HOOK}`, to: `.claude/hooks/${PENDING_HOOK}`, mode: 0o755 },
+] as const
+
+/** Skills installed under older names; install removes them so the old commands stop showing up. */
+const RETIRED_SKILLS = [
+  'publish-review',
+  'publish-pr-review',
+  'publish-test-plan',
+  'publish-data-setup',
+  'publish-test-run',
+  'apply-review',
+  'apply-test-review',
+  'address-pr-comments',
 ] as const
 
 export interface InstallOptions {
@@ -57,7 +69,7 @@ export interface InstallOptions {
   pathDir?: string | null
 }
 
-export type InstallAction = 'created' | 'updated' | 'unchanged' | 'skipped'
+export type InstallAction = 'created' | 'updated' | 'unchanged' | 'skipped' | 'removed'
 
 export interface InstallChange {
   path: string
@@ -83,7 +95,7 @@ async function exists(p: string): Promise<boolean> {
 export async function templatesDir(): Promise<string> {
   const candidates = [new URL('./templates/', import.meta.url), new URL('../../templates/', import.meta.url)].map((url) => fileURLToPath(url))
   for (const candidate of candidates) {
-    if (await exists(path.join(candidate, 'skills', 'publish-review', 'SKILL.md'))) return candidate
+    if (await exists(path.join(candidate, 'skills', 'scout-development-review', 'SKILL.md'))) return candidate
   }
   throw new Error(`templates not found next to ${fileURLToPath(import.meta.url)}`)
 }
@@ -176,6 +188,16 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
   for (const file of TEMPLATE_FILES) {
     const content = await readFile(path.join(templates, ...file.from.split('/')), 'utf8')
     record(file.to, await writeIfChanged(path.join(repo, ...file.to.split('/')), content, file.mode))
+  }
+  for (const name of RETIRED_SKILLS) {
+    for (const root of ['.claude', '.agents']) {
+      const rel = `${root}/skills/${name}`
+      const dir = path.join(repo, root, 'skills', name)
+      if (await lstat(dir).then(() => true, () => false)) {
+        await rm(dir, { recursive: true, force: true })
+        record(rel, 'removed')
+      }
+    }
   }
 
   // Repo-specific skills and scripts: `templates/repos/<origin repo name>/` mirrors paths inside that one repo,
@@ -279,7 +301,7 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
   if (options.mirror) {
     const sync = path.join(repo, '.claude', 'hooks', 'sync_claude_folders.sh')
     if (await exists(sync)) {
-      const input = JSON.stringify({ tool_input: { file_path: path.join(repo, '.claude', 'skills', 'publish-review', 'SKILL.md') } })
+      const input = JSON.stringify({ tool_input: { file_path: path.join(repo, '.claude', 'skills', 'scout-development-review', 'SKILL.md') } })
       await run(sync, [], { cwd: repo, input })
       messages.push('mirrored .claude/ with sync_claude_folders.sh')
     } else {
@@ -294,13 +316,13 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
     messages.push(`no runtime command for ${main}: /run-app and /snapshot-db fall back to guessing ports. Set one with: ai-review env --repo ${JSON.stringify(main)} --set-runtime '<command that prints the runtime JSON>'`)
   }
 
-  return { repo, changes, messages, changed: changes.some((c) => c.action === 'created' || c.action === 'updated') }
+  return { repo, changes, messages, changed: changes.some((c) => c.action !== 'unchanged' && c.action !== 'skipped') }
 }
 
 export function formatInstallResult(result: InstallResult): string {
   const lines = result.changes.map((c) => `${c.action.padEnd(9)} ${c.path}${c.note ? ` (${c.note})` : ''}`)
   lines.push(...result.messages)
-  lines.push(result.changed ? `${result.changes.filter((c) => c.action === 'created' || c.action === 'updated').length} change(s) in ${result.repo}` : 'no changes')
+  lines.push(result.changed ? `${result.changes.filter((c) => c.action !== 'unchanged' && c.action !== 'skipped').length} change(s) in ${result.repo}` : 'no changes')
   return lines.join('\n')
 }
 

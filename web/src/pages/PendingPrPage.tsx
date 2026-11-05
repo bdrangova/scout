@@ -30,7 +30,7 @@ function NotFound() {
   )
 }
 
-/** The placeholder is gone: when a session now has its id it was claimed by `publish-pr-review`, so go there. */
+/** The placeholder is gone: when a session now has its id it was claimed by `scout-pr-review`, so go there. */
 function Claimed({ id }: { id: string }) {
   const session = useAsync(`pr-pending-claimed:${id}`, () => apiGet<unknown>(`/sessions/${encodeURIComponent(id)}`))
   if (session.data !== null) return <Navigate to={`/s/${encodeURIComponent(id)}`} replace />
@@ -88,7 +88,7 @@ function Detail({ detail, onRemove }: { detail: PendingPrReviewDetail; onRemove:
   )
 }
 
-/** `/pr/p/:id`: a not-started PR review. Its facts and how to start the review; it becomes `/s/:id` once `publish-pr-review` claims it. */
+/** `/pr/p/:id`: a not-started PR review. Its facts and how to start the review; it becomes `/s/:id` once `scout-pr-review` claims it. */
 export function PendingPrPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()

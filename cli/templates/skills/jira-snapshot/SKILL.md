@@ -1,6 +1,6 @@
 ---
 name: jira-snapshot
-description: Save a snapshot of one or more Jira tickets into a Scout session's spec folder, so the reviewer reads the ticket next to the change. Called by publish-review and publish-pr-review for the ticket keys of the branch or PR; also use it when the user runs /jira-snapshot.
+description: Save a snapshot of one or more Jira tickets into a Scout session's spec folder, so the reviewer reads the ticket next to the change. Called by scout-development-review and scout-pr-review for the ticket keys of the branch or PR; also use it when the user runs /jira-snapshot.
 argument-hint: "<KEY>[=url] [<KEY>…] --session <id>"
 allowed-tools: Bash(ai-review artifact *) Bash(ai-review path *) Write mcp__atlassian__getJiraIssue mcp__atlassian__getAccessibleAtlassianResources
 ---

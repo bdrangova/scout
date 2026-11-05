@@ -63,7 +63,7 @@ async function testRunBuilder(deps: SendDeps, session: LoadedSession, request: S
 /**
  * One Submit: snapshot the open comments, verdicts and decision against the live tree (code review) or the run's scenarios
  * (test run) to `review/sent/<stem>.json|.md` (and `.patch` for a code review) and stamp `review.json`. The reviewer then applies
- * it from their own Claude Code session (`/apply-review`); Scout starts no agent.
+ * it from their own Claude Code session (`/scout-apply-review`); Scout starts no agent.
  */
 export async function sendReview(deps: SendDeps, sessionId: string, request: SendRequest): Promise<SendResponse> {
   const { store } = deps

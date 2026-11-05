@@ -211,7 +211,7 @@ describe('PR reviews: opening a row', () => {
     expect(await screen.findByText('Placeholder route')).toBeInTheDocument()
     expect(bodyOf(fetchMock, 'POST', '/api/pr-pending')).toEqual({ url: pr.url })
     expect(screen.getByTestId('location')).toHaveTextContent(`/pr/p/${PENDING_ID}`)
-    expect(await navigator.clipboard.readText()).toBe(`/publish-pr-review ${pr.url}`)
+    expect(await navigator.clipboard.readText()).toBe(`/scout-pr-review ${pr.url}`)
   })
 
   it('goes to the live session when starting finds one already', async () => {

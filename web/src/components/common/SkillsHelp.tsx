@@ -18,9 +18,9 @@ const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string
   {
     title: 'Development',
     skills: [
-      { command: '/publish-review', when: 'Work done. Opens or refreshes the session.' },
-      { command: '/apply-review <id>', when: 'After Submit. Fixes code, answers comments.' },
-      { command: '/address-pr-comments', when: 'GitHub PR comments to handle.' },
+      { command: '/scout-development-review', when: 'Work done. Opens or refreshes the session.' },
+      { command: '/scout-apply-review <id>', when: 'After Submit. Fixes code, answers comments.' },
+      { command: '/scout-pr-comments', when: 'GitHub PR comments to handle.' },
       { command: '/run-app', when: 'Needs the app up. The skills call it too.' },
       { command: '/jira-snapshot <KEY>', when: 'Ticket into the session spec. The publish skills call it too.' },
     ],
@@ -28,15 +28,15 @@ const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string
   {
     title: 'Test runs',
     skills: [
-      { command: '/publish-test-plan <run>', when: 'Plan written. Scenarios + steps.' },
-      { command: '/publish-data-setup <run>', when: 'Test data ready.' },
-      { command: '/publish-test-run <run>', when: 'After /feature-test (it asks: new worktree or here). Results + evidence.' },
-      { command: '/apply-test-review <id>', when: 'After Submit. Answers, re-runs.' },
+      { command: '/scout-test-plan <run>', when: 'Plan written. Scenarios + steps.' },
+      { command: '/scout-data-setup <run>', when: 'Test data ready.' },
+      { command: '/scout-test-run <run>', when: 'After /feature-test (it asks: new worktree or here). Results + evidence.' },
+      { command: '/scout-apply-test-review <id>', when: 'After Submit. Answers, re-runs.' },
     ],
   },
   {
     title: 'PR reviews',
-    skills: [{ command: '/publish-pr-review <PR url>', when: 'Asks: new worktree or here. Summary, tags, Jira, findings + repro. Nothing posted to GitHub.' }],
+    skills: [{ command: '/scout-pr-review <PR url>', when: 'Asks: new worktree or here. Summary, tags, Jira, findings + repro. Nothing posted to GitHub.' }],
   },
 ]
 

@@ -23,7 +23,7 @@ describe('PendingPanel', () => {
     const link = within(panel).getByRole('link', { name: 'Open in Claude Desktop' })
     expect(link).toHaveAttribute(
       'href',
-      `claude://code/new?q=${encodeURIComponent(`/apply-review ${SESSION_ID}`)}&folder=${encodeURIComponent(REPO)}`,
+      `claude://code/new?q=${encodeURIComponent(`/scout-apply-review ${SESSION_ID}`)}&folder=${encodeURIComponent(REPO)}`,
     )
     expect(within(panel).getByText(/confirm it there/)).toBeInTheDocument()
     expect(within(panel).getAllByRole('button').map((button) => button.textContent)).toEqual(['Copy command'])
@@ -34,7 +34,7 @@ describe('PendingPanel', () => {
     vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
     const { panel } = renderPanel()
     fireEvent.click(within(panel).getByRole('button', { name: 'Copy command' }))
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith(`/apply-review ${SESSION_ID}`))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(`/scout-apply-review ${SESSION_ID}`))
     expect(await within(panel).findByRole('alert')).toHaveTextContent('Could not copy')
     vi.unstubAllGlobals()
   })

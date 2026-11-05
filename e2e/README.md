@@ -21,7 +21,7 @@ What it covers, in order (one serial `describe`, one shared page):
    16-hex `fingerprint`, and one comment.
 4. Live update: the spec appends a line to `src/app.ts` in the fixture repo; within 5 s the "N files changed on disk" toast
    (or the card's "changed just now" chip) shows and the header's `+N` additions figure changes.
-5. Submit with "Request changes": no confirmation step; the "Feedback pending" panel shows the `/apply-review` command.
+5. Submit with "Request changes": no confirmation step; the "Feedback pending" panel shows the `/scout-apply-review` command.
 6. On disk: `review/sent/*.json|.md|.patch` and the comment in `review/review.json` is stamped `sentAt`.
 
 What it resets so it is repeatable (the store is rebuilt per run anyway, so these only matter within one run):

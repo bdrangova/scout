@@ -87,7 +87,7 @@ export function useSendReview(): SendReviewState {
   const testRun = detail.kind === 'test-run'
   // The agent works in the repo (code review) or the checkout (test run); sent feedback is applied with that kind's command.
   const cwd = detail.kind === 'test-run' ? detail.manifest.run.repo : detail.manifest.repo.path
-  const command: ReviewCommand = testRun ? '/apply-test-review' : '/apply-review'
+  const command: ReviewCommand = testRun ? '/scout-apply-test-review' : '/scout-apply-review'
   const { state, items, comments, dispatch, flushSave, reload: reloadReview } = useReview()
   const { queued, flushReplies } = usePrComments()
   const decision = state.review.overall.decision

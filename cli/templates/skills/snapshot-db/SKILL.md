@@ -1,6 +1,6 @@
 ---
 name: snapshot-db
-description: Checkpoint the local database(s) this checkout's app uses right after a reproduction's data setup, so later runs restore that state instead of repeating the setup. Looks up an existing checkpoint for the same setup first and restores it; otherwise, after the caller has seeded the data, dumps only local databases, writes a manifest with row counts, and prints the restore command. Called by the review skills (publish-pr-review, publish-review, apply-review, apply-test-review, address-pr-comments) around any data setup; also use it when the user runs /snapshot-db.
+description: Checkpoint the local database(s) this checkout's app uses right after a reproduction's data setup, so later runs restore that state instead of repeating the setup. Looks up an existing checkpoint for the same setup first and restores it; otherwise, after the caller has seeded the data, dumps only local databases, writes a manifest with row counts, and prints the restore command. Called by the review skills (scout-pr-review, scout-development-review, scout-apply-review, scout-apply-test-review, scout-pr-comments) around any data setup; also use it when the user runs /snapshot-db.
 argument-hint: "lookup|save|restore <setup-key> [--session <id>] [--setup <file>] [--auto]"
 allowed-tools: Bash(docker *) Bash(lsof *) Bash(ps *) Bash(git rev-parse *) Bash(ai-review path *) Bash(ai-review env*) Bash(ai-review checkpoint *) Bash(ai-review app-status*) Bash(du *) Read Glob Grep AskUserQuestion
 ---

@@ -1,6 +1,6 @@
 ---
 name: run-app
-description: Make sure this checkout's app is running so a reproduction, a fix or evidence can be checked against it. Reuses a dev server that already serves this checkout, otherwise asks before starting one (stopping the servers that hold its ports), and decides how the check is recorded (Playwright video, screenshots or none). Called by the review skills (apply-review, apply-test-review, address-pr-comments, publish-review, publish-pr-review) whenever a check needs the running app; also use it when the user runs /run-app.
+description: Make sure this checkout's app is running so a reproduction, a fix or evidence can be checked against it. Reuses a dev server that already serves this checkout, otherwise asks before starting one (stopping the servers that hold its ports), and decides how the check is recorded (Playwright video, screenshots or none). Called by the review skills (scout-apply-review, scout-apply-test-review, scout-pr-comments, scout-development-review, scout-pr-review) whenever a check needs the running app; also use it when the user runs /run-app.
 argument-hint: "[what needs checking] [--record video|screenshots|none] [--auto]"
 allowed-tools: Bash(ai-review env*) Bash(ai-review app-status*) Bash(lsof *) Bash(ps *) Bash(curl *) Bash(kill *) Bash(git rev-parse *) Bash(git worktree list*) Read Glob Grep AskUserQuestion
 ---

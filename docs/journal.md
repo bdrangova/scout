@@ -1,6 +1,6 @@
 # Scout's journal
 
-A human-readable journal of the decisions and implementation choices behind a code-review session's changes, written by the agent (Scout) while it works and topped up by `/publish-review`. The reviewer reads it per file, inline on the diff, and as a chronological page; replying to a note creates a normal comment.
+A human-readable journal of the decisions and implementation choices behind a code-review session's changes, written by the agent (Scout) while it works and topped up by `/scout-development-review`. The reviewer reads it per file, inline on the diff, and as a chronological page; replying to a note creates a normal comment.
 
 Decisions (user, 2026-10-27): written as the agent works (`ai-review journal add`) plus a gap-filling pass at publish; shown as a per-file summary, inline line notes and a Journal page; reply on a note → anchored comment; typed entries.
 
@@ -44,7 +44,7 @@ Line numbers drift as the agent keeps editing. `relocateJournalAnchor(anchor, fi
 
 ## Comment link
 
-`Comment` gains optional `about?: string` (a journal id). The web sets it when the reviewer replies to a note; the target is the note's file with its relocated anchor (or file-level when stale/unanchored; overall when the entry is session-level). The send renderer (`review/sent` markdown) prints, for such a comment, a quoted line `> Re Scout note j3 (decision): <title>` above the body. `/apply-review` uses it: when a reply changes the decision, it records a new journal entry that supersedes the old one.
+`Comment` gains optional `about?: string` (a journal id). The web sets it when the reviewer replies to a note; the target is the note's file with its relocated anchor (or file-level when stale/unanchored; overall when the entry is session-level). The send renderer (`review/sent` markdown) prints, for such a comment, a quoted line `> Re Scout note j3 (decision): <title>` above the body. `/scout-apply-review` uses it: when a reply changes the decision, it records a new journal entry that supersedes the old one.
 
 ## CLI
 
@@ -56,15 +56,15 @@ ai-review journal add [<id>] [--repo <path>] --from <file.json>        # array o
 ai-review journal list [<id>] [--repo <path>] [--file <path>] [--json]
 ai-review journal supersede <id> <jN> --by <jM>
 ```
-- Session resolution: explicit `<id>`, else the live session for `--repo` (default cwd) + its current branch (same lookup `ai-review status` uses). If none exists, `add` creates one exactly as `ai-review init --repo <repo>` would with the title = branch name, so the agent can journal before `/publish-review` runs.
+- Session resolution: explicit `<id>`, else the live session for `--repo` (default cwd) + its current branch (same lookup `ai-review status` uses). If none exists, `add` creates one exactly as `ai-review init --repo <repo>` would with the title = branch name, so the agent can journal before `/scout-development-review` runs.
 - `--line` requires `--file`; the CLI reads the snippet itself: for `side new` from the working-tree file, for `old` from `git show <baseSha>:<path>` (merge base). Error if the line is out of range.
 - Prints the new ids (or JSON).
 
 ## Skills
 
 - New `cli/templates/skills/journal/SKILL.md` (installed to `.claude/skills/journal/` and `.agents/skills/journal/`): when and how to journal. Description triggers on making a non-obvious implementation choice, picking between approaches, working around a constraint, or the user saying "journal this" / `/journal`. Guidance: write for a reviewer who did not see the conversation; say *why*, not *what the diff already shows*; one entry per decision; anchor to the line where the decision is visible; include rejected alternatives; 2–6 sentences; never paste code blocks longer than 5 lines; never secrets. `/journal` with no args = backfill: walk the session's changed files and add a `summary` for each file without one plus entries for decisions made in this conversation that are not logged yet.
-- `publish-review`: new step after Extras — "Journal": run `ai-review journal list --json`, add a `summary` for every changed file without a live one (skip collapsed/generated files), and log conversation decisions not yet journaled. Refresh mode: only files in the changed set; re-summarise (supersede) a file whose summary no longer matches.
-- `apply-review`: when a comment has `about`, after addressing it add an entry that supersedes the referenced note if the decision changed (else an `implementation` entry anchored where the fix landed).
+- `scout-development-review`: new step after Extras — "Journal": run `ai-review journal list --json`, add a `summary` for every changed file without a live one (skip collapsed/generated files), and log conversation decisions not yet journaled. Refresh mode: only files in the changed set; re-summarise (supersede) a file whose summary no longer matches.
+- `scout-apply-review`: when a comment has `about`, after addressing it add an entry that supersedes the referenced note if the decision changed (else an `implementation` entry anchored where the fix landed).
 - The repo `CLAUDE.md` snippet installed by `ai-review install` (if any) or the journal skill description is what makes the agent journal during work; no hook.
 
 ## Web

@@ -30,7 +30,7 @@ Never use the Claude desktop app's own worktree feature or `EnterWorktree` to cr
    It also writes the worktree's Playwright `.env` (`playwright-env`), so `npx playwright test` in `src/test/playwright` hits this worktree. Gradle's `testPlaywright` doesn't need it.
 3. `bash "$QWT" up <path>` — starts the dev servers; show me the `QbDVision runs in` block.
 4. Data: unless I named it, ask golden (Rockets R US, recommended, ~3 min) / one feature's seed scenario / none. Then `bash "$QWT" seed <path> golden` or `seed <path> feature <feature> [scenario]`. Never seed any other way (MySQL and cognito-local users must match).
-5. Scout: only if I ask, or I'm about to review here. `bash "$QWT" scout <path>`. `/publish-review` opens it by itself anyway.
+5. Scout: only if I ask, or I'm about to review here. `bash "$QWT" scout <path>`. `/scout-development-review` opens it by itself anyway.
 6. Tell me how to work in it: open a new Claude Code session with the worktree folder as its working directory. Memory and `.claude` are shared with the main checkout.
 
 Ports, DB and cognito container for any checkout: `ai-review env` (or `bash .claude/skills/_shared/checkout_runtime.sh` from inside it). Never assume 8080/3000/3306/9230.

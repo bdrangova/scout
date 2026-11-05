@@ -459,7 +459,7 @@ describe('SessionListPage', () => {
   it('shows the empty state, the loading state and the error state with a retry', async () => {
     const { unmount } = renderPage({ sessions: [] })
     expect(screen.getByText('No sessions')).toBeInTheDocument()
-    expect(screen.getByText('/publish-review')).toBeInTheDocument()
+    expect(screen.getByText('/scout-development-review')).toBeInTheDocument()
     unmount()
 
     const loading = renderPage({ loading: true })

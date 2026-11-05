@@ -217,7 +217,7 @@ describe('SubmitPage', () => {
     const panel = await screen.findByLabelText('Feedback pending')
     expect(within(panel).getByText(/Send any message in your open Claude Code session/)).toBeInTheDocument()
     expect(within(panel).queryByRole('link')).not.toBeInTheDocument()
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith(`/apply-review ${SESSION_ID}`))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(`/scout-apply-review ${SESSION_ID}`))
   })
 
   it('"New session" sends without dispatch, opens the Desktop deep link and shows it in the panel', async () => {
@@ -227,7 +227,7 @@ describe('SubmitPage', () => {
     await pickTarget('New session')
     await confirmSend()
     await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes' }))
-    const href = `claude://code/new?q=${encodeURIComponent(`/apply-review ${SESSION_ID}`)}&folder=${encodeURIComponent(sessionDetailFixture.manifest.repo.path)}`
+    const href = `claude://code/new?q=${encodeURIComponent(`/scout-apply-review ${SESSION_ID}`)}&folder=${encodeURIComponent(sessionDetailFixture.manifest.repo.path)}`
     const panel = await screen.findByLabelText('Feedback pending')
     expect(within(panel).getByRole('link', { name: 'Open in Claude Desktop' })).toHaveAttribute('href', href)
     expect(assign).toHaveBeenCalledWith(href)
@@ -242,9 +242,9 @@ describe('SubmitPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     await waitFor(() => expect(sentBody(api.posts)).toEqual({ decision: 'request-changes' }))
     const panel = await screen.findByLabelText('Feedback pending')
-    expect(within(panel).getByText(`/apply-review ${SESSION_ID}`)).toBeInTheDocument()
+    expect(within(panel).getByText(`/scout-apply-review ${SESSION_ID}`)).toBeInTheDocument()
     expect(within(panel).queryByRole('link', { name: 'Open in Claude Desktop' })).not.toBeInTheDocument()
-    expect(writeText).toHaveBeenCalledWith(`/apply-review ${SESSION_ID}`)
+    expect(writeText).toHaveBeenCalledWith(`/scout-apply-review ${SESSION_ID}`)
     expect(await within(panel).findByText('The command is on your clipboard.')).toBeInTheDocument()
   })
 

@@ -1,6 +1,6 @@
 ---
-name: address-pr-comments
-description: Address the comments reviewers and bots (Copilot) left on the GitHub pull request of this branch: sync them into the Scout session, change the code, and record for every comment how it was handled. Use when the user says "address the PR comments", "handle the GitHub review comments", runs /address-pr-comments, or when the review feedback has a "GitHub PR comments" section.
+name: scout-pr-comments
+description: Address the comments reviewers and bots (Copilot) left on the GitHub pull request of this branch: sync them into the Scout session, change the code, and record for every comment how it was handled. Use when the user says "address the PR comments", "handle the GitHub review comments", runs /scout-pr-comments, or when the review feedback has a "GitHub PR comments" section.
 argument-hint: "[sessionId] [--record video|screenshots|none]"
 allowed-tools: Bash(ai-review pr-sync *) Bash(ai-review pr-comments *) Bash(ai-review pr-resolve *) Bash(ai-review pr-reply *) Bash(ai-review pr-link *) Bash(ai-review status *) Bash(ai-review path *) Bash(ai-review feedback *) Bash(ai-review artifact *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Read Edit Write Grep Glob Skill
 ---

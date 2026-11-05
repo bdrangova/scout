@@ -6,7 +6,7 @@ Status: proposal, not started. Written 2026-10-19 on branch `retro-redesign` fro
 
 The user works almost only in Claude Desktop and does not use Claude Code session streaming. Today the loop is hand-carried:
 
-Submit in the dashboard -> copy `/apply-review <id>` (or open `claude://code/new?q=...&folder=...`) -> paste / confirm in Desktop -> the agent fixes things and calls `ai-review resolve` -> the user goes back to the dashboard and watches.
+Submit in the dashboard -> copy `/scout-apply-review <id>` (or open `claude://code/new?q=...&folder=...`) -> paste / confirm in Desktop -> the agent fixes things and calls `ai-review resolve` -> the user goes back to the dashboard and watches.
 
 They want it seamless in both directions: (1) sending a review reaches the right Desktop session with minimal manual steps; (2) the dashboard shows the agent picking it up, progress, resolutions, `updated` files and the final answer, live. The same must work for the coming GitHub-PR-comments flow (docs/gh-comments-options.md, docs/pr-link-options.md) and for "agent finished, ready for re-review".
 
@@ -18,9 +18,9 @@ They want it seamless in both directions: (1) sending a review reaches the right
 |---|---|---|
 | Submit | `web/src/state/useSendReview.ts` `send()` | `flushSave()`, then `POST /sessions/:id/review/send {decision, dispatch}`. `dispatch` is `target==='current' && origin!=='desktop'`. |
 | Snapshot | `server/src/send.ts` `sendReview` | Writes `review/sent/<stem>.json\|.md\|.patch`, stamps `review.json`. With `dispatch` and no active run: `adapter.canResume()` then `runs.start()` (headless `claude -p --resume`), else returns `pending: {reason}`. |
-| Desktop origin | `useSendReview.send` | `target==='current'`: copies `/apply-review <id>` to the clipboard. `target==='new'`: `window.location.assign(claude://code/new?q=<cmd>&folder=<repo>)`. Both then show `PendingPanel`. |
-| Agent notices | `cli/templates/hooks/ai_review_pending_feedback.sh` | `UserPromptSubmit` hook only. Runs `ai-review pending --repo $cwd`, injects `additionalContext` ("N open comments on session X, run /apply-review") once per (Claude session, pending fingerprint) via a marker in `$GIT_DIR/ai-review/nagged-<session>`. Fires only when the user sends some prompt in that session. |
-| Agent reads | `cli/templates/skills/apply-review/SKILL.md` | Shell-injects `ai-review feedback <id>` and `ai-review status <id>`; works the checklist; PR step only on Approve. |
+| Desktop origin | `useSendReview.send` | `target==='current'`: copies `/scout-apply-review <id>` to the clipboard. `target==='new'`: `window.location.assign(claude://code/new?q=<cmd>&folder=<repo>)`. Both then show `PendingPanel`. |
+| Agent notices | `cli/templates/hooks/ai_review_pending_feedback.sh` | `UserPromptSubmit` hook only. Runs `ai-review pending --repo $cwd`, injects `additionalContext` ("N open comments on session X, run /scout-apply-review") once per (Claude session, pending fingerprint) via a marker in `$GIT_DIR/ai-review/nagged-<session>`. Fires only when the user sends some prompt in that session. |
+| Agent reads | `cli/templates/skills/scout-apply-review/SKILL.md` | Shell-injects `ai-review feedback <id>` and `ai-review status <id>`; works the checklist; PR step only on Approve. |
 
 Guard rails that already hold: headless run uses `--permission-mode acceptEdits`, an explicit `--allowedTools` list, `--max-turns 80`, `--max-budget-usd 10`, never `bypassPermissions` (`server/src/agent/claude-code.ts`).
 
@@ -42,7 +42,7 @@ The agent has exactly two channels, both plain files watched by the server:
 | | Knows | Does not know |
 |---|---|---|
 | Dashboard | A resolution landed; files changed on disk. For headless runs: everything (stream-json). For `claude agents --json` (already called by `listLiveAgents`): pid, sessionId, `idle\|busy\|waiting` of any live session, Desktop sessions included (verified on 2.1.241 in research/06). | Whether any Desktop session received the feedback; which session picked it up; whether it is working, waiting for a permission prompt, or done; the final answer; "working on comment 3/7". `agent-working` status derives from an active run only, so it is never shown for a Desktop session. |
-| Agent (Desktop session) | Feedback, only after the user types a prompt (hook) or pastes `/apply-review`. | That a send happened while it sat idle. Nothing pushes. |
+| Agent (Desktop session) | Feedback, only after the user types a prompt (hook) or pastes `/scout-apply-review`. | That a send happened while it sat idle. Nothing pushes. |
 
 ### Two concrete bugs found
 
@@ -80,7 +80,7 @@ All keep the rule "local only, no credentials, never `bypassPermissions`".
 
 **B. Hook-first with presence.** Keep files as the contract. Add: `SessionStart` + `UserPromptSubmit` (claim: "this Claude session saw feedback X at T"), `Stop` (posts `last_assistant_message` and "turn finished"), `Notification` (permission prompt / idle), optional async `PostToolUse` heartbeat. Plus server-side presence from `claude agents --json` (busy / waiting) for the review's session. Skill additions: `ai-review claim`, `ai-review progress --comment cN`, `ai-review finish`.
 
-**C. One-click launcher + return trip.** Submit opens (server-side `open` or the existing link) `claude://code/new?q=/apply-review <id>&folder=<repo>`; clipboard fallback for an existing session; the skill's final message already ends with the dashboard URL (http link, clickable in Desktop). Fix origin detection so the UI offers the right primary action.
+**C. One-click launcher + return trip.** Submit opens (server-side `open` or the existing link) `claude://code/new?q=/scout-apply-review <id>&folder=<repo>`; clipboard fallback for an existing session; the skill's final message already ends with the dashboard URL (http link, clickable in Desktop). Fix origin detection so the UI offers the right primary action.
 
 **D. Companion session that waits.** A session runs `/review-watch`, which starts a `Monitor` on `ai-review wait <repo>` (blocks until a new send, prints one line) and applies it; or a Desktop scheduled task polls every minute.
 
@@ -100,7 +100,7 @@ All keep the rule "local only, no credentials, never `bypassPermissions`".
 | Security | extra process; tools can write only the session folder | shell hooks run with user rights; keep read/append only | folder confirmation dialog stays (good) | autonomous edits while the user may be mid-conversation; still `acceptEdits` of the session | unsupported API, sender classed as external; may be held or refused |
 | Failure modes | server not started, tool search latency, model skips calls | hook not firing (user disabled hooks), marker drift, model never says done (Stop still fires) | link blocked by browser, folder dialog, stale `repo` path | monitor lost on resume, wakeup not delivered, clutter/cost for scheduled variant | protocol changes, socket stale, hold queue |
 | Effort | M | S-M | S | M (S for the skill, M for `wait`) | L + spike |
-| PR comments flow | add `pr_*` tools | same claim/progress files, keyed by `kind` | link with `/address-pr-comments <id>` | same watcher | same |
+| PR comments flow | add `pr_*` tools | same claim/progress files, keyed by `kind` | link with `/scout-pr-comments <id>` | same watcher | same |
 | Verdict | nice-to-have, not needed first | **do first** | **do first** | opt-in after B | spike only |
 
 ### Why A is not first
@@ -144,12 +144,12 @@ Server: whitelist both in `watcher.ignored()`/`classify()`, new `StoreEvent` `ag
 - Accept: a Desktop-created session (manual check) gets a non-`cli` origin; Submit for it never calls `canResume`-refusal path; tests cover origin mapping.
 
 **3. Claim + progress + finish (CLI, skill, watcher, UI).** M.
-- CLI verbs above; `apply-review` skill: `claim` as step 0, `progress --comment cN` before each comment, `finish --summary` last (hook is the safety net, see 4).
+- CLI verbs above; `scout-apply-review` skill: `claim` as step 0, `progress --comment cN` before each comment, `finish --summary` last (hook is the safety net, see 4).
 - Watcher + `agent.updated` + `GET /sessions/:id/agent`; web "Agent activity" panel on Submit and a rail line: "Claude picked this up 2 min ago", "Addressing c3 (3 of 7 resolved)", "Finished 40 s ago".
 - Accept: scripted run (`ai-review claim; progress; resolve; finish`) updates the panel without reload within 1 s of each write; `stale` appears after 90 s without heartbeat; schema + CLI tests; e2e on the fixture store; `AI_REVIEW_HEADLESS` runs write the same files (the headless run also claims).
 
 **4. Hooks: Stop, Notification, SessionStart.** M.
-- New templates `ai_review_stop.sh`, `ai_review_notify.sh` (shell + `jq`, append-only, `async: true`, 5 s timeout, no Node start-up). `UserPromptSubmit` hook also writes the claim when the prompt starts with `/apply-review <id>` or it injects the nag. Stop: if a claim exists for this `session_id` in `done`-pending state, append `stop` with `last_assistant_message` (<= 4 KB), set `state` from open count (`done` when no open sent comments, else `waiting-for-user` shown as "Claude stopped with 2 open"). Notification (`permission_prompt`, `idle_prompt`): set `waiting`. Installed via `ai-review install` (settings merge already handles `hooks`; add events and matchers).
+- New templates `ai_review_stop.sh`, `ai_review_notify.sh` (shell + `jq`, append-only, `async: true`, 5 s timeout, no Node start-up). `UserPromptSubmit` hook also writes the claim when the prompt starts with `/scout-apply-review <id>` or it injects the nag. Stop: if a claim exists for this `session_id` in `done`-pending state, append `stop` with `last_assistant_message` (<= 4 KB), set `state` from open count (`done` when no open sent comments, else `waiting-for-user` shown as "Claude stopped with 2 open"). Notification (`permission_prompt`, `idle_prompt`): set `waiting`. Installed via `ai-review install` (settings merge already handles `hooks`; add events and matchers).
 - Accept: piping sample hook JSON into each script produces the expected files; hooks no-op when no claim, no `jq`, or no `ai-review`; install is idempotent; no hook output ever blocks a turn (never return `decision: block`, never use Stop `additionalContext`).
 
 **5. Launcher: one click, return trip.** S.
@@ -158,7 +158,7 @@ Server: whitelist both in `watcher.ignored()`/`classify()`, new `StoreEvent` `ag
 - Accept: with `open` stubbed, the launch route builds the exact URL (unit test for encoding, `q` < 14,000 chars, refuses ids not matching `SESSION_ID_RE`); the toast appears once per `done` transition; no navigation when not on macOS.
 
 **6. PR comments reuse (with the GitHub-comments feature).** M, after its contract lands.
-- Same `agent.json` with `kind: 'pr-comments'`; `ai-review pr-resolve` also bumps `progress`; "Address open comments" uses the launcher with `/address-pr-comments <id>`; the pending hook counts open PR threads only after an explicit dispatch marker (`review/dispatch.json`, written by the button), so external comments never nag by themselves. `open-pr` uses the same claim for "creating PR" state (docs/pr-link-options.md `creating` state).
+- Same `agent.json` with `kind: 'pr-comments'`; `ai-review pr-resolve` also bumps `progress`; "Address open comments" uses the launcher with `/scout-pr-comments <id>`; the pending hook counts open PR threads only after an explicit dispatch marker (`review/dispatch.json`, written by the button), so external comments never nag by themselves. `open-pr` uses the same claim for "creating PR" state (docs/pr-link-options.md `creating` state).
 - Accept: the PR page shows working/queued cards from `agent.current`; no PR comment is counted in Submit's open comments; hooks ignore PR threads without a dispatch.
 
 **7. Opt-in companion (`/review-watch`).** M.
@@ -203,4 +203,4 @@ Server: whitelist both in `watcher.ignored()`/`classify()`, new `StoreEvent` `ag
 - Deep links (Desktop): https://support.claude.com/en/articles/14729294-open-claude-desktop-with-a-link
 - Tools reference (Monitor, PushNotification): https://code.claude.com/docs/en/tools-reference
 - Env vars: https://code.claude.com/docs/en/env-vars
-- Repo evidence: `cli/src/commands/{init,pending,resolve,status,feedback}.ts`, `cli/templates/hooks/ai_review_pending_feedback.sh`, `cli/templates/skills/apply-review/SKILL.md`, `server/src/{send,watcher}.ts`, `server/src/agent/claude-code.ts`, `web/src/state/useSendReview.ts`, `web/src/components/layout/SessionLiveUpdates.tsx`, `web/src/components/submit/PendingPanel.tsx`, `web/src/lib/runs.ts`, research/03 and 06, docs/gh-comments-options.md, docs/pr-link-options.md.
+- Repo evidence: `cli/src/commands/{init,pending,resolve,status,feedback}.ts`, `cli/templates/hooks/ai_review_pending_feedback.sh`, `cli/templates/skills/scout-apply-review/SKILL.md`, `server/src/{send,watcher}.ts`, `server/src/agent/claude-code.ts`, `web/src/state/useSendReview.ts`, `web/src/components/layout/SessionLiveUpdates.tsx`, `web/src/components/submit/PendingPanel.tsx`, `web/src/lib/runs.ts`, research/03 and 06, docs/gh-comments-options.md, docs/pr-link-options.md.

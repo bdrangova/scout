@@ -1,6 +1,6 @@
 ---
-name: publish-test-plan
-description: Publish the test plan of a feature-test run to the Scout dashboard (/t/<id>) by writing the plan's part of the run's test-run.json index (title, feature, area, scenario skeleton with steps, plan summary and test-split panels). Use when the user runs /publish-test-plan, or says "publish the test plan" for a folder under a plans/**/test-runs/ run.
+name: scout-test-plan
+description: Publish the test plan of a feature-test run to the Scout dashboard (/t/<id>) by writing the plan's part of the run's test-run.json index (title, feature, area, scenario skeleton with steps, plan summary and test-split panels). Use when the user runs /scout-test-plan, or says "publish the test plan" for a folder under a plans/**/test-runs/ run.
 argument-hint: "<run-folder> [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Read Glob Grep Write AskUserQuestion
 ---
@@ -11,7 +11,7 @@ Arguments: $ARGUMENTS
 Run folder state: !`ls -1 "$0"`
 
 ## How the dashboard works
-A feature-test run is a folder (`<feature>/<area>/test-runs/<run>/`). The dashboard shows it from one index file, `<run>/test-run.json`, that three skills fill in together: `/publish-test-plan` (this one), `/publish-data-setup` and `/publish-test-run`. Each skill owns some keys and leaves all other keys exactly as they are. The dashboard reads the run folder live; there is nothing to upload and nothing to commit.
+A feature-test run is a folder (`<feature>/<area>/test-runs/<run>/`). The dashboard shows it from one index file, `<run>/test-run.json`, that three skills fill in together: `/scout-test-plan` (this one), `/scout-data-setup` and `/scout-test-run`. Each skill owns some keys and leaves all other keys exactly as they are. The dashboard reads the run folder live; there is nothing to upload and nothing to commit.
 
 Paths inside the index are refs, `alias:relative/path`, where the alias is a key of `roots`. Standard roots: `{ "run": ".", "plan": "../..", "bugs": "../../bugs" }` (relative to the run folder: `plan` is the folder holding `test-plan.md`, `bugs` the sibling `bugs/` folder). Adjust `plan` when the plan lives elsewhere. `..` is allowed only as a leading chain in a root, never inside a ref.
 
@@ -24,7 +24,7 @@ Paths inside the index are refs, `alias:relative/path`, where the alias is a key
 ## The patch
 `{ "title", "feature", "area", "roots": { "plan": "../.." }, "scenarios": [{ "id", "title", "order", "steps" }], "overview": [<Plan summary>, <Plan>, <Test split>], "removePanels": [], "hashes": { "plan:test-plan.md": "<from ai-review run-index scan --owner plan>" } }`
 - `title` only when the index has none or the plan heading changed (keep a title the user edited). `feature`/`area`: the two folder names above `test-runs/` (`change-summary/diffing/test-runs/2026-10-21-diffing` gives `change-summary` and `diffing`), or `null`.
-- The merge keeps everything `/publish-test-run` wrote: a new scenario starts `planned`, an existing one keeps its status and evidence, and a step that already has a result only takes your new `action`/`expected`.
+- The merge keeps everything `/scout-test-run` wrote: a new scenario starts `planned`, an existing one keeps its status and evidence, and a step that already has a result only takes your new `action`/`expected`.
 
 ## Steps
 0. **Choices.** Skip with `--auto` or `AI_REVIEW_HEADLESS=1`. Otherwise find the plan first (step 2) and ask once with AskUserQuestion: "Use these recommendations?" with options "Accept all (Recommended)" and "Let me choose", both with a `preview` listing the plan file, the `plan` root, the scenario ids you found, and the panels you would write. On "Let me choose", ask only about what is unclear: the plan file when there are several candidates, the `plan` root, scenario ids to leave out.

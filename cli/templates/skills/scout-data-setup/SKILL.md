@@ -1,6 +1,6 @@
 ---
-name: publish-data-setup
-description: Publish the data setup of a feature-test run to the Scout dashboard (/t/<id>) by writing the dataSetup key of the run's test-run.json index (data steps, setup videos and screenshots, DB snapshot path) and adding the Data setup page. Use when the user runs /publish-data-setup, or says "publish the data setup" for a plans/**/test-runs/ run folder.
+name: scout-data-setup
+description: Publish the data setup of a feature-test run to the Scout dashboard (/t/<id>) by writing the dataSetup key of the run's test-run.json index (data steps, setup videos and screenshots, DB snapshot path) and adding the Data setup page. Use when the user runs /scout-data-setup, or says "publish the data setup" for a plans/**/test-runs/ run folder.
 argument-hint: "<run-folder> [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Read Glob Grep Write AskUserQuestion
 ---
@@ -11,7 +11,7 @@ Arguments: $ARGUMENTS
 Run folder state: !`ls -1 "$0"`
 
 ## How the dashboard works
-A feature-test run is a folder. The dashboard shows it from one index file, `<run>/test-run.json`, that three skills fill in together: `/publish-test-plan`, `/publish-data-setup` (this one) and `/publish-test-run`. Each skill owns some keys and leaves all other keys exactly as they are. The dashboard reads the run folder live; there is nothing to upload and nothing to commit.
+A feature-test run is a folder. The dashboard shows it from one index file, `<run>/test-run.json`, that three skills fill in together: `/scout-test-plan`, `/scout-data-setup` (this one) and `/scout-test-run`. Each skill owns some keys and leaves all other keys exactly as they are. The dashboard reads the run folder live; there is nothing to upload and nothing to commit.
 
 Paths inside the index are refs, `alias:relative/path`, where the alias is a key of `roots`. Standard roots: `{ "run": ".", "plan": "../..", "bugs": "../../bugs" }` (relative to the run folder). Videos and screenshots of the data setup are refs under `run:data-setup/...`.
 
@@ -22,7 +22,7 @@ Paths inside the index are refs, `alias:relative/path`, where the alias is a key
 - Do not invent content. A step you cannot source from the plan or the run's notes is left out.
 
 ## The patch
-`{ "dataSetup": { "steps": Step[], "videos": Evidence[], "screenshots": Evidence[], "snapshotPath"?: string, "notes"?: string }, "pages": ["data-setup"], "hashes": { … } }` (`Step` = `{ label?, action?, expected?, observed?, result? }`, `Evidence` = `{ path: "run:...", caption? }`). `"dataSetup": null` with `"removePages": ["data-setup"]` removes the page. With no index yet, the merge creates one; suggest `/publish-test-plan` next.
+`{ "dataSetup": { "steps": Step[], "videos": Evidence[], "screenshots": Evidence[], "snapshotPath"?: string, "notes"?: string }, "pages": ["data-setup"], "hashes": { … } }` (`Step` = `{ label?, action?, expected?, observed?, result? }`, `Evidence` = `{ path: "run:...", caption? }`). `"dataSetup": null` with `"removePages": ["data-setup"]` removes the page. With no index yet, the merge creates one; suggest `/scout-test-plan` next.
 
 ## Steps
 0. **Choices.** Skip with `--auto` or `AI_REVIEW_HEADLESS=1`. Otherwise gather the sources first (step 2), then ask once with AskUserQuestion: "Use these recommendations?" with "Accept all (Recommended)" and "Let me choose", both with a `preview` listing the data steps, the number of videos and screenshots, and the snapshot path. On "Let me choose", ask which data steps to include, whether to list the files under `data-setup/_aborted-*` (recommend no), and which snapshot.

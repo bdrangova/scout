@@ -185,7 +185,7 @@ export type PutReviewResponse = z.infer<typeof PutReviewResponseSchema>
 export const PutReviewConflictSchema = z.object({ error: z.string(), current: ReviewSchema })
 export type PutReviewConflict = z.infer<typeof PutReviewConflictSchema>
 
-/** Submit only writes the feedback; the reviewer applies it from their own Claude Code session (`/apply-review`). */
+/** Submit only writes the feedback; the reviewer applies it from their own Claude Code session (`/scout-apply-review`). */
 export const SendRequestSchema = z.object({
   decision: DecisionSchema,
 })

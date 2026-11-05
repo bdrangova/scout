@@ -137,7 +137,7 @@ describe('session commands on test runs', () => {
     )
   })
 
-  it('pending matches run.repo and points at /apply-test-review', async () => {
+  it('pending matches run.repo and points at /scout-apply-test-review', async () => {
     const { id, dir } = await session()
     const sent = { at: T1, decision: 'request-changes' as const }
     const comment = makeComment({ id: 'c1', target: { kind: 'scenario', ref: 's2-fail' }, sentAt: T1 })
@@ -145,7 +145,7 @@ describe('session commands on test runs', () => {
     const pending = await pendingForRepo({ home, repo })
     expect(pending.count).toBe(1)
     expect(pending.sessions[0]).toMatchObject({ id, kind: 'test-run', url: `http://scout.localhost:4546/t/${id}` })
-    expect(pending.message).toContain(`/apply-test-review ${id}`)
+    expect(pending.message).toContain(`/scout-apply-test-review ${id}`)
     expect((await pendingForRepo({ home, repo: path.join(home, 'other') })).count).toBe(0)
   })
 
@@ -226,24 +226,24 @@ describe('run-index validate', () => {
 describe('install of the test-review skills', () => {
   it('copies the four skills and the hook skips them', async () => {
     const result = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/x/dist/index.js', nodeBin: '/x/node' })
-    for (const name of ['publish-test-plan', 'publish-data-setup', 'publish-test-run', 'apply-test-review']) {
+    for (const name of ['scout-test-plan', 'scout-data-setup', 'scout-test-run', 'scout-apply-test-review']) {
       const rel = `.claude/skills/${name}/SKILL.md`
       expect(result.changes.find((change) => change.path === rel)?.action).toBe('created')
       const text = await readFile(path.join(repo, rel), 'utf8')
       expect(text).toContain(`name: ${name}`)
       expect(text).toContain('allowed-tools:')
     }
-    for (const name of ['publish-test-plan', 'publish-data-setup', 'publish-test-run']) {
+    for (const name of ['scout-test-plan', 'scout-data-setup', 'scout-test-run']) {
       const text = await readFile(path.join(repo, '.claude', 'skills', name, 'SKILL.md'), 'utf8')
       expect(text).toContain('argument-hint: "<run-folder> [--auto]"')
       expect(text).toContain('ai-review init --kind test-run --run')
       expect(text).toContain('ai-review run-index merge "<run>"')
       expect(text).toContain('ai-review run-index scan')
     }
-    const apply = await readFile(path.join(repo, '.claude', 'skills', 'apply-test-review', 'SKILL.md'), 'utf8')
+    const apply = await readFile(path.join(repo, '.claude', 'skills', 'scout-apply-test-review', 'SKILL.md'), 'utf8')
     expect(apply).toContain('!`ai-review feedback $0 --format markdown`')
     expect(apply).toContain('!`ai-review status $0 --format brief`')
     const hook = await readFile(path.join(repo, '.claude', 'hooks', 'ai_review_pending_feedback.sh'), 'utf8')
-    for (const name of ['/publish-test-plan*', '/publish-data-setup*', '/publish-test-run*', '/apply-test-review*']) expect(hook).toContain(name)
+    for (const name of ['/scout-test-plan*', '/scout-data-setup*', '/scout-test-run*', '/scout-apply-test-review*']) expect(hook).toContain(name)
   })
 })

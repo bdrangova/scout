@@ -112,7 +112,7 @@ export function PrSummaryCard({ report, stats }: PrSummaryCardProps) {
         </>
       ) : (
         <p className="m-0 text-sm text-ink-muted">
-          {report ? 'This review has no summary yet.' : 'No review report yet.'} Run <code className="font-mono">/publish-pr-review</code> again to add the summary, change tags, PR description and tickets. {size}.
+          {report ? 'This review has no summary yet.' : 'No review report yet.'} Run <code className="font-mono">/scout-pr-review</code> again to add the summary, change tags, PR description and tickets. {size}.
         </p>
       )}
     </ContentCard>

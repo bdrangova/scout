@@ -11,7 +11,7 @@ export interface PendingPanelProps {
   sessionId: string
   /** Absolute path of the agent's working directory, for the Claude Desktop deep link in `new` mode. */
   repoPath: string
-  /** The slash command to run; `/apply-review` unless this is a test run. */
+  /** The slash command to run; `/scout-apply-review` unless this is a test run. */
   command?: ReviewCommand
   mode: SendTarget
   /** Submit already put the command on the clipboard. */
@@ -21,10 +21,10 @@ export interface PendingPanelProps {
 
 /**
  * Shown after a send. `current`: the reviewer's open Claude Code session picks the feedback up on
- * their next message (or `/apply-review` there). `new`: a Desktop deep link opens a fresh session
+ * their next message (or `/scout-apply-review` there). `new`: a Desktop deep link opens a fresh session
  * with the command prefilled. The command can always be copied.
  */
-export function PendingPanel({ sessionId, repoPath, command: slash = '/apply-review', mode, copied: autoCopied = false, className }: PendingPanelProps) {
+export function PendingPanel({ sessionId, repoPath, command: slash = '/scout-apply-review', mode, copied: autoCopied = false, className }: PendingPanelProps) {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const command = applyReviewCommand(sessionId, slash)

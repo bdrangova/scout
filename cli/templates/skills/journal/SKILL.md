@@ -37,7 +37,7 @@ ai-review journal add --kind decision --title "Each customer keeps its own saved
 **Technical detail:** the cache key is the tenant id, so …" --file src/cache.ts --line 42 \
   --alt "one shared copy for everyone::one customer's settings leak into another's" [--related src/tenant.ts] [--supersedes j3]
 ```
-- It finds this branch's review session, or creates it, so you can journal before `/publish-review`. Pass `--repo <path>` outside the repo and a session id as the first argument to target one.
+- It finds this branch's review session, or creates it, so you can journal before `/scout-development-review`. Pass `--repo <path>` outside the repo and a session id as the first argument to target one.
 - `--line` takes `42` or `42-48`; `--side old` anchors to the base version of the file. The line must exist.
 - Many at once: write a JSON array of `{ kind, title, body, file, line, side, alt, related, supersedes }` and run `ai-review journal add --from <file>`.
 - A `summary` for a file that already has one replaces it.

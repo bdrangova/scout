@@ -2,7 +2,7 @@
 
 PR review is the third session tab, at `/pr`. It reuses the Development session list, search, status filters, list/grid layouts, archive with Undo, archived list, Restore and confirmed Delete. PR sessions use the same `/s/:id/files` shell, with the tab labeled Review, full changed-file tree, commit scopes, Swipe/Scroll/Grid, file verdicts, draft-with-verdict behavior, Undo and manual line/range comments.
 
-`ai-review install --repo <path>` installs `publish-pr-review` for Claude (`.claude/skills`) and Codex (`.agents/skills`). Ask for a PR review in that session, optionally naming an ordered skill chain. The default skill reviews correctness and verifies actionable findings. The dashboard only consumes the report; it does not choose or run skills.
+`ai-review install --repo <path>` installs `scout-pr-review` for Claude (`.claude/skills`) and Codex (`.agents/skills`). Ask for a PR review in that session, optionally naming an ordered skill chain. The default skill reviews correctness and verifies actionable findings. The dashboard only consumes the report; it does not choose or run skills.
 
 ## Summary page
 

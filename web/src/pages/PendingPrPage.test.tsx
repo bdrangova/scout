@@ -32,7 +32,7 @@ function renderPage() {
 }
 
 const DETAIL = { ...pendingReview(), checkouts: ['/Users/me/Projects/app', '/Users/me/worktrees/app-2'] }
-const COMMAND = `/publish-pr-review ${assignedPr().url}`
+const COMMAND = `/scout-pr-review ${assignedPr().url}`
 const DETAIL_ROUTE = `GET /api/pr-pending/${PENDING_ID}`
 
 describe('PendingPrPage', () => {

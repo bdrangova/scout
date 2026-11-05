@@ -48,12 +48,12 @@ Stop it before `npm run dev`, which needs the same port.
 
 | Skill | Does |
 |---|---|
-| `/publish-review` | Opens the review for the current branch with evidence, Jira ticket, plan and PR description |
-| `/apply-review` | Applies the feedback you sent and answers every comment |
-| `/address-pr-comments` | Brings the GitHub PR comments in, fixes the code and records how each was handled |
-| `/publish-pr-review` | Publishes a PR review with reproduction evidence |
-| `/publish-test-plan`, `/publish-data-setup`, `/publish-test-run` | Publish the parts of a feature-test run |
-| `/apply-test-review` | Applies your verdicts and comments on a test run |
+| `/scout-development-review` | Opens the review for the current branch with evidence, Jira ticket, plan and PR description |
+| `/scout-apply-review` | Applies the feedback you sent and answers every comment |
+| `/scout-pr-comments` | Brings the GitHub PR comments in, fixes the code and records how each was handled |
+| `/scout-pr-review` | Publishes a PR review with reproduction evidence |
+| `/scout-test-plan`, `/scout-data-setup`, `/scout-test-run` | Publish the parts of a feature-test run |
+| `/scout-apply-test-review` | Applies your verdicts and comments on a test run |
 | `/journal` | Records why the code is the way it is |
 | `/reproduce` | Reproduces one reported problem against the running app |
 | `/run-app` | Makes sure this checkout's app is running |
@@ -66,9 +66,9 @@ is up, database snapshots) to `ai-review` commands, so the same step works the s
 
 ## How a review works
 
-1. The agent runs `/publish-review`; the session appears in the dashboard.
+1. The agent runs `/scout-development-review`; the session appears in the dashboard.
 2. You approve or reject files and comment, then **Submit**.
-3. A hook tells the agent's session feedback is waiting; `/apply-review` fixes and answers each comment.
+3. A hook tells the agent's session feedback is waiting; `/scout-apply-review` fixes and answers each comment.
 4. Changed files and answers show up live.
 
 The diff is against the branch's merge base with `origin/master` (or `main`) unless set otherwise.

@@ -1,6 +1,6 @@
 ---
-name: publish-review
-description: Open (or refresh) a Scout session for the current implementation and fill it with evidence (screenshots, recordings), the Jira snapshot, plan docs, extra artifacts and a PR description so the developer can review the live working tree in the dashboard. Use when the user says "publish for review", "send this to review", runs /publish-review, or when a ticket implementation is complete.
+name: scout-development-review
+description: Open (or refresh) a Scout session for the current implementation and fill it with evidence (screenshots, recordings), the Jira snapshot, plan docs, extra artifacts and a PR description so the developer can review the live working tree in the dashboard. Use when the user says "publish for review", "send this to review", runs /scout-development-review, or when a ticket implementation is complete.
 argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full] [--record video|screenshots|none] [--auto]"
 allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(npx playwright *) Read Write Edit Glob AskUserQuestion mcp__playwright__* Skill
 ---
@@ -28,11 +28,11 @@ soon as they land and updates while you keep working.
 - Load `/write-for-reviewers` (Skill tool) before writing captions, descriptions, journal entries and the PR description, and follow it.
 
 ## Refresh mode
-A first publish writes everything. When step 1 reuses a session (`"reused": true`) and neither `--full` nor the step 0 answer asks for a full rewrite, run `ai-review publish-log diff <id> --json` and refresh only what it reports; this includes the fixes `/apply-review` made. Everything else stays as it is.
+A first publish writes everything. When step 1 reuses a session (`"reused": true`) and neither `--full` nor the step 0 answer asks for a full rewrite, run `ai-review publish-log diff <id> --json` and refresh only what it reports; this includes the fixes `/scout-apply-review` made. Everything else stays as it is.
 - `first: true` (no log yet): publish everything.
 - `changed`, `added`, `dropped`: the repository files that moved since the last publish. Empty and nothing in the arguments asks for more: change nothing, and say so in step 8.
 - `evidenceToRecapture`, `evidenceToDelete`, `extrasToRegenerate`: from the coverage the last publish logged.
-- `refreshedEvidence`: evidence `/apply-review` already re-captured since then. Keep it; update only its caption and description if they no longer match.
+- `refreshedEvidence`: evidence `/scout-apply-review` already re-captured since then. Keep it; update only its caption and description if they no longer match.
 Each step below says what it does in refresh mode. Step 9 always rewrites the log.
 
 ## Steps
@@ -68,7 +68,7 @@ Each step below says what it does in refresh mode. Step 9 always rewrites the lo
    - Add entries (`decision`, `implementation`, `tradeoff`, `caveat`) for choices made in this conversation that are not logged yet, anchored to the line where each is visible, with rejected alternatives. Do not repeat an existing entry.
    - Write many entries at once with `ai-review journal add <id> --from <file.json>`. A new `summary` replaces the file's old one; replace any other entry with `--supersedes jN`.
    Refresh mode: only files in the changed set. Re-summarise a file whose live summary no longer matches its code (the new `summary` supersedes it), and add entries only for decisions since the last publish.
-7. **PR description.** Look for the repo's PR template with Glob/Read: `.github/pull_request_template.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `docs/pull_request_template.md`, `pull_request_template.md`, or a `.github/PULL_REQUEST_TEMPLATE/` folder (several templates: pick the default or most general one and say which in step 8). When one exists, write `<dir>/pr-description.md` following it as closely as possible: same headings, order, wording and checkbox style, each section filled from the change; a section you cannot fill keeps the template's own placeholder wording or a short "N/A"; add the Scout sections the template has no place for (Not captured, test notes) only as extra sections at the end. Without a template write: Summary, What changed (by area), How to test, Risks/follow-ups, Not captured. `/apply-review` opens the PR from this same file.
+7. **PR description.** Look for the repo's PR template with Glob/Read: `.github/pull_request_template.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `docs/pull_request_template.md`, `pull_request_template.md`, or a `.github/PULL_REQUEST_TEMPLATE/` folder (several templates: pick the default or most general one and say which in step 8). When one exists, write `<dir>/pr-description.md` following it as closely as possible: same headings, order, wording and checkbox style, each section filled from the change; a section you cannot fill keeps the template's own placeholder wording or a short "N/A"; add the Scout sections the template has no place for (Not captured, test notes) only as extra sections at the end. Without a template write: Summary, What changed (by area), How to test, Risks/follow-ups, Not captured. `/scout-apply-review` opens the PR from this same file.
    Refresh mode: edit `pr-description.md` in place with Edit and touch only the sections the changed set affects (what changed, how to test, risks, not captured). Keep the other sections word for word, including any edits the user made.
 8. Report the dashboard URL printed by step 1, the number of evidence files and anything you could not capture. In refresh mode, list what you refreshed, added and deleted, and say that the rest was kept. Remind the user that the dashboard updates live as files change; there is nothing to publish.
 9. **Publish log.** Write the coverage you noted to a JSON file, `{ "evidence": { "trial-bar-admin.png": ["<repo path>"] }, "extras": { "components.mmd": ["<repo path>"] } }` (only the entries you added or changed in refresh mode), and run `ai-review publish-log write <id> --coverage <file>`. It stores the current file hashes and head next to that coverage.
