@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { readConfig } from '../config.ts'
 import { checkoutEnv, scratchDir, setRuntimeCommand } from './env.ts'
 import { addPack, removePack } from './pack.ts'
+import { checkServiceCommand } from './service.ts'
 
 const GIT_ENV = { ...process.env, GIT_AUTHOR_NAME: 'T', GIT_AUTHOR_EMAIL: 't@e.x', GIT_COMMITTER_NAME: 'T', GIT_COMMITTER_EMAIL: 't@e.x' }
 
@@ -112,5 +113,13 @@ describe('scout env', () => {
     await expect(addPack({ home, dir, interactive: true })).rejects.toThrow(/repos/)
     await writeFile(path.join(dir, 'scout-pack.json'), JSON.stringify({ name: 'x', repos: ['r'], files: '../outside' }))
     await expect(addPack({ home, dir, interactive: true })).rejects.toThrow(/inside the pack/)
+  })
+
+  it('lets an agent run only read-only service commands', () => {
+    for (const command of [undefined, 'status', 'open', 'logs']) expect(() => checkServiceCommand(command, false)).not.toThrow()
+    for (const command of ['install', 'rebuild', 'stop', 'restart', 'start', 'uninstall']) {
+      expect(() => checkServiceCommand(command, false)).toThrow(/terminal, not by an agent/)
+      expect(() => checkServiceCommand(command, true)).not.toThrow()
+    }
   })
 })

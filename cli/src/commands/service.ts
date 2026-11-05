@@ -16,6 +16,18 @@ export async function serviceScript(): Promise<string> {
   throw new Error(`service/scout-service not found next to ${here}`)
 }
 
+/** Read-only commands an agent may run; the rest change what runs on the machine. */
+const READ_ONLY = new Set(['status', 'open', 'logs', 'help', '-h', '--help'])
+
+/**
+ * Skills are allowed `Bash(scout *)`, so without this an agent could install, rebuild or stop the service unprompted.
+ * Changing commands therefore need a terminal; the menu bar app runs the script directly and is not affected.
+ */
+export function checkServiceCommand(command: string | undefined, interactive: boolean): void {
+  if (command === undefined || READ_ONLY.has(command) || interactive) return
+  throw new Error(`scout service ${command} must be run by you in a terminal, not by an agent: it changes what runs on this machine`)
+}
+
 export function registerService(program: Command): void {
   program
     .command('service')
@@ -23,6 +35,7 @@ export function registerService(program: Command): void {
     .argument('[command]', 'service command (none: show the commands)')
     .allowExcessArguments(true)
     .action(async (command: string | undefined) => {
+      checkServiceCommand(command, process.stdin.isTTY === true && process.stdout.isTTY === true)
       const child = spawn('/bin/bash', [await serviceScript(), ...(command === undefined ? [] : [command])], { stdio: 'inherit' })
       process.exitCode = await new Promise<number>((resolve) => child.on('exit', (code) => resolve(code ?? 1)))
     })
