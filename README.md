@@ -19,41 +19,31 @@ Press `?` for the skills, `Ctrl+?` for keyboard shortcuts.
 
 ## A tour
 
-The screenshots use the made-up sessions from `npm run fixture` (see `fixtures/README.md`).
-
-**Development sessions.** One card per review of an agent's work: the ticket, the branch and its size, a linked PR,
-and where the review stands (awaiting review, in progress, review sent, approved).
+**Development sessions** — every review of an agent's work, with its ticket, branch, PR and status.
 
 ![Development sessions list](docs/screenshots/development.png)
 
-**Reviewing a file.** The file tree on the left shows each file's verdict and comment count. The diff is read live
-from the working tree; approve, reject or comment per file (`A`, `X`, `C`), or on single lines. The timeline at the
-top switches between the full diff, uncommitted changes and single commits.
+**File review** — the live diff, file by file. Approve, reject or comment on a file or a line.
 
 ![Reviewing one file of the change](docs/screenshots/file-review.png)
 
-**Evidence.** Screenshots and recordings the agent captured while checking its work, each with a caption, open
-next to the change so you can comment on what you see rather than take the result on trust.
+**Evidence** — screenshots and recordings the agent captured, next to the change.
 
 ![Evidence the agent captured](docs/screenshots/evidence.png)
 
-**Sending the review.** Submit gathers every comment, the overall note and the decision (approve, request changes,
-reject) with the PR description, and hands it back to the agent's session, which applies it and answers each comment.
+**Submit** — your comments and decision go back to the agent's session.
 
 ![Submitting the review](docs/screenshots/submit.png)
 
-**PR reviews.** For someone else's pull request the agent proposes findings, each with a severity, the lines it is
-about and a draft PR comment. You edit, approve or reject each one; nothing is posted to GitHub from Scout.
+**PR reviews** — the agent's findings on a pull request, each with a draft comment you edit, approve or reject.
 
 ![A finding in a PR review](docs/screenshots/pr-review.png)
 
-**Test runs.** A recorded feature test: totals by result, a summary, the environment it ran in, and links to the
-plan, steps and bugs. Each scenario has its own page with its video and screenshots to approve or comment on.
+**Test runs** — a recorded feature test: results, summary, environment and its documents.
 
 ![Overview of a test run](docs/screenshots/test-run.png)
 
-**Worktrees.** Every worktree in your chosen folders with its branch, ticket, commits ahead, uncommitted changes and
-the Scout sessions linked to it. A worktree with work in it or sessions linked to it cannot be deleted from here.
+**Worktrees** — your worktrees with their branch, changes and linked sessions.
 
 ![Worktrees page](docs/screenshots/worktrees.png)
 
