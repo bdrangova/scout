@@ -59,8 +59,15 @@ Stop it before `npm run dev`, which needs the same port.
 | `/run-app` | Makes sure this checkout's app is running |
 | `/snapshot-db` | Saves and restores this checkout's local database around a data setup |
 | `/jira-snapshot` | Saves Jira tickets into a session so they sit next to the change |
+| `/capture-evidence` | Captures screenshots or video of a change and adds them to the session |
+| `/pr-description` | Writes or updates the PR description, following the repo's template |
+| `/open-pr` | Commits the reviewed files, pushes and opens the PR |
+| `/default-code-review` | Scout's own PR reviewer, used when you name no other |
 
-The skills share a writing guide (`write-for-reviewers`, loaded by them, not run by you) and leave the
+The `scout-*` skills orchestrate; the others each do one job and can be run on their own. They share guides
+they load themselves, not run by you: `write-for-reviewers` (writing), `review-choices` (the opening question
+and auto mode), `record-resolutions` (answering every comment) and `test-run-index` (how a test run's index
+works). They leave the
 bookkeeping (adding evidence, tracking what changed since the last publish, merging run indexes, checking the app
 is up, database snapshots) to `ai-review` commands, so the same step works the same way every time.
 

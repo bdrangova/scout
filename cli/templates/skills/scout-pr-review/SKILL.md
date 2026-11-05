@@ -33,7 +33,7 @@ Save the template JSON outside the clean checkout, next to the evidence files. P
 
 On a follow-up pass, read `ai-review pr-report show <session-id>` for the previous report, human-edited wording, file feedback and private reviewer notes. Keep stable finding IDs and address those notes in the refreshed report; do not overwrite human state.
 
-If the user names review skills, use those in the order requested, keeping each skill's name/version in `reviewers` and finding provenance in `sources`. The same schema is the adapter boundary for every reviewer; no specific implementation or vendor is required. Merge findings only when they describe the same failure, preserving all sources and a stable finding ID on refresh. Later reviewers may consume earlier results when requested. Otherwise use the default review below with `default-code-review` version `1`.
+If the user names review skills, use those in the order requested, keeping each skill's name/version in `reviewers` and finding provenance in `sources`. The same schema is the adapter boundary for every reviewer; no specific implementation or vendor is required. Merge findings only when they describe the same failure, preserving all sources and a stable finding ID on refresh. Later reviewers may consume earlier results when requested. Otherwise run `/default-code-review` (Skill tool) on `<PR-checkout>` against the PR base.
 
 ## Summary, tickets and change tags
 
@@ -46,14 +46,6 @@ Every report carries an `overview`: it is the top of Scout's Summary page, where
    - What it is (usually one): `feature` adds something people can use; `fix` corrects wrong behaviour; `refactor` restructures without changing behaviour; `chore` is upkeep (renames, config, cleanup); `docs` is documentation only; `tests` is tests only or mainly.
    - What it touches (any that apply): `frontend` (browser code, UI), `backend` (server code, APIs, jobs), `database` (schema, migrations, stored data), `infra` (deploy, CI, environments, containers), `build` (build system, bundler, compiler, lint/tooling config), `dependencies` (packages added, removed or upgraded), `security` (sign-in, permissions, secrets, input that reaches queries or HTML, data exposure).
    Tag `frontend` or `backend` only when the changed files make it explicit. Never invent a tag outside the list.
-
-## Default code review
-
-Read the PR intent and changed code with surrounding callers and tests. Find actionable regressions introduced by the change: incorrect behavior, lost data, authorization mistakes, concurrency failures, boundary conditions and broken integration contracts. Ground each claim in a concrete path and trigger. Avoid style-only findings and speculative risks. Assign critical/high/medium/low according to demonstrated impact. A valid report can have zero findings.
-
-For each finding, write a concise proposed PR comment explaining the trigger, consequence and correction.
-
-Load `/write-for-reviewers` (Skill tool) before writing titles and comments: a title names the effect people see ("New equipment is saved without a type"), not the mechanism; a comment says what goes wrong, when, and what to change. Name code only where the fix needs it. Use the schema's existing old/new line anchor and keep the range tight within the diff. The human can edit this wording and accept or reject it independently of the file.
 
 ## Verify and publish
 

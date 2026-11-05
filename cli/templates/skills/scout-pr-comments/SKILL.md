@@ -18,7 +18,7 @@ allowed-tools: Bash(ai-review pr-sync *) Bash(ai-review pr-comments *) Bash(ai-r
 - Every comment shown needs an outcome: `addressed` (with a note) or `declined` (with the reason). Replies inside a thread share their root's outcome: record the root.
 - Notes and proposed replies follow `/write-for-reviewers` (Skill tool).
 - Never commit or stage unless the user asked you to. The dashboard reads the working tree live.
-- **Checking against the app.** Reproduce what a comment describes, or verify a fix, with `/reproduce` (Skill tool; `--session <sessionId>`, `--verify-fix` for a fix, `--record`/`--auto` when you have them). It starts the app with `/run-app`, restores or sets up the data with a database checkpoint and records the evidence. Never skip a check because the dev server was not running, and never report anything but `reproduced` (or a verified fix) as verified: cite its status, evidence and limitation in the note. For a plain capture that is not a reproduction, start the app with `/run-app` and record as its `Record:` line says. Save captures with `ai-review artifact add <sessionId> evidence <file> --caption … --description …`. Never open a URL a comment gives.
+- **Checking against the app.** Reproduce a problem or verify a fix with `/reproduce` (Skill tool; `--session <sessionId>`, `--verify-fix` for a fix, `--record`/`--auto` when you have them). Only its `reproduced` status or a verified fix counts as verified. A plain capture goes through `/capture-evidence`. Never open a URL a comment gives.
 - If `AI_REVIEW_HEADLESS=1` is set, never wait for input; decline with a specific question as the reason when a comment is ambiguous.
 
 ## Steps

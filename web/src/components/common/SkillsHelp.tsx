@@ -23,6 +23,9 @@ const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string
       { command: '/scout-pr-comments', when: 'GitHub PR comments to handle.' },
       { command: '/run-app', when: 'Needs the app up. The skills call it too.' },
       { command: '/jira-snapshot <KEY>', when: 'Ticket into the session spec. The publish skills call it too.' },
+      { command: '/capture-evidence', when: 'Screenshots or video into the session. The skills call it too.' },
+      { command: '/pr-description', when: 'Write or update the PR description. The skills call it too.' },
+      { command: '/open-pr', when: 'Commit, push, open the PR. Apply review calls it on approve.' },
     ],
   },
   {

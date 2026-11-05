@@ -2,7 +2,7 @@
 name: scout-test-run
 description: Publish the results of a feature-test run to the Scout dashboard (/t/<id>) by writing the run's part of test-run.json (per-scenario status, layers, steps, video and screenshot evidence, log excerpts, gaps, bugs, run-level overview panels). Rerunning refreshes only the scenarios whose sources changed and reports which verdicts are now stale. Use when the user runs /scout-test-run, or after /feature-test finished, to review the run in the dashboard.
 argument-hint: "<run-folder> [--auto]"
-allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Read Glob Grep Write AskUserQuestion
+allowed-tools: Bash(ai-review *) Bash(git rev-parse *) Bash(ls *) Read Glob Grep Write AskUserQuestion Skill
 ---
 # Publish the test run: $0
 
@@ -10,16 +10,10 @@ Arguments: $ARGUMENTS
 
 Run folder state: !`ls -1 "$0"`
 
-## How the dashboard works
-A feature-test run is a folder (`<feature>/<area>/test-runs/<run>/` with `steps.md`, `logs/`, `scenarios/s<N>-<slug>/{videos,screenshots,data}`, `data-setup/`, optional `db-snapshots/`), next to `../../test-plan.md` and `../../bugs/<slug>/`. The dashboard shows it from one index file, `<run>/test-run.json`, that three skills fill in together: `/scout-test-plan`, `/scout-data-setup` and `/scout-test-run` (this one). Each skill owns some keys and leaves all other keys exactly as they are. The dashboard reads the run folder live (a reviewer's verdict on a scenario is pinned to its evidence list and step text, so changed evidence shows as "updated since your verdict"); there is nothing to upload and nothing to commit.
-
-Paths inside the index are refs, `alias:relative/path` with the alias a key of `roots`, no leading `/`, no `..` segment. Standard roots: `{ "run": ".", "plan": "../..", "bugs": "../../bugs" }` (relative to the run folder). Adjust them when the plan or the bugs live elsewhere (ask unless `--auto`). Examples: `run:scenarios/s1-truncation/videos/e2e-test-1-truncation-1.mp4`, `bugs:change-summary-contact-risk-raw-json/change-summary-contact-risk-raw-json.md`.
-
 ## Rules
-- Resolve `$0` to an absolute run folder first.
-- Write the index only with `ai-review run-index merge "<run>" --owner run --from <patch.json>` (the patch in your scratch folder, never in the run folder). It creates the index when there is none, keeps every key this skill does not own (a scenario's `title` and `order`, the plan's panels, `dataSetup`), refuses keys it does not own, sets `updatedAt` and `publishedBy.run`, validates, and writes nothing when there are errors. Never edit `test-run.json`, `steps.md`, logs or bug files by hand, never commit or stage anything, never touch application code.
-- With `--auto` in the arguments or `AI_REVIEW_HEADLESS=1` set, never wait for user input: skip step 0 and take your recommendations.
-- Report only what the run's files say. If a scenario's result is not in any file, its status stays what it was (or `planned` when new); never guess a verdict.
+- Load `/test-run-index` and `/review-choices` (Skill tool) first: they say how the run index, its paths and the merge work, and how step 0 and auto mode go. This skill writes as owner `run`.
+- Never edit `steps.md`, logs or bug files by hand.
+- If a scenario's result is not in any file, its status stays what it was (or `planned` when new); never guess a verdict.
 
 ## The patch
 `{ "scenarios": [{ "id", "status", "layers", "steps", "evidence", "logs", "links", "notes" }], "gaps": [], "bugs": [], "logs": [], "roots": { "bugs": "../../bugs" }, "pages": ["gaps", "logs"], "overview": [<Results>, <Layer results>, <Run notes and deviations>, <Scenarios>], "removePanels": [], "hashes": { … } }`
@@ -43,10 +37,8 @@ Paths inside the index are refs, `alias:relative/path` with the alias a key of `
   - `Scenarios`: `{ "type": "scenario-list", "title": "Scenarios", "span": 2 }`.
 
 ## Steps
-0. **Choices.** Skip with `--auto` or `AI_REVIEW_HEADLESS=1`. Otherwise read the run first (steps 2-3), then ask once with AskUserQuestion: "Use these recommendations?" with options "Accept all (Recommended)" and "Let me choose", both with a `preview` that lists: scenarios found, folders mapped and ignored, bugs included, gaps, roots, and whether this is a first publish or a refresh (and which scenarios changed). On "Let me choose" ask only what is unclear: which bugs belong to this run, where the plan or bugs live, how to treat a superseded folder.
-1. **Session.** Run
-   `ai-review init --kind test-run --run "<run>" --repo "$(git rev-parse --show-toplevel)" --agent-session "${CLAUDE_SESSION_ID}" --format json`
-   and note `id` and `url` (the dashboard is `/t/<id>`). It reuses the session of this run folder. If it fails because the run folder is outside the repository, stop and tell the user.
+0. **Choices** (`/review-choices`). Read the run first (steps 2-3). The preview lists scenarios found, folders mapped and ignored, bugs included, gaps, roots, and whether this is a first publish or a refresh (and which scenarios changed). On "Let me choose" ask only what is unclear: which bugs belong to this run, where the plan or bugs live, how to treat a superseded folder.
+1. **Session.** Open it as `/test-run-index` says and note `id` and `url`.
 2. **Scan.** `ai-review run-index scan "<run>" --owner run --json`. Its `diff` is the changed set: `first: true` means everything; otherwise the `changed`, `added` and `dropped` sources.
 3. **Read and derive** as described in "Reading the run". Refresh rule: when a shared text file (`steps.md`, `logs/*.md`, the plan) changed, re-derive `status`, `layers`, `steps`, `notes` and gaps for all scenarios, but put a scenario in the patch only when its derived values differ from the index. Take new evidence and log excerpts only for scenarios whose own folder files (or `logs/*.log`) changed. If nothing changed, write nothing and say so in step 5.
 4. **Write.** Build the patch (above) with the scan's `hashes`, then `ai-review run-index merge "<run>" --owner run --from <patch.json>`. Fix errors and rerun; read the warnings and fix missing files that are your mistake (wrong path, wrong alias).

@@ -236,10 +236,13 @@ describe('install of the test-review skills', () => {
     for (const name of ['scout-test-plan', 'scout-data-setup', 'scout-test-run']) {
       const text = await readFile(path.join(repo, '.claude', 'skills', name, 'SKILL.md'), 'utf8')
       expect(text).toContain('argument-hint: "<run-folder> [--auto]"')
-      expect(text).toContain('ai-review init --kind test-run --run')
+      expect(text).toContain('/test-run-index')
       expect(text).toContain('ai-review run-index merge "<run>"')
       expect(text).toContain('ai-review run-index scan')
     }
+    const index = await readFile(path.join(repo, '.claude', 'skills', 'test-run-index', 'SKILL.md'), 'utf8')
+    expect(index).toContain('ai-review init --kind test-run --run')
+    expect(index).toContain('ai-review run-index merge "<run>" --owner <owner>')
     const apply = await readFile(path.join(repo, '.claude', 'skills', 'scout-apply-test-review', 'SKILL.md'), 'utf8')
     expect(apply).toContain('!`ai-review feedback $0 --format markdown`')
     expect(apply).toContain('!`ai-review status $0 --format brief`')

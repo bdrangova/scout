@@ -1,7 +1,7 @@
 ---
 name: journal
 description: Write Scout's journal, the notes a reviewer reads next to the diff to learn why the code is the way it is. Use while you work whenever you make a non-obvious implementation choice, pick between approaches, work around a constraint, or accept a tradeoff, and when the user says "journal this" or runs /journal. With no arguments, /journal backfills the journal for the current branch.
-argument-hint: "[what to journal, e.g. 'why the cache is keyed by tenant'] [--session <id>]"
+argument-hint: "[what to journal, e.g. 'why the cache is keyed by tenant'] [--session <id>] [--files <path,…>] [--summaries-only]"
 allowed-tools: Bash(ai-review *) Bash(git diff *) Bash(git status *) Read Glob
 ---
 # Journal
@@ -45,8 +45,10 @@ ai-review journal add --kind decision --title "Each customer keeps its own saved
 - `ai-review journal list [--file <path>] [--json]` shows what is there; check it before adding, so you do not repeat an entry.
 
 ## `/journal` with no arguments: backfill
-1. `ai-review journal list --json` for what exists.
-2. `git status --short` and `git diff --stat $(git merge-base <base> HEAD)` (base from `ai-review status`) for the changed files.
-3. Add a `summary` (title: the file's job in this change; body: 2 to 4 sentences) for each changed file without a live one. Skip lockfiles, generated and collapsed files.
-4. Add entries for decisions from this conversation that are not logged yet, anchored where visible. Read the code (Read, Glob) to find the right line.
-5. Report the ids added and the session id.
+`/scout-development-review` runs this too, with `--session <id>`, and with `--files <path,…>` on a refresh (only the files changed since the last publish) or `--summaries-only` when the user chose that.
+1. `ai-review journal list [<id>] --json` for what exists.
+2. The changed files: the `--files` list when given, otherwise `git status --short` and `git diff --stat $(git merge-base <base> HEAD)` (base from `ai-review status`).
+3. Add a `summary` (title: the file's job in this change; body: 2 to 4 sentences on why it changed and what to look at) for each changed file without a live one, and re-summarise a file whose live summary no longer matches its code (the new `summary` replaces it). Skip lockfiles, generated and collapsed files.
+4. Unless `--summaries-only`: add entries (`decision`, `implementation`, `tradeoff`, `caveat`) for choices from this conversation that are not logged yet, anchored where visible, with rejected alternatives. Do not repeat an existing entry. Read the code (Read, Glob) to find the right line.
+5. Write many at once with `ai-review journal add [<id>] --from <file.json>`.
+6. Report the ids added and the session id.
