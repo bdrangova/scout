@@ -3,7 +3,7 @@
 // with uncommitted changes, one with a code review, a PR review and a test run linked to it (so deleting it is refused).
 import { cp, mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { CONFIG_FILE, SCHEMA_VERSION, type GithubSettings, type TestRunManifest } from '@scout/shared'
+import { CONFIG_FILE, runFolderOf, SCHEMA_VERSION, type GithubSettings, type TestRunManifest } from '@scout/shared'
 import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { publishReport } from '@scout/shared/pr-review/report'
 import { makePrReport } from '@scout/shared/testing/pr-review'
@@ -56,9 +56,6 @@ export async function writeWorktrees(main: string, origin: string): Promise<Work
 
   const polish = await addWorktree(main, 'qi-15531-trial-bar-polish', 'qi-15531-trial-bar-polish')
   await commit(polish, { 'src/components/TrialBar.tsx': 'export function TrialBar(): string {\n  return "Trial ends soon"\n}\n' }, 'Polish the trial bar')
-  await cp(path.join(fixturesDir, 'test-runs', 'demo', 'plans'), path.join(polish, 'plans'), { recursive: true })
-  await git(polish, ['add', '-A'])
-  await git(polish, ['commit', '-q', '-m', 'Add the trial bar test plan'])
 
   const review = makeManifest({
     id: WORKTREE_CODE_REVIEW_SESSION_ID,
@@ -80,9 +77,11 @@ export async function writeWorktrees(main: string, origin: string): Promise<Work
     updatedAt: '2026-10-26T09:30:00.000Z',
     agent: { type: 'claude-code', sessionId: null, cliVersion: null, entrypoint: null },
     tickets: [{ key: 'QI-15531', url: null }],
-    run: { path: path.join(polish, 'plans', 'f', 'a', 'test-runs', 'run-1'), repo: polish, feature: 'f', area: 'a' },
+    run: { repo: polish, feature: 'f', area: 'a' },
   }
-  await writeSessionFolder(run, {})
+  // The run folder lives in the session folder: the demo run with its plan and bugs copied inside.
+  const runDir = await writeSessionFolder(run, {})
+  await cp(path.join(fixturesDir, 'test-runs', 'demo', 'run'), runFolderOf(runDir), { recursive: true })
 
   const prReview = { ...makeManifest({
     id: WORKTREE_PR_REVIEW_SESSION_ID,

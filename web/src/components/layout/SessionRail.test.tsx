@@ -150,7 +150,7 @@ describe('SessionRail identity of a test run', () => {
     expect(side.getByRole('group', { name: 'Tickets' })).toBeInTheDocument()
     expect(side.getByRole('heading', { level: 2, name: 'Demo feature test run' })).toBeInTheDocument()
     expect(side.getByText('f · a')).toBeInTheDocument()
-    expect(side.getByLabelText('Run folder plans/f/a/test-runs/run-1 in qbdvision')).toHaveTextContent('plans/f/a/test-runs/run-1')
+    expect(side.getByLabelText('Checkout qbdvision')).toHaveTextContent('qbdvision')
     expect(side.queryByText('into')).not.toBeInTheDocument()
   })
 })

@@ -59,7 +59,7 @@ describe('SessionListPage kinds', () => {
     renderAt('/t')
     const card = screen.getByRole('link', { name: 'Run A' })
     expect(card).toHaveAttribute('data-layout', 'grid')
-    expect(within(card).getByTitle(RUN_A.run.path)).toBeInTheDocument()
+    expect(within(card).getByTitle(RUN_A.run.repo)).toBeInTheDocument()
     expect(within(card).queryByLabelText('Feature and area')).not.toBeInTheDocument()
     expect(within(card).queryByLabelText('Base and current branch')).not.toBeInTheDocument()
     for (const [status, label] of Object.entries(SCENARIO_STATUS_LABEL)) {

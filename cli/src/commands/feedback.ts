@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { isTestRunSent, renderTestRunSentMarkdown, SentSnapshotSchema, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type TestRunIndex, type TestRunSentSnapshot } from '@scout/shared'
+import { isTestRunSent, renderTestRunSentMarkdown, runFolderOf, SentSnapshotSchema, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type TestRunIndex, type TestRunSentSnapshot } from '@scout/shared'
 import { dashboardOrigin, readConfig } from '../config.ts'
 import { listSentStems, SENT_DIR } from '../sessions.ts'
 import { manifestExists, readManifest, resolveHome, sessionDir } from '../store.ts'
@@ -39,8 +39,9 @@ async function readIndexNames(runPath: string): Promise<Pick<TestRunIndex, 'bugs
 
 /** Renders a test-run snapshot the way the dashboard does when it wrote no `.md` next to it. */
 async function renderTestRunFeedback(options: { home: string; id: string; snapshot: TestRunSentSnapshot }): Promise<string> {
-  const manifest = await readManifest(sessionDir(options.home, options.id))
-  const runPath = options.snapshot.run.path
+  const dir = sessionDir(options.home, options.id)
+  const manifest = await readManifest(dir)
+  const runPath = runFolderOf(dir)
   return renderTestRunSentMarkdown(options.snapshot, {
     title: manifest.title,
     dashboardUrl: dashboardOrigin(await readConfig(options.home)),

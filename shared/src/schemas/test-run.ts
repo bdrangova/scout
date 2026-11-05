@@ -194,15 +194,10 @@ const PublishedBySchema = z.object({
   hashes: z.record(z.string(), z.string()).optional(),
 })
 
-/**
- * Root values are relative to the run folder: no leading `/`, and `..` only as a leading chain
- * (`../..`, `../../bugs`): the plan and bugs live above the run folder.
- */
+/** Root values are relative to the run folder and stay inside it: no leading `/`, no drive letter, no `..` segment, no NUL. */
 function rootIsValid(value: string): boolean {
   if (value === '' || value.includes('\0') || value.startsWith('/') || value.startsWith('\\') || /^[A-Za-z]:/.test(value)) return false
-  const segments = segmentsOf(value)
-  const firstReal = segments.findIndex((segment) => segment !== '..' && segment !== '.')
-  return firstReal === -1 || !segments.slice(firstReal).includes('..')
+  return !segmentsOf(value).includes('..')
 }
 
 /**
@@ -232,7 +227,7 @@ export const TestRunIndexSchema = z
     const { roots, scenarios } = ctx.value
     for (const [alias, value] of Object.entries(roots)) {
       if (!rootIsValid(value)) {
-        ctx.issues.push({ code: 'custom', message: `root "${alias}" must be a relative path (no leading "/", ".." only as a leading chain)`, path: ['roots', alias], input: value })
+        ctx.issues.push({ code: 'custom', message: `root "${alias}" must be a relative path inside the run folder (no leading "/", no ".." segment)`, path: ['roots', alias], input: value })
       }
     }
     if (roots['run'] !== '.') {

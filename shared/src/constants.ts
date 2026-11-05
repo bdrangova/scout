@@ -58,6 +58,8 @@ export const CONFIG_FILE = 'config.json'
 export const SESSION_EVIDENCE_DIR = 'evidence'
 export const SESSION_EXTRAS_DIR = 'extras'
 export const SESSION_SPEC_DIR = 'spec'
+/** A test-run session's run folder: `<session folder>/run`, wherever the session currently lives (sessions/ or archive/). */
+export const SESSION_RUN_DIR = 'run'
 export const SESSION_PR_DESCRIPTION_FILE = 'pr-description.md'
 export const ARTIFACT_INDEX_FILE = 'index.json'
 /** GitHub PR comments of a session (posix, relative to the session folder): written by `ai-review pr-sync` / `pr-resolve`. */

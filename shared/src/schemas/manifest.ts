@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SCHEMA_VERSION, SESSION_ID_RE } from '../constants.ts'
+import { SCHEMA_VERSION, SESSION_ID_RE, SESSION_RUN_DIR } from '../constants.ts'
 
 const isoDate = z.iso.datetime({ offset: true })
 
@@ -45,17 +45,27 @@ export const CodeReviewManifestSchema = z.object({
 })
 export type CodeReviewManifest = z.infer<typeof CodeReviewManifestSchema>
 
-/** `manifest.json` of a test run: the content is read live from `run.path` (`<run>/test-run.json` and the files it names). */
+/**
+ * `manifest.json` of a test run. The run folder is not stored: it is always `<session folder>/run` (see `runFolderOf`), so it
+ * moves with the session when it is archived. The content is read live from there (`run/test-run.json` and the files it names).
+ */
 export const TestRunManifestSchema = z.object({
   ...baseFields,
   kind: z.literal('test-run'),
   run: z.object({
-    /** Absolute path of the run folder (posix separators), inside `repo`. */
-    path: z.string().min(1),
     /** Absolute path of the checkout (repository top level) the run belongs to; where the agent runs. */
     repo: z.string().min(1),
     feature: z.string().nullable(),
     area: z.string().nullable(),
+    /** Where the copies in the run folder came from, recorded by `ai-review run-file add` so `refresh` can copy them again. */
+    sources: z
+      .object({
+        /** Absolute path of the test plan file copied to `run/plan/test-plan.md`. */
+        plan: z.string().min(1).optional(),
+        /** Bug slug to the absolute path of the bug folder copied to `run/bugs/<slug>`. */
+        bugs: z.record(z.string(), z.string().min(1)).optional(),
+      })
+      .optional(),
   }),
 })
 export type TestRunManifest = z.infer<typeof TestRunManifestSchema>
@@ -71,6 +81,11 @@ export function isTestRun(manifest: Manifest): manifest is TestRunManifest {
 
 export function manifestKind(manifest: Manifest): ManifestKind {
   return manifest.kind ?? 'code-review'
+}
+
+/** The run folder of a test-run session: `<session folder>/run`, for the folder the session currently lives in. */
+export function runFolderOf(sessionFolder: string): string {
+  return `${sessionFolder.replace(/[\\/]+$/, '')}/${SESSION_RUN_DIR}`
 }
 
 /** The directory the agent works in: the repo of a code review, the checkout of a test run. */

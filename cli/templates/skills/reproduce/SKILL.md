@@ -14,6 +14,7 @@ Arguments: $ARGUMENTS
 - Local app and local data only. Never run a reproduction that writes against shared, staging or production data without the user's yes in this run (`--auto`/`AI_REVIEW_HEADLESS=1`: never).
 - Pin everything to the checkout's head (`git rev-parse HEAD`): the record and every evidence item carry it.
 - Name the checkout. Several worktrees of one repository can run at once: the record says which one ran it (`checkout` and `runtime.label` from `ai-review env`), so evidence from two worktrees is never mixed up.
+- Load `/verdict-highlights` (Skill tool) before capturing and follow it; for video also `/browser-recording`.
 - Keep the setup and the reproduction apart: the setup is what any run needs first (users, companies, records in the right state); the reproduction steps are what shows the problem. Only the setup is checkpointed.
 
 ## Steps

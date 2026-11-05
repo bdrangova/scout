@@ -19,8 +19,8 @@
   },
   "roots": {
     "run": ".",
-    "plan": "../..",
-    "bugs": "../../bugs"
+    "plan": "plan",
+    "bugs": "bugs"
   },
   "pages": [
     "gaps",

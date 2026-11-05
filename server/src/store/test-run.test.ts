@@ -1,5 +1,4 @@
 import fs from 'node:fs/promises'
-import os from 'node:os'
 import path from 'node:path'
 import { TestRunIndexSchema } from '@scout/shared'
 import type { Scenario, TestRunIndex, TestRunManifest } from '@scout/shared'
@@ -10,11 +9,13 @@ import { deriveRunDetail, normalizeRef, parseRunIndex, resolveRoots, scenarioFin
 
 let store: FixtureStore
 let manifest: TestRunManifest
+let runPath: string
 let index: TestRunIndex
 beforeAll(async () => {
   store = await createFixtureStore({ testRun: true })
   manifest = store.testRun?.manifest ?? (() => { throw new Error('no test run') })()
-  const parsed = parseRunIndex(await fs.readFile(path.join(manifest.run.path, 'test-run.json'), 'utf8'))
+  runPath = store.testRun?.runPath ?? ''
+  const parsed = parseRunIndex(await fs.readFile(path.join(runPath, 'test-run.json'), 'utf8'))
   if (!parsed.ok) throw new Error(parsed.error)
   index = parsed.index
 })
@@ -32,7 +33,7 @@ describe('normalizeRef', () => {
 
 describe('parseRunIndex', () => {
   it('warns about unsupported panels and dangling links without failing', async () => {
-    const broken = JSON.parse(await fs.readFile(path.join(manifest.run.path, 'test-run.json'), 'utf8')) as { scenarios: { links: { bugs: string[] } }[] }
+    const broken = JSON.parse(await fs.readFile(path.join(runPath, 'test-run.json'), 'utf8')) as { scenarios: { links: { bugs: string[] } }[] }
     const [first] = broken.scenarios
     if (first) first.links.bugs = ['ghost']
     const parsed = parseRunIndex(JSON.stringify(broken))
@@ -48,28 +49,31 @@ describe('parseRunIndex', () => {
 
 describe('resolveRoots', () => {
   it('resolves every root against the run folder, realpath-ed', async () => {
-    const roots = await resolveRoots(manifest, index)
-    const plan = path.join(store.testRun?.repo ?? '', 'plans', 'f', 'a')
-    expect(roots).toEqual({ run: manifest.run.path, plan, bugs: path.join(plan, 'bugs') })
+    const roots = await resolveRoots(manifest, runPath, index)
+    expect(roots).toEqual({ run: runPath, plan: path.join(runPath, 'plan'), bugs: path.join(runPath, 'bugs') })
   })
 
-  it('refuses a root outside the checkout and a run folder outside it', async () => {
-    await expect(resolveRoots(manifest, { roots: { run: '.', up: '../../../../../..' } })).rejects.toMatchObject({ status: 422 })
-    const outside = await fs.realpath(os.tmpdir())
-    const moved: TestRunManifest = { ...manifest, run: { ...manifest.run, repo: outside === manifest.run.repo ? '/' : path.join(manifest.run.path, 'scenarios') } }
-    await expect(resolveRoots(moved, { roots: { run: '.' } })).rejects.toMatchObject({ status: 422, message: expect.stringMatching(/not inside/) })
-    await expect(resolveRoots({ ...manifest, run: { ...manifest.run, path: path.join(manifest.run.repo, 'nope') } }, { roots: { run: '.' } })).rejects.toMatchObject({ status: 422 })
+  it('refuses a root that leaves the run folder, lexically or through a symlink', async () => {
+    await expect(resolveRoots(manifest, runPath, { roots: { run: '.', up: '..' } })).rejects.toMatchObject({ status: 422, message: expect.stringMatching(/leaves the run folder/) })
+    await expect(resolveRoots(manifest, runPath, { roots: { run: '.', abs: store.repo.repo } })).rejects.toMatchObject({ status: 422 })
+    await fs.symlink(store.repo.repo, path.join(runPath, 'sneaky'))
+    await expect(resolveRoots(manifest, runPath, { roots: { run: '.', sneaky: 'sneaky' } })).rejects.toMatchObject({ status: 422, message: expect.stringMatching(/leaves the run folder/) })
+    await fs.rm(path.join(runPath, 'sneaky'))
+  })
+
+  it('is a 422 when the run folder does not exist', async () => {
+    await expect(resolveRoots(manifest, path.join(runPath, 'nope'), { roots: { run: '.' } })).rejects.toMatchObject({ status: 422 })
   })
 
   it('keeps a root whose folder does not exist yet', async () => {
-    const roots = await resolveRoots(manifest, { roots: { run: '.', later: '../later' } })
-    expect(roots['later']).toBe(path.join(path.dirname(manifest.run.path), 'later'))
+    const roots = await resolveRoots(manifest, runPath, { roots: { run: '.', later: 'later' } })
+    expect(roots['later']).toBe(path.join(runPath, 'later'))
   })
 })
 
 describe('servablePaths', () => {
   it('is exactly the refs the index names, including data, panels, logs, bugs and data setup', async () => {
-    const roots = await resolveRoots(manifest, index)
+    const roots = await resolveRoots(manifest, runPath, index)
     const withSetup = TestRunIndexSchema.parse({
       ...index,
       dataSetup: { steps: [], videos: [{ path: 'run:setup/v.mp4' }], screenshots: [{ path: 'run:setup/./s.png' }] },
@@ -118,7 +122,7 @@ describe('scenarioFingerprint', () => {
 
 describe('deriveRunDetail', () => {
   it('derives the detail with the injected clock', async () => {
-    const detail = await deriveRunDetail(manifest, () => FIXTURE_T0)
+    const detail = await deriveRunDetail(manifest, runPath, () => FIXTURE_T0)
     expect(detail).toMatchObject({ kind: 'test-run', computedAt: FIXTURE_T0, missing: [] })
     expect(detail.manifest.id).toBe(TEST_RUN_SESSION_ID)
   })

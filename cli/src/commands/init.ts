@@ -146,7 +146,7 @@ interface InitFlags {
   kind: string
   pr?: string
   repo?: string
-  run?: string
+  session?: string
   title?: string
   ticket?: string[]
   base?: string
@@ -159,11 +159,11 @@ interface InitFlags {
 
 function printTestRun(result: InitTestRunResult, format: string): void {
   if (format === 'brief') {
-    console.log(`${result.id}${result.reused ? ' (reused)' : ''}\n${result.dir}\n${result.url}`)
+    console.log(`${result.id}${result.reused ? ' (reused)' : ''}\n${result.dir}\n${result.runPath}\n${result.url}`)
     return
   }
-  const { id, dir, url, reused, manifest } = result
-  console.log(JSON.stringify({ id, dir, url, reused, kind: 'test-run', runPath: manifest.run.path, repo: manifest.run.repo, feature: manifest.run.feature, area: manifest.run.area }))
+  const { id, dir, url, reused, manifest, runPath } = result
+  console.log(JSON.stringify({ id, dir, url, reused, kind: 'test-run', run: runPath, repo: manifest.run.repo, feature: manifest.run.feature, area: manifest.run.area }))
 }
 
 export function registerInit(program: Command): void {
@@ -171,33 +171,33 @@ export function registerInit(program: Command): void {
     .command('init')
     .description('Create or refresh a review session; prints id, folder, URL')
     .option('--kind <kind>', 'code-review | test-run | pr-review', 'code-review')
-    .option('--repo <path>', 'path inside the repository (test-run: the checkout containing the run folder; default: the run folder)')
+    .option('--repo <path>', 'path inside the repository (test-run: the checkout the feature test runs against; a linked worktree is fine)')
     .option('--pr <url>', 'pr-review: the PR URL; takes over the not-started review Scout made for it')
-    .option('--run <path>', 'test-run: the feature-test run folder (must be inside the repository)')
+    .option('--session <id>', 'test-run: reuse this live test-run session instead of creating one')
     .option('--base <ref>', 'code-review: base ref (default: origin/master, master, origin/main, main, then origin/HEAD)')
-    .option('--title <title>', 'session title, e.g. "QI-15472: Trial bar" (test-run default: the run folder name)')
+    .option('--title <title>', 'session title, e.g. "QI-15472: Trial bar" (test-run: required for a new session)')
     .option('--ticket <KEY[=url]>', 'ticket key with an optional URL (repeatable)', (value: string, previous: string[] = []) => [...previous, value])
-    .option('--feature <name>', 'test-run: feature name (default: the folder two levels above test-runs/)')
-    .option('--area <name>', 'test-run: area name (default: the folder one level above test-runs/)')
-    .option('--new', 'always create a new session instead of reusing the latest one for this branch (run folder)')
+    .option('--feature <name>', 'test-run: feature name')
+    .option('--area <name>', 'test-run: area name')
+    .option('--new', 'always create a new session instead of reusing the latest one for this branch')
     .option('--agent-session <id>', 'Claude Code session id')
     .option('--format <format>', 'json | brief', 'json')
     .action(async (flags: InitFlags) => {
       if (flags.pr !== undefined && flags.kind !== 'pr-review') throw new Error('--pr is only valid with --kind pr-review')
+      if (flags.session !== undefined && flags.kind !== 'test-run') throw new Error('--session is only valid with --kind test-run')
       const tickets = (flags.ticket ?? []).map(parseTicket)
       if (flags.kind === 'test-run') {
-        if (flags.run === undefined) throw new Error('--run <path> is required with --kind test-run')
+        if (flags.repo === undefined) throw new Error('--repo <checkout> is required with --kind test-run')
         printTestRun(
           await initTestRunSession({
             home: resolveHome(),
-            run: path.resolve(flags.run),
-            repo: flags.repo === undefined ? null : path.resolve(flags.repo),
+            repo: path.resolve(flags.repo),
+            session: flags.session ?? null,
             title: flags.title ?? null,
             tickets,
             feature: flags.feature ?? null,
             area: flags.area ?? null,
             agentSession: flags.agentSession ?? null,
-            fresh: flags.new === true,
           }),
           flags.format,
         )

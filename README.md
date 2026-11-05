@@ -52,7 +52,8 @@ Stop it before `npm run dev`, which needs the same port.
 | `/scout-apply-review` | Applies the feedback you sent and answers every comment |
 | `/scout-pr-comments` | Brings the GitHub PR comments in, fixes the code and records how each was handled |
 | `/scout-pr-review` | Publishes a PR review with reproduction evidence |
-| `/scout-test-plan`, `/scout-data-setup`, `/scout-test-run` | Publish the parts of a feature-test run |
+| `/scout-feature-test` | Tests a feature in the browser, records every scenario and publishes the run |
+| `/scout-test-plan`, `/scout-data-setup`, `/scout-test-run` | Publish (or republish) the parts of a feature-test run |
 | `/scout-apply-test-review` | Applies your verdicts and comments on a test run |
 | `/journal` | Records why the code is the way it is |
 | `/reproduce` | Reproduces one reported problem against the running app |
@@ -63,11 +64,14 @@ Stop it before `npm run dev`, which needs the same port.
 | `/pr-description` | Writes or updates the PR description, following the repo's template |
 | `/open-pr` | Commits the reviewed files, pushes and opens the PR |
 | `/default-code-review` | Scout's own PR reviewer, used when you name no other |
+| `/pick-checkout` | Picks a new worktree or this checkout before a review or test |
+| `/prepare-test-data` | Gets a feature test's data ready and checkpoints it |
 
 The `scout-*` skills orchestrate; the others each do one job and can be run on their own. They share guides
 they load themselves, not run by you: `write-for-reviewers` (writing), `review-choices` (the opening question
-and auto mode), `record-resolutions` (answering every comment) and `test-run-index` (how a test run's index
-works). They leave the
+and auto mode), `record-resolutions` (answering every comment), `test-run-index` (where a test run lives and how its index
+works), `browser-recording` (videos), `verdict-highlights` (the coloured boxes on evidence) and `run-scenario`
+(one recorded test scenario). In qbdvision, `qbd-test-data` says how its test data and users are made. They leave the
 bookkeeping (adding evidence, tracking what changed since the last publish, merging run indexes, checking the app
 is up, database snapshots) to `ai-review` commands, so the same step works the same way every time.
 

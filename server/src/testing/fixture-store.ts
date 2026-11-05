@@ -18,17 +18,17 @@ export const BROKEN_SESSION_ID = '20260102-1000-broken-ffff'
 export const TEST_RUN_SESSION_ID = '20260103-1100-testrun-aaaa'
 export const FIXTURE_T0 = '2026-01-01T09:00:00.000Z'
 
-const DEMO_RUN_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../fixtures/test-runs/demo/plans/f/a')
+const DEMO_RUN_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../fixtures/test-runs/demo/run')
 
-/** A test-run session: its run folder is a copy of the demo run inside a fake checkout. */
+/** A test-run session: its run folder is a copy of the demo run inside the session folder. */
 export interface FixtureTestRun {
   id: string
   manifest: TestRunManifest
   /** `<home>/sessions/<id>` */
   dir: string
-  /** The fake checkout (a plain folder, not a git repo) holding `plans/f/a/...`. */
+  /** The fake checkout (a plain folder, not a git repo) the run belongs to. */
   repo: string
-  /** `<repo>/plans/f/a/test-runs/run-1` */
+  /** `<home>/sessions/<id>/run`: the demo run with its plan and bugs copied inside. */
   runPath: string
 }
 
@@ -139,8 +139,9 @@ export async function createFixtureStore(options: { repoInsideHome?: boolean; te
 
 async function createTestRun(home: string): Promise<FixtureTestRun> {
   const repo = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'scout-testrepo-')))
-  await fs.cp(DEMO_RUN_SOURCE, path.join(repo, 'plans', 'f', 'a'), { recursive: true })
-  const runPath = path.join(repo, 'plans', 'f', 'a', 'test-runs', 'run-1')
+  const dir = fixtureSessionDir(home, TEST_RUN_SESSION_ID)
+  const runPath = path.join(dir, 'run')
+  await fs.cp(DEMO_RUN_SOURCE, runPath, { recursive: true })
   const manifest: TestRunManifest = {
     schemaVersion: SCHEMA_VERSION,
     id: TEST_RUN_SESSION_ID,
@@ -149,10 +150,9 @@ async function createTestRun(home: string): Promise<FixtureTestRun> {
     updatedAt: FIXTURE_T0,
     agent: { type: 'claude-code', sessionId: 'agent-session-2', cliVersion: '2.1.241', entrypoint: 'cli' },
     kind: 'test-run',
-    run: { path: runPath, repo, feature: 'f', area: 'a' },
+    run: { repo, feature: 'f', area: 'a' },
     tickets: [],
   }
-  const dir = fixtureSessionDir(home, TEST_RUN_SESSION_ID)
   await writeFile(path.join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
   return { id: TEST_RUN_SESSION_ID, manifest, dir, repo, runPath }
 }

@@ -5,7 +5,7 @@ import { readPrStatus } from './pr-status.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import readline from 'node:readline'
-import { journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@scout/shared'
+import { journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, runFolderOf, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@scout/shared'
 import type {
   AnySentSnapshot,
   ArchivedSession,
@@ -189,7 +189,7 @@ export function testRunSummary(manifest: TestRunManifest, state: ReviewState, de
     title: manifest.title,
     createdAt: manifest.createdAt,
     updatedAt: latestUpdatedAt(manifest, state, detail.index.updatedAt),
-    run: { path: manifest.run.path, feature: manifest.run.feature, area: manifest.run.area },
+    run: { repo: manifest.run.repo, feature: manifest.run.feature, area: manifest.run.area },
     tickets: manifest.tickets,
     status: testRunStatus(state, detail),
     counts,
@@ -389,7 +389,7 @@ export class Store {
     if (cached !== undefined && cached.indexStamp === stamp) return cached.detail
     const pending = this.runDetailsInFlight.get(manifest.id)
     if (pending !== undefined) return pending
-    const compute = deriveRunDetail(manifest)
+    const compute = deriveRunDetail(manifest, this.runPathOf(manifest))
       .then((detail) => {
         this.runDetails.set(manifest.id, { detail, indexStamp: stamp })
         return detail
@@ -399,12 +399,18 @@ export class Store {
     return compute
   }
 
+  /** The run folder of a live test run: `sessions/<id>/run`. */
+  runPathOf(manifest: TestRunManifest): string {
+    return runFolderOf(this.paths.sessionDir(manifest.id))
+  }
+
   private async indexStamp(manifest: TestRunManifest): Promise<string> {
+    const runPath = this.runPathOf(manifest)
     try {
-      const stat = await fs.stat(path.join(manifest.run.path, TEST_RUN_INDEX_FILE))
-      return `${manifest.run.path}:${stat.mtimeMs}:${stat.size}`
+      const stat = await fs.stat(path.join(runPath, TEST_RUN_INDEX_FILE))
+      return `${runPath}:${stat.mtimeMs}:${stat.size}`
     } catch {
-      return `${manifest.run.path}:missing`
+      return `${runPath}:missing`
     }
   }
 
@@ -416,10 +422,11 @@ export class Store {
 
   /** The directories a run watcher needs: the run folder and every resolved root (the run folder alone when the index is unusable). */
   async runWatchPaths(manifest: TestRunManifest): Promise<string[]> {
-    const paths = [manifest.run.path]
+    const runPath = this.runPathOf(manifest)
+    const paths = [runPath]
     try {
-      const loaded = await loadRunIndex(manifest.run.path)
-      if (loaded?.ok) paths.push(...Object.values(await resolveRoots(manifest, loaded.index)))
+      const loaded = await loadRunIndex(runPath)
+      if (loaded?.ok) paths.push(...Object.values(await resolveRoots(manifest, runPath, loaded.index)))
     } catch (err) {
       this.log(`test run ${manifest.id}: watching the run folder only: ${errorMessage(err)}`)
     }
@@ -677,7 +684,7 @@ export class Store {
 
   /** `test-run.json`'s fingerprint, for the send snapshot. */
   runIndexFingerprint(manifest: TestRunManifest): Promise<string | null> {
-    return indexFingerprint(manifest.run.path)
+    return indexFingerprint(this.runPathOf(manifest))
   }
 
   /**
@@ -688,7 +695,7 @@ export class Store {
     const session = await this.loadSession(id)
     const manifest = this.testRun(session)
     const detail = await this.runDetail(manifest)
-    const roots = await resolveRoots(manifest, detail.index)
+    const roots = await resolveRoots(manifest, this.runPathOf(manifest), detail.index)
     const normal = normalizeRef(ref)
     const target = normal === null ? null : refToAbsolute(roots, normal)
     if (normal === null || target === null || !servablePaths(detail.index, roots).has(normal)) throw notFound(`${JSON.stringify(ref)} is not a file of test run ${id}`)

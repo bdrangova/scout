@@ -113,7 +113,7 @@ export function makeTestRunManifest(overrides: Partial<TestRunManifest> = {}): T
     createdAt: T0,
     updatedAt: T0,
     agent: { type: 'claude-code', sessionId: 'agent-session-1', cliVersion: '2.1.241', entrypoint: 'cli' },
-    run: { path: '/Users/me/Projects/app/plans/f/a/test-runs/run-1', repo: '/Users/me/Projects/app', feature: 'f', area: 'a' },
+    run: { repo: '/Users/me/Projects/app', feature: 'f', area: 'a' },
     tickets: [],
     ...overrides,
   }

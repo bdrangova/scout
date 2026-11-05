@@ -6,7 +6,7 @@ import { CommentSchema, ReviewSchema, emptyReview } from './review.ts'
 import { ManifestSchema, agentCwd, isTestRun, manifestKind } from './manifest.ts'
 import { PanelSchema, RunRefSchema, TestRunIndexSchema, parseRunRef } from './test-run.ts'
 
-const FIXTURE = fileURLToPath(new URL('../../../fixtures/test-runs/demo/plans/f/a/test-runs/run-1/test-run.json', import.meta.url))
+const FIXTURE = fileURLToPath(new URL('../../../fixtures/test-runs/demo/run/test-run.json', import.meta.url))
 
 function fixtureJson(): Record<string, unknown> {
   return JSON.parse(readFileSync(FIXTURE, 'utf8')) as Record<string, unknown>
@@ -65,9 +65,12 @@ describe('TestRunIndexSchema', () => {
     }
   })
 
-  it('validates roots: relative, run must be ".", ".." only as a leading chain', () => {
+  it('validates roots: relative, inside the run folder, run must be "."', () => {
     const parse = (roots: Record<string, string>) => TestRunIndexSchema.safeParse({ ...fixtureJson(), roots })
-    expect(parse({ run: '.', plan: '../..', bugs: '../../bugs' }).success).toBe(true)
+    expect(parse({ run: '.', plan: 'plan', bugs: 'bugs/all' }).success).toBe(true)
+    expect(parse({ run: '.', plan: '../..' }).success).toBe(false)
+    expect(parse({ run: '.', bugs: '../../bugs' }).success).toBe(false)
+    expect(parse({ run: '.', bugs: 'C:\\x' }).success).toBe(false)
     expect(parse({ run: '.', bugs: '/abs/bugs' }).success).toBe(false)
     expect(parse({ run: '.', bugs: 'bugs/../../../etc' }).success).toBe(false)
     expect(parse({ plan: '../..' }).success).toBe(false)

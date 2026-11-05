@@ -63,7 +63,7 @@ describe('test-run sessions', () => {
         kind: 'test-run',
         id: TEST_RUN_SESSION_ID,
         title: 'Fixture test run',
-        run: { path: store.testRun?.runPath, feature: 'f', area: 'a' },
+        run: { repo: store.testRun?.repo, feature: 'f', area: 'a' },
         counts: { scenarios: 3, pass: 1, fail: 1, gap: 1, na: 0, blocked: 0, uncertain: 0, planned: 0 },
         status: 'unreviewed',
         reviewed: 0,
@@ -267,7 +267,7 @@ describe('test-run sessions on a changing run folder', () => {
 
   it('reports a referenced file that disappeared in missing[]', async () => {
     const updated = nextRunUpdate(app)
-    fs.rmSync(path.join(runPath(), '..', '..', 'bugs', 'x', 'screenshots', '1.png'))
+    fs.rmSync(path.join(runPath(), 'bugs', 'x', 'screenshots', '1.png'))
     await updated
     expect((await detailOf(app)).missing).toEqual(['bugs:x/screenshots/1.png'])
     expect((await request(app).get(runFile('bugs/x/screenshots/1.png'))).status).toBe(404)
@@ -293,16 +293,23 @@ describe('test-run sessions on a changing run folder', () => {
     expect((await request(app).get(runFile('run/leak.txt'))).status).toBe(404)
   })
 
-  it('refuses a run whose index points a root outside the checkout', async () => {
+  it('refuses a run whose index names a root that leaves the run folder', async () => {
     const indexFile = path.join(runPath(), 'test-run.json')
     const index = JSON.parse(fs.readFileSync(indexFile, 'utf8')) as { roots: Record<string, string> }
-    index.roots['bugs'] = '../../../../../../..'
+    // A lexical `..` is refused by the index schema; a symlink inside the run is refused by the server.
+    fs.symlinkSync(outside, path.join(runPath(), 'out'))
+    index.roots['bugs'] = 'out'
     fs.writeFileSync(indexFile, JSON.stringify(index))
     const res = await request(app).get(base)
     expect(res.status).toBe(422)
-    expect(res.body.error).toMatch(/leaves/)
+    expect(res.body.error).toMatch(/leaves the run folder/)
     const list = (await request(app).get('/api/sessions?kind=test-run')).body as { id: string; error?: string }[]
     expect(list[0]).toMatchObject({ id: TEST_RUN_SESSION_ID, error: expect.stringMatching(/leaves/) })
+    index.roots['bugs'] = '../../bugs'
+    fs.writeFileSync(indexFile, JSON.stringify(index))
+    const lexical = await request(app).get(base)
+    expect(lexical.status).toBe(422)
+    expect(lexical.body.error).toMatch(/invalid/)
   })
 
   it('answers 422 for a missing or invalid index', async () => {

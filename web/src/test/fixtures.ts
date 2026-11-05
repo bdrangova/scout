@@ -230,7 +230,7 @@ export const testRunIndexFixture: TestRunIndex = {
 
 export const testRunManifestFixture = makeTestRunManifest({
   title: 'Demo feature test run',
-  run: { path: '/Users/bojana/Projects/qbdvision/plans/f/a/test-runs/run-1', repo: '/Users/bojana/Projects/qbdvision', feature: 'f', area: 'a' },
+  run: { repo: '/Users/bojana/Projects/qbdvision', feature: 'f', area: 'a' },
   tickets: [{ key: 'QI-15472', url: 'https://example.atlassian.net/browse/QI-15472' }],
 })
 
@@ -254,7 +254,7 @@ export function testRunSummary(overrides: Partial<TestRunSummary> & Pick<TestRun
     kind: 'test-run',
     createdAt: '2026-10-21T10:00:00.000Z',
     updatedAt: '2026-10-21T11:00:00.000Z',
-    run: { path: '/Users/bojana/Projects/qbdvision/plans/f/a/test-runs/run-1', feature: 'f', area: 'a' },
+    run: { repo: '/Users/bojana/Projects/qbdvision', feature: 'f', area: 'a' },
     tickets: [],
     status: 'unreviewed',
     counts: { scenarios: 3, pass: 1, fail: 1, gap: 1, na: 0, blocked: 0, uncertain: 0, planned: 0 },

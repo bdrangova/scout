@@ -23,9 +23,13 @@ function merge(owner: 'plan' | 'data-setup' | 'run', patch: unknown, existing: R
 }
 
 describe('mergeRunIndex', () => {
-  it('creates the skeleton with feature and area from the path', () => {
-    const skeleton = indexSkeleton(run, NOW.toISOString())
-    expect(skeleton).toMatchObject({ runId: 'run-1', title: 'run-1', feature: 'feat', area: 'area', roots: { run: '.', plan: '../..' }, scenarios: [] })
+  it('creates the skeleton with the plan and bugs roots inside the run folder', () => {
+    const skeleton = indexSkeleton({ runId: 'run-1', title: 'Run one', feature: 'feat', area: 'area' }, NOW.toISOString())
+    expect(skeleton).toMatchObject({ runId: 'run-1', title: 'Run one', feature: 'feat', area: 'area', roots: { run: '.', plan: 'plan', bugs: 'bugs' }, scenarios: [] })
+  })
+
+  it('names the skeleton after the session folder when no index exists yet', () => {
+    expect(merge('plan', { title: 'P' }, null).index).toMatchObject({ runId: path.basename(path.dirname(run)), roots: { run: '.', plan: 'plan', bugs: 'bugs' } })
   })
 
   it('plan: adds scenarios as planned, keeps run data of existing ones and observed steps', () => {
@@ -66,7 +70,7 @@ describe('mergeRunIndex', () => {
         scenarios: [{ id: 'S2', title: 'Two', order: 1, status: 'fail' }],
         overview: [{ type: 'scenario-list', title: 'Scenarios' }, { type: 'stats', title: 'Results', items: [] }],
         pages: ['gaps', 'logs'],
-        roots: { bugs: '../../bugs' },
+        roots: { bugs: 'all-bugs' },
       },
       other,
     )
@@ -75,7 +79,7 @@ describe('mergeRunIndex', () => {
     expect(titles).toEqual(['Plan summary', 'Test split', 'Results', 'Scenarios', 'Mine'])
     expect((result.index?.['scenarios'] as Record<string, unknown>[])[0]).toMatchObject({ id: 'S2', title: 'Two', status: 'fail', logs: [], links: { gaps: [], bugs: [] } })
     expect(result.index?.['pages']).toEqual(['gaps', 'logs'])
-    expect(result.index?.['roots']).toEqual({ run: '.', plan: '../..', bugs: '../../bugs' })
+    expect(result.index?.['roots']).toEqual({ run: '.', plan: 'plan', bugs: 'all-bugs' })
     const removed = merge('run', { removePanels: ['Scenarios'], overview: [] }, result.index)
     expect((removed.index?.['overview'] as { title: string }[]).map((p) => p.title)).toEqual(['Plan summary', 'Test split', 'Results', 'Mine'])
     // an owned panel absent from the patch stays when not listed in removePanels
@@ -85,7 +89,7 @@ describe('mergeRunIndex', () => {
   })
 
   it('data-setup: sets dataSetup and the page, preserves unknown fields, removes on null', () => {
-    const existing = { ...indexSkeleton(run, NOW.toISOString()), extra: { keep: true }, pages: ['gaps'] }
+    const existing = { ...indexSkeleton({ runId: 'r', title: 'r', feature: null, area: null }, NOW.toISOString()), extra: { keep: true }, pages: ['gaps'] }
     const result = merge('data-setup', { dataSetup: { steps: [], videos: [], screenshots: [] }, pages: ['data-setup'] }, existing)
     expect(result.index).toMatchObject({ extra: { keep: true }, pages: ['gaps', 'data-setup'], dataSetup: { steps: [] } })
     const removed = merge('data-setup', { dataSetup: null, removePages: ['data-setup'] }, result.index)

@@ -11,13 +11,7 @@ Use the PR specified by the user. Resolve the PR base/head and repository with t
 
 ## Pick the checkout first
 
-Before any review work, ask the user (AskUserQuestion) where to review:
-- **New worktree** (recommended when the current folder is not on the PR's head branch or has uncommitted changes): a worktree of the PR's head branch, so Scout lists it on its Worktrees page and links this review to it.
-- **This folder**: only offered when it is already on the PR's head branch with no uncommitted changes.
-
-For a new worktree, use the repository's own worktree skill when it has one (for example `qbd-worktree`: its "existing branch" flow, then its app and data steps when findings need reproducing) and follow that skill's rules. Without one, ask the user for the parent folder (suggest one of Scout's worktree folders) and run `git worktree add <folder>/<branch-name> <head-branch>`. Never make an ad-hoc clone or temporary copy, and never use `EnterWorktree` or the desktop app's own worktree feature. Then work on the worktree by its absolute path: it is `<PR-checkout>` below.
-
-With `--auto` or `AI_REVIEW_HEADLESS=1`, don't ask: review this folder when it qualifies, otherwise create the worktree.
+Before any review work, run `/pick-checkout <PR head branch> --why "PR review"` (Skill tool). Review the checkout it reports; it is `<PR-checkout>` below. A new worktree is listed on Scout's Worktrees page and linked to this review.
 
 Create or reuse a session:
 

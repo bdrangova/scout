@@ -84,23 +84,20 @@ async function realpathOrSelf(target: string): Promise<string> {
 }
 
 /**
- * The absolute directory of every alias: `run.path` resolved against the index's relative roots (realpath'd).
- * Throws a 422 when `run.path` or a root escapes `run.repo`, so nothing outside the checkout is ever read.
+ * The absolute directory of every alias: `runPath` (the session's run folder) resolved against the index's relative roots (realpath'd).
+ * Throws a 422 when a root leaves the run folder (a symlink included), so nothing outside the run is ever read.
  */
-export async function resolveRoots(manifest: TestRunManifest, index: Pick<TestRunIndex, 'roots'>): Promise<Record<string, string>> {
-  const { run } = manifest
-  let repo: string
-  let runPath: string
+export async function resolveRoots(manifest: TestRunManifest, runPath: string, index: Pick<TestRunIndex, 'roots'>): Promise<Record<string, string>> {
+  let real: string
   try {
-    ;[repo, runPath] = await Promise.all([fs.realpath(run.repo), fs.realpath(run.path)])
+    real = await fs.realpath(runPath)
   } catch (err) {
-    throw invalidStoreFile(`test run ${manifest.id}: run folder or checkout is not readable: ${errorMessage(err)}`)
+    throw invalidStoreFile(`test run ${manifest.id}: run folder is not readable: ${errorMessage(err)}`)
   }
-  if (!isInside(repo, runPath)) throw invalidStoreFile(`test run ${manifest.id}: run folder ${run.path} is not inside ${run.repo}`)
   const roots: Record<string, string> = {}
   for (const [alias, relative] of Object.entries(index.roots)) {
-    const resolved = await realpathOrSelf(path.resolve(runPath, relative))
-    if (!isInside(repo, resolved)) throw invalidStoreFile(`test run ${manifest.id}: root "${alias}" (${relative}) leaves ${run.repo}`)
+    const resolved = await realpathOrSelf(path.resolve(real, relative))
+    if (!isInside(real, resolved)) throw invalidStoreFile(`test run ${manifest.id}: root "${alias}" (${relative}) leaves the run folder`)
     roots[alias] = resolved
   }
   return roots
@@ -200,14 +197,14 @@ async function statRef(roots: Readonly<Record<string, string>>, ref: string): Pr
 
 /**
  * The live detail of a test run: the parsed index, its warnings, each scenario with its fingerprint and the refs whose file is absent
- * (or is not a regular file). 422 when `test-run.json` is missing or invalid, or a root escapes the checkout.
+ * (or is not a regular file). 422 when `test-run.json` is missing or invalid, or a root leaves the run folder.
  */
-export async function deriveRunDetail(manifest: TestRunManifest, now: () => string = () => new Date().toISOString()): Promise<TestRunDetail> {
-  const loaded = await loadRunIndex(manifest.run.path)
-  if (loaded === null) throw invalidStoreFile(`test run ${manifest.id}: ${TEST_RUN_INDEX_FILE} is missing from ${manifest.run.path} (publish in progress?)`)
+export async function deriveRunDetail(manifest: TestRunManifest, runPath: string, now: () => string = () => new Date().toISOString()): Promise<TestRunDetail> {
+  const loaded = await loadRunIndex(runPath)
+  if (loaded === null) throw invalidStoreFile(`test run ${manifest.id}: ${TEST_RUN_INDEX_FILE} is missing from ${runPath} (publish in progress?)`)
   if (!loaded.ok) throw invalidStoreFile(`test run ${manifest.id}: ${loaded.error}`)
   const { index } = loaded
-  const roots = await resolveRoots(manifest, index)
+  const roots = await resolveRoots(manifest, runPath, index)
   const warnings = [...loaded.warnings]
 
   const refs = [...new Set(allRefs(index).map((ref) => normalizeRef(ref) ?? ref))].sort()

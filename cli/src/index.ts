@@ -23,8 +23,10 @@ import { registerPrSync } from './commands/pr-sync.ts'
 import { PrSyncError } from './pr/gh.ts'
 import { registerPending } from './commands/pending.ts'
 import { registerResolve } from './commands/resolve.ts'
+import { registerRunFile } from './commands/run-file.ts'
 import { registerRunIndex } from './commands/run-index.ts'
 import { registerStatus } from './commands/status.ts'
+import { registerVideo } from './commands/video.ts'
 
 const program = new Command()
 
@@ -55,6 +57,8 @@ registerPrTrust(program)
 registerOpen(program)
 registerArchive(program)
 registerRunIndex(program)
+registerRunFile(program)
+registerVideo(program)
 registerInstall(program)
 
 try {

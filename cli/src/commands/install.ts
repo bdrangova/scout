@@ -53,6 +53,17 @@ const TEMPLATE_FILES = [
   { from: 'skills/open-pr/SKILL.md', to: '.agents/skills/open-pr/SKILL.md', mode: 0o644 },
   { from: 'skills/default-code-review/SKILL.md', to: '.claude/skills/default-code-review/SKILL.md', mode: 0o644 },
   { from: 'skills/default-code-review/SKILL.md', to: '.agents/skills/default-code-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-feature-test/SKILL.md', to: '.claude/skills/scout-feature-test/SKILL.md', mode: 0o644 },
+  { from: 'skills/pick-checkout/SKILL.md', to: '.claude/skills/pick-checkout/SKILL.md', mode: 0o644 },
+  { from: 'skills/pick-checkout/SKILL.md', to: '.agents/skills/pick-checkout/SKILL.md', mode: 0o644 },
+  { from: 'skills/browser-recording/SKILL.md', to: '.claude/skills/browser-recording/SKILL.md', mode: 0o644 },
+  { from: 'skills/browser-recording/SKILL.md', to: '.agents/skills/browser-recording/SKILL.md', mode: 0o644 },
+  { from: 'skills/verdict-highlights/SKILL.md', to: '.claude/skills/verdict-highlights/SKILL.md', mode: 0o644 },
+  { from: 'skills/verdict-highlights/SKILL.md', to: '.agents/skills/verdict-highlights/SKILL.md', mode: 0o644 },
+  { from: 'skills/prepare-test-data/SKILL.md', to: '.claude/skills/prepare-test-data/SKILL.md', mode: 0o644 },
+  { from: 'skills/prepare-test-data/SKILL.md', to: '.agents/skills/prepare-test-data/SKILL.md', mode: 0o644 },
+  { from: 'skills/run-scenario/SKILL.md', to: '.claude/skills/run-scenario/SKILL.md', mode: 0o644 },
+  { from: 'skills/run-scenario/SKILL.md', to: '.agents/skills/run-scenario/SKILL.md', mode: 0o644 },
   { from: `hooks/${PENDING_HOOK}`, to: `.claude/hooks/${PENDING_HOOK}`, mode: 0o755 },
 ] as const
 
@@ -66,6 +77,7 @@ const RETIRED_SKILLS = [
   'apply-review',
   'apply-test-review',
   'address-pr-comments',
+  'feature-test',
 ] as const
 
 export interface InstallOptions {

@@ -184,12 +184,6 @@ export function repoName(repoPath: string): string {
   return slash === -1 ? trimmed : trimmed.slice(slash + 1)
 }
 
-/** The run folder inside its checkout (`plans/f/a/test-runs/run-1`); the whole path when it is not under the repo. */
-export function shortRunPath(run: { path: string; repo: string }): string {
-  const repo = run.repo.replace(/\/+$/, '')
-  return run.path.startsWith(`${repo}/`) ? run.path.slice(repo.length + 1) : run.path
-}
-
 /** The list of a session kind: `/d` for code reviews (Development), `/t` for test runs, `/pr` for PR reviews. */
 export function sessionListRoute(kind: SessionKind): string {
   return kind === 'pr-review' ? '/pr' : kind === 'test-run' ? '/t' : '/d'

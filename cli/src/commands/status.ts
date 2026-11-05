@@ -3,7 +3,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { isTestRun, ScenarioStatusSchema, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type Decision, type ScenarioStatus } from '@scout/shared'
+import { isTestRun, runFolderOf, ScenarioStatusSchema, TestRunIndexSchema, TEST_RUN_INDEX_FILE, type Decision, type ScenarioStatus } from '@scout/shared'
 import { currentBranch, topLevel } from '@scout/shared/git/repo'
 import { dashboardUrl, readConfig, type Config } from '../config.ts'
 import { countOpenComments, openSessionForBranch, readReview } from '../sessions.ts'
@@ -69,8 +69,8 @@ async function describe(dir: string, config: Config): Promise<StatusSession> {
       id: manifest.id,
       title: manifest.title,
       dir,
-      run: { path: manifest.run.path, feature: manifest.run.feature, area: manifest.run.area },
-      scenarios: await readScenarioCounts(manifest.run.path),
+      run: { path: runFolderOf(dir), feature: manifest.run.feature, area: manifest.run.area },
+      scenarios: await readScenarioCounts(runFolderOf(dir)),
       verdicts: {
         approved: verdicts.filter((file) => file.verdict === 'approved').length,
         rejected: verdicts.filter((file) => file.verdict === 'rejected').length,

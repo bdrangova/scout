@@ -327,11 +327,11 @@ scope-tree.ts   computeScopeTree({ repo, scope, signal? }): Promise<{ tree: Work
 
 ## Test runs (`kind: 'test-run'`)
 
-A test run is a second session kind in the same store: `~/.ai-review/sessions/<id>/` holds `manifest.json` plus all review state exactly as for a code review (`review.json`, `resolutions.json`, `sent/`, `runs/`). The content is read live from the run folder (`manifest.run.path`) through the index the publish skills write. Dashboard routes live under `/t/<id>`.
+A test run is a second session kind in the same store: `~/.ai-review/sessions/<id>/` holds `manifest.json` plus all review state exactly as for a code review (`review.json`, `resolutions.json`, `sent/`, `runs/`). The run folder is not stored in the manifest: it is always `<session folder>/run` (`runFolderOf(sessionDir)`), so it moves with the session to `archive/<id>/run` and is deleted with it. The content is read live from there through the index the publish skills write; the test plan and the bug folders are copies inside it (`run/plan/test-plan.md`, `run/bugs/<slug>/...`, made by `ai-review run-file add`), so the server only reads inside the run folder. Dashboard routes live under `/t/<id>`.
 
 ### schemas/manifest.ts
 
-`ManifestSchema = z.union([CodeReviewManifestSchema, TestRunManifestSchema])`. `CodeReviewManifest` is the shape above with `kind?: 'code-review'` (absent in older manifests). `TestRunManifest` = the same `schemaVersion/id/title/createdAt/updatedAt/agent/tickets` plus `kind: 'test-run'` and `run: { path /* absolute run folder, inside repo */, repo /* absolute checkout, where the agent runs */, feature: string|null, area: string|null }`, no `repo`. Helpers: `isTestRun(m)`, `manifestKind(m)` (`'code-review'` default), `agentCwd(m)` (`repo.path` or `run.repo`). `SCHEMA_VERSION` stays 2.
+`ManifestSchema = z.union([CodeReviewManifestSchema, TestRunManifestSchema])`. `CodeReviewManifest` is the shape above with `kind?: 'code-review'` (absent in older manifests). `TestRunManifest` = the same `schemaVersion/id/title/createdAt/updatedAt/agent/tickets` plus `kind: 'test-run'` and `run: { repo /* absolute checkout, where the agent runs */, feature: string|null, area: string|null, sources?: { plan?: string /* absolute source file of run/plan/test-plan.md */, bugs?: Record<slug, string /* absolute source folder of run/bugs/<slug> */> } }`, no `repo` at the top level. `sources` is written by `ai-review run-file add` so `run-file refresh` can copy again. Helpers: `runFolderOf(sessionFolder)` (the derived run folder), `isTestRun(m)`, `manifestKind(m)` (`'code-review'` default), `agentCwd(m)` (`repo.path` or `run.repo`). `SCHEMA_VERSION` stays 2.
 
 ### schemas/test-run.ts: `<run>/test-run.json` (`TEST_RUN_INDEX_FILE`, `TEST_RUN_INDEX_SCHEMA_VERSION = 1`)
 
@@ -357,7 +357,7 @@ Step = { label?, action?, expected?, observed?, result? }
 Evidence = { path: Ref, caption?, layer?, atSec? /* chapter on the video timeline */ }
 ```
 
-`roots` values are relative to the run folder with no leading `/`; `..` is allowed only as a leading chain (`../..`, `../../bugs`) because the plan and the bugs sit above the run folder (`plan: '../..'` is the plan folder holding `test-plan.md`). The server additionally refuses roots that resolve outside `run.repo`.
+`roots` values are relative to the run folder and stay inside it: no leading `/`, no drive letter, no `..` segment, no NUL. A new run starts with `{ run: '.', plan: 'plan', bugs: 'bugs' }` (`plan/` holds the copied `test-plan.md`, `bugs/` the copied bug folders). The server additionally refuses a root whose real path (a symlink included) leaves the real run folder (422 "leaves the run folder").
 
 **Refs.** Every path in the index is `<alias>:<relative path>` (`RunRefSchema`, `/^[a-z][a-z0-9-]*:[^\0]+$/`), no leading `/` and no `..` segment on either separator. `parseRunRef(ref)` returns `{ alias, path }` or `null`. Example: `run:scenarios/s1-pass/videos/a.mp4`, `bugs:x/x.md`, `plan:test-plan.md`.
 
@@ -375,7 +375,7 @@ Evidence = { path: Ref, caption?, layer?, atSec? /* chapter on the video timelin
 
 ### api.ts additions
 
-`TestRunSummary = { kind: 'test-run', id, title, createdAt, updatedAt, run: { path, feature, area }, tickets, status, counts: { scenarios, pass, fail, gap, na, blocked, uncertain, planned }, reviewed, total, openComments, lastSend?, activeRunId, latestRunStatus? }`; `SessionListItem = SessionSummary | TestRunSummary | { id, error }` (`SessionSummary.kind?: 'code-review'`). `SessionDetail = CodeReviewDetail (kind?: 'code-review') | TestRunDetail`, `TestRunDetail = { kind: 'test-run', manifest, index, warnings: string[], scenarios: (Scenario & { fingerprint })[], missing: string[], computedAt }`. `StoreEvent` adds `{ type: 'testrun.updated', sessionId }`.
+`TestRunSummary = { kind: 'test-run', id, title, createdAt, updatedAt, run: { repo, feature, area }, tickets, status, counts: { scenarios, pass, fail, gap, na, blocked, uncertain, planned }, reviewed, total, openComments, lastSend?, activeRunId, latestRunStatus? }`; `SessionListItem = SessionSummary | TestRunSummary | { id, error }` (`SessionSummary.kind?: 'code-review'`). `SessionDetail = CodeReviewDetail (kind?: 'code-review') | TestRunDetail`, `TestRunDetail = { kind: 'test-run', manifest, index, warnings: string[], scenarios: (Scenario & { fingerprint })[], missing: string[], computedAt }`. `StoreEvent` adds `{ type: 'testrun.updated', sessionId }`.
 
 ### review/test-run-markdown.ts
 
@@ -398,7 +398,7 @@ Verdict: **<VERDICT>** · Status: <status>
 
 Empty sections are omitted; `\n` endings, one trailing newline. The grouping and quoting helpers shared with `renderSentMarkdown` live in `review/markdown-helpers.ts`.
 
-Fixture run folder: `fixtures/test-runs/demo/plans/f/a/test-runs/run-1/` (see `fixtures/test-runs/README.md`); the schema tests parse its `test-run.json`.
+Fixture run folder: `fixtures/test-runs/demo/run/` (see `fixtures/test-runs/README.md`); the schema tests parse its `test-run.json`.
 
 ## Migration notes
 

@@ -32,5 +32,5 @@ Arguments: $ARGUMENTS
    On "not running", the caller records the check as not done (with the reason) and never as passed.
 
 ## Recording (for the caller)
-- Screenshots: `mcp__playwright__browser_take_screenshot` with an absolute `filename`. Video: a Playwright Test spec with `use: { video: 'on', screenshot: 'on' }` and `outputDir` set to the target folder (`npx playwright test <spec>`), or the Playwright MCP recording tools when they are available.
+- Screenshots: `mcp__playwright__browser_take_screenshot` with an absolute `filename`. Video: a Playwright Test spec with `use: { video: 'on', screenshot: 'on' }` and `outputDir` set to the target folder (`npx playwright test <spec>`), or the Playwright MCP recording tools as `/browser-recording` describes (browser size, one video per check, verified file, MP4 at the end). Highlights and screenshot marking follow `/verdict-highlights`.
 - Save where the calling skill says, with descriptive names (`trial-bar-admin-before.png`). For a session that is `ai-review artifact add <id> evidence <file> --caption … --description …` (it copies the file and its index entry). Cite the files in the note or report.

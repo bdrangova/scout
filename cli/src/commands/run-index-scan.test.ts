@@ -80,7 +80,7 @@ describe('scanRun', () => {
     await put('db-snapshots/old.dump')
     await put('db-snapshots/new.dump')
     await utimes(path.join(run, 'db-snapshots', 'old.dump'), new Date(1000), new Date(1000))
-    await put('../../test-plan.md', '# plan\n')
+    await put('plan/test-plan.md', '# plan\n')
   })
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true })

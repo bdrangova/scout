@@ -18,11 +18,11 @@ import {
   isTestRunSent,
   mergeComments,
   runFileOwners,
+  runFolderOf,
   unapproveCommented,
   type Comment,
   type CodeReviewManifest,
   type Manifest,
-  type TestRunManifest,
   type PrComments,
   type PrReplies,
   type PrResolutions,
@@ -56,14 +56,12 @@ export async function listSessionIds(home: string): Promise<string[]> {
   }
 }
 
-/** A cheap look at a manifest: parsed JSON, `repo.path`/`repo.branch` (or `run.path`/`run.repo`) read without full validation. */
+/** A cheap look at a manifest: parsed JSON, `repo.path`/`repo.branch` (or `run.repo`) read without full validation. */
 export interface ManifestPeek {
   id: string
   dir: string
   repoPath: string | null
   branch: string | null
-  /** `run.path` of a test-run manifest. */
-  runPath: string | null
   /** `run.repo` of a test-run manifest (the checkout the run belongs to). */
   runRepo: string | null
   raw: unknown
@@ -85,7 +83,6 @@ export async function peekManifest(home: string, id: string): Promise<ManifestPe
     dir,
     repoPath: typeof repo.path === 'string' ? repo.path : null,
     branch: typeof repo.branch === 'string' ? repo.branch : null,
-    runPath: typeof run.path === 'string' ? run.path : null,
     runRepo: typeof run.repo === 'string' ? run.repo : null,
     raw,
   }
@@ -220,19 +217,6 @@ export async function openSessionForBranch(home: string, repoPath: string, branc
   return (await sessionsForRepo(home, repoPath, branch, kind))[0] ?? null
 }
 
-/** The latest live test-run session of a run folder (`manifest.run.path`), newest first by `updatedAt`. Archived sessions are never found here. */
-export async function openSessionForRun(home: string, runPath: string): Promise<SessionMatch<TestRunManifest> | null> {
-  const matches: SessionMatch<TestRunManifest>[] = []
-  for (const id of await listSessionIds(home)) {
-    const peek = await peekManifest(home, id)
-    if (peek === null || peek.runPath !== runPath) continue
-    const parsed = ManifestSchema.safeParse(peek.raw)
-    if (!parsed.success || !isTestRun(parsed.data)) continue
-    matches.push({ id, dir: peek.dir, manifest: parsed.data })
-  }
-  return newestFirst(matches)[0] ?? null
-}
-
 /**
  * Reusing a session after an approval: the reviewer decides again, so the overall decision goes back
  * to undecided. File verdicts, comments and resolutions stay; `effectiveVerdict` drops the verdicts of
@@ -245,9 +229,9 @@ export async function resetApprovedDecision(dir: string, now: string): Promise<v
 }
 
 /** The `run-file` owners of a test-run session's index; empty for a code review or when the index is missing or invalid. */
-async function runFileOwnersOf(manifest: Manifest): Promise<Map<string, string>> {
+async function runFileOwnersOf(dir: string, manifest: Manifest): Promise<Map<string, string>> {
   if (!isTestRun(manifest)) return new Map()
-  const parsed = TestRunIndexSchema.safeParse(await readJson(path.join(manifest.run.path, TEST_RUN_INDEX_FILE)))
+  const parsed = TestRunIndexSchema.safeParse(await readJson(path.join(runFolderOf(dir), TEST_RUN_INDEX_FILE)))
   return parsed.success ? runFileOwners(parsed.data) : new Map()
 }
 
@@ -255,6 +239,6 @@ async function runFileOwnersOf(manifest: Manifest): Promise<Map<string, string>>
 export async function unapproveAfterRerun(dir: string, manifest: Manifest, pick: (review: Review) => readonly Comment[], now: string): Promise<void> {
   const review = await readReview(dir)
   if (review === null) return
-  const next = unapproveCommented(review, pick(review), now, await runFileOwnersOf(manifest))
+  const next = unapproveCommented(review, pick(review), now, await runFileOwnersOf(dir, manifest))
   if (next !== review) await writeReview(dir, next)
 }

@@ -80,7 +80,7 @@ export function LiveSessionCard({ session, onArchive, onDone, layout = 'grid', s
       <div className={cn('mt-auto flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && '-mt-2 border-t-0 pt-0')}>
 
         <div className="flex min-w-0 items-center gap-2 text-[11px] text-ink-muted">
-          <CardLine label="Session metadata" className="flex-1"><RepoName path={isRun ? session.run.path : session.repo.path} /><span>·</span><CardTime at={session.updatedAt} /><span title={session.id} className="font-mono">· {session.id}</span></CardLine>
+          <CardLine label="Session metadata" className="flex-1"><RepoName path={isRun ? session.run.repo : session.repo.path} /><span>·</span><CardTime at={session.updatedAt} /><span title={session.id} className="font-mono">· {session.id}</span></CardLine>
           {onDone && <Button variant="ghost" size="icon-sm" title="Done: finished or merged" aria-label={`Mark ${session.title} as done`} onClick={(event) => { event.stopPropagation(); onDone(session) }} className="shrink-0 text-green shadow-none hover:text-green"><CircleCheck aria-hidden /></Button>}
           <Button variant="ghost" size="icon-sm" title={isRun ? 'Archive test run' : 'Archive session'} aria-label={`Archive ${session.title}`} onClick={(event) => { event.stopPropagation(); onArchive(session) }} className="shrink-0 shadow-none"><Archive aria-hidden /></Button>
         </div>

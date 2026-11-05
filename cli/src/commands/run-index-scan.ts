@@ -268,6 +268,12 @@ async function scanDataSetup(runPath: string): Promise<RunScan['dataSetup']> {
   }
 }
 
+/** True when `parts` joined onto the run folder stay inside it (an index that is not valid yet may name `..`). */
+function isInsideRun(run: string, ...parts: string[]): boolean {
+  const relative = path.relative(run, path.resolve(run, ...parts))
+  return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
+}
+
 function sha16(buffer: Buffer): string {
   return createHash('sha256').update(buffer).digest('hex').slice(0, 16)
 }
@@ -356,12 +362,12 @@ export async function scanRun(runPath: string, owner: IndexOwner | null): Promis
   }
   const dataSetup = await scanDataSetup(run)
   for (const item of [...dataSetup.videos, ...dataSetup.screenshots]) await put(mediaFilesOf(item), path.join(run, mediaFilesOf(item)))
-  const planRoot = hint?.roots['plan'] ?? '../..'
-  await put('plan:test-plan.md', path.resolve(run, planRoot, 'test-plan.md'))
-  const bugsRoot = hint?.roots['bugs']
+  const planRoot = hint?.roots['plan'] ?? 'plan'
+  if (isInsideRun(run, planRoot)) await put('plan:test-plan.md', path.resolve(run, planRoot, 'test-plan.md'))
+  const bugsRoot = hint?.roots['bugs'] ?? 'bugs'
   for (const bug of hint?.bugs ?? []) {
     const rest = bug.path.startsWith('bugs:') ? bug.path.slice('bugs:'.length) : null
-    if (rest !== null && bugsRoot !== undefined) await put(bug.path, path.resolve(run, bugsRoot, rest))
+    if (rest !== null && isInsideRun(run, bugsRoot, rest)) await put(bug.path, path.resolve(run, bugsRoot, rest))
   }
 
   const keys = owner === null ? Object.keys(hashes) : ownerHashKeys(owner, Object.keys(hashes))

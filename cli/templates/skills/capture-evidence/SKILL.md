@@ -11,7 +11,7 @@ Arguments: $ARGUMENTS
 ## Rules
 - Start the app with `/run-app` (Skill tool) and record as its `Record:` line says. Never skip a capture because the dev server was not running.
 - Capture into your scratch folder, never into the repository. Add files only with `ai-review artifact add|remove`, never by hand.
-- Captions and descriptions follow `/write-for-reviewers`.
+- Captions and descriptions follow `/write-for-reviewers`. Load `/verdict-highlights` (Skill tool) and, for video, `/browser-recording`, and follow them.
 
 ## Steps
 1. **Capture.** Screenshots with `mcp__playwright__browser_take_screenshot` (absolute `filename`), or a Playwright Test spec with `use: { screenshot: 'on', video: 'on' }` and `outputDir` set to the scratch folder (`npx playwright test <spec>`). Name files descriptively (`trial-bar-admin.png`).

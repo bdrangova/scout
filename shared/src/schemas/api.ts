@@ -68,7 +68,7 @@ export const TestRunSummarySchema = z.object({
   createdAt: isoDate,
   /** The latest of manifest, review, resolutions and the run index. */
   updatedAt: isoDate,
-  run: z.object({ path: z.string(), feature: z.string().nullable(), area: z.string().nullable() }),
+  run: z.object({ repo: z.string(), feature: z.string().nullable(), area: z.string().nullable() }),
   tickets: z.array(TicketSchema),
   status: SessionStatusSchema,
   counts: z.object({

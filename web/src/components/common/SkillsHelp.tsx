@@ -31,9 +31,10 @@ const SKILL_GROUPS: readonly { title: string; skills: readonly { command: string
   {
     title: 'Test runs',
     skills: [
-      { command: '/scout-test-plan <run>', when: 'Plan written. Scenarios + steps.' },
-      { command: '/scout-data-setup <run>', when: 'Test data ready.' },
-      { command: '/scout-test-run <run>', when: 'After /feature-test (it asks: new worktree or here). Results + evidence.' },
+      { command: '/scout-feature-test <feature>', when: 'Test in the browser (asks: new worktree or here). Records every scenario and publishes the run.' },
+      { command: '/scout-test-plan <id>', when: 'Republish the plan. The feature test calls it.' },
+      { command: '/scout-data-setup <id>', when: 'Republish the data setup. The feature test calls it.' },
+      { command: '/scout-test-run <id>', when: 'Republish the results. The feature test calls it.' },
       { command: '/scout-apply-test-review <id>', when: 'After Submit. Answers, re-runs.' },
     ],
   },

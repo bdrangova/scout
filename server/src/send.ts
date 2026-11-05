@@ -53,7 +53,7 @@ async function testRunBuilder(deps: SendDeps, session: LoadedSession, request: S
   const [detail, indexFingerprint] = await Promise.all([store.runDetail(manifest), store.runIndexFingerprint(manifest)])
   const scenarios = detail.scenarios.map(({ id, title, status, fingerprint }) => ({ id, title, status, fingerprint }))
   return (review, resolutions, now) => {
-    const sent = buildTestRunSentSnapshot(review, scenarios, request.decision, resolutions, now, { path: manifest.run.path, indexFingerprint })
+    const sent = buildTestRunSentSnapshot(review, scenarios, request.decision, resolutions, now, { path: store.runPathOf(manifest), indexFingerprint })
     nothingToSend(sent, request)
     const markdown = renderTestRunSentMarkdown(sent, { title: manifest.title, dashboardUrl: deps.dashboardUrl, index: detail.index })
     return { sent, markdown, patch: null }

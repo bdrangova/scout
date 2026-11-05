@@ -2,7 +2,6 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { TEST_RUN_INDEX_FILE, TEST_RUN_INDEX_SCHEMA_VERSION } from '@scout/shared'
-import { deriveFeatureArea } from './init-test-run.ts'
 
 export const INDEX_OWNERS = ['plan', 'data-setup', 'run'] as const
 export type IndexOwner = (typeof INDEX_OWNERS)[number]
@@ -159,24 +158,35 @@ function mergePages(owner: IndexOwner, index: Obj, patch: Obj, errors: string[])
   index['pages'] = [...pages]
 }
 
-/** The index a first publish starts from. */
-export function indexSkeleton(runPath: string, nowIso: string): Obj {
-  const { feature, area } = deriveFeatureArea(runPath)
-  const name = path.basename(runPath)
+export interface SkeletonMeta {
+  runId: string
+  title: string
+  feature: string | null
+  area: string | null
+}
+
+/** The index a first publish starts from: the run folder holds the plan and the bugs, so those roots point inside it. */
+export function indexSkeleton(meta: SkeletonMeta, nowIso: string): Obj {
   return {
     schemaVersion: TEST_RUN_INDEX_SCHEMA_VERSION,
-    runId: name,
-    title: name,
-    feature,
-    area,
+    runId: meta.runId,
+    title: meta.title,
+    feature: meta.feature,
+    area: meta.area,
     createdAt: nowIso,
     updatedAt: nowIso,
     publishedBy: {},
-    roots: { run: '.', plan: '../..' },
+    roots: { run: '.', plan: 'plan', bugs: 'bugs' },
     pages: [],
     overview: [],
     scenarios: [],
   }
+}
+
+/** The skeleton for a run folder nobody initialised: named after its session folder (`<session>/run`). */
+function fallbackSkeleton(runPath: string, nowIso: string): Obj {
+  const name = path.basename(path.dirname(runPath))
+  return indexSkeleton({ runId: name, title: name, feature: null, area: null }, nowIso)
 }
 
 export interface MergeResult {
@@ -194,7 +204,7 @@ export function mergeRunIndex(options: { runPath: string; owner: IndexOwner; exi
   const badTop = unowned(Object.keys(patch), TOP_KEYS[owner])
   if (badTop.length > 0) errors.push(`patch: the ${owner} owner cannot set ${badTop.join(', ')} (owns ${TOP_KEYS[owner].join(', ')})`)
 
-  const index: Obj = structuredClone(options.existing ?? indexSkeleton(options.runPath, nowIso))
+  const index: Obj = structuredClone(options.existing ?? fallbackSkeleton(options.runPath, nowIso))
   for (const key of ['title', 'feature', 'area'] as const) {
     if (patch[key] === undefined || badTop.includes(key)) continue
     index[key] = patch[key]

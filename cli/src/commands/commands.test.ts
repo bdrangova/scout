@@ -453,6 +453,8 @@ describe('install', () => {
     expect(actions['.claude/skills/scout-apply-review/SKILL.md']).toBe('created')
     expect(actions['.claude/skills/scout-pr-comments/SKILL.md']).toBe('created')
     expect(actions['.claude/skills/publish-review']).toBe('removed')
+    expect(actions['.claude/skills/scout-feature-test/SKILL.md']).toBe('created')
+    expect(actions['.agents/skills/run-scenario/SKILL.md']).toBe('created')
     await expect(access(path.join(repo, '.claude', 'skills', 'publish-review'))).rejects.toThrow()
     expect(actions['.claude/skills/run-app/SKILL.md']).toBe('created')
     expect(actions['.agents/skills/run-app/SKILL.md']).toBe('created')

@@ -28,7 +28,7 @@ describe('TestRunRow', () => {
     const row = screen.getByRole('link', { name: 'Demo feature test run' })
     expect(within(row).queryByLabelText('Feature and area')).not.toBeInTheDocument()
     expect(within(row).queryByLabelText('Base and current branch')).not.toBeInTheDocument()
-    expect(within(row).getByTitle('/Users/bojana/Projects/qbdvision/plans/f/a/test-runs/run-1')).toHaveTextContent('run-1')
+    expect(within(row).getByTitle('/Users/bojana/Projects/qbdvision')).toHaveTextContent('qbdvision')
     expect(within(row).getByText('1 Pass')).toBeInTheDocument()
     expect(within(row).getByText('1 Fail')).toBeInTheDocument()
     expect(within(row).getByText('1 Gap')).toBeInTheDocument()

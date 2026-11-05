@@ -1,9 +1,9 @@
-// Test-run sessions: each copies a run tree from fixtures/test-runs/<name>/plans into a plain folder under the generated
-// repos and points a kind "test-run" manifest at it. The server only needs `run.path` to be inside `run.repo` (both
-// realpath'd), not a git repository.
+// Test-run sessions: each copies the run folder of fixtures/test-runs/<name>/run (plan and bugs inside it) into the session
+// folder (`<session>/run`) and points a kind "test-run" manifest at a plain folder under the generated repos (`run.repo`).
+// The server reads only inside the run folder, and `run.repo` need not be a git repository.
 import { cp, mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { emptyReview, ReviewSchema, SCHEMA_VERSION, type Review, type TestRunManifest } from '@scout/shared'
+import { emptyReview, ReviewSchema, runFolderOf, SCHEMA_VERSION, type Review, type TestRunManifest } from '@scout/shared'
 import { writeJsonAtomic } from '../../cli/src/store.ts'
 import { deriveRunDetail } from '../../server/src/store/test-run.ts'
 import { fixturesDir, writeSessionFolder } from './common.ts'
@@ -14,11 +14,9 @@ const TEST_RUN_TITLE = 'Change summary diffing: demo run'
 interface TestRunSpec {
   id: string
   title: string
-  /** Folder under fixtures/test-runs and the plain folder name under repos. */
+  /** Folder under fixtures/test-runs (its `run` folder is copied) and the plain folder name under repos. */
   source: string
   repoName: string
-  /** The run folder relative to the copied `plans` folder. */
-  runRel: string
   feature: string
   area: string | null
   ticket: string
@@ -34,7 +32,6 @@ const SPECS: readonly TestRunSpec[] = [
     title: TEST_RUN_TITLE,
     source: 'demo',
     repoName: 'qa-plans',
-    runRel: 'f/a/test-runs/run-1',
     feature: 'f',
     area: 'a',
     ticket: 'QA-31',
@@ -46,7 +43,6 @@ const SPECS: readonly TestRunSpec[] = [
     title: 'QI-15267 Approve for Archive end to end',
     source: 'state-management',
     repoName: 'qa-state-management',
-    runRel: 'state-management/test-runs/qi-15267-approve-archive',
     feature: 'state-management',
     area: 'approve-for-archive',
     ticket: 'QI-15267',
@@ -83,7 +79,6 @@ const SPECS: readonly TestRunSpec[] = [
     title: 'QI-16304 Propose Withdrawn and Rejected records',
     source: 'withdrawn-repropose',
     repoName: 'qa-withdrawn-repropose',
-    runRel: 'withdrawn-repropose/test-runs/withdrawn-repropose',
     feature: 'withdrawn-repropose',
     area: null,
     ticket: 'QI-16304',
@@ -95,8 +90,6 @@ const SPECS: readonly TestRunSpec[] = [
 async function writeSpec(reposDir: string, spec: TestRunSpec): Promise<{ id: string; title: string; covers: string; repo: string; runPath: string }> {
   const repo = path.join(reposDir, spec.repoName)
   await mkdir(repo, { recursive: true })
-  await cp(path.join(fixturesDir, 'test-runs', spec.source, 'plans'), path.join(repo, 'plans'), { recursive: true })
-  const runPath = path.join(repo, 'plans', spec.runRel)
   const manifest: TestRunManifest = {
     schemaVersion: SCHEMA_VERSION,
     kind: 'test-run',
@@ -106,11 +99,13 @@ async function writeSpec(reposDir: string, spec: TestRunSpec): Promise<{ id: str
     updatedAt: spec.createdAt,
     agent: { type: 'claude-code', sessionId: null, cliVersion: null, entrypoint: null },
     tickets: [{ key: spec.ticket, url: null }],
-    run: { path: runPath, repo, feature: spec.feature, area: spec.area },
+    run: { repo, feature: spec.feature, area: spec.area },
   }
   const dir = await writeSessionFolder(manifest, {})
+  const runPath = runFolderOf(dir)
+  await cp(path.join(fixturesDir, 'test-runs', spec.source, 'run'), runPath, { recursive: true })
   if (spec.review !== undefined) {
-    const detail = await deriveRunDetail(manifest)
+    const detail = await deriveRunDetail(manifest, runPath)
     const fingerprints = new Map(detail.scenarios.map((scenario) => [scenario.id, scenario.fingerprint]))
     await writeJsonAtomic(path.join(dir, 'review', 'review.json'), spec.review(fingerprints, spec.id))
   }

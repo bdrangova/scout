@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { commitsPath, fileContentsPath, fileContentsUrl, filePatchPath, isImagePath, isMarkdownPath, otherKindRoute, runFileUrl, runLogUrl, scopeTreePath, sessionRoute, shortRunPath, testRunRoute } from './paths'
+import { commitsPath, fileContentsPath, fileContentsUrl, filePatchPath, isImagePath, isMarkdownPath, otherKindRoute, runFileUrl, runLogUrl, scopeTreePath, sessionRoute, testRunRoute } from './paths'
 
 describe('paths', () => {
   it('recognises markdown files by extension, case-insensitively', () => {
@@ -49,10 +49,5 @@ describe('paths', () => {
   it('builds the run log slice url', () => {
     expect(runLogUrl('sid', 'run:logs/run.log')).toBe('/api/sessions/sid/run/log/run/logs/run.log')
     expect(runLogUrl('sid', 'run:logs/run.log', 5, 9)).toBe('/api/sessions/sid/run/log/run/logs/run.log?from=5&to=9')
-  })
-
-  it('shortens a run folder to its path inside the checkout', () => {
-    expect(shortRunPath({ path: '/r/app/plans/f/a/test-runs/run-1', repo: '/r/app' })).toBe('plans/f/a/test-runs/run-1')
-    expect(shortRunPath({ path: '/elsewhere/run-1', repo: '/r/app/' })).toBe('/elsewhere/run-1')
   })
 })

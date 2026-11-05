@@ -2,7 +2,7 @@ import type { TestRunDetail } from '@scout/shared'
 import { Folder } from 'lucide-react'
 import { TicketStrip } from '@/components/session/TicketStrip'
 import { Tag } from '@/components/ui/tag'
-import { repoName, shortRunPath } from '@/lib/paths'
+import { repoName } from '@/lib/paths'
 import { CompactIdentity, DensityButton } from './DensityButton'
 import type { RailDensity } from './useRailDensity'
 
@@ -42,11 +42,11 @@ export function TestRunIdentity({ detail, density, onToggleDensity }: TestRunIde
       )}
       <div
         className="flex min-w-0 items-center gap-1 font-mono text-xs leading-[18px] font-medium"
-        title={`Run folder: ${run.path}`}
-        aria-label={`Run folder ${shortRunPath(run)} in ${repoName(run.repo)}`}
+        title={`Checkout: ${run.repo}`}
+        aria-label={`Checkout ${repoName(run.repo)}`}
       >
         <Folder className="size-3.5 shrink-0" aria-hidden />
-        <span className="truncate">{shortRunPath(run)}</span>
+        <span className="truncate">{repoName(run.repo)}</span>
       </div>
     </div>
   )
