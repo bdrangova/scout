@@ -1,4 +1,4 @@
-// `ai-review app-status [--repo <path>] [--port <n>...] [--json]`: who listens on this checkout's app ports, whether it
+// `scout app-status [--repo <path>] [--port <n>...] [--json]`: who listens on this checkout's app ports, whether it
 // is this checkout, another worktree or something else, and whether the URL answers. The run-app skill reads it
 // instead of chaining lsof, ps and curl by hand.
 import { execFile } from 'node:child_process'

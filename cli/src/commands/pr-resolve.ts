@@ -1,4 +1,4 @@
-// `ai-review pr-resolve <id> --comment <rc123> --status addressed|declined --note … [--commit sha] [--files a,b]`:
+// `scout pr-resolve <id> --comment <rc123> --status addressed|declined --note … [--commit sha] [--files a,b]`:
 // records how the agent handled a GitHub PR comment in review/pr-resolutions.json.
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -31,11 +31,11 @@ export async function resolvePrComments(options: PrResolveOptions): Promise<{ re
   const dir = sessionDir(options.home, options.id)
   if (!(await manifestExists(dir))) throw new Error(`session ${options.id} not found under ${options.home} (no manifest.json)`)
   const prComments = await readPrComments(dir)
-  if (prComments === null) throw new Error(`session ${options.id} has no PR comments: run ai-review pr-sync first`)
+  if (prComments === null) throw new Error(`session ${options.id} has no PR comments: run scout pr-sync first`)
   const known = new Map(prComments.comments.map((comment) => [comment.id, comment]))
   for (const item of options.items) {
     const comment = known.get(item.comment)
-    if (comment === undefined) throw new Error(`unknown PR comment ${item.comment} in session ${options.id} (see ${prCommentsPath(dir)}; run ai-review pr-sync if it is new)`)
+    if (comment === undefined) throw new Error(`unknown PR comment ${item.comment} in session ${options.id} (see ${prCommentsPath(dir)}; run scout pr-sync if it is new)`)
     if (comment.inReplyTo !== null && known.has(comment.inReplyTo)) throw new Error(`${item.comment} is a reply: resolve the thread root ${comment.inReplyTo}`)
     if (item.status === 'declined' && item.note.trim() === '') throw new Error(`${item.comment}: a declined comment needs the reason in --note`)
   }

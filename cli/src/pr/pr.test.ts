@@ -20,7 +20,7 @@ import { installIntoRepo } from '../commands/install.ts'
 let home: string
 let repo: string
 beforeEach(async () => {
-  home = await mkdtemp(path.join(os.tmpdir(), 'ai-review-pr-'))
+  home = await mkdtemp(path.join(os.tmpdir(), 'scout-pr-'))
   repo = path.join(home, 'repo')
   await mkdir(repo)
   await gitText(repo, ['init', '-q', '-b', 'feature/trial-bar'])
@@ -259,8 +259,8 @@ describe('trust and the text an agent can read', () => {
       expect(tools).not.toContain('gh api')
     }
     const tools = /^allowed-tools: (.*)$/m.exec(await readFile(skillFile, 'utf8'))?.[1] ?? ''
-    expect(tools).not.toMatch(/npm run|npx|gh |Bash\(\*\)|ai-review \*/)
-    expect(tools).toContain('Bash(ai-review pr-resolve *)')
+    expect(tools).not.toMatch(/npm run|npx|gh |Bash\(\*\)|scout \*/)
+    expect(tools).toContain('Bash(scout pr-resolve *)')
     expect(await readFile(skillFile, 'utf8')).toContain('<untrusted-github-comment>')
   })
 

@@ -29,7 +29,7 @@ async function writeFake(bytes: number): Promise<string> {
 }
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(os.tmpdir(), 'ai-review-video-'))
+  dir = await mkdtemp(path.join(os.tmpdir(), 'scout-video-'))
   fakeFfmpeg = await writeFake(MIN_VIDEO_BYTES + 5000)
 })
 afterEach(async () => {

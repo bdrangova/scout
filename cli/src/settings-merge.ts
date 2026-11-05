@@ -1,5 +1,6 @@
 // Idempotent merge of the Scout hooks and permission into a Claude Code settings file.
-// Existing entries are never removed or reordered; a hook is recognised by its script name.
+// Existing entries are never reordered, and only entries Scout itself retired (`retire`) are removed; a hook is
+// recognised by its script name.
 
 export type JsonObject = Record<string, unknown>
 
@@ -17,6 +18,7 @@ export interface MergeResult {
   settings: JsonObject
   changed: boolean
   added: string[]
+  removed: string[]
 }
 
 function isObject(value: unknown): value is JsonObject {
@@ -50,10 +52,48 @@ function groupMentions(group: unknown, matchKey: string): boolean {
   return group.hooks.some((hook) => isObject(hook) && typeof hook.command === 'string' && hook.command.includes(matchKey))
 }
 
-export function mergeSettings(existing: unknown, input: { hooks: readonly HookSpec[]; allow: readonly string[] }): MergeResult {
+export interface RetiredSettings {
+  /** Script names of hooks Scout no longer installs; a hook whose command mentions one is removed. */
+  hookKeys: readonly string[]
+  /** Permissions Scout no longer needs. */
+  allow: readonly string[]
+}
+
+/** Removes Scout's own retired hooks and permissions (an old name); everything else is left as it is. */
+function retire(settings: JsonObject, retired: RetiredSettings, removed: string[]): void {
+  const permissions = settings.permissions
+  if (isObject(permissions) && Array.isArray(permissions.allow)) {
+    const before = permissions.allow
+    permissions.allow = before.filter((entry) => !(typeof entry === 'string' && retired.allow.includes(entry)))
+    for (const entry of before) if (typeof entry === 'string' && retired.allow.includes(entry)) removed.push(`permissions.allow: ${entry}`)
+  }
+  const hooks = settings.hooks
+  if (!isObject(hooks)) return
+  for (const [event, groups] of Object.entries(hooks)) {
+    if (!Array.isArray(groups)) continue
+    const kept: unknown[] = []
+    for (const group of groups) {
+      if (!isObject(group) || !Array.isArray(group.hooks)) {
+        kept.push(group)
+        continue
+      }
+      const remaining = group.hooks.filter((hook) => {
+        const key = isObject(hook) && typeof hook.command === 'string' ? retired.hookKeys.find((k) => (hook.command as string).includes(k)) : undefined
+        if (key !== undefined) removed.push(`hooks.${event}: ${key}`)
+        return key === undefined
+      })
+      if (remaining.length > 0) kept.push(remaining.length === group.hooks.length ? group : { ...group, hooks: remaining })
+    }
+    hooks[event] = kept
+  }
+}
+
+export function mergeSettings(existing: unknown, input: { hooks: readonly HookSpec[]; allow: readonly string[]; retired?: RetiredSettings }): MergeResult {
   if (existing !== undefined && !isObject(existing)) throw new Error('settings file is not a JSON object')
   const settings: JsonObject = existing === undefined ? {} : (structuredClone(existing) as JsonObject)
   const added: string[] = []
+  const removed: string[] = []
+  if (input.retired !== undefined) retire(settings, input.retired, removed)
 
   const allow = ensureArray(ensureObject(settings, 'permissions'), 'allow')
   for (const entry of input.allow) {
@@ -71,5 +111,5 @@ export function mergeSettings(existing: unknown, input: { hooks: readonly HookSp
     added.push(`hooks.${spec.event}: ${spec.matchKey}`)
   }
 
-  return { settings, changed: added.length > 0, added }
+  return { settings, changed: added.length > 0 || removed.length > 0, added, removed }
 }

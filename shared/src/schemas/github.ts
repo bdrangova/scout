@@ -128,7 +128,7 @@ export type AssignedPrsResponse = z.infer<typeof AssignedPrsResponseSchema>
 
 /**
  * A not-started PR review, `<home>/pr-pending/<id>.json` (`PR_PENDING_DIR`). Created from the Assigned PRs tab;
- * `ai-review init --kind pr-review --pr <url>` claims it: the new session takes this `id` and the file is removed.
+ * `scout init --kind pr-review --pr <url>` claims it: the new session takes this `id` and the file is removed.
  */
 export const PendingPrReviewSchema = z.object({
   id: z.string().regex(SESSION_ID_RE),

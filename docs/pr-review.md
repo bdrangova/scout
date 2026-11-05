@@ -2,7 +2,7 @@
 
 PR review is the third session tab, at `/pr`. It reuses the Development session list, search, status filters, list/grid layouts, archive with Undo, archived list, Restore and confirmed Delete. PR sessions use the same `/s/:id/files` shell, with the tab labeled Review, full changed-file tree, commit scopes, Swipe/Scroll/Grid, file verdicts, draft-with-verdict behavior, Undo and manual line/range comments.
 
-`ai-review install --repo <path>` installs `scout-pr-review` for Claude (`.claude/skills`) and Codex (`.agents/skills`). Ask for a PR review in that session, optionally naming an ordered skill chain. Without one it uses `default-code-review`, installed next to it, which looks for real regressions; `scout-pr-review` then reproduces the actionable findings with `/reproduce`. The dashboard only consumes the report; it does not choose or run skills.
+`scout install --repo <path>` installs `scout-pr-review` for Claude (`.claude/skills`) and Codex (`.agents/skills`). Ask for a PR review in that session, optionally naming an ordered skill chain. Without one it uses `default-code-review`, installed next to it, which looks for real regressions; `scout-pr-review` then reproduces the actionable findings with `/reproduce`. The dashboard only consumes the report; it does not choose or run skills.
 
 ## Summary page
 
@@ -13,20 +13,20 @@ lists author, branches, commit count, size, labels and the linked Jira tickets. 
 and the changed files (each opens that file on the Review page), in scroll or grid, each card collapsible. A ticket
 saved by `/jira-snapshot` shows in full; a ticket link only accepts http(s) addresses.
 
-`ai-review pr-report facts <PR>` gathers the facts from GitHub (title, description, author, branches, labels,
+`scout pr-report facts <PR>` gathers the facts from GitHub (title, description, author, branches, labels,
 commits, ticket keys from the title, branch and description); the skill adds the bullets and badges and stores them in the
 report's optional overview. A report without one shows a short note instead of the card.
 
 ## Agent/adapter interface
 
 1. Check out the PR head cleanly in a dedicated checkout when necessary. Do not change the user's dirty checkout.
-2. `ai-review init --kind pr-review --repo <checkout> --base <target-ref> --title <title>` creates/reuses a PR session independently of Development sessions on that branch. Archived sessions are never reused.
-3. `ai-review pr-report template <id> --pr <url> --number <number> --repository <owner/repo>` prints revisions and the complete changed-file/fingerprint list.
-4. `ai-review pr-report schema` prints the JSON schema. Any review skill can produce it; record its name/version and finding sources. Deduplication belongs to the session's review chain.
+2. `scout init --kind pr-review --repo <checkout> --base <target-ref> --title <title>` creates/reuses a PR session independently of Development sessions on that branch. Archived sessions are never reused.
+3. `scout pr-report template <id> --pr <url> --number <number> --repository <owner/repo>` prints revisions and the complete changed-file/fingerprint list.
+4. `scout pr-report schema` prints the JSON schema. Any review skill can produce it; record its name/version and finding sources. Deduplication belongs to the session's review chain.
 5. Write a report and real evidence outside the checkout. Evidence paths are relative to the report JSON. Schema validation enforces step links, revision, verification limits and screenshot/video or non-visual evidence requirements. Videos are WebM or MP4 up to 200 MB; other evidence up to 20 MB.
-6. `ai-review pr-report validate <id> <report.json>` checks against git. `ai-review pr-report import <id> <report.json>` validates, copies and hashes evidence, stores an immutable report version, then replaces the active report atomically. Invalid import leaves the last report intact.
+6. `scout pr-report validate <id> <report.json>` checks against git. `scout pr-report import <id> <report.json>` validates, copies and hashes evidence, stores an immutable report version, then replaces the active report atomically. Invalid import leaves the last report intact.
 
-`ai-review pr-report show <id>` returns the current source report and human review state, including private reviewer notes, for a follow-up session-side pass.
+`scout pr-report show <id>` returns the current source report and human review state, including private reviewer notes, for a follow-up session-side pass.
 
 The active report is `<session>/pr-review.json`. Immutable sources/media live under `review/pr-reports/<digest>/`. Source reports are separate from human `review.json` state; `prProposals` adds independent generated-comment decisions, wording and private reviewer notes using the existing conflict-aware autosave and flush. Existing file verdict and comment shapes stay compatible.
 

@@ -59,7 +59,7 @@ async function makeRepo(parent: string, branch = 'feature/x'): Promise<{ repo: s
 
 let home: string
 beforeEach(async () => {
-  home = await mkdtemp(path.join(os.tmpdir(), 'ai-review-cmd-'))
+  home = await mkdtemp(path.join(os.tmpdir(), 'scout-cmd-'))
 })
 afterEach(async () => {
   await rm(home, { recursive: true, force: true })
@@ -478,12 +478,12 @@ describe('install', () => {
     expect(actions['.agents/skills/review-choices/SKILL.md']).toBe('created')
     expect(actions['.claude/skills/journal/SKILL.md']).toBe('created')
     expect(actions['.agents/skills/journal/SKILL.md']).toBe('created')
-    expect(actions['.claude/hooks/ai_review_pending_feedback.sh']).toBe('created')
+    expect(actions['.claude/hooks/scout_pending_feedback.sh']).toBe('created')
     expect(actions['.claude/settings.local.json']).toBe('updated')
     expect(actions['.gitignore']).toBe('created')
     expect(actions['claude mcp (user)']).toBe('skipped')
     expect(first.messages.join('\n')).toContain(`claude ${MCP_ADD_ARGS.join(' ')}`)
-    expect(await exists(path.join(repo, '.claude', 'hooks', 'ai_review_publish_nudge.sh'))).toBe(false)
+    expect(await exists(path.join(repo, '.claude', 'hooks', 'scout_publish_nudge.sh'))).toBe(false)
 
     const settings = JSON.parse(await readFile(settingsFile, 'utf8'))
     expect(settings.env).toEqual({ FOO: 'bar' })
@@ -493,37 +493,37 @@ describe('install', () => {
     expect(settings.hooks.UserPromptSubmit).toHaveLength(2)
     expect(settings.hooks.UserPromptSubmit[0]).toEqual(existing.hooks.UserPromptSubmit[0])
     expect(settings.hooks.UserPromptSubmit[1]).toEqual({
-      hooks: [{ type: 'command', command: '"$CLAUDE_PROJECT_DIR/.claude/hooks/ai_review_pending_feedback.sh"', timeout: 5 }],
+      hooks: [{ type: 'command', command: '"$CLAUDE_PROJECT_DIR/.claude/hooks/scout_pending_feedback.sh"', timeout: 5 }],
     })
     expect(settings.hooks.Stop).toBeUndefined()
 
     const publish = await readFile(path.join(repo, '.claude', 'skills', 'scout-development-review', 'SKILL.md'), 'utf8')
-    expect(publish).toContain('ai-review init --repo')
-    expect(publish).toContain('ai-review artifact add')
-    expect(publish).toContain('ai-review publish-log diff')
-    expect(publish).not.toMatch(/ai-review publish(?!-log)/)
+    expect(publish).toContain('scout init --repo')
+    expect(publish).toContain('scout artifact add')
+    expect(publish).toContain('scout publish-log diff')
+    expect(publish).not.toMatch(/scout publish(?!-log)/)
     const apply = await readFile(path.join(repo, '.claude', 'skills', 'scout-apply-review', 'SKILL.md'), 'utf8')
-    expect(apply).toContain('!`ai-review feedback $0 --format markdown`')
+    expect(apply).toContain('!`scout feedback $0 --format markdown`')
     expect(apply).toContain('/record-resolutions')
     expect(apply).toContain('/open-pr --session <sessionId>')
     const resolutions = await readFile(path.join(repo, '.claude', 'skills', 'record-resolutions', 'SKILL.md'), 'utf8')
-    expect(resolutions).toContain('ai-review resolve <id> --comment c<n> --status resolved')
+    expect(resolutions).toContain('scout resolve <id> --comment c<n> --status resolved')
     const openPr = await readFile(path.join(repo, '.claude', 'skills', 'open-pr', 'SKILL.md'), 'utf8')
     expect(openPr).toContain('Bash(gh pr create *)')
     expect(apply).not.toMatch(/republish/i)
     expect(apply).toMatch(/Decision: \*\*APPROVE\*\*/)
     expect(apply).toContain('Bash(gh pr create *)')
     const addressPr = await readFile(path.join(repo, '.claude', 'skills', 'scout-pr-comments', 'SKILL.md'), 'utf8')
-    expect(addressPr).toContain('ai-review pr-sync $ARGUMENTS --json')
-    expect(addressPr).toContain('ai-review pr-resolve <sessionId> --comment <id> --status addressed')
-    expect(addressPr).toContain('Bash(ai-review pr-reply *)')
+    expect(addressPr).toContain('scout pr-sync $ARGUMENTS --json')
+    expect(addressPr).toContain('scout pr-resolve <sessionId> --comment <id> --status addressed')
+    expect(addressPr).toContain('Bash(scout pr-reply *)')
     expect(addressPr).toContain('--reply "<one or two sentences for the reviewer, written as the author>"')
     expect(addressPr).not.toMatch(/Bash\(gh /)
-    const launcher = await readFile(path.join(home, 'bin', 'ai-review'), 'utf8')
+    const launcher = await readFile(path.join(home, 'bin', 'scout'), 'utf8')
     expect(launcher).toContain('exec "/opt/node/bin/node" "/opt/scout/cli/dist/index.js" "$@"')
     expect(JSON.parse(await readFile(path.join(home, 'config.json'), 'utf8'))).toEqual({ port: 4546 })
     expect(await readFile(path.join(repo, '.gitignore'), 'utf8')).toBe('.claude/settings.local.json\n')
-    expect(await exists(path.join(repo, '.git', 'ai-review'))).toBe(true)
+    expect(await exists(path.join(repo, '.git', 'scout'))).toBe(true)
 
     const before = await readFile(settingsFile, 'utf8')
     const second = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/opt/scout/cli/dist/index.js', nodeBin: '/opt/node/bin/node' })
@@ -602,18 +602,18 @@ describe('install', () => {
     expect((await readFile(log, 'utf8')).match(/mcp add/g)).toHaveLength(1)
   })
 
-  it('links ai-review into a PATH directory, idempotently, and never replaces another file', async () => {
+  it('links scout into a PATH directory, idempotently, and never replaces another file', async () => {
     const repo = path.join(home, 'repo')
     const pathDir = path.join(home, 'localbin')
     await mkdir(repo)
     await mkdir(pathDir)
     await gitText(home, ['init', '-q', '-b', 'main', repo])
     const opts = { home, repo, claudeBin: null, pathDir, cliBundle: '/b', nodeBin: '/n' }
-    const link = path.join(pathDir, 'ai-review')
+    const link = path.join(pathDir, 'scout')
 
     const first = await installIntoRepo(opts)
     expect(first.changes.find((c) => c.path === link)).toMatchObject({ action: 'created' })
-    expect(await readlink(link)).toBe(path.join(home, 'bin', 'ai-review'))
+    expect(await readlink(link)).toBe(path.join(home, 'bin', 'scout'))
     expect((await installIntoRepo(opts)).changes.find((c) => c.path === link)).toEqual({ path: link, action: 'unchanged' })
 
     await rm(link)
@@ -625,6 +625,33 @@ describe('install', () => {
 })
 
 describe('mergeSettings', () => {
+  it('removes only the retired hook and permission, keeping groups that still have other hooks', () => {
+    const existing = {
+      permissions: { allow: ['Bash(ai-review *)', 'Bash(git *)'] },
+      hooks: {
+        UserPromptSubmit: [
+          { hooks: [{ type: 'command', command: '"$CLAUDE_PROJECT_DIR/.claude/hooks/ai_review_pending_feedback.sh"' }] },
+          { matcher: 'x', hooks: [{ type: 'command', command: 'old ai_review_pending_feedback.sh' }, { type: 'command', command: 'mine.sh' }] },
+        ],
+      },
+    }
+    const merged = mergeSettings(existing, {
+      hooks: [{ event: 'UserPromptSubmit', command: 'new scout_pending_feedback.sh', timeout: 5, matchKey: 'scout_pending_feedback.sh' }],
+      allow: ['Bash(scout *)'],
+      retired: { hookKeys: ['ai_review_pending_feedback.sh'], allow: ['Bash(ai-review *)'] },
+    })
+    expect(merged.settings).toEqual({
+      permissions: { allow: ['Bash(git *)', 'Bash(scout *)'] },
+      hooks: {
+        UserPromptSubmit: [
+          { matcher: 'x', hooks: [{ type: 'command', command: 'mine.sh' }] },
+          { hooks: [{ type: 'command', command: 'new scout_pending_feedback.sh', timeout: 5 }] },
+        ],
+      },
+    })
+    expect(merged.removed).toEqual(['permissions.allow: Bash(ai-review *)', 'hooks.UserPromptSubmit: ai_review_pending_feedback.sh', 'hooks.UserPromptSubmit: ai_review_pending_feedback.sh'])
+  })
+
   it('starts from an empty object and rejects non-object settings', () => {
     const merged = mergeSettings(undefined, { hooks: [{ event: 'Stop', command: 'x', timeout: 1, matchKey: 'x' }], allow: ['A'] })
     expect(merged.settings).toEqual({ permissions: { allow: ['A'] }, hooks: { Stop: [{ hooks: [{ type: 'command', command: 'x', timeout: 1 }] }] } })

@@ -1,4 +1,4 @@
-// `ai-review open [id]`: opens the dashboard (or one session) in the default browser.
+// `scout open [id]`: opens the dashboard (or one session) in the default browser.
 import { spawn } from 'node:child_process'
 import type { Command } from 'commander'
 import { dashboardOrigin, dashboardUrl, readConfig } from '../config.ts'

@@ -1,7 +1,7 @@
 // Builds the stable copy the background service runs: the server bundled into one file with all its
 // dependencies, plus the built web app. It is written next to the target and swapped in at the end, so a
 // failed build leaves the running copy alone, and edits to the source never reach it until the next build.
-// Usage: node scripts/build-app.mjs [<target dir>]   (default: $AI_REVIEW_HOME/app, i.e. ~/.ai-review/app)
+// Usage: node scripts/build-app.mjs [<target dir>]   (default: $SCOUT_HOME/app, i.e. ~/.scout/app)
 import { execFileSync } from 'node:child_process'
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const home = process.env.AI_REVIEW_HOME?.replace(/^~(?=\/|$)/, os.homedir()) ?? path.join(os.homedir(), '.ai-review')
+const home = process.env.SCOUT_HOME?.replace(/^~(?=\/|$)/, os.homedir()) ?? path.join(os.homedir(), '.scout')
 const target = path.resolve(process.argv[2] ?? path.join(home, 'app'))
 const next = `${target}.next`
 

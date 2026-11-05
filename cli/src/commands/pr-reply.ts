@@ -1,4 +1,4 @@
-// `ai-review pr-reply [--session <id>] [--dry-run]`: posts the replies the user approved with their last Submit to the
+// `scout pr-reply [--session <id>] [--dry-run]`: posts the replies the user approved with their last Submit to the
 // GitHub threads, through `gh`. The only source of text is the latest sent snapshot (review/sent/*.json, `prReplies`
 // of kind `reply`): never a proposed reply, never a draft that was not submitted.
 import path from 'node:path'
@@ -60,7 +60,7 @@ export async function prReply(options: PrReplyOptions): Promise<PrReplyResult> {
   if (approved.size === 0) return result
 
   const prComments = await readPrComments(session.dir)
-  if (prComments === null) throw new PrSyncError('no-pr', `session ${session.id} has no PR comments: run ai-review pr-sync first`)
+  if (prComments === null) throw new PrSyncError('no-pr', `session ${session.id} has no PR comments: run scout pr-sync first`)
   const { repo, number } = prComments.pr
   if (!REPO_RE.test(repo)) throw new Error(`pr-comments.json has an unusable repo ${JSON.stringify(repo)}`)
   const known = new Map(prComments.comments.map((comment) => [comment.id, comment]))

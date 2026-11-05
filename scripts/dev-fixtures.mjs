@@ -1,6 +1,6 @@
 // Runs `npm run dev` against the fixture store with the fake agent adapter, from any cwd.
 // Runs on its own ports (API 4555, web 4556) so it can sit next to the real Scout on 4545/4546.
-// Optional overrides: FIXTURE_HOME (store root), AI_REVIEW_PORT (API, also the web proxy target) and
+// Optional overrides: FIXTURE_HOME (store root), SCOUT_PORT (API, also the web proxy target) and
 // WEB_PORT. The e2e run uses them to start a third, isolated pair.
 import { spawn } from 'node:child_process'
 import path from 'node:path'
@@ -13,7 +13,7 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const env = { ...process.env }
 delete env.PORT
 
-const apiPort = env.AI_REVIEW_PORT ?? '4555'
+const apiPort = env.SCOUT_PORT ?? '4555'
 const webPort = env.WEB_PORT ?? '4556'
 
 const child = spawn(npm, ['run', 'dev'], {
@@ -21,8 +21,8 @@ const child = spawn(npm, ['run', 'dev'], {
   stdio: 'inherit',
   env: {
     ...env,
-    AI_REVIEW_HOME: env.FIXTURE_HOME ?? path.join(repo, 'fixtures', 'store'),
-    AI_REVIEW_PORT: apiPort,
+    SCOUT_HOME: env.FIXTURE_HOME ?? path.join(repo, 'fixtures', 'store'),
+    SCOUT_PORT: apiPort,
     API_PORT: apiPort,
     WEB_PORT: webPort,
     DASHBOARD_URL: env.DASHBOARD_URL ?? `http://scout.localhost:${webPort}`,

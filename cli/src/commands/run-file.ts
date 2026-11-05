@@ -1,4 +1,4 @@
-// `ai-review run-file add|refresh`: copies the test plan and the bug folders into a test-run session's run folder
+// `scout run-file add|refresh`: copies the test plan and the bug folders into a test-run session's run folder
 // (`run/plan/test-plan.md`, `run/bugs/<slug>/...`), so the dashboard only ever reads inside the run. The source of each copy is
 // recorded in the manifest (`run.sources`) and `refresh` copies them again.
 import { createHash } from 'node:crypto'

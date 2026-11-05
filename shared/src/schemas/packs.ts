@@ -7,7 +7,7 @@ import { z } from 'zod'
  */
 export const PACK_MANIFEST_FILE = 'scout-pack.json'
 
-/** The jobs a pack's skill can take over from Scout's defaults; the generic skills look these up in `ai-review env`. */
+/** The jobs a pack's skill can take over from Scout's defaults; the generic skills look these up in `scout env`. */
 export const PackSkillRoleSchema = z.enum(['worktree', 'testData'])
 export type PackSkillRole = z.infer<typeof PackSkillRoleSchema>
 
@@ -24,13 +24,13 @@ export const PackManifestSchema = z.object({
   description: z.string().optional(),
   /** Origin repository names (`git@host:org/<name>.git`) the pack applies to; matched case-insensitively. */
   repos: z.array(z.string().min(1)).min(1),
-  /** Folder inside the pack that mirrors paths inside the repository; `ai-review install` copies it there. */
+  /** Folder inside the pack that mirrors paths inside the repository; `scout install` copies it there. */
   files: z.string().min(1).optional(),
   /** Shell command that prints a checkout's runtime JSON; run from the checkout with `SCOUT_PACK_DIR` set. A runtime command stored for the repo wins. */
   runtime: z.string().min(1).optional(),
   /** Skill name per job, e.g. `{ "worktree": "qbd-worktree" }`. */
   skills: z.partialRecord(PackSkillRoleSchema, z.string().min(1)).optional(),
-  /** Shell command run from the repository after every `ai-review install`, with `SCOUT_PACK_DIR` set. */
+  /** Shell command run from the repository after every `scout install`, with `SCOUT_PACK_DIR` set. */
   afterInstall: z.string().min(1).optional(),
   /** Extra entries for the dashboard's Skills help. */
   help: z.array(PackHelpEntrySchema).optional(),

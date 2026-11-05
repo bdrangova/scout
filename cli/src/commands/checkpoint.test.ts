@@ -20,7 +20,7 @@ async function commit(message: string) {
 }
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'ai-review-ckpt-')))
+  root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'scout-ckpt-')))
   home = path.join(root, 'home')
   repo = path.join(root, 'repo')
   setup = path.join(root, 'setup.md')
@@ -38,7 +38,7 @@ afterEach(async () => {
 
 const manifestOptions = (folder: string) => ({ repo, folder, key: 'k', setupFile: setup, engine: 'mysql', database: 'app', host: 'localhost', dumpCommand: 'dump', restoreCommand: 'restore' })
 
-describe('ai-review checkpoint', () => {
+describe('scout checkpoint', () => {
   it('detects schema and seed roots among tracked files', () => {
     expect(detectSchemaPaths(['a/db/x.sql', 'a/db/y.sql', 'src/migrations/1.ts', 'prisma/schema.prisma', 'schema.sql', 'src/app.ts'])).toEqual(['a/db', 'prisma', 'schema.sql', 'src/migrations'])
   })

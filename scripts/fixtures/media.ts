@@ -117,7 +117,7 @@ export async function ensureMedia(): Promise<Media> {
     if (missing.has(media.mobilePng)) await screenshot(browser, media.mobilePng, WARNING_PAGE, { width: 390, height: 520 })
     if (missing.has(media.webm)) {
       console.log('make-fixture: recording fixtures/media/upgrade-flow.webm')
-      const videoDir = await mkdtemp(path.join(os.tmpdir(), 'ai-review-video-'))
+      const videoDir = await mkdtemp(path.join(os.tmpdir(), 'scout-video-'))
       const context = await browser.newContext({ viewport, recordVideo: { dir: videoDir, size: viewport } })
       const page = await context.newPage()
       await page.setContent(EVIDENCE_PAGE)

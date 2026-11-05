@@ -1,11 +1,11 @@
 {
-  "name": "ai-review",
+  "name": "@scout/cli",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Packages Claude Code changes into Scout sessions and reads the review back",
   "bin": {
-    "ai-review": "dist/index.js"
+    "scout": "dist/index.js"
   },
   "files": [
     "dist"

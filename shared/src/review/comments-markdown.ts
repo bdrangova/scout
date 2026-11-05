@@ -75,7 +75,7 @@ function artifactSection(
 
 /**
  * Renders a sent snapshot to the markdown the agent reads (`review/sent/<stem>.md`, and
- * `ai-review feedback`). Artifacts are named by their path (the comment ref) with the caption or
+ * `scout feedback`). Artifacts are named by their path (the comment ref) with the caption or
  * title after a dash. Deterministic: `\n` line endings, one trailing newline, empty sections omitted.
  */
 export function renderSentMarkdown(sent: SentSnapshot, ctx: SentMarkdownContext): string {

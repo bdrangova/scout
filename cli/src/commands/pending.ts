@@ -1,4 +1,4 @@
-// `ai-review pending --repo <path>`: sessions of a repo whose sent review still has open comments.
+// `scout pending --repo <path>`: sessions of a repo whose sent review still has open comments.
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import type { Command } from 'commander'

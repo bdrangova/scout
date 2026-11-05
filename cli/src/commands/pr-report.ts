@@ -50,6 +50,6 @@ export function registerPrReport(program: Command): void {
 async function load(id: string) {
   if (!SESSION_ID_RE.test(id)) throw new Error('invalid session id')
   const manifest = await readManifest(sessionDir(resolveHome(), id))
-  if (manifest.kind !== 'pr-review') throw new Error('create a PR review with ai-review init --kind pr-review --repo <checkout> --base <base-ref>')
+  if (manifest.kind !== 'pr-review') throw new Error('create a PR review with scout init --kind pr-review --repo <checkout> --base <base-ref>')
   return manifest
 }

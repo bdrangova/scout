@@ -1,4 +1,4 @@
-// `ai-review checkpoint lookup|manifest`: the deterministic half of the snapshot-db skill. A database checkpoint is
+// `scout checkpoint lookup|manifest`: the deterministic half of the snapshot-db skill. A database checkpoint is
 // reusable only while the data setup (hash of its description) and the schema (hash of the tracked migration and seed
 // files) are the same; this command computes both, finds the newest matching checkpoint and writes manifests.
 import { createHash } from 'node:crypto'

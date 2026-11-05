@@ -12,13 +12,13 @@ user-invocable: false
 - The dashboard shows resolutions as you record them. There is nothing to publish or resend.
 
 ## Checklist
-Read the feedback (`ai-review feedback <id> --format markdown`) top to bottom and list every comment id with what it is about and the action you plan. The calling skill says what the targets are (files, lines, evidence, scenarios, bugs, the whole change) and which actions it allows.
+Read the feedback (`scout feedback <id> --format markdown`) top to bottom and list every comment id with what it is about and the action you plan. The calling skill says what the targets are (files, lines, evidence, scenarios, bugs, the whole change) and which actions it allows.
 
 ## Record
 One line each:
-`ai-review resolve <id> --comment c<n> --status resolved --note "<what changed, where, how verified>" --files <path,path>`
+`scout resolve <id> --comment c<n> --status resolved --note "<what changed, where, how verified>" --files <path,path>`
 To reply without resolving (a question for the reviewer, a won't-fix with reasons, something only the user can do, a change that needs approval) use `--status open --note "…"`.
-Many at once: write a JSON array `[{ "comment": "c1", "status": "resolved", "note": "…", "files": ["…"] }, …]` and run `ai-review resolve <id> --from <file>`.
+Many at once: write a JSON array `[{ "comment": "c1", "status": "resolved", "note": "…", "files": ["…"] }, …]` and run `scout resolve <id> --from <file>`.
 
 ## Report
 Finish with a table of comment id, status and note. Say which comments stay open and what the user has to do for them.

@@ -7,6 +7,7 @@ import { registerArtifact } from './commands/artifact.ts'
 import { registerCheckpoint } from './commands/checkpoint.ts'
 import { registerEnv } from './commands/env.ts'
 import { registerPack } from './commands/pack.ts'
+import { registerService } from './commands/service.ts'
 import { registerFeedback } from './commands/feedback.ts'
 import { registerInit } from './commands/init.ts'
 import { registerInstall } from './commands/install.ts'
@@ -32,7 +33,7 @@ import { registerVideo } from './commands/video.ts'
 const program = new Command()
 
 program
-  .name('ai-review')
+  .name('scout')
   .description(`Create Scout sessions for Claude Code work and read the review back (contract v${SCHEMA_VERSION})`)
   .version(pkg.version)
 
@@ -42,6 +43,7 @@ registerArtifact(program)
 registerPublishLog(program)
 registerEnv(program)
 registerPack(program)
+registerService(program)
 registerAppStatus(program)
 registerCheckpoint(program)
 registerFeedback(program)

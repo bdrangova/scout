@@ -3,7 +3,7 @@ import { ARCHIVE_DIR, SESSIONS_DIR, SESSION_ID_RE } from '@scout/shared'
 import { notFound } from '../errors.ts'
 
 export interface StorePaths {
-  /** Absolute store root (`AI_REVIEW_HOME`). */
+  /** Absolute store root (`SCOUT_HOME`). */
   readonly home: string
   /** `<home>/sessions` */
   readonly sessionsDir: string

@@ -29,7 +29,7 @@ async function initRepo(dir: string): Promise<void> {
 }
 
 beforeEach(async () => {
-  home = await realpath(await mkdtemp(path.join(os.tmpdir(), 'ai-review-testrun-')))
+  home = await realpath(await mkdtemp(path.join(os.tmpdir(), 'scout-testrun-')))
   repo = path.join(home, 'checkout')
   await initRepo(repo)
 })
@@ -243,16 +243,16 @@ describe('install of the test-review skills', () => {
       const text = await readFile(path.join(repo, '.claude', 'skills', name, 'SKILL.md'), 'utf8')
       expect(text).toContain('argument-hint: "<session id> [--auto]"')
       expect(text).toContain('/test-run-index')
-      expect(text).toContain('ai-review run-index merge "<run>"')
-      expect(text).toContain('ai-review run-index scan')
+      expect(text).toContain('scout run-index merge "<run>"')
+      expect(text).toContain('scout run-index scan')
     }
     const index = await readFile(path.join(repo, '.claude', 'skills', 'test-run-index', 'SKILL.md'), 'utf8')
-    expect(index).toContain('ai-review init --kind test-run --repo')
-    expect(index).toContain('ai-review run-index merge "<run>" --owner <owner>')
+    expect(index).toContain('scout init --kind test-run --repo')
+    expect(index).toContain('scout run-index merge "<run>" --owner <owner>')
     const apply = await readFile(path.join(repo, '.claude', 'skills', 'scout-apply-test-review', 'SKILL.md'), 'utf8')
-    expect(apply).toContain('!`ai-review feedback $0 --format markdown`')
-    expect(apply).toContain('!`ai-review status $0 --format brief`')
-    const hook = await readFile(path.join(repo, '.claude', 'hooks', 'ai_review_pending_feedback.sh'), 'utf8')
+    expect(apply).toContain('!`scout feedback $0 --format markdown`')
+    expect(apply).toContain('!`scout status $0 --format brief`')
+    const hook = await readFile(path.join(repo, '.claude', 'hooks', 'scout_pending_feedback.sh'), 'utf8')
     for (const name of ['/scout-test-plan*', '/scout-data-setup*', '/scout-test-run*', '/scout-apply-test-review*']) expect(hook).toContain(name)
   })
 })

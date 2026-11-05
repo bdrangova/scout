@@ -20,7 +20,7 @@ export const PrIdentitySchema = z.object({
   draft: z.boolean(),
   baseRef: z.string().min(1),
   headRef: z.string().min(1),
-  /** Empty when the PR was linked by hand (`ai-review pr-link`) and not yet synced. */
+  /** Empty when the PR was linked by hand (`scout pr-link`) and not yet synced. */
   headSha: z.string(),
 })
 export type PrIdentity = z.infer<typeof PrIdentitySchema>
@@ -93,7 +93,7 @@ export const PrCommentSchema = z.object({
 export type PrComment = z.infer<typeof PrCommentSchema>
 
 /**
- * `review/pr-comments.json`: written only by `ai-review pr-sync` (atomically). One PR per session for now:
+ * `review/pr-comments.json`: written only by `scout pr-sync` (atomically). One PR per session for now:
  * `pr` is the current one and every comment carries its `prNumber`, so a list of PRs can replace `pr` later.
  */
 export const PrCommentsSchema = z.object({
@@ -101,7 +101,7 @@ export const PrCommentsSchema = z.object({
   sessionId: z.string().regex(SESSION_ID_RE),
   fetchedAt: isoDate,
   pr: PrIdentitySchema,
-  /** `trustedPrCommentAuthors` from `~/.ai-review/config.json` at sync time (logins, case-insensitive). */
+  /** `trustedPrCommentAuthors` from `~/.scout/config.json` at sync time (logins, case-insensitive). */
   trustedAuthors: z.array(z.string()).optional(),
   comments: z.array(PrCommentSchema),
 })
@@ -118,18 +118,18 @@ export const PrResolutionSchema = z.object({
   at: isoDate,
   /** `review.sent.at` when this was recorded: the Submit this answer belongs to; null when nothing was sent yet. */
   sentAt: isoDate.nullable(),
-  /** What the agent suggests replying to the reviewer on GitHub (written only by `ai-review pr-resolve --reply`). Never posted by itself: it only goes out as the user's draft, after a Submit. */
+  /** What the agent suggests replying to the reviewer on GitHub (written only by `scout pr-resolve --reply`). Never posted by itself: it only goes out as the user's draft, after a Submit. */
   proposedReply: z.string().max(PR_REPLY_MAX_LENGTH).optional(),
 })
 export type PrResolution = z.infer<typeof PrResolutionSchema>
 
 /**
- * `review/pr-resolutions.json`: agent-owned, written by `ai-review pr-resolve`. A sibling of
+ * `review/pr-resolutions.json`: agent-owned, written by `scout pr-resolve`. A sibling of
  * `resolutions.json` (not an `external` target in it): different id space, a different writer that
  * rewrites `pr-comments.json` wholesale at every sync, and a different status vocabulary. Keeping them
  * apart also keeps `sessionStatus` (`resolutions.updatedAt > sent.at` → updated) unaffected.
  */
-/** What the user explicitly chose to trust (`ai-review pr-trust`, only from a terminal). */
+/** What the user explicitly chose to trust (`scout pr-trust`, only from a terminal). */
 /**
  * A comment-level grant is pinned to what the user saw: it lapses when the body changes (`hashPrBody`,
  * the full SHA-256). A short 16-hex pin from an earlier version still parses but never matches a full
@@ -158,19 +158,19 @@ export type PrReplyKind = z.infer<typeof PrReplyKindSchema>
 /**
  * The user's text for one PR comment thread. `instruction` (the thread is open): what Claude should do about the comment,
  * sent with the next Submit and never posted. `reply` (the thread is addressed or declined): the text to post on GitHub as a
- * reply, posted by `ai-review pr-reply` only when it is in the latest sent snapshot. A new draft's `kind` is derived from the status at the first save; later saves keep it (only an explicit `kind` on the request converts it).
+ * reply, posted by `scout pr-reply` only when it is in the latest sent snapshot. A new draft's `kind` is derived from the status at the first save; later saves keep it (only an explicit `kind` on the request converts it).
  */
 export const PrReplyDraftSchema = z.object({
   body: z.string().min(1).max(PR_REPLY_MAX_LENGTH),
   kind: PrReplyKindSchema,
   editedAt: isoDate,
-  /** Set by `ai-review pr-reply` after posting; null while a draft. */
+  /** Set by `scout pr-reply` after posting; null while a draft. */
   postedAt: isoDate.nullable(),
   githubUrl: z.string().min(1).optional(),
 })
 export type PrReplyDraft = z.infer<typeof PrReplyDraftSchema>
 
-/** `review/pr-replies.json`: written by the dashboard server (`PUT /pr-replies/:commentId`) and, for `postedAt`/`githubUrl`, by `ai-review pr-reply`. Keyed by thread root id. */
+/** `review/pr-replies.json`: written by the dashboard server (`PUT /pr-replies/:commentId`) and, for `postedAt`/`githubUrl`, by `scout pr-reply`. Keyed by thread root id. */
 export const PrRepliesSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   sessionId: z.string().regex(SESSION_ID_RE),

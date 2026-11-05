@@ -25,7 +25,7 @@ const baseFields = {
 }
 
 /**
- * `manifest.json` of a code review: written by `ai-review init` only. Everything else about a session (the diff,
+ * `manifest.json` of a code review: written by `scout init` only. Everything else about a session (the diff,
  * the artifacts, the PR description) is read live from the repo working tree and the session folder.
  * `kind` is absent from manifests written before test runs existed.
  */
@@ -40,7 +40,7 @@ export const CodeReviewManifestSchema = z.object({
     /** A ref name (e.g. `origin/main`); the base SHA is `git merge-base <baseRef> HEAD`, computed live. */
     baseRef: z.string().min(1),
   }),
-  /** pr-review: the PR being reviewed (`ai-review init --pr`), so Scout can link it before a report is published. */
+  /** pr-review: the PR being reviewed (`scout init --pr`), so Scout can link it before a report is published. */
   pr: z.object({ url: z.string().min(1) }).optional(),
 })
 export type CodeReviewManifest = z.infer<typeof CodeReviewManifestSchema>
@@ -57,7 +57,7 @@ export const TestRunManifestSchema = z.object({
     repo: z.string().min(1),
     feature: z.string().nullable(),
     area: z.string().nullable(),
-    /** Where the copies in the run folder came from, recorded by `ai-review run-file add` so `refresh` can copy them again. */
+    /** Where the copies in the run folder came from, recorded by `scout run-file add` so `refresh` can copy them again. */
     sources: z
       .object({
         /** Absolute path of the test plan file copied to `run/plan/test-plan.md`. */

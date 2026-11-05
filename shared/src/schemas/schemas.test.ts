@@ -87,7 +87,7 @@ describe('schemas accept a valid example of each shape', () => {
   })
 
   it('api responses and requests', () => {
-    const health: Health = { ok: true, home: '/Users/me/.ai-review' }
+    const health: Health = { ok: true, home: '/Users/me/.scout' }
     expect(HealthSchema.parse(health)).toEqual(health)
 
     const m = makeManifest()

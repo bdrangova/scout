@@ -8,18 +8,18 @@ import { ARCHIVE_DIR, ManifestSchema, SESSIONS_DIR, type Manifest } from '@scout
 export const MANIFEST_FILE = 'manifest.json'
 export const SLUG_MAX_LENGTH = 40
 
-/** `AI_REVIEW_HOME`, or `~/.ai-review`. */
+/** `SCOUT_HOME`, or `~/.scout`. */
 export function resolveHome(env: NodeJS.ProcessEnv = process.env): string {
-  const fromEnv = env.AI_REVIEW_HOME
+  const fromEnv = env.SCOUT_HOME
   if (fromEnv !== undefined && fromEnv.trim() !== '') return path.resolve(fromEnv)
-  return path.join(os.homedir(), '.ai-review')
+  return path.join(os.homedir(), '.scout')
 }
 
 export function sessionDir(home: string, id: string): string {
   return path.join(home, SESSIONS_DIR, id)
 }
 
-/** `<home>/archive/<id>`: where `ai-review archive` moves a session folder. */
+/** `<home>/archive/<id>`: where `scout archive` moves a session folder. */
 export function archivedSessionDir(home: string, id: string): string {
   return path.join(home, ARCHIVE_DIR, id)
 }

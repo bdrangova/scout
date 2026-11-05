@@ -19,6 +19,6 @@ export async function findPrSession(options: { home: string; repo: string; id?: 
   const repo = await topLevel(options.repo)
   const branch = await currentBranch(repo)
   const open = await openSessionForBranch(options.home, repo, branch)
-  if (open === null) throw new PrSyncError('no-session', `no open review session for ${branch ?? 'detached HEAD'} in ${repo}: run ai-review init first, or pass the session id`)
+  if (open === null) throw new PrSyncError('no-session', `no open review session for ${branch ?? 'detached HEAD'} in ${repo}: run scout init first, or pass the session id`)
   return { id: open.id, dir: open.dir }
 }

@@ -1,4 +1,4 @@
-// `ai-review run-index merge`: applies one publish skill's patch to `<run>/test-run.json`, enforcing which keys that skill owns.
+// `scout run-index merge`: applies one publish skill's patch to `<run>/test-run.json`, enforcing which keys that skill owns.
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { TEST_RUN_INDEX_FILE, TEST_RUN_INDEX_SCHEMA_VERSION } from '@scout/shared'

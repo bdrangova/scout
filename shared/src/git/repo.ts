@@ -46,7 +46,7 @@ export async function refExists(repo: string, ref: string, options: RunOptions =
  * The diff is always "everything changed against master": `origin/master`, then `master`, then
  * `origin/main`, then `main`, then whatever `origin/HEAD` points to, else `HEAD`. The remote ref
  * is preferred because a stale local master (121 commits behind in a measured checkout) turns a
- * 392-file diff into a 1,688-file one. `ai-review init --base <ref>` overrides the choice.
+ * 392-file diff into a 1,688-file one. `scout init --base <ref>` overrides the choice.
  */
 export async function defaultBase(repo: string): Promise<string> {
   for (const candidate of ['origin/master', 'master', 'origin/main', 'main']) {

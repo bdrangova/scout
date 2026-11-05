@@ -10,7 +10,7 @@ let dir: string
 let run: string
 
 beforeEach(async () => {
-  dir = await mkdtemp(path.join(os.tmpdir(), 'ai-review-merge-'))
+  dir = await mkdtemp(path.join(os.tmpdir(), 'scout-merge-'))
   run = path.join(dir, 'feat', 'area', 'test-runs', 'run-1')
   await mkdir(run, { recursive: true })
 })

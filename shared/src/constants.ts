@@ -62,10 +62,10 @@ export const SESSION_SPEC_DIR = 'spec'
 export const SESSION_RUN_DIR = 'run'
 export const SESSION_PR_DESCRIPTION_FILE = 'pr-description.md'
 export const ARTIFACT_INDEX_FILE = 'index.json'
-/** GitHub PR comments of a session (posix, relative to the session folder): written by `ai-review pr-sync` / `pr-resolve`. */
+/** GitHub PR comments of a session (posix, relative to the session folder): written by `scout pr-sync` / `pr-resolve`. */
 export const PR_COMMENTS_FILE = 'review/pr-comments.json'
 export const PR_RESOLUTIONS_FILE = 'review/pr-resolutions.json'
-/** Scout's journal (agent-owned, written by `ai-review journal`; posix, relative to the session folder). */
+/** Scout's journal (agent-owned, written by `scout journal`; posix, relative to the session folder). */
 export const JOURNAL_FILE = 'review/journal.json'
 /** Dashboard-written drafts: the user's instruction for an open comment, or the reply to post for an answered one. */
 export const PR_REPLIES_FILE = 'review/pr-replies.json'

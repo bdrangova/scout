@@ -1,5 +1,5 @@
-// `ai-review init --kind test-run`: a feature-test session. The run folder lives inside the session folder (`<session>/run`):
-// the agent writes scenarios, evidence and logs there, and `ai-review run-file add` copies the test plan and the bugs in.
+// `scout init --kind test-run`: a feature-test session. The run folder lives inside the session folder (`<session>/run`):
+// the agent writes scenarios, evidence and logs there, and `scout run-file add` copies the test plan and the bugs in.
 // The dashboard reads that folder live (through `run/test-run.json`); the session also holds the manifest and the review state.
 import { mkdir, realpath } from 'node:fs/promises'
 import path from 'node:path'

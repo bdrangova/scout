@@ -21,7 +21,7 @@ export default defineConfig({
     timeout: 60_000,
     env: {
       FIXTURE_HOME: E2E_STORE,
-      AI_REVIEW_PORT: String(E2E_API_PORT),
+      SCOUT_PORT: String(E2E_API_PORT),
       WEB_PORT: String(E2E_WEB_PORT),
       DASHBOARD_URL: E2E_BASE_URL,
     },

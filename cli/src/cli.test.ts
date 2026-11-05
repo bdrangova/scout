@@ -11,10 +11,10 @@ const bundle = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 
 
 const COMMANDS = ['init', 'path', 'feedback', 'resolve', 'pending', 'status', 'open', 'install']
 
-describe('ai-review bundle', () => {
+describe('scout bundle', () => {
   let home: string
   beforeAll(async () => {
-    home = await mkdtemp(path.join(os.tmpdir(), 'ai-review-cli-'))
+    home = await mkdtemp(path.join(os.tmpdir(), 'scout-cli-'))
   })
   afterAll(async () => {
     await rm(home, { recursive: true, force: true })
@@ -29,12 +29,12 @@ describe('ai-review bundle', () => {
 
   it('exits 1 with the error message for an unknown session', async () => {
     await expect(
-      execFileAsync(process.execPath, [bundle, 'feedback', '20260101-0000-nope-0000'], { env: { ...process.env, AI_REVIEW_HOME: home } }),
+      execFileAsync(process.execPath, [bundle, 'feedback', '20260101-0000-nope-0000'], { env: { ...process.env, SCOUT_HOME: home } }),
     ).rejects.toMatchObject({ code: 1, stderr: expect.stringContaining('manifest.json') })
   })
 
   it('reports no pending feedback for an empty store', async () => {
-    const { stdout } = await execFileAsync(process.execPath, [bundle, 'pending', '--repo', home], { env: { ...process.env, AI_REVIEW_HOME: home } })
+    const { stdout } = await execFileAsync(process.execPath, [bundle, 'pending', '--repo', home], { env: { ...process.env, SCOUT_HOME: home } })
     expect(JSON.parse(stdout)).toMatchObject({ count: 0, sessions: [], message: '' })
   })
 })

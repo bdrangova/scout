@@ -1,5 +1,5 @@
-// Scout's menu bar item: shows whether the background service answers and runs `scout <command>` for the
-// menu actions, so the service logic lives in one place (service/scout).
+// Scout's menu bar item: shows whether the background service answers and runs `scout-service <command>` for the
+// menu actions, so the service logic lives in one place (service/scout-service, also `scout service <command>`).
 import AppKit
 
 let dashboardURL = URL(string: "http://scout.localhost:4546")!
@@ -16,7 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
   private var timer: Timer?
   private let control: String = {
     let fromBundle = Bundle.main.object(forInfoDictionaryKey: "ScoutControl") as? String
-    return fromBundle ?? (NSHomeDirectory() as NSString).appendingPathComponent(".local/bin/scout")
+    return fromBundle ?? (NSHomeDirectory() as NSString).appendingPathComponent(".scout/bin/scout-service")
   }()
   // Black on transparent, marked as a template so macOS tints it for light and dark menu bars.
   // `image(forResource:)` picks up scout-menubar@2x.png for Retina screens.
@@ -154,7 +154,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
   @objc private func quit() { NSApp.terminate(nil) }
 
   @objc private func showLogs() {
-    let home = ProcessInfo.processInfo.environment["AI_REVIEW_HOME"] ?? (NSHomeDirectory() as NSString).appendingPathComponent(".ai-review")
+    let home = ProcessInfo.processInfo.environment["SCOUT_HOME"] ?? (NSHomeDirectory() as NSString).appendingPathComponent(".scout")
     let log = URL(fileURLWithPath: (home as NSString).appendingPathComponent("logs/scout.log"))
     NSWorkspace.shared.open([log], withApplicationAt: URL(fileURLWithPath: "/System/Applications/Utilities/Console.app"), configuration: NSWorkspace.OpenConfiguration())
   }

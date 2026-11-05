@@ -1,4 +1,4 @@
-// `ai-review journal add | list | supersede`: Scout's journal (review/journal.json), written only here.
+// `scout journal add | list | supersede`: Scout's journal (review/journal.json), written only here.
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
@@ -96,7 +96,7 @@ async function sessionById(home: string, id: string): Promise<JournalSession> {
   return { id, dir, manifest, created: false }
 }
 
-/** An explicit id, else the live session for repo + branch; with `create`, a missing one is created like `ai-review init` (title = branch). */
+/** An explicit id, else the live session for repo + branch; with `create`, a missing one is created like `scout init` (title = branch). */
 export async function resolveJournalSession(options: { home: string; repo: string; id?: string | null; create: boolean }): Promise<JournalSession | null> {
   if (options.id) return sessionById(options.home, options.id)
   const repo = await topLevel(options.repo)

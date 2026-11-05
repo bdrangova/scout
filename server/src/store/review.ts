@@ -52,7 +52,7 @@ export async function readResolutions(sessionDir: string, sessionId: string): Pr
   return resolutions
 }
 
-/** `review/journal.json` (Scout's journal, written by `ai-review journal`); `null` when absent, invalid or another session's. */
+/** `review/journal.json` (Scout's journal, written by `scout journal`); `null` when absent, invalid or another session's. */
 export async function readJournal(sessionDir: string, sessionId: string): Promise<Journal | null> {
   try {
     const journal = await readValidated(path.join(sessionDir, ...JOURNAL_FILE.split('/')), JOURNAL_FILE, JournalSchema)
@@ -62,21 +62,21 @@ export async function readJournal(sessionDir: string, sessionId: string): Promis
   }
 }
 
-/** `review/pr-comments.json` (written by `ai-review pr-sync`), validated; `null` when the session was never synced. */
+/** `review/pr-comments.json` (written by `scout pr-sync`), validated; `null` when the session was never synced. */
 export async function readPrComments(sessionDir: string, sessionId: string): Promise<PrComments | null> {
   const value = await readValidated(path.join(sessionDir, ...PR_COMMENTS_FILE.split('/')), PR_COMMENTS_FILE, PrCommentsSchema)
   if (value !== null && value.sessionId !== sessionId) throw invalidStoreFile(`${PR_COMMENTS_FILE} belongs to session ${value.sessionId}, not ${sessionId}`)
   return value
 }
 
-/** `review/pr-resolutions.json` (written by `ai-review pr-resolve`), validated; `null` when absent. */
+/** `review/pr-resolutions.json` (written by `scout pr-resolve`), validated; `null` when absent. */
 export async function readPrResolutions(sessionDir: string, sessionId: string): Promise<PrResolutions | null> {
   const value = await readValidated(path.join(sessionDir, ...PR_RESOLUTIONS_FILE.split('/')), PR_RESOLUTIONS_FILE, PrResolutionsSchema)
   if (value !== null && value.sessionId !== sessionId) throw invalidStoreFile(`${PR_RESOLUTIONS_FILE} belongs to session ${value.sessionId}, not ${sessionId}`)
   return value
 }
 
-/** `review/pr-replies.json` (the user's drafts, written here and by `ai-review pr-reply`), validated; `null` when absent. */
+/** `review/pr-replies.json` (the user's drafts, written here and by `scout pr-reply`), validated; `null` when absent. */
 export async function readPrReplies(sessionDir: string, sessionId: string): Promise<PrReplies | null> {
   const value = await readValidated(path.join(sessionDir, ...PR_REPLIES_FILE.split('/')), PR_REPLIES_FILE, PrRepliesSchema)
   if (value !== null && value.sessionId !== sessionId) throw invalidStoreFile(`${PR_REPLIES_FILE} belongs to session ${value.sessionId}, not ${sessionId}`)

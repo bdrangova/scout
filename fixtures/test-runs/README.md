@@ -31,4 +31,4 @@ and the roots `run`, `plan`, `bugs`. Every root stays inside the run folder (no 
 
 Check one with `npx tsx cli/src/index.ts run-index validate fixtures/test-runs/<name>/run`.
 
-A real run gets its plan and bugs the same way: `ai-review run-file add <id> plan <file>` and `ai-review run-file add <id> bug <folder>` copy them into the run, and `ai-review run-file refresh <id>` copies them again when the originals changed.
+A real run gets its plan and bugs the same way: `scout run-file add <id> plan <file>` and `scout run-file add <id> bug <folder>` copy them into the run, and `scout run-file refresh <id>` copies them again when the originals changed.

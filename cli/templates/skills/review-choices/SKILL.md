@@ -1,12 +1,12 @@
 ---
 name: review-choices
-description: The one question every Scout skill asks before it starts ("Use these recommendations?") and how it behaves with --auto or AI_REVIEW_HEADLESS=1. Loaded by the scout-* skills for their step 0.
+description: The one question every Scout skill asks before it starts ("Use these recommendations?") and how it behaves with --auto or SCOUT_HEADLESS=1. Loaded by the scout-* skills for their step 0.
 user-invocable: false
 ---
 # Asking for choices
 
 ## Auto mode
-With `--auto` in the arguments or `AI_REVIEW_HEADLESS=1` set, never wait for user input: skip the question and take your own recommendations. When something is ambiguous, do the safe thing the calling skill names (leave a comment open with a specific question, decline with a question as the reason) instead of guessing.
+With `--auto` in the arguments or `SCOUT_HEADLESS=1` set, never wait for user input: skip the question and take your own recommendations. When something is ambiguous, do the safe thing the calling skill names (leave a comment open with a specific question, decline with a question as the reason) instead of guessing.
 
 ## The question
 Gather what the calling skill says to read first, work out a proposal for each of its choices, then ask once with AskUserQuestion:

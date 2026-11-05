@@ -37,7 +37,7 @@ export const CodeReviewSentSnapshotSchema = z.object({
   comments: z.array(CommentSchema),
   /**
    * The user's unposted PR-comment drafts at send time: `instruction`s for open comments (what Claude should do) and `reply`s the
-   * user approved to post on GitHub (`ai-review pr-reply` posts only these). Absent when there were none.
+   * user approved to post on GitHub (`scout pr-reply` posts only these). Absent when there were none.
    */
   prReplies: z.array(SentPrReplySchema).optional(),
   counts: z.object({

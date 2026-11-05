@@ -237,7 +237,7 @@ describe('PR reply drafts', () => {
     const md = renderPrRepliesMarkdown(SESSION_ID, prReplies) ?? ''
     expect(md).toContain('### Instructions for GitHub PR comments')
     expect(md).toContain('  > Do it.')
-    expect(md).toContain(`ai-review pr-reply --session ${SESSION_ID}`)
+    expect(md).toContain(`scout pr-reply --session ${SESSION_ID}`)
     expect(md).not.toContain('nit: rename this.')
     expect(renderPrRepliesMarkdown(SESSION_ID, [])).toBeNull()
   })

@@ -35,9 +35,9 @@ describe('newSessionId', () => {
 })
 
 describe('resolveHome / sessionDir', () => {
-  it('uses AI_REVIEW_HOME when set, else ~/.ai-review', () => {
-    expect(resolveHome({ AI_REVIEW_HOME: '/tmp/x' })).toBe(path.resolve('/tmp/x'))
-    expect(resolveHome({})).toBe(path.join(os.homedir(), '.ai-review'))
+  it('uses SCOUT_HOME when set, else ~/.scout', () => {
+    expect(resolveHome({ SCOUT_HOME: '/tmp/x' })).toBe(path.resolve('/tmp/x'))
+    expect(resolveHome({})).toBe(path.join(os.homedir(), '.scout'))
     expect(sessionDir('/h', 'id')).toBe(path.join('/h', 'sessions', 'id'))
   })
 })
@@ -49,7 +49,7 @@ describe('writeJsonAtomic', () => {
   })
 
   it('writes the file and leaves no temp file behind', async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'ai-review-store-'))
+    dir = await mkdtemp(path.join(os.tmpdir(), 'scout-store-'))
     const file = path.join(dir, 'nested', 'manifest.json')
     await writeJsonAtomic(file, { a: 1 })
     expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ a: 1 })

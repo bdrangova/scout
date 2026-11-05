@@ -14,7 +14,7 @@ let repo: string
 let worktree: string
 
 beforeEach(async () => {
-  root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'ai-review-app-')))
+  root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'scout-app-')))
   home = path.join(root, 'home')
   repo = path.join(root, 'main')
   worktree = path.join(root, 'wt')
@@ -37,7 +37,7 @@ function fake(listeners: Record<number, { pid: number; cwd: string | null }[]>, 
   }
 }
 
-describe('ai-review app-status', () => {
+describe('scout app-status', () => {
   it('classifies listeners as this checkout, another worktree or other, for ports given with --port', async () => {
     const system = fake(
       { 4001: [{ pid: 11, cwd: path.join(worktree, 'web') }], 4002: [{ pid: 12, cwd: path.join(repo, 'web') }], 4003: [{ pid: 13, cwd: '/somewhere/else' }], 4004: [] },

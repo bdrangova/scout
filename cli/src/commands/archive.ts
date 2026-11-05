@@ -1,4 +1,4 @@
-// `ai-review archive <id> [--done] [--undo]` moves a session folder between sessions/ and archive/; `ai-review delete <id> --yes` removes an archived one (no server needed).
+// `scout archive <id> [--done] [--undo]` moves a session folder between sessions/ and archive/; `scout delete <id> --yes` removes an archived one (no server needed).
 import { cp, lstat, mkdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
@@ -59,7 +59,7 @@ export interface DeleteOptions {
 }
 
 /**
- * `ai-review delete <id>`: removes `archive/<id>` for good (archived sessions only; a live session is
+ * `scout delete <id>`: removes `archive/<id>` for good (archived sessions only; a live session is
  * refused and untouched). The repository itself is never touched. Returns the folder it removed.
  */
 export async function deleteArchivedSession({ home, id }: DeleteOptions): Promise<string> {

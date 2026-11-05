@@ -51,7 +51,7 @@ Ids are constants in `scripts/fixtures/ids.ts`. The first two are what `e2e/smok
 
 `pr-mixed` also shows the reply loop (`review/pr-resolutions.json` `proposedReply`, `review/pr-replies.json`): proposed replies on `rc9001`, `rc9003`, `rc9005` (declined) and `ic9201`; drafts: `rc9001` an edited `reply`, not yet posted; `rc9002` an `instruction` on an open comment; `rc9003` a `reply` already posted (`postedAt`, `githubUrl`); `rc9005` and `ic9201` have a proposal but no draft yet. The sent snapshot of this session predates them, so it has no `prReplies`; a new Submit from the UI lists the unposted drafts.
 
-The four `pr-*` sessions (`scripts/fixtures/pr-sessions.ts`) write `review/pr-comments.json` and `review/pr-resolutions.json` directly, as `ai-review pr-sync` / `pr-resolve` would; `pr-mixed` shares `variety-app`, the others `trial-app`.
+The four `pr-*` sessions (`scripts/fixtures/pr-sessions.ts`) write `review/pr-comments.json` and `review/pr-resolutions.json` directly, as `scout pr-sync` / `pr-resolve` would; `pr-mixed` shares `variety-app`, the others `trial-app`.
 
 Three sessions (`empty-spec-extras`, `branch-changed`, `archived`) and the first session share the `trial-app` repo;
 `types-variety` and `rich-spec` share `variety-app`.

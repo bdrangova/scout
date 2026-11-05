@@ -12,7 +12,7 @@ import { GhCommandError, type GhRunner } from './gh.ts'
 let home: string
 let dir: string
 beforeEach(async () => {
-  home = await mkdtemp(path.join(os.tmpdir(), 'ai-review-pr-reply-'))
+  home = await mkdtemp(path.join(os.tmpdir(), 'scout-pr-reply-'))
   dir = sessionDir(home, SESSION_ID)
   await writeJsonAtomic(path.join(dir, 'manifest.json'), makeManifest())
   await writeJsonAtomic(
@@ -63,7 +63,7 @@ function stubGh(fail: (args: readonly string[]) => boolean = () => false): { gh:
 }
 const run = (gh: GhRunner, extra: { dryRun?: boolean } = {}) => prReply({ home, repo: home, id: SESSION_ID, gh, now: new Date(T3), ...extra })
 
-describe('ai-review pr-reply', () => {
+describe('scout pr-reply', () => {
   it('posts the replies of the latest sent snapshot through gh with the body on stdin, and records postedAt and the url', async () => {
     await writeSent(T1, [reply('rc1', 'OLD approved text')])
     await writeSent(T2, [reply('rc1', 'Fixed in abc; $(rm -rf /) is just text.'), reply('rc2', 'Kept on purpose.'), reply('ic3', 'Thanks all.'), reply('rc4', 'x', 'instruction')])
@@ -154,7 +154,7 @@ describe('ai-review pr-reply', () => {
   })
 })
 
-describe('ai-review pr-resolve --reply', () => {
+describe('scout pr-resolve --reply', () => {
   it('stores the proposal with the resolution, and rejects an empty one', async () => {
     await resolvePrComments({ home, id: SESSION_ID, items: [{ comment: 'rc1', status: 'addressed', note: 'done', reply: 'Fixed in abc.' }, { comment: 'rc2', status: 'declined', note: 'why' }] })
     const stored = PrResolutionsSchema.parse(JSON.parse(await readFile(path.join(dir, 'review', 'pr-resolutions.json'), 'utf8')))

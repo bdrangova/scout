@@ -82,7 +82,7 @@ describe('renderSentMarkdown', () => {
       - [c11] > This one is gone from disk.
 
       ## Required response
-      Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. For each comment run \`ai-review resolve 20260926-1830-add-trial-bar-3f2a --comment c<n> --status resolved --note "…"\` (or \`--status open --note "…"\` to reply without resolving). The exact diff the reviewer saw is in \`review/sent/2026-09-26T19-30-00.000Z.patch\` (relative to the session folder).
+      Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. For each comment run \`scout resolve 20260926-1830-add-trial-bar-3f2a --comment c<n> --status resolved --note "…"\` (or \`--status open --note "…"\` to reply without resolving). The exact diff the reviewer saw is in \`review/sent/2026-09-26T19-30-00.000Z.patch\` (relative to the session folder).
       "
     `)
   })
@@ -163,7 +163,7 @@ index 1111111..2222222 100644
       - [c1] > Ship it.
 
       ## Required response
-      Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. For each comment run \`ai-review resolve 20260926-1830-add-trial-bar-3f2a --comment c<n> --status resolved --note "…"\` (or \`--status open --note "…"\` to reply without resolving). The exact diff the reviewer saw is in \`review/sent/2026-09-26T19-30-00.000Z.patch\` (relative to the session folder).
+      Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. For each comment run \`scout resolve 20260926-1830-add-trial-bar-3f2a --comment c<n> --status resolved --note "…"\` (or \`--status open --note "…"\` to reply without resolving). The exact diff the reviewer saw is in \`review/sent/2026-09-26T19-30-00.000Z.patch\` (relative to the session folder).
       "
     `)
   })

@@ -54,7 +54,7 @@ describe('scanRun', () => {
   let dir: string
   let run: string
   beforeEach(async () => {
-    dir = await mkdtemp(path.join(os.tmpdir(), 'ai-review-scan-'))
+    dir = await mkdtemp(path.join(os.tmpdir(), 'scout-scan-'))
     run = path.join(dir, 'f', 'a', 'test-runs', 'r1')
     const put = async (rel: string, text = 'x'): Promise<void> => {
       await mkdir(path.dirname(path.join(run, rel)), { recursive: true })

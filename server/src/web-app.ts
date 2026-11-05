@@ -15,7 +15,7 @@ export function webAppRouter(dir: string): Router {
   router.use(express.static(dir, { index: false }))
   router.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => {
     res.setHeader('Cache-Control', 'no-cache')
-    // `root`, not a joined path: `send` refuses any path with a dot folder in it, like `~/.ai-review`.
+    // `root`, not a joined path: `send` refuses any path with a dot folder in it, like `~/.scout`.
     res.sendFile('index.html', { root: dir })
   })
   return router

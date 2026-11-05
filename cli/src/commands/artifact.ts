@@ -1,4 +1,4 @@
-// `ai-review artifact add|remove`: put a file into a session's evidence, extras or spec folder and keep that folder's index.json in step.
+// `scout artifact add|remove`: put a file into a session's evidence, extras or spec folder and keep that folder's index.json in step.
 import { copyFile, mkdir, readFile, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'

@@ -2,7 +2,7 @@
 name: journal
 description: Write Scout's journal, the notes a reviewer reads next to the diff to learn why the code is the way it is. Use while you work whenever you make a non-obvious implementation choice, pick between approaches, work around a constraint, or accept a tradeoff, and when the user says "journal this" or runs /journal. With no arguments, /journal backfills the journal for the current branch.
 argument-hint: "[what to journal, e.g. 'why the cache is keyed by tenant'] [--session <id>] [--files <path,…>] [--summaries-only]"
-allowed-tools: Bash(ai-review *) Bash(git diff *) Bash(git status *) Read Glob
+allowed-tools: Bash(scout *) Bash(git diff *) Bash(git status *) Read Glob
 ---
 # Journal
 
@@ -31,7 +31,7 @@ Kinds: `decision` (chose A over B), `implementation` (how something non-obvious 
 
 ## Add an entry
 ```
-ai-review journal add --kind decision --title "Each customer keeps its own saved settings" \
+scout journal add --kind decision --title "Each customer keeps its own saved settings" \
   --body "Customers can set different defaults, and a shared copy showed one customer's choices to another. …
 
 **Technical detail:** the cache key is the tenant id, so …" --file src/cache.ts --line 42 \
@@ -39,16 +39,16 @@ ai-review journal add --kind decision --title "Each customer keeps its own saved
 ```
 - It finds this branch's review session, or creates it, so you can journal before `/scout-development-review`. Pass `--repo <path>` outside the repo and a session id as the first argument to target one.
 - `--line` takes `42` or `42-48`; `--side old` anchors to the base version of the file. The line must exist.
-- Many at once: write a JSON array of `{ kind, title, body, file, line, side, alt, related, supersedes }` and run `ai-review journal add --from <file>`.
+- Many at once: write a JSON array of `{ kind, title, body, file, line, side, alt, related, supersedes }` and run `scout journal add --from <file>`.
 - A `summary` for a file that already has one replaces it.
-- To replace an entry whose decision changed: add the new one with `--supersedes jN`, or `ai-review journal supersede <id> jN --by jM`. Never edit the file by hand.
-- `ai-review journal list [--file <path>] [--json]` shows what is there; check it before adding, so you do not repeat an entry.
+- To replace an entry whose decision changed: add the new one with `--supersedes jN`, or `scout journal supersede <id> jN --by jM`. Never edit the file by hand.
+- `scout journal list [--file <path>] [--json]` shows what is there; check it before adding, so you do not repeat an entry.
 
 ## `/journal` with no arguments: backfill
 `/scout-development-review` runs this too, with `--session <id>`, and with `--files <path,…>` on a refresh (only the files changed since the last publish) or `--summaries-only` when the user chose that.
-1. `ai-review journal list [<id>] --json` for what exists.
-2. The changed files: the `--files` list when given, otherwise `git status --short` and `git diff --stat $(git merge-base <base> HEAD)` (base from `ai-review status`).
+1. `scout journal list [<id>] --json` for what exists.
+2. The changed files: the `--files` list when given, otherwise `git status --short` and `git diff --stat $(git merge-base <base> HEAD)` (base from `scout status`).
 3. Add a `summary` (title: the file's job in this change; body: 2 to 4 sentences on why it changed and what to look at) for each changed file without a live one, and re-summarise a file whose live summary no longer matches its code (the new `summary` replaces it). Skip lockfiles, generated and collapsed files.
 4. Unless `--summaries-only`: add entries (`decision`, `implementation`, `tradeoff`, `caveat`) for choices from this conversation that are not logged yet, anchored where visible, with rejected alternatives. Do not repeat an existing entry. Read the code (Read, Glob) to find the right line.
-5. Write many at once with `ai-review journal add [<id>] --from <file.json>`.
+5. Write many at once with `scout journal add [<id>] --from <file.json>`.
 6. Report the ids added and the session id.

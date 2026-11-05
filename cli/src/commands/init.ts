@@ -1,4 +1,4 @@
-// `ai-review init`: writes the session manifest (repo top level, branch, base ref) and creates the
+// `scout init`: writes the session manifest (repo top level, branch, base ref) and creates the
 // folders the agent drops files into. The dashboard reads the repo working tree live from then on.
 import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'

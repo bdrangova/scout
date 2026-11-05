@@ -2,7 +2,7 @@ import type { Comment, CommentTargetKind, Decision } from '../schemas/review.ts'
 
 const REQUIRED_RESPONSE =
   'Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. ' +
-  'For each comment run `ai-review resolve <id> --comment c<n> --status resolved --note "…"` ' +
+  'For each comment run `scout resolve <id> --comment c<n> --status resolved --note "…"` ' +
   '(or `--status open --note "…"` to reply without resolving).'
 
 /** The `## Required response` body; `patchPath` (session-relative) is named only when the send carries a diff. */

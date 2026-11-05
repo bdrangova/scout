@@ -1,4 +1,4 @@
-// `ai-review path <id> [evidence|extras|spec|run]`: the absolute folder the agent writes into (`run`: the run folder of a test-run session).
+// `scout path <id> [evidence|extras|spec|run]`: the absolute folder the agent writes into (`run`: the run folder of a test-run session).
 import path from 'node:path'
 import type { Command } from 'commander'
 import { isTestRun, runFolderOf, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR } from '@scout/shared'

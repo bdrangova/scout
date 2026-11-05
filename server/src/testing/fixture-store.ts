@@ -52,9 +52,9 @@ export function fixtureSessionDir(home: string, id: string = FIXTURE_SESSION_ID)
   return path.join(home, 'sessions', id)
 }
 
-/** A `Config` pointing at `home`, built the same way the server does (`AI_REVIEW_HOME`). */
+/** A `Config` pointing at `home`, built the same way the server does (`SCOUT_HOME`). */
 export function testConfig(home: string): Config {
-  return loadConfig({ AI_REVIEW_HOME: home, AGENT_ADAPTER: 'fake', PATH: '' })
+  return loadConfig({ SCOUT_HOME: home, AGENT_ADAPTER: 'fake', PATH: '' })
 }
 
 /** Quiet logs, fast watchers and a short tree debounce. Call `closeApp` in `afterAll`. */

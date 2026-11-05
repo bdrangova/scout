@@ -1,4 +1,4 @@
-// `ai-review publish-log diff|write`: what changed in the session's files since the last publish, so a refresh redoes only what it must.
+// `scout publish-log diff|write`: what changed in the session's files since the last publish, so a refresh redoes only what it must.
 import { readFile, readdir, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'

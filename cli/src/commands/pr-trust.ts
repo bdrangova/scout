@@ -1,4 +1,4 @@
-// `ai-review pr-trust <id> --comment <cid> | --author <login>`: the user's explicit choice to hand a comment (or every
+// `scout pr-trust <id> --comment <cid> | --author <login>`: the user's explicit choice to hand a comment (or every
 // comment of an author) from an untrusted GitHub author to the agent. Terminal only: an agent (no TTY) is refused,
 // so a comment cannot talk the agent into trusting itself.
 import path from 'node:path'
@@ -25,7 +25,7 @@ export async function prTrust(options: PrTrustOptions): Promise<{ trust: NonNull
   if ((options.comment === undefined) === (options.author === undefined)) throw new Error('pr-trust needs exactly one of --comment <id> or --author <login>')
   const session = await findPrSession(options)
   const prComments = await readPrComments(session.dir)
-  if (prComments === null) throw new Error(`session ${session.id} has no PR comments: run ai-review pr-sync first`)
+  if (prComments === null) throw new Error(`session ${session.id} has no PR comments: run scout pr-sync first`)
   const existing = await readPrResolutions(session.dir)
   const trust: NonNullable<PrResolutions['trust']> = { authors: [...(existing?.trust?.authors ?? [])], comments: [...(existing?.trust?.comments ?? [])] }
   if (options.comment !== undefined) {

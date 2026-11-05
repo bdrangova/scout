@@ -14,7 +14,7 @@ let repo: string
 let worktree: string
 
 beforeEach(async () => {
-  const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'ai-review-env-')))
+  const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'scout-env-')))
   home = path.join(root, 'home')
   repo = path.join(root, 'main')
   worktree = path.join(root, 'worktrees', 'slot2-fix')
@@ -31,9 +31,9 @@ afterEach(async () => {
   await rm(path.dirname(home), { recursive: true, force: true })
 })
 
-const RUNTIME = `p=$(cat port.txt); printf '{"label":"%s","apps":[{"name":"web","url":"http://localhost:%s","port":%s}],"databases":[{"engine":"mysql","port":3306,"compose":{"project":"%s_database"}}],"extra":1}' "$(basename "$AI_REVIEW_CHECKOUT")" "$p" "$p" "$(basename "$PWD")"`
+const RUNTIME = `p=$(cat port.txt); printf '{"label":"%s","apps":[{"name":"web","url":"http://localhost:%s","port":%s}],"databases":[{"engine":"mysql","port":3306,"compose":{"project":"%s_database"}}],"extra":1}' "$(basename "$SCOUT_CHECKOUT")" "$p" "$p" "$(basename "$PWD")"`
 
-describe('ai-review env', () => {
+describe('scout env', () => {
   it('tells a linked worktree from the main worktree and puts scratch outside both', async () => {
     const main = await checkoutEnv({ home, repo })
     const linked = await checkoutEnv({ home, repo: path.join(worktree) })

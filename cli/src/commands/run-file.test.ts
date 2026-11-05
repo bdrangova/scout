@@ -20,7 +20,7 @@ async function put(file: string, text = 'x'): Promise<void> {
 }
 
 beforeEach(async () => {
-  home = await realpath(await mkdtemp(path.join(os.tmpdir(), 'ai-review-runfile-')))
+  home = await realpath(await mkdtemp(path.join(os.tmpdir(), 'scout-runfile-')))
   repo = path.join(home, 'checkout')
   await mkdir(repo)
   await gitText(repo, ['init', '-q', '-b', 'main'])

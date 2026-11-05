@@ -1,4 +1,4 @@
-// `ai-review run-index validate|show <runPath>`: checks `<runPath>/test-run.json` (the index the publish skills write).
+// `scout run-index validate|show <runPath>`: checks `<runPath>/test-run.json` (the index the publish skills write).
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'

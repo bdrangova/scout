@@ -1,4 +1,4 @@
-// `ai-review video mp4|check`: browsers play H.264 mp4, not the webm Playwright records. `mp4` converts with the system ffmpeg and
+// `scout video mp4|check`: browsers play H.264 mp4, not the webm Playwright records. `mp4` converts with the system ffmpeg and
 // deletes the webm once the mp4 is checked; `check` lists videos and flags any that are too small to hold a recording.
 import { execFile } from 'node:child_process'
 import { readdir, rename, rm, stat } from 'node:fs/promises'
@@ -10,7 +10,7 @@ const run = promisify(execFile)
 
 /** A recording smaller than this is an empty or broken file. */
 export const MIN_VIDEO_BYTES = 10 * 1024
-const FFMPEG_MISSING = 'ffmpeg was not found on PATH: install it with `brew install ffmpeg` (or set AI_REVIEW_FFMPEG to its path)'
+const FFMPEG_MISSING = 'ffmpeg was not found on PATH: install it with `brew install ffmpeg` (or set SCOUT_FFMPEG to its path)'
 
 export interface ConvertResult {
   input: string
@@ -121,7 +121,7 @@ export function registerVideo(program: Command): void {
     .action(async (paths: string[], flags: JsonFlag) => {
       let converted: Awaited<ReturnType<typeof convertToMp4>>
       try {
-        converted = await convertToMp4({ paths, ffmpeg: process.env.AI_REVIEW_FFMPEG ?? 'ffmpeg' })
+        converted = await convertToMp4({ paths, ffmpeg: process.env.SCOUT_FFMPEG ?? 'ffmpeg' })
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         if (flags.json === true) console.log(JSON.stringify({ ok: false, error: message }, null, 2))

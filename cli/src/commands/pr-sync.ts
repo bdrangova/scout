@@ -1,4 +1,4 @@
-// `ai-review pr-sync [id] [--repo <path>] [--pr N] [--json]`: fetches the PR of the current branch through `gh`
+// `scout pr-sync [id] [--repo <path>] [--pr N] [--json]`: fetches the PR of the current branch through `gh`
 // into review/pr-comments.json (identity + external comments), keeping what is already there.
 import path from 'node:path'
 import type { Command } from 'commander'

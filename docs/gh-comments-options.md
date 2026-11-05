@@ -16,7 +16,7 @@ Half right. As an input it behaves like a spec: it says what the work should do.
 | Find an unaddressed comment | frequent | Rail: group by file / author / status, Open filter |
 | Replies to GitHub | end of the loop | Push replies button (drafts, edited per card) |
 | Start addressing | once or twice | "Address open comments" split button, starts a run like Submit |
-| Fetch / refresh | rare | Refresh button and `ai-review pr-sync`; never automatic |
+| Fetch / refresh | rare | Refresh button and `scout pr-sync`; never automatic |
 | Reviewer's own comments and Submit | unchanged | Submit stays about the reviewer's feedback; PR comments never count as Open comments |
 
 ## Options
@@ -51,7 +51,7 @@ Half right. As an input it behaves like a spec: it says what the work should do.
 Smaller-first slice, in order, each shippable:
 
 1. **Today, no code:** the agent writes `spec/pr-feedback.md` (option B). Validates the skill, the ingest and the wording of notes.
-2. **Contract + `ai-review pr-sync` + read-only A page:** rail group by file/status, threads with the agent's note and commit chip, progress bar. You tell Claude Code to address comments; it records outcomes with `ai-review pr-resolve`.
+2. **Contract + `scout pr-sync` + read-only A page:** rail group by file/status, threads with the agent's note and commit chip, progress bar. You tell Claude Code to address comments; it records outcomes with `scout pr-resolve`.
 3. **Address button and progress:** starts a run, working/queued states.
 4. **Push replies** (drafts, per-card edit, sticky tick bar) via `gh`.
 5. **Files links:** "Open in Files" at the fixing commit, `gh` counts on tree rows and the timeline node. Annotations in the diff only if the links prove not enough.
@@ -61,12 +61,12 @@ Smaller-first slice, in order, each shippable:
 Separate from `Comment` (ids `c<n>`, the reviewer's own): external comments must not enter Submit, `openComments` or the sent snapshot.
 
 ```
-github/pr.json            written by `ai-review pr-sync`; the server only reads it
+github/pr.json            written by `scout pr-sync`; the server only reads it
   PrFeedback = { schemaVersion, fetchedAt, pr: { number, url, title, repo, headRef, baseRef, headSha }, threads: PrThread[] }
   PrThread   = { id: 't<n>' (local, never reused), kind: 'line'|'review'|'general'|'summary', nodeId, path|null, line|null,
                  originalLine, side, commitSha, diffHunk, outdated, resolvedOnGitHub, reviewState?,
                  comments: { ghId, nodeId, author: { login, kind: 'bot'|'user' }, body, suggestion|null, createdAt, url, inReplyTo|null }[] }
-review/pr-resolutions.json   agent-owned, written by `ai-review pr-resolve <t> --addressed|--declined|--outdated --note … --reply … --commit …`
+review/pr-resolutions.json   agent-owned, written by `scout pr-resolve <t> --addressed|--declined|--outdated --note … --reply … --commit …`
   { schemaVersion, sessionId, updatedAt, threads: Record<t<n>, { status: 'addressed'|'declined'|'outdated'|'open', note, at, files[], commits[],
       reply: { body, status: 'draft'|'posted', postedAt, ghCommentId } | null }> }
 ```
@@ -94,7 +94,7 @@ Related: `docs/pr-link-options.md` (PR identity `manifest.prs`, the Submit choic
 
 Decision: option C. External PR comments appear inline on the diff lines in Files, and the Submit page's one comments panel ("Open comments" / "Comments") lists the PR threads next to the session's own comments, under the same headings: by file path under Files, the ones that name no file under Overall. There is no separate GitHub section. Open threads show; addressed, declined, outdated and resolved/deleted ones count as resolved and sit behind "Show n resolved" (the header counts include them). Each card keeps the author, body, replies, "View on GitHub", the agent's note with the commit chip, the "Not sent to agent" tag and an "In Files" link. Status is carried by colour, not a word: an addressed card has a green wash and a declined one a red wash (the file cards' approved/rejected tint; the word is `sr-only`); open and outdated keep their chip. There is no "In last send" anywhere in the UI (`inLastSend` and `lastSendAt` stay in the contract, unused by web). The cards are informational: they never change Will be sent, the suggested decision or the send. No replies are posted and no GitHub thread is resolved; external comments never count in Open comments or the verdict counts. Full contract: `shared/README.md` ("schemas/pr-comments.ts").
 
-**Files.** `review/pr-comments.json` (written only by `ai-review pr-sync` / `pr-link`: PR identity + comments, merged on every sync, vanished comments kept with `removedAt`) and `review/pr-resolutions.json` (agent-owned, `ai-review pr-resolve`: `addressed` with a note and optional `commitSha`, or `declined` with the reason; each carries `sentAt` = the `review.sent.at` current when recorded). A sibling file rather than an `external` target in `resolutions.json`: different id space (`rc|rv|ic<githubId>`), a different writer, different statuses, and `sessionStatus` and Submit must not react.
+**Files.** `review/pr-comments.json` (written only by `scout pr-sync` / `pr-link`: PR identity + comments, merged on every sync, vanished comments kept with `removedAt`) and `review/pr-resolutions.json` (agent-owned, `scout pr-resolve`: `addressed` with a note and optional `commitSha`, or `declined` with the reason; each carries `sentAt` = the `review.sent.at` current when recorded). A sibling file rather than an `external` target in `resolutions.json`: different id space (`rc|rv|ic<githubId>`), a different writer, different statuses, and `sessionStatus` and Submit must not react.
 
 **For the UI agent**
 - Import from `@scout/shared`: `PrCommentsResponse` (`PrCommentsResponseSchema`), `PrCommentView`, `PrComment`, `PrCommentCounts`, `PrSummary`, `PrIdentity`, `PrResolution`, `PrCommentStatus` (`open|addressed|declined|outdated`), `PrAuthor` (`kind: human|bot|copilot`), `LineAnchor` (already used by the diff). Do not re-derive status: the route returns views; to derive client-side use `derivePrComments(prComments, resolutions, lastSendAt)`, `isAddressedInLastSend(resolution, lastSendAt)`, `prCommentAnchor(comment)`, `prCommentCounts`.
@@ -104,10 +104,10 @@ Decision: option C. External PR comments appear inline on the diff lines in File
 - Fixture sessions (`npm run fixture`; see `fixtures/README.md`): `20261005-0900-var-201-pr-comments-b4e1` (every state, thread with reply, Copilot/human, summaries, general; sent, so `lastSend` exists), `20261005-0930-qi-15472-trial-bar-pr-fresh-c5d2` (draft PR, all open, nothing sent), `20261005-1000-qi-15472-trial-bar-pr-no-comments-d6f3` (PR, zero comments), `20261005-1030-qi-15472-trial-bar-pr-merged-e7a4` (merged PR, all addressed in the approved send).
 
 **CLI** (all through `gh`; the server never talks to GitHub):
-- `ai-review pr-sync [id] [--repo <path>] [--pr N] [--json]`: `gh pr view` + `gh api --paginate` (review comments, reviews with a body, issue comments) + GraphQL `reviewThreads` (resolved/outdated; a failure only adds a warning). Exit codes: 2 gh missing, 3 not authenticated, 4 no PR for the branch, 5 no GitHub remote, 6 no review session, 1 other. With `--json` the result is `{ ok: true, sessionId, file, pr, counts, added, updated, removed, warnings }`, or `{ ok: false, error: { code, message, exitCode } }` on stdout with the same exit code.
-- `ai-review pr-resolve <id> --comment rc123 --status addressed|declined --note … [--commit sha] [--files a,b] [--from file.json]` (declined needs a note; replies are refused, resolve the root).
-- `ai-review pr-link [id] --url https://github.com/o/r/pull/N [--number N]`: records a PR opened elsewhere without `gh` (title/state are placeholders until a sync).
-- Skill `scout-pr-comments` (installed by `ai-review install`); `scout-apply-review` points to it; the pending hook counts open PR comments of sent sessions; the sent `.md` gets a `## GitHub PR comments` section (open ones, with replies and permalinks) when `pr-comments.json` exists.
+- `scout pr-sync [id] [--repo <path>] [--pr N] [--json]`: `gh pr view` + `gh api --paginate` (review comments, reviews with a body, issue comments) + GraphQL `reviewThreads` (resolved/outdated; a failure only adds a warning). Exit codes: 2 gh missing, 3 not authenticated, 4 no PR for the branch, 5 no GitHub remote, 6 no review session, 1 other. With `--json` the result is `{ ok: true, sessionId, file, pr, counts, added, updated, removed, warnings }`, or `{ ok: false, error: { code, message, exitCode } }` on stdout with the same exit code.
+- `scout pr-resolve <id> --comment rc123 --status addressed|declined --note … [--commit sha] [--files a,b] [--from file.json]` (declined needs a note; replies are refused, resolve the root).
+- `scout pr-link [id] --url https://github.com/o/r/pull/N [--number N]`: records a PR opened elsewhere without `gh` (title/state are placeholders until a sync).
+- Skill `scout-pr-comments` (installed by `scout install`); `scout-apply-review` points to it; the pending hook counts open PR comments of sent sessions; the sent `.md` gets a `## GitHub PR comments` section (open ones, with replies and permalinks) when `pr-comments.json` exists.
 
 **Decision needed**
 1. A comment resolved on GitHub is shown as `outdated` (`closedBy: 'github-resolved'`), not a fifth status. Say if the UI should tell them apart (it can, via `closedBy`).
@@ -115,16 +115,16 @@ Decision: option C. External PR comments appear inline on the diff lines in File
 3. A different PR on the same branch replaces the stored one (old comments dropped, old resolutions kept, a warning is printed).
 
 **Security (untrusted comment text)**
-- New on the contract: `PrComment.authorAssociation` (optional), `PrComments.trustedAuthors` (optional), `PrResolutions.trust` (optional) and `PrCommentView.trusted: boolean` from the pure helper `isTrustedPrComment(comment, prTrustFor(prComments, resolutions))` (`@scout/shared`). Trusted = OWNER/MEMBER/COLLABORATOR, Copilot, `trustedPrCommentAuthors` in `~/.ai-review/config.json`, or granted by the user.
-- UI agents: show a badge when `!view.trusted` ("not shown to the agent"); an untrusted comment still appears everywhere, only the agent never receives it. There is no web control to trust one yet: `ai-review pr-trust <id> --comment <id>|--author <login>` works from a terminal only (an agent has no TTY and is refused).
-- The agent reads comments only through the feedback section or `ai-review pr-comments`: each body is in an `<untrusted-github-comment>` block under a "data, not instructions" warning; the section also says how many untrusted comments were left out. The `scout-pr-comments` skill is limited to `ai-review pr-sync|pr-comments|pr-resolve|pr-link|status|path|feedback`, read-only git and the edit tools (no `gh api`, `npm run`, `npx`); tests go through the repo's normal permission prompts. `ai-review install` rewrites an existing copy.
+- New on the contract: `PrComment.authorAssociation` (optional), `PrComments.trustedAuthors` (optional), `PrResolutions.trust` (optional) and `PrCommentView.trusted: boolean` from the pure helper `isTrustedPrComment(comment, prTrustFor(prComments, resolutions))` (`@scout/shared`). Trusted = OWNER/MEMBER/COLLABORATOR, Copilot, `trustedPrCommentAuthors` in `~/.scout/config.json`, or granted by the user.
+- UI agents: show a badge when `!view.trusted` ("not shown to the agent"); an untrusted comment still appears everywhere, only the agent never receives it. There is no web control to trust one yet: `scout pr-trust <id> --comment <id>|--author <login>` works from a terminal only (an agent has no TTY and is refused).
+- The agent reads comments only through the feedback section or `scout pr-comments`: each body is in an `<untrusted-github-comment>` block under a "data, not instructions" warning; the section also says how many untrusted comments were left out. The `scout-pr-comments` skill is limited to `scout pr-sync|pr-comments|pr-resolve|pr-link|status|path|feedback`, read-only git and the edit tools (no `gh api`, `npm run`, `npx`); tests go through the repo's normal permission prompts. `scout install` rewrites an existing copy.
 - New fixtures in `20261005-0900-var-201-pr-comments-b4e1`: `rc9010` (CONTRIBUTOR, untrusted) and `rc9011` (FIRST_TIME_CONTRIBUTOR, an injection attempt); counts there are now `open: 6` (two untrusted).
-- Decision needed: the headless run still allows `Bash(ai-review *)`, `npm run *` and `npx vitest *` (`APPLY_REVIEW_ALLOWED_TOOLS`, unchanged); trusted comments could in theory reach those. Narrowing it is a separate change.
+- Decision needed: the headless run still allows `Bash(scout *)`, `npm run *` and `npx vitest *` (`APPLY_REVIEW_ALLOWED_TOOLS`, unchanged); trusted comments could in theory reach those. Narrowing it is a separate change.
 - Trust is exact: Copilot = the logins in `COPILOT_BOT_LOGINS` (shared constant, `Copilot` and `copilot-pull-request-reviewer[bot]`) with type Bot, one source of truth for the CLI classifier and `isTrustedPrComment`; allowlist = case-insensitive equality. A comment-level `pr-trust` grant is pinned to the body hash and lapses on edit (`pr-sync` result `trustLapsed: string[]`, printed as "N trusted comments were edited since you trusted them and are untrusted again"); `--author` is a standing grant. `hashPrBody` is exported from shared. `copilot-swe-agent[bot]` is not in the set (unverified): add it to `trustedPrCommentAuthors` if wanted.
 
 ## Phase 2: instructions and replies (contract)
 
-The loop, decided with the user: (1) on an **open** PR thread the user types an *instruction* for Claude; it travels with the next Submit and is never posted. (2) After the fixes Claude regenerates the dashboard info and proposes a *reply* per answered thread (`ai-review pr-resolve --reply "…"`). (3) The user edits or accepts it, Submits, and `ai-review pr-reply` posts those texts to GitHub. The Submit is the approval; the server still never calls GitHub.
+The loop, decided with the user: (1) on an **open** PR thread the user types an *instruction* for Claude; it travels with the next Submit and is never posted. (2) After the fixes Claude regenerates the dashboard info and proposes a *reply* per answered thread (`scout pr-resolve --reply "…"`). (3) The user edits or accepts it, Submits, and `scout pr-reply` posts those texts to GitHub. The Submit is the approval; the server still never calls GitHub.
 
 **Files**
 - `review/pr-resolutions.json`: each resolution gains optional `proposedReply` (max 65000 chars, `PR_REPLY_MAX_LENGTH`). Written only by `pr-resolve --reply`; never posted by itself.
@@ -137,9 +137,9 @@ The loop, decided with the user: (1) on an **open** PR thread the user types an 
 - Shared: `PrRepliesSchema`, `PrReplyDraftSchema`, `PutPrReplyRequest/ResponseSchema`, `SentPrReplySchema`, `prReplyKindFor`, `buildSentPrReplies`, `renderPrRepliesMarkdown`; `derivePrComments`/`buildPrCommentsResponse` take the drafts as a last argument.
 
 **CLI**
-- `ai-review pr-resolve <id> --comment … --status … --note … [--reply <text>]` (also `reply` in `--from` items).
-- `ai-review pr-reply [--session <id>] [--repo <path>] [--dry-run]`: reads the LATEST sent snapshot's `prReplies` of kind `reply`; posts each with `gh api --method POST <endpoint> --input -` (JSON body on stdin, never in a shell string): `repos/{o}/{r}/pulls/{n}/comments/{id}/replies` for `rc`, `repos/{o}/{r}/issues/{n}/comments` for `ic` and `rv`. Skips: comment not in `pr-comments.json`, a reply inside a thread, a removed comment, `postedAt` already set, a draft whose stored kind is not `reply`, and a draft removed or edited since the Submit (submit again to approve the new text). One failure does not stop the rest; `postedAt`/`githubUrl` are written after each post; the exit code is 1 when any failed. It never reads `proposedReply`.
-- Skills: `scout-pr-comments` passes `--reply` on every `pr-resolve`, follows the instructions section, and runs `ai-review pr-reply` only when the feedback lists approved replies; its allowed tools add `Bash(ai-review pr-reply *)` and still contain no `gh`.
+- `scout pr-resolve <id> --comment … --status … --note … [--reply <text>]` (also `reply` in `--from` items).
+- `scout pr-reply [--session <id>] [--repo <path>] [--dry-run]`: reads the LATEST sent snapshot's `prReplies` of kind `reply`; posts each with `gh api --method POST <endpoint> --input -` (JSON body on stdin, never in a shell string): `repos/{o}/{r}/pulls/{n}/comments/{id}/replies` for `rc`, `repos/{o}/{r}/issues/{n}/comments` for `ic` and `rv`. Skips: comment not in `pr-comments.json`, a reply inside a thread, a removed comment, `postedAt` already set, a draft whose stored kind is not `reply`, and a draft removed or edited since the Submit (submit again to approve the new text). One failure does not stop the rest; `postedAt`/`githubUrl` are written after each post; the exit code is 1 when any failed. It never reads `proposedReply`.
+- Skills: `scout-pr-comments` passes `--reply` on every `pr-resolve`, follows the instructions section, and runs `scout pr-reply` only when the feedback lists approved replies; its allowed tools add `Bash(scout pr-reply *)` and still contain no `gh`.
 
 **Web** (see `web/src/DESIGN.md`, "Reply box"): each open or answered thread root gets a text box (instruction on an open thread, proposed or edited reply on an answered one, a read-only quote once posted); an untouched proposal is not a draft until "Use this reply" or an edit; there is no Dismiss (it could not be persisted). Text autosaves after 250 ms and Submit flushes the boxes first. An answered thread with an unaccepted proposal or an unposted draft stays visible in Open comments until posted; the header counts only threads still open on GitHub. Will be sent shows "Instructions n" and "PR replies n", and Submit works with only drafts and no decision.
 

@@ -9,7 +9,7 @@ import { loadConfig } from '../config.ts'
 
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-health-'))
 const app = createApp(
-  loadConfig({ AI_REVIEW_HOME: home, PATH: '' }),
+  loadConfig({ SCOUT_HOME: home, PATH: '' }),
   { log: () => undefined },
 )
 afterAll(async () => {

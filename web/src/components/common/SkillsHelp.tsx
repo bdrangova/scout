@@ -40,7 +40,7 @@ export function SkillsHelp({ open, onOpenChange }: SkillsHelpProps) {
         <DialogHeader>
           <DialogTitle>Skills</DialogTitle>
           <DialogDescription>
-            Install: <code className="font-mono text-xs text-ink">ai-review install --repo &lt;path&gt;</code>. Loop: publish → review → apply.
+            Install: <code className="font-mono text-xs text-ink">scout install --repo &lt;path&gt;</code>. Loop: publish → review → apply.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-5">

@@ -271,7 +271,7 @@ export function contentsType(file: TreeFile): string {
 }
 
 /**
- * The `AI_REVIEW_HOME` store: manifests and review files on disk, plus the live working tree of
+ * The `SCOUT_HOME` store: manifests and review files on disk, plus the live working tree of
  * each session's repo (`TreeCache`) and the artifacts derived from the session folder.
  */
 export class Store {
@@ -911,7 +911,7 @@ export class Store {
 
   /**
    * Deletes `archive/<id>` permanently (archived sessions only: a live id is 404 and untouched).
-   * Never touches the repository, `refs/ai-review/*` or `cache/`; a symlinked entry only loses the
+   * Never touches the repository, `refs/scout/*` or `cache/`; a symlinked entry only loses the
    * link. No events: the live list is unaffected.
    */
   async deleteArchivedSession(id: string): Promise<void> {

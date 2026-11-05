@@ -1,4 +1,4 @@
-// `ai-review install --repo <path>`: skills, matching packs, the pending-feedback hook, settings merge, Playwright MCP, launcher, config.
+// `scout install --repo <path>`: skills, matching packs, the pending-feedback hook, settings merge, Playwright MCP, launcher, config.
 import { execFile } from 'node:child_process'
 import { access, chmod, constants, lstat, mkdir, readdir, readFile, readlink, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
@@ -15,8 +15,11 @@ import { runShell } from './env.ts'
 export { originRepoName }
 import { resolveHome, writeJsonAtomic } from '../store.ts'
 
-export const PENDING_HOOK = 'ai_review_pending_feedback.sh'
-export const PERMISSION = 'Bash(ai-review *)'
+export const PENDING_HOOK = 'scout_pending_feedback.sh'
+export const PERMISSION = 'Bash(scout *)'
+/** What installs before the rename to Scout put into a repository: removed on install so the old command stops running. */
+export const RETIRED_HOOK = 'ai_review_pending_feedback.sh'
+export const RETIRED_PERMISSION = 'Bash(ai-review *)'
 /** Change-list key for the MCP step (a user-level setting, not a file in the repo). */
 const MCP_RECORD = 'claude mcp (user)'
 export const MCP_ADD_ARGS = ['mcp', 'add', '--scope', 'user', 'playwright', '--', 'npx', '@playwright/mcp@latest', '--caps=devtools']
@@ -94,7 +97,7 @@ export interface InstallOptions {
   /** Absolute path of the bundled CLI the launcher should exec; default derived from this module's location. */
   cliBundle?: string
   nodeBin?: string
-  /** A directory on PATH that gets an `ai-review` symlink to the launcher (skills call the bare name); default `~/.local/bin`, null = none. */
+  /** A directory on PATH that gets an `scout` symlink to the launcher (skills call the bare name); default `~/.local/bin`, null = none. */
   pathDir?: string | null
 }
 
@@ -211,6 +214,11 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
     const content = await readFile(path.join(templates, ...file.from.split('/')), 'utf8')
     record(file.to, await writeIfChanged(path.join(repo, ...file.to.split('/')), content, file.mode))
   }
+  const retiredHook = path.join(repo, '.claude', 'hooks', RETIRED_HOOK)
+  if (await lstat(retiredHook).then(() => true, () => false)) {
+    await rm(retiredHook, { force: true })
+    record(`.claude/hooks/${RETIRED_HOOK}`, 'removed')
+  }
   for (const name of RETIRED_SKILLS) {
     for (const root of ['.claude', '.agents']) {
       const rel = `${root}/skills/${name}`
@@ -237,7 +245,7 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
     }
   }
 
-  // Settings: hooks keyed by script name, plus the Bash(ai-review *) permission.
+  // Settings: hooks keyed by script name, plus the Bash(scout *) permission.
   const settingsRel = path.posix.join('.claude', options.shared ? 'settings.json' : 'settings.local.json')
   const settingsFile = path.join(repo, ...settingsRel.split('/'))
   const raw = await readFile(settingsFile, 'utf8').catch(() => null)
@@ -250,10 +258,10 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
     }
   }
   const hooks: HookSpec[] = [{ event: 'UserPromptSubmit', command: hookCommand(PENDING_HOOK), timeout: 5, matchKey: PENDING_HOOK }]
-  const merged = mergeSettings(existing, { hooks, allow: [PERMISSION] })
+  const merged = mergeSettings(existing, { hooks, allow: [PERMISSION], retired: { hookKeys: [RETIRED_HOOK], allow: [RETIRED_PERMISSION] } })
   if (merged.changed) {
     await writeJsonAtomic(settingsFile, merged.settings)
-    record(settingsRel, raw === null ? 'created' : 'updated', merged.added.join(', '))
+    record(settingsRel, raw === null ? 'created' : 'updated', [...merged.added, ...merged.removed.map((r) => `removed ${r}`)].join(', '))
   } else {
     record(settingsRel, 'unchanged')
   }
@@ -286,19 +294,19 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
   }
 
   // Launcher with absolute paths (nvm is not on hook or Desktop PATHs) and the port config.
-  const launcher = path.join(options.home, 'bin', 'ai-review')
+  const launcher = path.join(options.home, 'bin', 'scout')
   const launcherContent = [
     '#!/bin/sh',
-    '# Scout launcher: absolute node and CLI paths so hooks and the Desktop app can run ai-review.',
+    '# Scout launcher: absolute node and CLI paths so hooks and the Desktop app can run scout.',
     `exec ${JSON.stringify(options.nodeBin ?? process.execPath)} ${JSON.stringify(options.cliBundle ?? defaultCliBundle())} "$@"`,
     '',
   ].join('\n')
   record(launcher, await writeIfChanged(launcher, launcherContent, 0o755))
 
-  // The skills and the hook say plain `ai-review`, which a Desktop or terminal session only finds on PATH.
+  // The skills and the hook say plain `scout`, which a Desktop or terminal session only finds on PATH.
   const pathDir = options.pathDir === undefined ? path.join(os.homedir(), '.local', 'bin') : options.pathDir
   if (pathDir !== null && (await stat(pathDir).then((s) => s.isDirectory(), () => false))) {
-    const link = path.join(pathDir, 'ai-review')
+    const link = path.join(pathDir, 'scout')
     const current = await lstat(link).then(() => readlink(link).catch(() => null), () => undefined)
     if (current === launcher) {
       record(link, 'unchanged')
@@ -310,7 +318,7 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
       messages.push(`${link} already exists and is not the Scout launcher; put ${path.dirname(launcher)} on PATH instead`)
     }
   } else {
-    messages.push(`put ${path.dirname(launcher)} on PATH (or symlink ${launcher} into a PATH directory) so sessions can run ai-review`)
+    messages.push(`put ${path.dirname(launcher)} on PATH (or symlink ${launcher} into a PATH directory) so sessions can run scout`)
   }
 
   const configFile = path.join(options.home, CONFIG_FILE)
@@ -322,7 +330,7 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
   }
 
   // The pending hook keeps its once-per-session markers here.
-  await mkdir(path.join((await gitText(repo, ['rev-parse', '--absolute-git-dir'])).trim(), 'ai-review'), { recursive: true })
+  await mkdir(path.join((await gitText(repo, ['rev-parse', '--absolute-git-dir'])).trim(), 'scout'), { recursive: true })
 
   // A pack's own after-install step (for example mirroring `.claude/` into sibling clones), run from the repo.
   for (const pack of packs) {
@@ -339,7 +347,7 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
   const main = (await mainWorktree(repo)).split(path.sep).join('/')
   if (main !== repo.split(path.sep).join('/')) messages.push(`${repo} is a linked worktree: install into the main worktree ${main} instead, and link its .claude/ into worktrees`)
   if ((await readConfig(options.home)).repos?.[main]?.runtime === undefined && !packs.some((p) => p.manifest.runtime !== undefined)) {
-    messages.push(`no runtime command for ${main}: /run-app and /snapshot-db fall back to guessing ports. Set one with: ai-review env --repo ${JSON.stringify(main)} --set-runtime '<command that prints the runtime JSON>'`)
+    messages.push(`no runtime command for ${main}: /run-app and /snapshot-db fall back to guessing ports. Set one with: scout env --repo ${JSON.stringify(main)} --set-runtime '<command that prints the runtime JSON>'`)
   }
 
   return { repo, changes, messages, changed: changes.some((c) => c.action !== 'unchanged' && c.action !== 'skipped') }

@@ -1,4 +1,4 @@
-// `ai-review env [--repo <path>]`: what the skills need to know about one checkout before they touch its app or data:
+// `scout env [--repo <path>]`: what the skills need to know about one checkout before they touch its app or data:
 // main worktree vs linked worktree, a scratch folder outside the checkout, and the checkout's runtime (app URLs,
 // databases, services) as printed by the repository's own runtime command. Scout never guesses ports or file layouts.
 import { execFile } from 'node:child_process'
@@ -83,7 +83,7 @@ export function scratchDir(home: string, checkout: string): string {
 
 /** Runs a shell command from `cwd`; `packDir` is exported as `SCOUT_PACK_DIR` for commands that come from a pack. */
 export function runShell(command: string, cwd: string, options: { packDir?: string; timeoutMs?: number } = {}): Promise<string> {
-  const env: NodeJS.ProcessEnv = { ...process.env, AI_REVIEW_CHECKOUT: cwd }
+  const env: NodeJS.ProcessEnv = { ...process.env, SCOUT_CHECKOUT: cwd }
   if (options.packDir !== undefined) env.SCOUT_PACK_DIR = options.packDir
   return new Promise((resolve, reject) => {
     execFile('/bin/sh', ['-c', command], { cwd, timeout: options.timeoutMs ?? RUNTIME_TIMEOUT_MS, maxBuffer: 1024 * 1024, env }, (error, stdout, stderr) => {
@@ -141,7 +141,7 @@ export async function checkoutEnv(options: { home: string; repo: string }): Prom
 
 /**
  * Stores (or with `null` clears) the runtime command of the repository `repo` is in. Edits the raw file, so keys this
- * CLI version does not know survive. Terminal only: the command runs on every `ai-review env`, so an agent must not be
+ * CLI version does not know survive. Terminal only: the command runs on every `scout env`, so an agent must not be
  * able to plant one.
  */
 export async function setRuntimeCommand(options: { home: string; repo: string; command: string | null; interactive?: boolean }): Promise<{ mainCheckout: string }> {

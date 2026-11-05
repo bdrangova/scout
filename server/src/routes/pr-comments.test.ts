@@ -291,7 +291,7 @@ describe('Submit with PR drafts', () => {
     expect(md).toContain('### Instructions for GitHub PR comments')
     expect(md).toContain('- [rc2] https://github.com/acme/app/pull/482#discussion_r2\n  > Do it, but keep the name.')
     expect(md).toContain('### Replies the reviewer approved to post')
-    expect(md).toContain('ai-review pr-reply')
+    expect(md).toContain('scout pr-reply')
     expect(md).not.toContain('Already posted.')
   })
 

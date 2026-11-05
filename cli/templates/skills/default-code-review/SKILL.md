@@ -19,6 +19,6 @@ Assign critical, high, medium or low by demonstrated impact, not by how alarming
 Load `/write-for-reviewers` (Skill tool) first.
 - **Title:** the effect people see ("New equipment is saved without a type"), not the mechanism.
 - **Proposed PR comment:** what goes wrong, when, and what to change. Name code only where the fix needs it.
-- **Anchor:** the schema's old/new line anchor, kept tight within the diff (`ai-review pr-report schema`).
+- **Anchor:** the schema's old/new line anchor, kept tight within the diff (`scout pr-report schema`).
 
 The human edits this wording and accepts or rejects each finding in Scout; never decide that for them. Reproducing findings is the caller's job (`/reproduce`); do not mark anything verified here.

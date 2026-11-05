@@ -1,4 +1,4 @@
-// `ai-review status [id] --repo <path>`: the review session of this branch from the store files only
+// `scout status [id] --repo <path>`: the review session of this branch from the store files only
 // (manifest, review.json, resolutions.json); the tree itself is computed by the dashboard, not here.
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'

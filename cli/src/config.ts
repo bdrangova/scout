@@ -1,4 +1,4 @@
-// `~/.ai-review/config.json` `{ port }`: the dashboard writes it at startup so URLs are right.
+// `~/.scout/config.json` `{ port }`: the dashboard writes it at startup so URLs are right.
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
@@ -7,7 +7,7 @@ import { DASHBOARD_HOST, DEFAULT_WEB_PORT, type ManifestKind } from '@scout/shar
 export const CONFIG_FILE = 'config.json'
 
 export const RepoConfigSchema = z.object({
-  /** Shell command run in a checkout that prints its runtime (`CheckoutRuntimeSchema`) as JSON; see `ai-review env`. */
+  /** Shell command run in a checkout that prints its runtime (`CheckoutRuntimeSchema`) as JSON; see `scout env`. */
   runtime: z.string().min(1).optional(),
 })
 export type RepoConfig = z.infer<typeof RepoConfigSchema>
@@ -19,7 +19,7 @@ export const ConfigSchema = z.object({
   trustedPrCommentAuthors: z.array(z.string()).optional(),
   /** Per repository, keyed by the main worktree's absolute path, so every linked worktree of it shares the entry. */
   repos: z.record(z.string(), RepoConfigSchema).optional(),
-  /** Registered pack folders (`ai-review pack add`), absolute, in order; see `@scout/shared/packs`. */
+  /** Registered pack folders (`scout pack add`), absolute, in order; see `@scout/shared/packs`. */
   packs: z.array(z.string().min(1)).optional(),
 })
 export type Config = z.infer<typeof ConfigSchema>

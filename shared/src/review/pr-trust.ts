@@ -17,7 +17,7 @@ export function isCopilotAccount(login: string, isBot: boolean): boolean {
   return isBot && COPILOT_BOT_LOGINS.includes(login)
 }
 
-/** Logins allowed by the config at sync time plus what the user trusted explicitly (`ai-review pr-trust`). */
+/** Logins allowed by the config at sync time plus what the user trusted explicitly (`scout pr-trust`). */
 export function prTrustFor(prComments: Pick<PrComments, 'trustedAuthors'> | null, resolutions: Pick<PrResolutions, 'trust'> | null): PrTrust {
   return {
     authors: [...(prComments?.trustedAuthors ?? []), ...(resolutions?.trust?.authors ?? [])],

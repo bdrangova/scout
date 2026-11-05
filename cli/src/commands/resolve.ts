@@ -1,4 +1,4 @@
-// `ai-review resolve <id>`: records how the agent addressed comments in review/resolutions.json.
+// `scout resolve <id>`: records how the agent addressed comments in review/resolutions.json.
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'

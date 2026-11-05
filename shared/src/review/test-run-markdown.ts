@@ -42,7 +42,7 @@ function commentLines(comment: Comment): string[] {
 }
 
 /**
- * Renders a test-run snapshot to the markdown the agent reads (`review/sent/<stem>.md`, `ai-review feedback`).
+ * Renders a test-run snapshot to the markdown the agent reads (`review/sent/<stem>.md`, `scout feedback`).
  * Scenarios appear only with a verdict or a comment. Deterministic: `\n` line endings, one trailing newline,
  * empty sections omitted.
  */

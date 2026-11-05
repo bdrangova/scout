@@ -7,15 +7,15 @@ import { closeApp, createApp } from './app.ts'
 import { loadConfig } from './config.ts'
 
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'scout-webapp-'))
-// A dot folder on the way, like `~/.ai-review/app/web`.
-const webDir = path.join(home, '.ai-review', 'web')
+// A dot folder on the way, like `~/.scout/app/web`.
+const webDir = path.join(home, '.scout', 'web')
 fs.mkdirSync(path.join(webDir, 'assets'), { recursive: true })
 fs.writeFileSync(path.join(webDir, 'index.html'), '<div id="root"></div>')
 fs.writeFileSync(path.join(webDir, 'assets', 'index-abc.js'), 'console.log(1)')
 fs.writeFileSync(path.join(webDir, 'favicon.svg'), '<svg/>')
 
 const app = createApp(
-  loadConfig({ AI_REVIEW_HOME: home, AGENT_ADAPTER: 'fake', AI_REVIEW_WEB_DIR: webDir, PATH: '' }),
+  loadConfig({ SCOUT_HOME: home, AGENT_ADAPTER: 'fake', SCOUT_WEB_DIR: webDir, PATH: '' }),
   { log: () => undefined },
 )
 afterAll(async () => {

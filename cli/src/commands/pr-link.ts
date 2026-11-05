@@ -1,4 +1,4 @@
-// `ai-review pr-link <id> --url <github pull url> [--number N]`: records a PR opened outside the flow, without gh.
+// `scout pr-link <id> --url <github pull url> [--number N]`: records a PR opened outside the flow, without gh.
 import path from 'node:path'
 import type { Command } from 'commander'
 import { isTestRun, SCHEMA_VERSION, type PrComments } from '@scout/shared'

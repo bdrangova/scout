@@ -1,4 +1,4 @@
-// `ai-review pr-report facts`: the PR facts part of the Summary overview, read from GitHub in one `gh pr view`.
+// `scout pr-report facts`: the PR facts part of the Summary overview, read from GitHub in one `gh pr view`.
 import { z } from 'zod'
 import { classifyGhError, defaultGhRunner, PrSyncError, type GhRunner } from '../pr/gh.ts'
 

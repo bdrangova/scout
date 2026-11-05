@@ -34,7 +34,7 @@ export function settingsRouter(home: string, pickFolder: () => Promise<string | 
   router.put('/settings', async (req, res) => {
     res.json(await writeSettings(home, req.body))
   })
-  // Registered packs (`ai-review pack add`) for the Skills help; read-only, registering stays in the terminal.
+  // Registered packs (`scout pack add`) for the Skills help; read-only, registering stays in the terminal.
   router.get('/packs', async (_req, res) => {
     const packs = await loadRegisteredPacks(home)
     const body: PacksResponse = {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Runs Scout in the background as a login service (launchd) and controls it.
-# The service runs a built copy in $AI_REVIEW_HOME/app, so edits to this repo reach it only on `scout rebuild`.
+# Runs Scout in the background as a login service (launchd) and controls it: `scout service <command>`.
+# The service runs a built copy in $SCOUT_HOME/app, so edits to this repo reach it only on `scout service rebuild`.
 set -euo pipefail
 
 self="$0"
@@ -10,7 +10,7 @@ while [ -L "$self" ]; do
 done
 REPO="$(cd "$(dirname "$self")/.." && pwd -P)"
 
-HOME_DIR="${AI_REVIEW_HOME:-$HOME/.ai-review}"
+HOME_DIR="${SCOUT_HOME:-$HOME/.scout}"
 APP="$HOME_DIR/app"
 LOG_DIR="$HOME_DIR/logs"
 LOG="$LOG_DIR/scout.log"
@@ -23,7 +23,7 @@ MENU_LABEL=dev.scout.menubar
 PLIST="$AGENTS/$LABEL.plist"
 MENU_PLIST="$AGENTS/$MENU_LABEL.plist"
 MENU_APP="$HOME/Applications/Scout.app"
-BIN_LINK="$HOME/.local/bin/scout"
+BIN_LINK="$HOME_DIR/bin/scout-service"
 DOMAIN="gui/$(id -u)"
 
 say() { printf '[scout] %s\n' "$*"; }
@@ -69,9 +69,9 @@ write_server_plist() {
   </array>
   <key>EnvironmentVariables</key>
   <dict>
-    <key>AI_REVIEW_HOME</key><string>$(xml "$HOME_DIR")</string>
-    <key>AI_REVIEW_PORT</key><string>$PORT</string>
-    <key>AI_REVIEW_WEB_DIR</key><string>$(xml "$APP/web")</string>
+    <key>SCOUT_HOME</key><string>$(xml "$HOME_DIR")</string>
+    <key>SCOUT_PORT</key><string>$PORT</string>
+    <key>SCOUT_WEB_DIR</key><string>$(xml "$APP/web")</string>
     <key>PATH</key><string>$(xml "$SCOUT_PATH")</string>
   </dict>
   <key>WorkingDirectory</key><string>$(xml "$HOME_DIR")</string>
@@ -136,7 +136,7 @@ wait_healthy() {
 }
 
 cmd_start() {
-  [ -f "$PLIST" ] || die "not installed; run: scout install"
+  [ -f "$PLIST" ] || die "not installed; run: scout service install"
   if loaded "$LABEL"; then
     healthy && { say "running at $URL"; return; }
     launchctl kickstart "$DOMAIN/$LABEL"
@@ -146,13 +146,13 @@ cmd_start() {
     [ -z "$owner" ] || die "port $PORT is taken by $owner (npm run dev?); stop it first"
     launchctl bootstrap "$DOMAIN" "$PLIST"
   fi
-  wait_healthy && say "running at $URL" || die "did not come up; see: scout logs"
+  wait_healthy && say "running at $URL" || die "did not come up; see: scout service logs"
 }
 
 cmd_stop() {
   if loaded "$LABEL"; then
     launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
-    say "stopped (starts again at login, or: scout start)"
+    say "stopped (starts again at login, or: scout service start)"
   else
     say "not running"
   fi
@@ -161,7 +161,7 @@ cmd_stop() {
 cmd_restart() {
   if loaded "$LABEL"; then
     launchctl kickstart -k "$DOMAIN/$LABEL"
-    wait_healthy && say "running at $URL" || die "did not come up; see: scout logs"
+    wait_healthy && say "running at $URL" || die "did not come up; see: scout service logs"
   else
     cmd_start
   fi
@@ -173,7 +173,7 @@ cmd_status() {
   if healthy; then
     say "running at $URL${build:+ ($build)}"
   elif loaded "$LABEL"; then
-    say "starting or failing; see: scout logs"
+    say "starting or failing; see: scout service logs"
     return 1
   else
     say "stopped${build:+ ($build)}"
@@ -189,13 +189,14 @@ cmd_install() {
   write_server_plist
   write_menu_plist
   mkdir -p "$(dirname "$BIN_LINK")"
-  ln -sfn "$REPO/service/scout" "$BIN_LINK"
+  ln -sfn "$REPO/service/scout-service" "$BIN_LINK"
   if loaded "$LABEL"; then launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true; fi
   cmd_start
   if loaded "$MENU_LABEL"; then launchctl bootout "$DOMAIN/$MENU_LABEL" 2>/dev/null || true; fi
-  launchctl bootstrap "$DOMAIN" "$MENU_PLIST"
+  # Right after a bootout launchd can still be tearing the old job down; try again once.
+  launchctl bootstrap "$DOMAIN" "$MENU_PLIST" 2>/dev/null || { sleep 2; launchctl bootstrap "$DOMAIN" "$MENU_PLIST"; }
   say "menu bar app: $MENU_APP (starts at login)"
-  say "command: $BIN_LINK"
+  say "control: scout service <command> (menu bar: $BIN_LINK)"
 }
 
 cmd_rebuild() {
@@ -215,12 +216,12 @@ cmd_uninstall() {
 
 usage() {
   cat <<EOF
-scout install      build, install the login service and the menu bar app, start them
-scout start|stop|restart|status
-scout open         open the dashboard
-scout logs         follow the server log
-scout rebuild      rebuild from $REPO and restart
-scout uninstall    remove the service, the menu bar app and the built copy
+scout service install      build, install the login service and the menu bar app, start them
+scout service start|stop|restart|status
+scout service open         open the dashboard
+scout service logs         follow the server log
+scout service rebuild      rebuild from $REPO and restart
+scout service uninstall    remove the service, the menu bar app and the built copy
 EOF
 }
 

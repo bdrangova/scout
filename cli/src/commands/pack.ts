@@ -1,4 +1,4 @@
-// `ai-review pack add|remove|list`: register the folders of packs (a repository's own skills and setup kept outside
+// `scout pack add|remove|list`: register the folders of packs (a repository's own skills and setup kept outside
 // Scout, see `@scout/shared/packs`). Add and remove are terminal only: a pack's runtime and after-install commands run on
 // the user's machine, so an agent must not be able to register one.
 import { readFile } from 'node:fs/promises'
@@ -82,7 +82,7 @@ export function registerPack(program: Command): void {
   const pack = program.command('pack').description("Register packs: a repository's own skills and setup, kept outside Scout")
   pack
     .command('add <dir>')
-    .description('register the pack in <dir> (terminal only); run `ai-review install` in the repository afterwards')
+    .description('register the pack in <dir> (terminal only); run `scout install` in the repository afterwards')
     .action(async (dir: string) => {
       const result = await addPack({ home: resolveHome(), dir })
       console.log(`${result.added ? 'registered' : 'already registered'}:\n${formatPack(result)}`)

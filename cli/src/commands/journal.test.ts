@@ -15,7 +15,7 @@ let home: string
 let repo: string
 
 beforeEach(async () => {
-  home = await mkdtemp(path.join(os.tmpdir(), 'ai-review-journal-'))
+  home = await mkdtemp(path.join(os.tmpdir(), 'scout-journal-'))
   repo = path.join(home, 'repo')
   await mkdir(path.join(repo, 'src'), { recursive: true })
   await run(repo, ['init', '-q', '-b', 'master'])

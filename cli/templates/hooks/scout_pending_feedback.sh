@@ -16,18 +16,18 @@ session_id="$(printf '%s' "$input" | jq -r '.session_id // empty')"
 cwd="$(printf '%s' "$input" | jq -r '.cwd // empty')"
 [ -n "$cwd" ] || cwd="$PWD"
 
-AI_REVIEW="${AI_REVIEW_BIN:-$HOME/.ai-review/bin/ai-review}"
-[ -x "$AI_REVIEW" ] || AI_REVIEW="$(command -v ai-review 2>/dev/null || true)"
-[ -n "$AI_REVIEW" ] || exit 0
+SCOUT="${SCOUT_BIN:-$HOME/.scout/bin/scout}"
+[ -x "$SCOUT" ] || SCOUT="$(command -v scout 2>/dev/null || true)"
+[ -n "$SCOUT" ] || exit 0
 
-pending="$("$AI_REVIEW" pending --repo "$cwd" --format json 2>/dev/null)" || exit 0
+pending="$("$SCOUT" pending --repo "$cwd" --format json 2>/dev/null)" || exit 0
 [ "$(printf '%s' "$pending" | jq -r '.count // 0')" -gt 0 ] || exit 0
 
 fingerprint="$(printf '%s' "$pending" | jq -r '.fingerprint')"
 git_dir="$(git -C "$cwd" rev-parse --absolute-git-dir 2>/dev/null)" || exit 0
-marker="$git_dir/ai-review/nagged-${session_id:-no-session}"
+marker="$git_dir/scout/nagged-${session_id:-no-session}"
 [ -f "$marker" ] && [ "$(cat "$marker")" = "$fingerprint" ] && exit 0
-mkdir -p "$git_dir/ai-review" && printf '%s' "$fingerprint" > "$marker"
+mkdir -p "$git_dir/scout" && printf '%s' "$fingerprint" > "$marker"
 
 printf '%s' "$pending" | jq '{
   hookSpecificOutput: {

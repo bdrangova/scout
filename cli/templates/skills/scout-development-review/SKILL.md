@@ -2,12 +2,12 @@
 name: scout-development-review
 description: Open (or refresh) a Scout session for the current implementation and fill it with evidence (screenshots, recordings), the Jira snapshot, plan docs, extra artifacts and a PR description so the developer can review the live working tree in the dashboard. Use when the user says "publish for review", "send this to review", runs /scout-development-review, or when a ticket implementation is complete.
 argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full] [--record video|screenshots|none] [--auto]"
-allowed-tools: Bash(ai-review *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(npx playwright *) Read Write Edit Glob AskUserQuestion mcp__playwright__* Skill
+allowed-tools: Bash(scout *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(npx playwright *) Read Write Edit Glob AskUserQuestion mcp__playwright__* Skill
 ---
 # Publish the current work for review
 
 Repo state: !`git status --short --branch | head -40`
-Review session for this branch (if any): !`ai-review status --repo "${CLAUDE_PROJECT_DIR}" --format brief`
+Review session for this branch (if any): !`scout status --repo "${CLAUDE_PROJECT_DIR}" --format brief`
 
 Arguments: $ARGUMENTS
 
@@ -24,11 +24,11 @@ soon as they land and updates while you keep working.
 - If a step's tool is unavailable (no Atlassian connector, no browser tool), skip it and list it under "Not captured" in the PR description.
 - **Checking against the app.** Reproduce a problem or verify a fix with `/reproduce` (Skill tool; `--session <sessionId>`, `--verify-fix` for a fix, `--record`/`--auto` when you have them). Only its `reproduced` status or a verified fix counts as verified. Plain captures go through `/capture-evidence` (step 4).
 - Step 0 and auto mode follow `/review-choices` (Skill tool).
-- Add, replace and remove session files with `ai-review artifact add|remove`, never by hand: it copies the file and keeps the folder's `index.json` in step.
+- Add, replace and remove session files with `scout artifact add|remove`, never by hand: it copies the file and keeps the folder's `index.json` in step.
 - Load `/write-for-reviewers` (Skill tool) before writing captions and descriptions, and follow it. The helper skills below load it themselves.
 
 ## Refresh mode
-A first publish writes everything. When step 1 reuses a session (`"reused": true`) and neither `--full` nor the step 0 answer asks for a full rewrite, run `ai-review publish-log diff <id> --json` and refresh only what it reports; this includes the fixes `/scout-apply-review` made. Everything else stays as it is.
+A first publish writes everything. When step 1 reuses a session (`"reused": true`) and neither `--full` nor the step 0 answer asks for a full rewrite, run `scout publish-log diff <id> --json` and refresh only what it reports; this includes the fixes `/scout-apply-review` made. Everything else stays as it is.
 - `first: true` (no log yet): publish everything.
 - `changed`, `added`, `dropped`: the repository files that moved since the last publish. Empty and nothing in the arguments asks for more: change nothing, and say so in step 8.
 - `evidenceToRecapture`, `evidenceToDelete`, `extrasToRegenerate`: from the coverage the last publish logged.
@@ -49,19 +49,19 @@ Each step below says what it does in refresh mode. Step 9 always rewrites the lo
      - **PR description:** write or update it, or leave it alone.
    - Leave out a question the arguments already answer (`--base`, `--ticket`, `--full`, `--new`). A part the user turned off is not listed under "Not captured".
 1. **Session.** Run
-   `ai-review init --repo "$PWD" --title "<KEY>: <short title>" --ticket <KEY>=<ticket url> --agent-session "${CLAUDE_SESSION_ID}" [--base <REF>] [--new]`
+   `scout init --repo "$PWD" --title "<KEY>: <short title>" --ticket <KEY>=<ticket url> --agent-session "${CLAUDE_SESSION_ID}" [--base <REF>] [--new]`
    where KEY comes from the arguments, the branch name or the conversation. It reuses the latest session for this branch, even after an approved review, unless `--new` is given: approved files stay approved and only the files changed since come back for review, the overall decision resets, comments and resolutions stay. An archived session is never reused. Pass `--base <REF>` only when the branch is not based on master. Note the printed `id`, `dir` and `url`.
 2. **Jira snapshot.** `/jira-snapshot <KEY>[=<url>] --session <id>` (Skill tool). It saves `jira-<KEY>.md` into the spec folder.
    Refresh mode: skip this step unless the snapshot is missing, the ticket key changed, or the arguments ask for a fresh one.
-3. **Spec documents.** For each plan or spec Markdown file you worked from (for example under `plans/`, or the paths the user gave): `ai-review artifact add <id> spec <absolute path> --type markdown --title "<its first heading>"` (it records where the original lives). A design artifact HTML: `ai-review artifact add <id> spec <file> --as design.html --type artifact --title "<design title>" --url <artifact url>`.
+3. **Spec documents.** For each plan or spec Markdown file you worked from (for example under `plans/`, or the paths the user gave): `scout artifact add <id> spec <absolute path> --type markdown --title "<its first heading>"` (it records where the original lives). A design artifact HTML: `scout artifact add <id> spec <file> --as design.html --type artifact --title "<design title>" --url <artifact url>`.
    Refresh mode: add a document again only when the original changed since the copy, or when it is new.
 4. **Evidence.** For each user-visible change, `/capture-evidence <what to capture> --session <id>` (Skill tool, with `--record` when you have it). Keep the coverage it returns (which repository files each capture covers) for the log in step 9.
-   Refresh mode: re-capture `evidenceToRecapture` with `--as <same name>` (skip `refreshedEvidence`), capture new evidence for user-visible changes nothing covers yet, and remove `evidenceToDelete` (`ai-review artifact remove <id> evidence <file>`). Leave every other file untouched.
-5. **Extras.** Markdown explainers (`*.md`), artifact HTML (`*.html`) and Mermaid diagrams (`*.mmd`) that help the reviewer (for example a component or data-flow graph): `ai-review artifact add <id> extras <file> --title "<title>"`. Note the files each extra describes, as for evidence.
+   Refresh mode: re-capture `evidenceToRecapture` with `--as <same name>` (skip `refreshedEvidence`), capture new evidence for user-visible changes nothing covers yet, and remove `evidenceToDelete` (`scout artifact remove <id> evidence <file>`). Leave every other file untouched.
+5. **Extras.** Markdown explainers (`*.md`), artifact HTML (`*.html`) and Mermaid diagrams (`*.mmd`) that help the reviewer (for example a component or data-flow graph): `scout artifact add <id> extras <file> --title "<title>"`. Note the files each extra describes, as for evidence.
    Refresh mode: regenerate only `extrasToRegenerate`, and add new ones only for areas none of them cover.
 6. **Journal.** `/journal --session <id>` (Skill tool) with no other text: it backfills summaries for changed files and the decisions from this conversation that are not logged yet. Add `--summaries-only` when the user chose summaries only.
    Refresh mode: add `--files <the changed set>`.
 7. **PR description.** `/pr-description --session <id>` (Skill tool). `/scout-apply-review` opens the PR from the same file.
    Refresh mode: add `--refresh`, so only the sections the changed set affects are edited and the user's edits stay.
 8. Report the dashboard URL printed by step 1, the number of evidence files and anything you could not capture. In refresh mode, list what you refreshed, added and deleted, and say that the rest was kept. Remind the user that the dashboard updates live as files change; there is nothing to publish.
-9. **Publish log.** Write the coverage you noted to a JSON file, `{ "evidence": { "trial-bar-admin.png": ["<repo path>"] }, "extras": { "components.mmd": ["<repo path>"] } }` (only the entries you added or changed in refresh mode), and run `ai-review publish-log write <id> --coverage <file>`. It stores the current file hashes and head next to that coverage.
+9. **Publish log.** Write the coverage you noted to a JSON file, `{ "evidence": { "trial-bar-admin.png": ["<repo path>"] }, "extras": { "components.mmd": ["<repo path>"] } }` (only the entries you added or changed in refresh mode), and run `scout publish-log write <id> --coverage <file>`. It stores the current file hashes and head next to that coverage.

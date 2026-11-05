@@ -2,14 +2,14 @@
 name: pr-description
 description: Write or update the PR description of a Scout session (pr-description.md in the session folder), following the repository's PR template when it has one. Called by scout-development-review and scout-apply-review; also use it when the user runs /pr-description or asks to update the PR description.
 argument-hint: "[--session <id>] [--refresh]"
-allowed-tools: Bash(ai-review status *) Bash(ai-review path *) Bash(ai-review publish-log *) Bash(git diff *) Bash(git log *) Bash(git status *) Read Write Edit Glob Skill
+allowed-tools: Bash(scout status *) Bash(scout path *) Bash(scout publish-log *) Bash(git diff *) Bash(git log *) Bash(git status *) Read Write Edit Glob Skill
 ---
 # PR description
 
 Arguments: $ARGUMENTS
 
 ## Rules
-- The file is `<session dir>/pr-description.md` (`ai-review path <id>`; without `--session`, `ai-review status --repo "$PWD"` finds this branch's session). Write nothing else, never into the repository.
+- The file is `<session dir>/pr-description.md` (`scout path <id>`; without `--session`, `scout status --repo "$PWD"` finds this branch's session). Write nothing else, never into the repository.
 - `/scout-apply-review` opens the PR from this same file, and the user may have edited it: never throw their wording away.
 - Load `/write-for-reviewers` (Skill tool) before writing and follow it.
 

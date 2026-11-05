@@ -176,7 +176,7 @@ Verdict: **REJECTED** · Status: fail
 - [c4] run:logs/run.log:7 **[not-clear]** Why?
 
 ## Required response
-Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. For each comment run \`ai-review resolve 20260926-1830-add-trial-bar-3f2a --comment c<n> --status resolved --note "…"\` (or \`--status open --note "…"\` to reply without resolving).
+Address every open comment by changing the code in the working tree; the dashboard reads it live, there is nothing to publish. For each comment run \`scout resolve 20260926-1830-add-trial-bar-3f2a --comment c<n> --status resolved --note "…"\` (or \`--status open --note "…"\` to reply without resolving).
 `)
   })
 

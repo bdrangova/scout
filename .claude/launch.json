@@ -10,7 +10,7 @@
     {
       "name": "dashboard-alt",
       "runtimeExecutable": "env",
-      "runtimeArgs": ["AI_REVIEW_PORT=4785", "WEB_PORT=4786", "npm", "run", "dev:fixtures"],
+      "runtimeArgs": ["SCOUT_PORT=4785", "WEB_PORT=4786", "npm", "run", "dev:fixtures"],
       "port": 4786
     }
   ]

@@ -1,4 +1,4 @@
-// `ai-review feedback <id>`: the latest sent review, as the dashboard rendered it (review/sent/<stem>.md|.json).
+// `scout feedback <id>`: the latest sent review, as the dashboard rendered it (review/sent/<stem>.md|.json).
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'

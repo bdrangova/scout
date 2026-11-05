@@ -7,10 +7,10 @@ argument-hint: "--session <id> [--setup-key <key>] [--record video|screenshots|n
 
 Arguments: $ARGUMENTS
 
-The run folder is `$(ai-review path <id> run)`. Setup recordings go to `<run>/data-setup/videos/`, screenshots to `<run>/data-setup/screenshots/`, notes to `<run>/steps.md` under "Data setup".
+The run folder is `$(scout path <id> run)`. Setup recordings go to `<run>/data-setup/videos/`, screenshots to `<run>/data-setup/screenshots/`, notes to `<run>/steps.md` under "Data setup".
 
 ## Rules
-- Use the repository's own test-data skill when it has one: `ai-review env` names it under `skills.testData` (from a registered pack). Load it (Skill tool) before step 1; it says how data, users and passwords are made there. Without one, build the data through the app's UI or the seeding the repository documents (README, seed scripts, fixtures). Never invent a password or log one.
+- Use the repository's own test-data skill when it has one: `scout env` names it under `skills.testData` (from a registered pack). Load it (Skill tool) before step 1; it says how data, users and passwords are made there. Without one, build the data through the app's UI or the seeding the repository documents (README, seed scripts, fixtures). Never invent a password or log one.
 - Setup is run, never assumed. When seeding fails, say so and stop or mark the affected scenarios blocked.
 - Local data only. Never write to shared, staging or production data.
 - Never record the setup inside a scenario video.

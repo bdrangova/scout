@@ -27,8 +27,8 @@ npm run dev
 ```
 
 `install` adds the skills and the feedback hook to the repository, registers the Playwright MCP and puts the
-`ai-review` command in `~/.local/bin`. Rerun it after updating Scout. The dashboard runs on
-**http://scout.localhost:4546** (API on 4545). Data lives in `~/.ai-review` (`AI_REVIEW_HOME`).
+`scout` command in `~/.local/bin`. Rerun it after updating Scout. The dashboard runs on
+**http://scout.localhost:4546** (API on 4545). Data lives in `~/.scout` (`SCOUT_HOME`).
 
 ## Packs
 
@@ -37,13 +37,13 @@ how its test data and users are made, its per-checkout ports, a step after insta
 folder or repository with a `scout-pack.json`. Register it once from a terminal (agents can't), then install:
 
 ```
-ai-review pack add <pack folder>
-ai-review install --repo <path to your repository>
-ai-review pack list
+scout pack add <pack folder>
+scout install --repo <path to your repository>
+scout pack list
 ```
 
 A pack applies to repositories whose `origin` name it lists. `install` copies the pack's `files/` folder into the
-repository and runs its after-install command. `ai-review env` then reports the pack's runtime command (unless one is
+repository and runs its after-install command. `scout env` then reports the pack's runtime command (unless one is
 stored for the repository) and its skills per job (`skills.worktree`, `skills.testData`), which the generic skills
 use instead of their defaults: a plain `git worktree add`, data set up through the app, guessed ports. The dashboard's
 Skills help lists the pack's commands. Example: `scout-qbdvision` for the qbdvision repository.
@@ -67,12 +67,13 @@ Edit a pack's skills in the pack, not in the repository: `install` overwrites th
 ## Run it in the background (macOS)
 
 ```
-service/scout install
+scout service install
 ```
 
-Builds a fixed copy into `~/.ai-review/app`, runs it on 4546 at login (restarted if it crashes), adds a Scout
-icon to the menu bar (Open, Start/Stop, Restart, Rebuild & Restart, Logs) and a `scout` command:
-`scout start|stop|restart|status|open|logs|rebuild|uninstall`. Code edits reach it only through `scout rebuild`.
+(Before the first `scout install`, run it as `service/scout-service install`.) Builds a fixed copy into `~/.scout/app`,
+runs it on 4546 at login (restarted if it crashes) and adds a Scout icon to the menu bar (Open, Start/Stop, Restart,
+Rebuild & Restart, Logs). Control it with `scout service start|stop|restart|status|open|logs|rebuild|uninstall`.
+Code edits reach it only through `scout service rebuild`.
 Stop it before `npm run dev`, which needs the same port.
 
 ## Skills
@@ -104,7 +105,7 @@ and auto mode), `record-resolutions` (answering every comment), `test-run-index`
 works), `browser-recording` (videos), `verdict-highlights` (the coloured boxes on evidence) and `run-scenario`
 (one recorded test scenario). A repository's own skills for jobs like worktrees and test data come from a registered pack (see "Packs" above). They leave the
 bookkeeping (adding evidence, tracking what changed since the last publish, merging run indexes, checking the app
-is up, database snapshots) to `ai-review` commands, so the same step works the same way every time.
+is up, database snapshots) to `scout` commands, so the same step works the same way every time.
 
 ## How a review works
 
@@ -121,12 +122,12 @@ Each checkout can run its own app and database on its own ports. A repository te
 one command: a registered pack's `runtime`, or one set from a terminal (agents can't set it), which wins:
 
 ```
-ai-review env --set-runtime '<command that prints the checkout runtime as JSON>'
-ai-review env    # what the skills read
+scout env --set-runtime '<command that prints the checkout runtime as JSON>'
+scout env    # what the skills read
 ```
 
 `/run-app`, `/snapshot-db` and `/reproduce` use it; without it they guess and say so. Snapshots go to
-`~/.ai-review/checkouts/`, never inside the checkout.
+`~/.scout/checkouts/`, never inside the checkout.
 
 ## Development
 

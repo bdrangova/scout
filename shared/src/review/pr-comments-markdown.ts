@@ -63,8 +63,8 @@ export function renderPrCommentsMarkdown(input: PrCommentsMarkdownInput): string
   const lines = [
     `## GitHub PR comments (#${input.pr.number}, ${plain(input.pr.repo)}: ${open.length} open)`,
     WARNING,
-    `Run \`ai-review pr-sync\` first if they may be stale, address each one, then record it: ` +
-      `\`ai-review pr-resolve ${input.sessionId} --comment <id> --status addressed|declined --note "…" --reply "…" [--commit <sha>]\` ` +
+    `Run \`scout pr-sync\` first if they may be stale, address each one, then record it: ` +
+      `\`scout pr-resolve ${input.sessionId} --comment <id> --status addressed|declined --note "…" --reply "…" [--commit <sha>]\` ` +
       `(declined needs the reason in the note; --reply is one or two sentences for the reviewer on GitHub, written as the author: the user edits it and it is posted only after they submit).`,
     ...open.flatMap((view) => entry(view, repliesOf(view))),
   ]
@@ -77,7 +77,7 @@ export function renderPrCommentsMarkdown(input: PrCommentsMarkdownInput): string
 /**
  * The `## PR comment instructions and replies` section of the sent markdown: the user's own text per PR comment
  * (trusted, unlike the comment bodies, which are not repeated here). Instructions tell the agent what to do about
- * that comment; replies are the texts the user approved to post on GitHub with `ai-review pr-reply`. Null when empty.
+ * that comment; replies are the texts the user approved to post on GitHub with `scout pr-reply`. Null when empty.
  */
 export function renderPrRepliesMarkdown(sessionId: string, prReplies: readonly SentPrReply[] | undefined): string | null {
   if (prReplies === undefined || prReplies.length === 0) return null
@@ -98,7 +98,7 @@ export function renderPrRepliesMarkdown(sessionId: string, prReplies: readonly S
   if (replies.length > 0) {
     lines.push(
       '### Replies the reviewer approved to post',
-      `These texts were approved by the reviewer for the GitHub thread of each comment. After your fixes, post them with \`ai-review pr-reply --session ${sessionId}\` (it posts exactly these texts and nothing else; do not use gh yourself).`,
+      `These texts were approved by the reviewer for the GitHub thread of each comment. After your fixes, post them with \`scout pr-reply --session ${sessionId}\` (it posts exactly these texts and nothing else; do not use gh yourself).`,
       ...replies.flatMap(quote),
     )
   }

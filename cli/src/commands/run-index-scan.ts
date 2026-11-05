@@ -1,4 +1,4 @@
-// `ai-review run-index scan`: the mechanical part of reading a test run (folders, evidence, log excerpts, hashes).
+// `scout run-index scan`: the mechanical part of reading a test run (folders, evidence, log excerpts, hashes).
 import { createHash } from 'node:crypto'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
