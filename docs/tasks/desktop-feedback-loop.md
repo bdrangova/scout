@@ -169,7 +169,7 @@ Server: whitelist both in `watcher.ignored()`/`classify()`, new `StoreEvent` `ag
 
 ## Risks
 
-- **Hooks are shell on the user's machine.** Keep them read-and-append only, no network, never read `~/.claude`; reuse the existing marker dir under `$GIT_DIR/ai-review`. `qbdvision` syncs `.claude/` to sibling clones (research/06): hook files must not hard-code repo paths.
+- **Hooks are shell on the user's machine.** Keep them read-and-append only, no network, never read `~/.claude`; reuse the existing marker dir under `$GIT_DIR/ai-review`. A repository may copy `.claude/` to sibling clones (a pack's after-install step does this for qbdvision): hook files must not hard-code repo paths.
 - **Model compliance.** Skill-driven `progress`/`finish` may be skipped; hooks (Stop) and presence are the backstops, and `stale` makes silence visible instead of lying.
 - **Claim attribution.** Concurrent Desktop sessions in the same repo: claim by (`agentSessionId`, `forSent`), never by repo alone. A second claim for the same send replaces the first and is recorded in `progress.jsonl`.
 - **Assistant text in a local file.** `last_assistant_message` may quote code or secrets seen in the session; it stays in `~/.ai-review` (local, same trust as the transcript). Truncate and do not render as HTML.

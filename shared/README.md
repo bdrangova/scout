@@ -36,6 +36,10 @@ review/runs/<runId>.json      AgentRun;  review/runs/<runId>.jsonl  raw stream-j
 
 `github` (`GithubSettingsSchema`) = `{ repos: string[], teams: { id, name, githubTeams: string[], members: string[] }[] }`: the `owner/name` repos Scout follows for assigned PRs, and the reviewing teams (`githubTeams` are `org/slug`, `members` GitHub logins). Missing reads as `{ repos: [], teams: [] }`. On save the server trims every value, removes duplicate repos, githubTeams and members case-insensitively (first spelling kept), strips a leading `@` from members, and keeps the team order.
 
+### Packs
+
+`packs` in the same `config.json`: absolute folders of registered packs (`ai-review pack add|remove`, terminal only; the server never writes it). A pack holds `scout-pack.json` (`PackManifestSchema`, `schemas/packs.ts`): `name`, `repos` (origin repository names it applies to), optional `files` (folder `ai-review install` copies into the repository), `runtime` (checkout runtime command, used when the repository has none stored), `skills` (skill name per job: `worktree`, `testData`), `afterInstall` (run in the repository after install) and `help` (`{ group, command, when }` for the Skills help). Pack commands run with `SCOUT_PACK_DIR` set. `ai-review env` reports the matching packs, `runtimeSource` (`repo` | `pack:<name>`) and `skills`. Missing or malformed reads as no packs; a pack that cannot be read is reported with its error, never fatal.
+
 ### PR review status
 
 `<session>/review/pr-status.json` (`PR_STATUS_FILE`, `PrReviewStatusFileSchema`) = `{ status: 'in-progress' | 'commented' | 'approved', setAt, by: 'you' | 'github' }`: where a PR review session stands. Set by hand (`PUT /sessions/:id/pr-status`, `by: 'you'`) or picked up from your latest GitHub review on each `GET /github/assigned` (`by: 'github'`, `setAt` = that review's time); a later review of yours replaces an older status, whoever set it. No file means in progress. Approved archives the session; the file moves with it.
@@ -286,6 +290,7 @@ PUT  /sessions/:id/review                         PutReviewRequest → { updated
 POST /sessions/:id/review/send                    SendRequest → SendResponse; writes sent/<stem>.json|.md|.patch
 GET  /sessions/:id/runs · POST /sessions/:id/runs · GET /runs/:runId · GET /runs/:runId/events (SSE) · POST /runs/:runId/cancel
 GET  /settings · PUT /settings                    Settings (PutSettingsRequest = the whole object; folders normalised on save; 400 invalid body, 422 unreadable config.json)
+GET  /packs                                        PacksResponse: registered packs with their help entries ({ dir, name, repos, help, error } each; a broken pack has name null and its error)
 POST /settings/pick-folder                         PickFolderResponse: opens the native macOS folder chooser on the server machine ({ path: null } when cancelled; 501 off macOS)
 GET  /github/assigned[?refresh=1]                 AssignedPrsResponse, the whole PR reviews page. `authored`: open PRs you wrote (author = viewer, case-insensitive), kept out of `assignedToMe` and the teams and shown under My PRs; `assignedToMe`: open PRs (drafts included) of the followed repos, from `gh pr list` per repo in parallel, where the viewer (`gh api user`, cached) is a requested user or has reviewed; `teams`: one entry per configured team in settings order (a requested `org/slug` (org = the repo owner) or a requested member, logins case-insensitive), `prs` possibly empty. GitHub's answer is cached for 60 s (`refresh=1` bypasses); sessions, marks and statuses are looked up on every request. Your latest GitHub review is first picked up into the live review sessions' `pr-status.json`.
                                                   Each PR has `session` (`{ id, state: 'live' | 'pending' | 'archived' }` or null; live wins over a placeholder, which wins over an archived review) and `status` (see below). `authored` ("My PRs"): open PRs you wrote, kept out of the other sections. `other` ("Other", last): `LocalPrReview` rows for your review sessions and placeholders that no GitHub section covers: a PR you aren't requested on, or a review without a PR (`pr: null`); an archived review of a PR no longer listed is left out; one row per PR (live > placeholder > archived), newest first, built from local data so it is returned even when `problem` is set. `problem`: `gh-missing`, `not-authenticated` or `no-repos` (GitHub sections empty); a repo that fails is an `errors` entry while the others list. Each PR also carries `reviews` (latest submitted review per person, bots left out) and `requested` (pending requests)
@@ -307,6 +312,10 @@ GET  /events                                      SSE of StoreEvent
 ```
 
 Express 5 path syntax. Web routes: `/` (worktrees; `/w` redirects), `/w/:id`, `/d` (development sessions), `/t`, `/pr`, `/s/:id/files`, `/s/:id/files/*path`, `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/submit`.
+
+## shared/src/packs.ts (Node-only)
+
+`registeredPackDirs(home)`, `loadPack(dir)`, `loadRegisteredPacks(home)`: `LoadedPack[]`, `originRepoName(url)`, `packsForRepo(packs, originName)` (case-insensitive, registration order), `packSkills(matched)` (first pack naming a job wins). Imported as `@scout/shared/packs` by the CLI and the server; not re-exported from the index.
 
 ## shared/src/git (Node-only)
 

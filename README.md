@@ -62,6 +62,8 @@ Skills help lists the pack's commands. Example: `scout-qbdvision` for the qbdvis
 
 Pack commands run from the checkout or repository with `SCOUT_PACK_DIR` set to the pack folder.
 
+Edit a pack's skills in the pack, not in the repository: `install` overwrites the copies it put there.
+
 ## Run it in the background (macOS)
 
 ```
