@@ -19,6 +19,8 @@ export const ConfigSchema = z.object({
   trustedPrCommentAuthors: z.array(z.string()).optional(),
   /** Per repository, keyed by the main worktree's absolute path, so every linked worktree of it shares the entry. */
   repos: z.record(z.string(), RepoConfigSchema).optional(),
+  /** Registered pack folders (`ai-review pack add`), absolute, in order; see `@scout/shared/packs`. */
+  packs: z.array(z.string().min(1)).optional(),
 })
 export type Config = z.infer<typeof ConfigSchema>
 

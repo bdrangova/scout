@@ -5,6 +5,7 @@ import { gitText } from '@scout/shared/git/run'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { readConfig } from '../config.ts'
 import { checkoutEnv, scratchDir, setRuntimeCommand } from './env.ts'
+import { addPack, removePack } from './pack.ts'
 
 const GIT_ENV = { ...process.env, GIT_AUTHOR_NAME: 'T', GIT_AUTHOR_EMAIL: 't@e.x', GIT_COMMITTER_NAME: 'T', GIT_COMMITTER_EMAIL: 't@e.x' }
 
@@ -75,5 +76,41 @@ describe('ai-review env', () => {
     await writeFile(path.join(home, 'config.json'), JSON.stringify({ worktreeFolders: ['/w'], repos: { [repo]: { runtime: 'echo {}' } } }))
     expect(await readConfig(home)).toMatchObject({ port: 4546, repos: { [repo]: { runtime: 'echo {}' } } })
     expect((await checkoutEnv({ home, repo: worktree })).runtimeCommand).toBe('echo {}')
+  })
+
+  it('takes the runtime and the skills from a pack that names the origin; a stored command wins', async () => {
+    const pack = path.join(path.dirname(home), 'pack')
+    await mkdir(pack, { recursive: true })
+    await writeFile(path.join(pack, 'runtime.sh'), RUNTIME)
+    await writeFile(
+      path.join(pack, 'scout-pack.json'),
+      JSON.stringify({ name: 'acme', repos: ['acme-app'], runtime: 'sh "$SCOUT_PACK_DIR/runtime.sh"', skills: { worktree: 'acme-worktree', testData: 'acme-data' } }),
+    )
+    await expect(addPack({ home, dir: pack, interactive: false })).rejects.toThrow(/terminal, not by an agent/)
+    expect((await addPack({ home, dir: pack, interactive: true })).added).toBe(true)
+    expect((await addPack({ home, dir: pack, interactive: true })).added).toBe(false)
+
+    // No origin, or another one: the pack does not apply.
+    expect(await checkoutEnv({ home, repo: worktree })).toMatchObject({ runtime: null, runtimeSource: null, packs: [], skills: {} })
+    await gitText(repo, ['remote', 'add', 'origin', 'git@github.com:Org/acme-app.git'])
+    const linked = await checkoutEnv({ home, repo: worktree })
+    expect(linked).toMatchObject({ runtimeSource: 'pack:acme', packs: [{ name: 'acme', dir: pack }], skills: { worktree: 'acme-worktree', testData: 'acme-data' } })
+    expect(linked.runtime?.apps?.[0]?.port).toBe(8123)
+
+    await setRuntimeCommand({ home, repo, command: `echo '{"label":"stored"}'`, interactive: true })
+    expect(await checkoutEnv({ home, repo })).toMatchObject({ runtimeSource: 'repo', runtime: { label: 'stored' } })
+
+    expect(await removePack({ home, dir: pack, interactive: true })).toBe(true)
+    expect((await checkoutEnv({ home, repo })).packs).toEqual([])
+  })
+
+  it('refuses to register a folder without a valid pack manifest', async () => {
+    const dir = path.join(path.dirname(home), 'not-a-pack')
+    await mkdir(dir, { recursive: true })
+    await expect(addPack({ home, dir, interactive: true })).rejects.toThrow(/no scout-pack.json/)
+    await writeFile(path.join(dir, 'scout-pack.json'), JSON.stringify({ name: 'x', repos: [], files: '../outside' }))
+    await expect(addPack({ home, dir, interactive: true })).rejects.toThrow(/repos/)
+    await writeFile(path.join(dir, 'scout-pack.json'), JSON.stringify({ name: 'x', repos: ['r'], files: '../outside' }))
+    await expect(addPack({ home, dir, interactive: true })).rejects.toThrow(/inside the pack/)
   })
 })

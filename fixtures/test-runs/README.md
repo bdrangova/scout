@@ -24,7 +24,7 @@ and the roots `run`, `plan`, `bugs`. Every root stays inside the run folder (no 
 
 ## Runs from real feature tests
 
-- `state-management/run/` (about 4.4 MB): the QI-15267 run, 6 scenarios, 3 bugs, data setup, 4 logs, JPEG screenshots
+- `state-management/run/` (about 1.1 MB): the DEMO-15267 run, 6 scenarios, 3 bugs, data setup, 4 logs, JPEG screenshots
   and 8 s MP4 clips cut from the source recordings. `db-snapshots/*.sql` is a placeholder.
 - `withdrawn-repropose/run/` (about 0.5 MB): no test plan, no data setup, 9 scenarios, the three source notes under
   the `notes` root, and a `timeline` panel the dashboard does not know (renders as unsupported).

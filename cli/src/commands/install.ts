@@ -1,4 +1,4 @@
-// `ai-review install --repo <path>`: skills, the pending-feedback hook, settings merge, Playwright MCP, launcher, config.
+// `ai-review install --repo <path>`: skills, matching packs, the pending-feedback hook, settings merge, Playwright MCP, launcher, config.
 import { execFile } from 'node:child_process'
 import { access, chmod, constants, lstat, mkdir, readdir, readFile, readlink, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
@@ -9,6 +9,10 @@ import { CONFIG_FILE, DEFAULT_CONFIG, readConfig } from '../config.ts'
 import { mainWorktree, remoteUrl, topLevel } from '@scout/shared/git/repo'
 import { gitText } from '@scout/shared/git/run'
 import { mergeSettings, type HookSpec } from '../settings-merge.ts'
+import { loadRegisteredPacks, originRepoName, packsForRepo } from '@scout/shared/packs'
+import { runShell } from './env.ts'
+
+export { originRepoName }
 import { resolveHome, writeJsonAtomic } from '../store.ts'
 
 export const PENDING_HOOK = 'ai_review_pending_feedback.sh'
@@ -83,7 +87,6 @@ const RETIRED_SKILLS = [
 export interface InstallOptions {
   home: string
   repo: string
-  mirror?: boolean
   /** Write `.claude/settings.json` instead of `.claude/settings.local.json`. */
   shared?: boolean
   /** The `claude` binary for `claude mcp add`; undefined = look it up on PATH, null = never run it. */
@@ -166,13 +169,6 @@ async function writeIfChanged(file: string, content: string, mode: number): Prom
   return current === null ? 'created' : 'updated'
 }
 
-/** Repository name of origin (`git@host:org/name.git` -> `name`), or null without an origin. */
-export function originRepoName(url: string | null): string | null {
-  if (url === null) return null
-  const name = path.posix.basename(url.trim().replace(/\/+$/, '').replace(/^.*:/, '/'), '.git')
-  return name === '' || name === '.' || name === '..' ? null : name
-}
-
 /** Files under `dir` as repo-relative posix paths, macOS litter skipped. */
 async function filesUnder(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { recursive: true, withFileTypes: true })
@@ -226,14 +222,18 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
     }
   }
 
-  // Repo-specific skills and scripts: `templates/repos/<origin repo name>/` mirrors paths inside that one repo,
-  // so a skill that only makes sense there (its start scripts, its ports) never reaches other repos.
-  const repoTemplates = path.join(templates, 'repos', originRepoName(await remoteUrl(repo)) ?? '')
-  if (path.dirname(repoTemplates) === path.join(templates, 'repos') && (await exists(repoTemplates))) {
-    for (const rel of await filesUnder(repoTemplates)) {
-      const source = path.join(repoTemplates, ...rel.split('/'))
+  // Packs: a registered pack whose `repos` names this repository's origin copies its `files` folder into the repo, so
+  // a skill that only makes sense there (its start scripts, its ports) never reaches other repos and never lives in Scout.
+  const loadedPacks = await loadRegisteredPacks(options.home)
+  for (const broken of loadedPacks) if (broken.error !== null) messages.push(`pack ${broken.dir} skipped: ${broken.error}`)
+  const packs = packsForRepo(loadedPacks, originRepoName(await remoteUrl(repo)))
+  for (const pack of packs) {
+    if (pack.manifest.files === undefined) continue
+    const filesDir = path.resolve(pack.dir, pack.manifest.files)
+    for (const rel of await filesUnder(filesDir).catch(() => [])) {
+      const source = path.join(filesDir, ...rel.split('/'))
       const mode = (await stat(source)).mode & 0o111 ? 0o755 : 0o644
-      record(rel, await writeIfChanged(path.join(repo, ...rel.split('/')), await readFile(source, 'utf8'), mode))
+      record(rel, await writeIfChanged(path.join(repo, ...rel.split('/')), await readFile(source, 'utf8'), mode), `pack ${pack.manifest.name}`)
     }
   }
 
@@ -324,21 +324,21 @@ export async function installIntoRepo(options: InstallOptions): Promise<InstallR
   // The pending hook keeps its once-per-session markers here.
   await mkdir(path.join((await gitText(repo, ['rev-parse', '--absolute-git-dir'])).trim(), 'ai-review'), { recursive: true })
 
-  if (options.mirror) {
-    const sync = path.join(repo, '.claude', 'hooks', 'sync_claude_folders.sh')
-    if (await exists(sync)) {
-      const input = JSON.stringify({ tool_input: { file_path: path.join(repo, '.claude', 'skills', 'scout-development-review', 'SKILL.md') } })
-      await run(sync, [], { cwd: repo, input })
-      messages.push('mirrored .claude/ with sync_claude_folders.sh')
-    } else {
-      messages.push('--mirror: .claude/hooks/sync_claude_folders.sh not found; nothing mirrored')
+  // A pack's own after-install step (for example mirroring `.claude/` into sibling clones), run from the repo.
+  for (const pack of packs) {
+    if (pack.manifest.afterInstall === undefined) continue
+    try {
+      const out = (await runShell(pack.manifest.afterInstall, repo, { packDir: pack.dir, timeoutMs: 120_000 })).trim()
+      messages.push(`pack ${pack.manifest.name} after install${out === '' ? ': done' : `: ${out.split('\n').slice(-3).join(' | ')}`}`)
+    } catch (error) {
+      messages.push(`pack ${pack.manifest.name} after install failed: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
   // Linked worktrees get the skills from the main worktree (symlinked .claude/ or per-skill links), and they share its runtime command.
   const main = (await mainWorktree(repo)).split(path.sep).join('/')
   if (main !== repo.split(path.sep).join('/')) messages.push(`${repo} is a linked worktree: install into the main worktree ${main} instead, and link its .claude/ into worktrees`)
-  if ((await readConfig(options.home)).repos?.[main]?.runtime === undefined) {
+  if ((await readConfig(options.home)).repos?.[main]?.runtime === undefined && !packs.some((p) => p.manifest.runtime !== undefined)) {
     messages.push(`no runtime command for ${main}: /run-app and /snapshot-db fall back to guessing ports. Set one with: ai-review env --repo ${JSON.stringify(main)} --set-runtime '<command that prints the runtime JSON>'`)
   }
 
@@ -354,7 +354,6 @@ export function formatInstallResult(result: InstallResult): string {
 
 interface InstallFlags {
   repo: string
-  mirror?: boolean
   shared?: boolean
 }
 
@@ -363,13 +362,11 @@ export function registerInstall(program: Command): void {
     .command('install')
     .description('Install review skills, the pending-feedback hook, settings and launcher')
     .requiredOption('--repo <path>', 'path inside the repository')
-    .option('--mirror', 'run .claude/hooks/sync_claude_folders.sh afterwards when present')
     .option('--shared', 'write .claude/settings.json instead of .claude/settings.local.json')
     .action(async (flags: InstallFlags) => {
       const result = await installIntoRepo({
         home: resolveHome(),
         repo: path.resolve(flags.repo),
-        mirror: flags.mirror === true,
         shared: flags.shared === true,
       })
       console.log(formatInstallResult(result))

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "runId": "qi-15267-approve-archive",
-  "title": "QI-15267 Approve for Archive end to end",
+  "runId": "demo-15267-approve-archive",
+  "title": "DEMO-15267 Approve for Archive end to end",
   "feature": "state-management",
   "area": "approve-for-archive",
   "createdAt": "2026-10-12T09:00:00.000Z",
@@ -61,7 +61,7 @@
     {
       "type": "markdown",
       "title": "Summary",
-      "markdown": "Scenarios S1-S12 ran on 2026-10-12 against Archivers R US with flag-OFF comparisons where a result looked odd.\n\n- **No regression** in the new approve pipeline: S8 and the stale label are pre-existing or cosmetic.\n- **One parity gap:** an IQA that is itself Proposed for Archive loses the legacy v1.1 version (S9b).\n- **S9** first looked like a regression, a false alarm from forced link data; the clean rerun passes.\n- DB restored to `pristine`, flag back ON."
+      "markdown": "Scenarios S1-S12 ran on 2026-10-12 against Demo Co with flag-OFF comparisons where a result looked odd.\n\n- **No regression** in the new approve pipeline: S8 and the stale label are pre-existing or cosmetic.\n- **One parity gap:** an IQA that is itself Proposed for Archive loses the legacy v1.1 version (S9b).\n- **S9** first looked like a regression, a false alarm from forced link data; the clean rerun passes.\n- DB restored to `pristine`, flag back ON."
     },
     {
       "type": "table",
@@ -105,11 +105,11 @@
       "items": [
         {
           "key": "Company",
-          "value": "Archivers R US (client_local_ArchiversRUS)"
+          "value": "Demo Co (client_local_DemoCo)"
         },
         {
           "key": "Stack",
-          "value": "qbdvision dev, Node 22, backend :3000, Vite :8080"
+          "value": "foliant dev, Node 22, backend :3000, Vite :8080"
         },
         {
           "key": "Flags ON",
@@ -121,7 +121,7 @@
         },
         {
           "key": "Users",
-          "value": "Ryan 1349 (proposer), Yash 1350, Kons 1351, Stan 1352"
+          "value": "Omar 1349 (proposer), Priya 1350, Dana 1351, Sam 1352"
         }
       ]
     },
@@ -150,8 +150,8 @@
           "ref": "bugs:approve-for-archive-approve-after-reject-accepted/approve-for-archive-approve-after-reject-accepted.md"
         },
         {
-          "label": "Jira QI-15267",
-          "url": "https://example.atlassian.net/browse/QI-15267"
+          "label": "Jira DEMO-15267",
+          "url": "https://example.atlassian.net/browse/DEMO-15267"
         }
       ]
     },
@@ -190,7 +190,7 @@
       "steps": [
         {
           "label": "1",
-          "action": "As Yash, open UO-1 (Proposed for Archive) and choose Approve / Reject, then Approve",
+          "action": "As Priya, open UO-1 (Proposed for Archive) and choose Approve / Reject, then Approve",
           "expected": "E-signature dialog with email and password",
           "observed": "Dialog shown with the email field",
           "result": "pass"
@@ -278,7 +278,7 @@
       "steps": [
         {
           "label": "1",
-          "action": "Demote Kons to a standard user and open UO-2",
+          "action": "Demote Dana to a standard user and open UO-2",
           "expected": "No approve action",
           "observed": "403 \"Access denied.\", no Approve button",
           "result": "pass"
@@ -301,7 +301,7 @@
           },
           {
             "path": "run:scenarios/s3-permission/screenshots/s3-stan-login-state.jpg",
-            "caption": "Stan login attempt",
+            "caption": "Sam login attempt",
             "layer": "UI"
           }
         ],
@@ -341,7 +341,7 @@
       "steps": [
         {
           "label": "1",
-          "action": "Open UO-1 as Yash and approve with a wrong password",
+          "action": "Open UO-1 as Priya and approve with a wrong password",
           "expected": "Error, nothing saved",
           "observed": "\"Password is incorrect.\", DB dump identical",
           "result": "pass"
@@ -419,21 +419,21 @@
       "steps": [
         {
           "label": "1",
-          "action": "Yash rejects UO-3 (approvers Yash and Kons)",
+          "action": "Priya rejects UO-3 (approvers Priya and Dana)",
           "expected": "Request closed",
           "observed": "UO-3 and its Step are Rejected",
           "result": "pass"
         },
         {
           "label": "2",
-          "action": "Kons opens UO-3",
+          "action": "Dana opens UO-3",
           "expected": "No Approve / Reject",
           "observed": "Approve is still enabled",
           "result": "fail"
         },
         {
           "label": "3",
-          "action": "Kons approves",
+          "action": "Dana approves",
           "expected": "Refused, nothing stored",
           "observed": "Accepted; response approve=1 stored, state stays Rejected",
           "result": "fail"
@@ -444,12 +444,12 @@
         "screenshots": [
           {
             "path": "run:scenarios/s8-reject-then-approve/screenshots/s8-01-yash-reject-dialog.jpg",
-            "caption": "Yash rejects",
+            "caption": "Priya rejects",
             "layer": "UI"
           },
           {
             "path": "run:scenarios/s8-reject-then-approve/screenshots/s8-03-kons-sees-rejected-uo3.jpg",
-            "caption": "Kons sees Rejected but can approve",
+            "caption": "Dana sees Rejected but can approve",
             "layer": "UI"
           },
           {
@@ -461,7 +461,7 @@
         "data": [
           {
             "path": "run:scenarios/s8-reject-then-approve/data/state-c-s8-kons.txt",
-            "caption": "State after Kons approves"
+            "caption": "State after Dana approves"
           }
         ]
       },
@@ -494,14 +494,14 @@
       "steps": [
         {
           "label": "1",
-          "action": "Ryan proposes IQA-19, then FQA-21, for archive; Yash approves the FQA",
+          "action": "Omar proposes IQA-19, then FQA-21, for archive; Priya approves the FQA",
           "expected": "IQA-19 unlinked and re-versioned as in the legacy flow",
           "observed": "Flag ON: FQA-21 Archived, IQA-19 untouched (v83), Approve enabled. Flag OFF: IQA-19 gets v1.1",
           "result": "fail"
         },
         {
           "label": "2",
-          "action": "Yash approves IQA-19 himself",
+          "action": "Priya approves IQA-19 himself",
           "expected": "IQA-19 Archived",
           "observed": "Archived (v95), link rows NULL",
           "result": "pass"
@@ -622,7 +622,7 @@
       "scenarios": [
         "s12-project-records"
       ],
-      "markdown": "`muhammara` (PDF stamping) has no native binding for Node 22 in `qbdvision`. Needs a decision: build it (`npm rebuild muhammara`) or accept the gap."
+      "markdown": "`muhammara` (PDF stamping) has no native binding for Node 22 in `foliant`. Needs a decision: build it (`npm rebuild muhammara`) or accept the gap."
     },
     {
       "id": "g-pin",
@@ -635,12 +635,12 @@
     },
     {
       "id": "g-stan-login",
-      "title": "Stan cannot log in locally",
+      "title": "Sam cannot log in locally",
       "status": "accepted",
       "scenarios": [
         "s3-permission"
       ],
-      "markdown": "Cognito rejects the helper password. The demoted Kons covers the Standard User case."
+      "markdown": "Auth service rejects the helper password. The demoted Dana covers the Standard User case."
     }
   ],
   "bugs": [
@@ -648,7 +648,7 @@
       "slug": "approve-for-archive-approve-after-reject-accepted",
       "title": "Approve after a reject is accepted and recorded",
       "path": "bugs:approve-for-archive-approve-after-reject-accepted/approve-for-archive-approve-after-reject-accepted.md",
-      "jira": "QI-15268",
+      "jira": "DEMO-15268",
       "screenshots": [
         "bugs:approve-for-archive-approve-after-reject-accepted/screenshots/1-rejected-buttons-still-shown.jpg",
         "bugs:approve-for-archive-approve-after-reject-accepted/screenshots/2-second-approver-approve-dialog.jpg",
@@ -662,7 +662,7 @@
       "slug": "approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa",
       "title": "FQA archive does not unlink or re-version an IQA that is Proposed for Archive",
       "path": "bugs:approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa/approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa.md",
-      "jira": "QI-15269",
+      "jira": "DEMO-15269",
       "screenshots": [
         "bugs:approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa/screenshots/iqa19-before.jpg",
         "bugs:approve-for-archive-fqa-spec-not-unlinked-from-proposed-iqa/screenshots/iqa19-after-flag-on.jpg",
@@ -676,7 +676,7 @@
       "slug": "approve-for-archive-stale-latest-label",
       "title": "Cascaded children show a stale \"Latest\" label",
       "path": "bugs:approve-for-archive-stale-latest-label/approve-for-archive-stale-latest-label.md",
-      "jira": "QI-15270",
+      "jira": "DEMO-15270",
       "screenshots": [
         "bugs:approve-for-archive-stale-latest-label/screenshots/redo-before-pp31-b-result.jpg",
         "bugs:approve-for-archive-stale-latest-label/screenshots/redo-after-pp31-b-result.jpg"
@@ -690,9 +690,9 @@
     "steps": [
       {
         "label": "1",
-        "action": "Restore the lean project snapshot and create the lean UO-1..3 as Ryan",
+        "action": "Restore the lean project snapshot and create the lean UO-1..3 as Omar",
         "expected": "Three Unit Operations proposed for archive",
-        "observed": "UO 31, 32, 33 Proposed for Archive (Yash / Kons / both)",
+        "observed": "UO 31, 32, 33 Proposed for Archive (Priya / Dana / both)",
         "result": "pass"
       },
       {
@@ -713,18 +713,18 @@
     "videos": [
       {
         "path": "run:data-setup/videos/01-ryan-lean-project.mp4",
-        "caption": "Ryan builds the lean project (first 8 s)",
+        "caption": "Omar builds the lean project (first 8 s)",
         "atSec": 0
       }
     ],
     "screenshots": [
       {
         "path": "run:data-setup/screenshots/01-lib-propose-select.jpg",
-        "caption": "Ryan proposes library materials for approval"
+        "caption": "Omar proposes library materials for approval"
       },
       {
         "path": "run:data-setup/screenshots/05-yash-lib-esign.jpg",
-        "caption": "Yash signs the approval"
+        "caption": "Priya signs the approval"
       },
       {
         "path": "run:data-setup/screenshots/13-archive-mtl1.jpg",
@@ -735,7 +735,7 @@
         "caption": "IQA-19 proposed for archive"
       }
     ],
-    "snapshotPath": "/Users/bojanadrangova/Projects/qbdvision/plans/05-development/state-management/test-runs/qi-15267-approve-archive-20261012/db-snapshots/pristine-client_local_ArchiversRUS.sql",
+    "snapshotPath": "/Users/demo/projects/foliant/plans/state-management/test-runs/demo-15267-approve-archive-20261012/db-snapshots/pristine-client_local_DemoCo.sql",
     "notes": "Baseline `pristine`. Restore with `db-snapshots/restore.sh pristine`; the dump is not part of this fixture (placeholder)."
   },
   "logs": [

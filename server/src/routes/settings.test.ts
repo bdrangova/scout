@@ -1,6 +1,6 @@
 import express from 'express'
 import request from 'supertest'
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -21,6 +21,28 @@ describe('POST /settings/pick-folder', () => {
   it('returns null when the chooser is cancelled', async () => {
     const res = await request(appWith(async () => null)).post('/settings/pick-folder')
     expect(res.body).toEqual({ path: null })
+  })
+})
+
+describe('GET /packs', () => {
+  it('lists the registered packs with their help entries, and a broken one with its error', async () => {
+    const home = await mkdtemp(path.join(os.tmpdir(), 'scout-packs-'))
+    const pack = path.join(home, 'acme')
+    await mkdir(pack)
+    const help = [{ group: 'Worktrees', command: '/acme-worktree', when: 'Start one.' }]
+    await writeFile(path.join(pack, 'scout-pack.json'), JSON.stringify({ name: 'acme', repos: ['acme-app'], help }))
+    await writeFile(path.join(home, 'config.json'), JSON.stringify({ port: 4546, packs: [pack, path.join(home, 'gone')] }))
+    const res = await request(express().use(settingsRouter(home))).get('/packs')
+    expect(res.status).toBe(200)
+    expect(res.body.packs).toEqual([
+      { dir: pack, name: 'acme', repos: ['acme-app'], help, error: null },
+      { dir: path.join(home, 'gone'), name: null, repos: [], help: [], error: expect.stringMatching(/no scout-pack.json/) },
+    ])
+  })
+
+  it('answers an empty list without a config file', async () => {
+    const res = await request(appWith(async () => null)).get('/packs')
+    expect(res.body).toEqual({ packs: [] })
   })
 })
 

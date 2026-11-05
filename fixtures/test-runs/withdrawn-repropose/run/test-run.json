@@ -60,7 +60,7 @@
     {
       "type": "markdown",
       "title": "Playwright baseline",
-      "markdown": "Run on `master` against Rockets R US, project PRJ-18. Checks 1, 4 and 10 are **confirmed**: no propose from a withdrawn Supplier, bulk Propose disabled, duplicate rows in Drafts Pending. A single-record REST propose from Withdrawn already works, so the propose flag was probably off locally. Checks 2, 3, 5-9 and 11 wait for the after-run."
+      "markdown": "Run on `master` against Demo Co, project PRJ-18. Checks 1, 4 and 10 are **confirmed**: no propose from a withdrawn Supplier, bulk Propose disabled, duplicate rows in Drafts Pending. A single-record REST propose from Withdrawn already works, so the propose flag was probably off locally. Checks 2, 3, 5-9 and 11 wait for the after-run."
     },
     {
       "type": "links",

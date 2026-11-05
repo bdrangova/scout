@@ -40,14 +40,14 @@ const SPECS: readonly TestRunSpec[] = [
   },
   {
     id: STATE_MANAGEMENT_RUN_SESSION_ID,
-    title: 'QI-15267 Approve for Archive end to end',
+    title: 'DEMO-15267 Approve for Archive end to end',
     source: 'state-management',
     repoName: 'qa-state-management',
     feature: 'state-management',
     area: 'approve-for-archive',
-    ticket: 'QI-15267',
+    ticket: 'DEMO-15267',
     createdAt: '2026-10-12T17:45:00.000Z',
-    covers: 'kind test-run: 6 scenarios (pass/gap/fail/blocked), 3 bugs, 3 gaps, data setup, 4 logs, real JPEGs and clips; s1 approved, an open "incorrect" comment on s8',
+    covers: 'kind test-run: 6 scenarios (pass/gap/fail/blocked), 3 bugs, 3 gaps, data setup, 4 logs, placeholder JPEGs and clips; s1 approved, an open "incorrect" comment on s8',
     review: (fingerprints, sessionId) => {
       const at = '2026-10-12T18:10:00.000Z'
       const fingerprint = fingerprints.get('s1-uo-approve')

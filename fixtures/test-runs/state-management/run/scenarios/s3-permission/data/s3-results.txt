@@ -1,6 +1,6 @@
-S3: UO-2 (id 32), Kons demoted to Standard User (common-local Users.role), approve sent over ws://localhost:3001 (token as Sec-WebSocket-Protocol), replies gunzipped.
-Record page in UI as demoted Kons: 403 "Access denied." page (no Approve button reachable).
+S3: UO-2 (id 32), Dana demoted to Standard User (core-local Users.role), approve sent over ws://localhost:3001 (token as Sec-WebSocket-Protocol), replies gunzipped.
+Record page in UI as demoted Dana: 403 "Access denied." page (no Approve button reachable).
 Flag ON : wrong password -> ValidationError "Invalid password" (400); correct password -> NoStackError "Access denied." (403). DB identical (state-b-t1/t2 vs state-b-before).
 Flag OFF: identical replies ("Invalid password" / "Access denied." 403), only an extra "Authenticating" progress frame. DB identical.
 Ticket expects "Unauthorized action. You don't have permission to perform this action." - not produced on this path (generic access check stops the request first, flag ON and OFF).
-Stan (stdArchiver) cannot log in locally: "Incorrect username or password" with helper password.
+Sam (samDemo) cannot log in locally: "Incorrect username or password" with helper password.

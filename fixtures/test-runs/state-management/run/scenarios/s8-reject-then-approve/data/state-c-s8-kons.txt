@@ -2,10 +2,10 @@
 +------+----------------------+------+------------------------------------------+
 | id   | currentState         | vId  | openReqs                                 |
 +------+----------------------+------+------------------------------------------+
-|   31 | Archived             |   70 | 34:>Yash,37:archive>Yash,51:archive>Yash |
-|   32 | Proposed for Archive |   51 | 35:>Yash,38:archive>Kons                 |
-|   33 | Rejected             |   52 | 36:>Yash,39:archive>Yash,Kons            |
-|   34 | Approved             |   53 | 33:>Yash                                 |
+|   31 | Archived             |   70 | 34:>Priya,37:archive>Priya,51:archive>Priya |
+|   32 | Proposed for Archive |   51 | 35:>Priya,38:archive>Dana                 |
+|   33 | Rejected             |   52 | 36:>Priya,39:archive>Priya,Dana            |
+|   34 | Approved             |   53 | 33:>Priya                                 |
 +------+----------------------+------+------------------------------------------+
 -- Steps
 +------+---------------------------------+------+----------+
@@ -25,53 +25,53 @@
 |   18 | Draft        |   18 | NULL                   |
 |   19 | Draft        |   19 | NULL                   |
 |   20 | Draft        |   20 | NULL                   |
-|   21 | Approved     |   26 | 2:>Yash                |
-|   22 | Archived     |   28 | 3:>Yash,6:archive>Yash |
-|   23 | Proposed     |   23 | 4:>Yash                |
-|   24 | Routing      |   24 | 5:>Yash,Kons           |
-|   25 | Proposed     |   25 | 7:>Yash                |
+|   21 | Approved     |   26 | 2:>Priya                |
+|   22 | Archived     |   28 | 3:>Priya,6:archive>Priya |
+|   23 | Proposed     |   23 | 4:>Priya                |
+|   24 | Routing      |   24 | 5:>Priya,Dana           |
+|   25 | Proposed     |   25 | 7:>Priya                |
 +------+--------------+------+------------------------+
 -- LibraryMaterials
 +------+----------------------+------+-------------------------+
 | id   | currentState         | vId  | openReqs                |
 +------+----------------------+------+-------------------------+
-|    3 | Proposed for Archive |   17 | 6:>Yash,10:archive>Yash |
-|    4 | Proposed for Archive |   18 | 7:>Yash,11:archive>Yash |
-|    5 | Proposed for Archive |   19 | 8:>Yash,12:archive>Yash |
-|    6 | Approved             |   20 | 9:>Yash                 |
+|    3 | Proposed for Archive |   17 | 6:>Priya,10:archive>Priya |
+|    4 | Proposed for Archive |   18 | 7:>Priya,11:archive>Priya |
+|    5 | Proposed for Archive |   19 | 8:>Priya,12:archive>Priya |
+|    6 | Approved             |   20 | 9:>Priya                 |
 +------+----------------------+------+-------------------------+
 -- Suppliers
 +------+----------------------+------+------------------------+
 | id   | currentState         | vId  | openReqs               |
 +------+----------------------+------+------------------------+
-|    7 | Approved             |   19 | 6:>Yash                |
-|   10 | Proposed for Archive |   22 | 7:>Yash,8:archive>Yash |
+|    7 | Approved             |   19 | 6:>Priya                |
+|   10 | Proposed for Archive |   22 | 7:>Priya,8:archive>Priya |
 +------+----------------------+------+------------------------+
 -- ControlMethods
 +------+----------------------+------+------------------------+
 | id   | currentState         | vId  | openReqs               |
 +------+----------------------+------+------------------------+
-|    6 | Proposed for Archive |   12 | 6:>Yash,7:archive>Yash |
+|    6 | Proposed for Archive |   12 | 6:>Priya,7:archive>Priya |
 +------+----------------------+------+------------------------+
 -- IQAs
 +------+----------------------+------+--------------------------+
 | id   | currentState         | vId  | openReqs                 |
 +------+----------------------+------+--------------------------+
-|   19 | Proposed for Archive |   83 | 24:>Yash,25:archive>Yash |
-|   25 | Proposed for Archive |   84 | 23:>Yash,26:archive>Yash |
-|   26 | Proposed for Archive |   85 | 20:>Yash,27:archive>Yash |
+|   19 | Proposed for Archive |   83 | 24:>Priya,25:archive>Priya |
+|   25 | Proposed for Archive |   84 | 23:>Priya,26:archive>Priya |
+|   26 | Proposed for Archive |   85 | 20:>Priya,27:archive>Priya |
 +------+----------------------+------+--------------------------+
 -- FQAs
 +------+----------------------+------+------------------------+
 | id   | currentState         | vId  | openReqs               |
 +------+----------------------+------+------------------------+
-|   21 | Proposed for Archive |   55 | 5:>Yash,8:archive>Yash |
+|   21 | Proposed for Archive |   55 | 5:>Priya,8:archive>Priya |
 +------+----------------------+------+------------------------+
 -- Documents
 +------+--------------+------+----------+
 | id   | currentState | vId  | openReqs |
 +------+--------------+------+----------+
-|    2 | Proposed     |    3 | 3:>Yash  |
+|    2 | Proposed     |    3 | 3:>Priya  |
 +------+--------------+------+----------+
 -- Samples
 +------+--------------+------+----------+

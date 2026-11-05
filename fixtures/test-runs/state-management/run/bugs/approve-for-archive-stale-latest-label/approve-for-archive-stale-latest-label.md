@@ -1,6 +1,6 @@
 # Approve for Archive: cascaded children show a stale "Latest" label
 
-Found while testing QI-15255 (Propose for Archive). Flag: `stateManagementServiceApproveForArchive`.
+Found while testing DEMO-15255 (Propose for Archive). Flag: `stateManagementServiceApproveForArchive`.
 
 ## Steps
 1. Propose a unit operation that has child records for archive (e.g. UO-16, children PP-31..36). Children become **Proposed for Archive (Cascaded)**.

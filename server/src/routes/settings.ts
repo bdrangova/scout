@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 import { Router } from 'express'
-import type { PickFolderResponse } from '@scout/shared'
+import type { PacksResponse, PickFolderResponse } from '@scout/shared'
+import { loadRegisteredPacks } from '@scout/shared/packs'
 import { readSettings, writeSettings } from '../settings.ts'
 
 // Runs inside the frontmost app so the chooser opens in front of the browser, not behind it.
@@ -32,6 +33,14 @@ export function settingsRouter(home: string, pickFolder: () => Promise<string | 
   })
   router.put('/settings', async (req, res) => {
     res.json(await writeSettings(home, req.body))
+  })
+  // Registered packs (`ai-review pack add`) for the Skills help; read-only, registering stays in the terminal.
+  router.get('/packs', async (_req, res) => {
+    const packs = await loadRegisteredPacks(home)
+    const body: PacksResponse = {
+      packs: packs.map((p) => ({ dir: p.dir, name: p.manifest?.name ?? null, repos: p.manifest?.repos ?? [], help: p.manifest?.help ?? [], error: p.error })),
+    }
+    res.json(body)
   })
   router.post('/settings/pick-folder', async (_req, res) => {
     const body: PickFolderResponse = { path: await pickFolder() }

@@ -1,15 +1,15 @@
 # Approve after a reject is accepted and recorded (two-approver archive request)
 
-Found while testing QI-15267. Happens with `stateManagementServiceApproveForArchive` ON and OFF (UO-7, Archivers R US, approvers Yash + Kons).
+Found while testing DEMO-15267. Happens with `stateManagementServiceApproveForArchive` ON and OFF (UO-7, Demo Co, approvers Priya + Dana).
 
 ## Steps
-1. UO-7 is Proposed for Archive with approvers Yash and Kons.
-2. Yash opens UO-7 → Approve / Reject → Reject. Record is Rejected.
-3. Kons opens UO-7: "Approve / Reject" and "Edit Last Draft" are still shown.
-4. Kons approves (e-signature, email, password).
+1. UO-7 is Proposed for Archive with approvers Priya and Dana.
+2. Priya opens UO-7 → Approve / Reject → Reject. Record is Rejected.
+3. Dana opens UO-7: "Approve / Reject" and "Edit Last Draft" are still shown.
+4. Dana approves (e-signature, email, password).
 
 ![Rejected, buttons still shown](screenshots/1-rejected-buttons-still-shown.jpg)
-![Kons approve dialog](screenshots/2-second-approver-approve-dialog.jpg)
+![Dana approve dialog](screenshots/2-second-approver-approve-dialog.jpg)
 ![No error, record still Rejected](screenshots/3-approve-accepted-no-error.jpg)
 ![History: YA rejected, KA approved](screenshots/4-history-shows-both-responses.jpg)
 
@@ -17,12 +17,12 @@ Found while testing QI-15267. Happens with `stateManagementServiceApproveForArch
 After a reject the request is closed: no Approve / Reject for the other approver, or the approve is refused, and no response stored.
 
 ## Actual
-Approve is accepted silently. `UnitOperationApprovalResponses`: id 1 approve=0 (Yash), id 2 approve=1 (Kons), both on the same transition (15). Record state stays Rejected.
+Approve is accepted silently. `UnitOperationApprovalResponses`: id 1 approve=0 (Priya), id 2 approve=1 (Dana), both on the same transition (15). Record state stays Rejected.
 
 | | Flag ON | Flag OFF |
 |---|---|---|
 | Buttons after reject | shown | shown |
-| Kons approve | accepted, response stored | accepted, response stored |
+| Dana approve | accepted, response stored | accepted, response stored |
 | Record state | Rejected | Rejected |
 
 ![Flag OFF](screenshots/5-flag-off-same-result.jpg)

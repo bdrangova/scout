@@ -533,24 +533,46 @@ describe('install', () => {
     expect(await readFile(path.join(repo, '.gitignore'), 'utf8')).toBe('.claude/settings.local.json\n')
   })
 
-  it('installs repo-specific templates only into the repository whose origin they are named after', async () => {
+  it('installs a registered pack only into the repository whose origin it names, and runs its after-install step', async () => {
     const opts = { home, claudeBin: null, pathDir: null, cliBundle: '/opt/x/index.js', nodeBin: '/opt/node' }
-    const qbd = path.join(home, 'qbd')
-    await gitText(home, ['init', '-q', '-b', 'main', qbd])
-    await gitText(qbd, ['remote', 'add', 'origin', 'git@github.com:Some-Org/qbdvision.git'])
+    const pack = path.join(home, 'packs', 'acme')
+    await mkdir(path.join(pack, 'files', '.claude', 'skills', 'acme-worktree', 'scripts'), { recursive: true })
+    await writeFile(path.join(pack, 'files', '.claude', 'skills', 'acme-worktree', 'SKILL.md'), '# acme worktree\n')
+    await writeFile(path.join(pack, 'files', '.claude', 'skills', 'acme-worktree', 'scripts', 'wt.sh'), '#!/bin/sh\n', { mode: 0o755 })
+    await writeFile(
+      path.join(pack, 'scout-pack.json'),
+      JSON.stringify({ name: 'acme', repos: ['ACME-App'], files: 'files', skills: { worktree: 'acme-worktree' }, afterInstall: 'echo "from $SCOUT_PACK_DIR" > after.txt' }),
+    )
+    await writeJsonAtomic(path.join(home, 'config.json'), { port: 4546, packs: [pack, path.join(home, 'packs', 'missing')] })
+
+    const acme = path.join(home, 'acme')
+    await gitText(home, ['init', '-q', '-b', 'main', acme])
+    await gitText(acme, ['remote', 'add', 'origin', 'git@github.com:Some-Org/acme-app.git'])
     const other = path.join(home, 'other')
     await gitText(home, ['init', '-q', '-b', 'main', other])
     await gitText(other, ['remote', 'add', 'origin', 'https://github.com/Some-Org/elsewhere.git'])
 
-    const script = '.claude/skills/qbd-worktree/scripts/qbd_worktree.sh'
-    const first = await installIntoRepo({ ...opts, repo: qbd })
-    expect(first.changes.find((c) => c.path === script)?.action).toBe('created')
-    expect((await lstat(path.join(qbd, ...script.split('/')))).mode & 0o111).not.toBe(0)
-    expect((await installIntoRepo({ ...opts, repo: qbd })).changes.find((c) => c.path === script)?.action).toBe('unchanged')
+    const script = '.claude/skills/acme-worktree/scripts/wt.sh'
+    const first = await installIntoRepo({ ...opts, repo: acme })
+    expect(first.changes.find((c) => c.path === script)).toMatchObject({ action: 'created', note: 'pack acme' })
+    expect((await lstat(path.join(acme, ...script.split('/')))).mode & 0o111).not.toBe(0)
+    expect(await readFile(path.join(acme, 'after.txt'), 'utf8')).toBe(`from ${pack}\n`)
+    expect(first.messages.some((m) => m.startsWith(`pack ${path.join(home, 'packs', 'missing')} skipped: no scout-pack.json`))).toBe(true)
+    expect((await installIntoRepo({ ...opts, repo: acme })).changes.find((c) => c.path === script)?.action).toBe('unchanged')
 
     const elsewhere = await installIntoRepo({ ...opts, repo: other })
-    expect(elsewhere.changes.some((c) => c.path.includes('qbd-worktree'))).toBe(false)
-    await expect(access(path.join(other, '.claude', 'skills', 'qbd-worktree'))).rejects.toThrow()
+    expect(elsewhere.changes.some((c) => c.path.includes('acme-worktree'))).toBe(false)
+    await expect(access(path.join(other, '.claude', 'skills', 'acme-worktree'))).rejects.toThrow()
+    await expect(access(path.join(other, 'after.txt'))).rejects.toThrow()
+  })
+
+  it('installs no repository-specific files without packs', async () => {
+    const repo = path.join(home, 'plain')
+    await gitText(home, ['init', '-q', '-b', 'main', repo])
+    await gitText(repo, ['remote', 'add', 'origin', 'git@github.com:Some-Org/qbdvision.git'])
+    const result = await installIntoRepo({ home, repo, claudeBin: null, pathDir: null, cliBundle: '/opt/x/index.js', nodeBin: '/opt/node' })
+    expect(result.changes.some((c) => c.note?.startsWith('pack '))).toBe(false)
+    await expect(access(path.join(repo, '.claude', 'skills', 'qbd-worktree'))).rejects.toThrow()
   })
 
   it('reads the repository name from ssh and https origins', () => {

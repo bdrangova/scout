@@ -1,4 +1,4 @@
--- QI-15267 re-run plumbing (client_local_ArchiversRUS). Imported suppliers carry 2017/2018 qualification dates,
+-- DEMO-15267 re-run plumbing (client_local_DemoCo). Imported suppliers carry 2017/2018 qualification dates,
 -- which block "Propose" with "Expired Qualification". The UI cannot clear it, so push the dates forward.
 UPDATE Suppliers SET effectiveDate='2026-01-01', expirationDate='2036-12-31' WHERE id IN (1,2,3,4,6);
 UPDATE SupplierVersions SET effectiveDate='2026-01-01', expirationDate='2036-12-31' WHERE supplierId IN (1,2,3,4,6);
@@ -12,7 +12,7 @@ INSERT INTO IQAToFQALibraries (IQAId, FQAId, status, createdByUserId, createdAt,
 UPDATE IQAToFQALibraries SET status='Linked' WHERE IQAId=19 AND FQAId=21;
 UPDATE IQAToFQALibraryLinkedVersions SET status='Linked' WHERE IQAVersionId=83 AND FQAId=21;
 
--- S3 (common-local DB, NOT covered by restore.sh): demote Kons, revert after the scenario
+-- S3 (core-local DB, NOT covered by restore.sh): demote Dana, revert after the scenario
 -- (applied for S3) UPDATE Users SET role='Standard User' WHERE id=1351;
 -- UPDATE Users SET role='Administrator' WHERE id=1351;
 -- S6a: trigger dropped, retry
@@ -22,7 +22,7 @@ UPDATE IQAToFQALibraryLinkedVersions SET status='Linked' WHERE IQAVersionId=83 A
 -- Same rows the handler would insert. IQA 27 is NOT proposed for archive, so the link status is not rewritten.
 INSERT INTO IQAToFQALibraries (IQAId, FQAId, status, createdByUserId, createdAt, updatedAt) VALUES (27, 24, 'Linked', 1349, NOW(), NOW());
 INSERT INTO IQAToFQALibraryLinkedVersions (IQAVersionId, FQAId, status, createdByUserId, createdAt, updatedAt) VALUES (86, 24, 'Linked', 1349, NOW(), NOW());
--- S9 clean rerun used snapshot s9-clean-proposed (pristine + the two INSERTs above + FQA 24 proposed for archive by Ryan via the UI).
+-- S9 clean rerun used snapshot s9-clean-proposed (pristine + the two INSERTs above + FQA 24 proposed for archive by Omar via the UI).
 -- S9 natural-data run: undo the forced 'Linked' on IQA 19 -> FQA 21. Proposing IQA-19 for archive (UI) nulls these on its own.
 UPDATE IQAToFQALibraries SET status=NULL WHERE IQAId=19 AND FQAId=21;
 UPDATE IQAToFQALibraryLinkedVersions SET status=NULL WHERE IQAVersionId=83 AND FQAId=21;

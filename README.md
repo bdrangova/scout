@@ -30,8 +30,37 @@ npm run dev
 `ai-review` command in `~/.local/bin`. Rerun it after updating Scout. The dashboard runs on
 **http://scout.localhost:4546** (API on 4545). Data lives in `~/.ai-review` (`AI_REVIEW_HOME`).
 
-Skills only one repository needs go in `cli/templates/repos/<repo name>/`; `install` copies them only into a
-repository whose `origin` has that name.
+## Packs
+
+Scout itself knows nothing about any one company or repository. What only one repository needs (its worktree flow,
+how its test data and users are made, its per-checkout ports, a step after install) lives in a **pack**: a separate
+folder or repository with a `scout-pack.json`. Register it once from a terminal (agents can't), then install:
+
+```
+ai-review pack add <pack folder>
+ai-review install --repo <path to your repository>
+ai-review pack list
+```
+
+A pack applies to repositories whose `origin` name it lists. `install` copies the pack's `files/` folder into the
+repository and runs its after-install command. `ai-review env` then reports the pack's runtime command (unless one is
+stored for the repository) and its skills per job (`skills.worktree`, `skills.testData`), which the generic skills
+use instead of their defaults: a plain `git worktree add`, data set up through the app, guessed ports. The dashboard's
+Skills help lists the pack's commands. Example: `scout-qbdvision` for the qbdvision repository.
+
+`scout-pack.json`:
+
+| Key | What it is |
+| --- | --- |
+| `name`, `description` | Shown by `pack list` |
+| `repos` | Origin repository names it applies to |
+| `files` | Folder mirrored into the repository by `install` |
+| `runtime` | Command that prints a checkout's runtime JSON (see Worktrees) |
+| `skills` | Skill name per job: `worktree`, `testData` |
+| `afterInstall` | Command run in the repository after every `install` |
+| `help` | `{ group, command, when }` entries for the Skills help |
+
+Pack commands run from the checkout or repository with `SCOUT_PACK_DIR` set to the pack folder.
 
 ## Run it in the background (macOS)
 
@@ -71,7 +100,7 @@ The `scout-*` skills orchestrate; the others each do one job and can be run on t
 they load themselves, not run by you: `write-for-reviewers` (writing), `review-choices` (the opening question
 and auto mode), `record-resolutions` (answering every comment), `test-run-index` (where a test run lives and how its index
 works), `browser-recording` (videos), `verdict-highlights` (the coloured boxes on evidence) and `run-scenario`
-(one recorded test scenario). In qbdvision, `qbd-test-data` says how its test data and users are made. They leave the
+(one recorded test scenario). A repository's own skills for jobs like worktrees and test data come from a registered pack (see "Packs" above). They leave the
 bookkeeping (adding evidence, tracking what changed since the last publish, merging run indexes, checking the app
 is up, database snapshots) to `ai-review` commands, so the same step works the same way every time.
 
@@ -87,7 +116,7 @@ The diff is against the branch's merge base with `origin/master` (or `main`) unl
 ## Worktrees
 
 Each checkout can run its own app and database on its own ports. A repository tells Scout those ports through
-one command, set once from a terminal (agents can't set it):
+one command: a registered pack's `runtime`, or one set from a terminal (agents can't set it), which wins:
 
 ```
 ai-review env --set-runtime '<command that prints the checkout runtime as JSON>'

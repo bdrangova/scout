@@ -41,7 +41,7 @@ export const PR_MERGED_SESSION_ID = '20261005-1030-qi-15472-trial-bar-pr-merged-
 /** A test run (kind "test-run"): the demo run folder copied from fixtures/test-runs, 3 scenarios. */
 export const TEST_RUN_SESSION_ID = '20261021-1800-diffing-run-7e2a'
 /** A test run from the user's state-management feature test: 6 scenarios, one verdict and an open comment written. */
-export const STATE_MANAGEMENT_RUN_SESSION_ID = '20261012-1745-qi-15267-approve-archive-5a1c'
+export const STATE_MANAGEMENT_RUN_SESSION_ID = '20261012-1745-demo-15267-approve-archive-5a1c'
 /** A test run without a plan file or data setup: baseline checks and gap demos, one unsupported panel. */
 export const WITHDRAWN_RUN_SESSION_ID = '20261022-1545-qi-16304-withdrawn-repropose-9c3d'
 

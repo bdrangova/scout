@@ -1,9 +1,9 @@
 // The Worktrees page: `store/worktrees/` holds linked worktrees of `clean-app` (a git repo with a local origin) and
 // `store/config.json` points Scout's worktree folders at it. Three worktrees: one clean and ahead of the base, one
 // with uncommitted changes, one with a code review, a PR review and a test run linked to it (so deleting it is refused).
-import { cp, mkdir } from 'node:fs/promises'
+import { cp, mkdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { CONFIG_FILE, runFolderOf, SCHEMA_VERSION, type GithubSettings, type TestRunManifest } from '@scout/shared'
+import { CONFIG_FILE, GithubSettingsSchema, runFolderOf, SCHEMA_VERSION, type GithubSettings, type TestRunManifest } from '@scout/shared'
 import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { publishReport } from '@scout/shared/pr-review/report'
 import { makePrReport } from '@scout/shared/testing/pr-review'
@@ -31,13 +31,23 @@ async function commit(dir: string, files: Record<string, string>, message: strin
   await git(dir, ['commit', '-q', '-m', message])
 }
 
-/** The PR reviews' Assigned PRs tab follows the real qbdvision repo (through the local `gh` login) and the Dream Team and Core UI. */
-const FIXTURE_GITHUB: GithubSettings = {
-  repos: ['QbDVision-Inc/qbdvision'],
-  teams: [
-    { id: 'dream-team', name: 'Dream Team', githubTeams: ['QbDVision-Inc/dream-team'], members: ['dnp1204', 'geveit', 'karimmady', 'bdrangova', 'NooreldeenAbd'] },
-    { id: 'core-ui', name: 'Core UI', githubTeams: ['QbDVision-Inc/core-ui'], members: [] },
-  ],
+/**
+ * The PR reviews' Assigned PRs tab follows real repos and teams through the local `gh` login. Which ones is personal, so
+ * it comes from `scripts/fixtures/github.local.json` (git-ignored, a `GithubSettings` object) when present; otherwise a
+ * neutral example that shows the settings but finds no PRs.
+ */
+const EXAMPLE_GITHUB: GithubSettings = {
+  repos: ['example-org/example-app'],
+  teams: [{ id: 'example-team', name: 'Example Team', githubTeams: ['example-org/example-team'], members: [] }],
+}
+
+async function fixtureGithub(): Promise<GithubSettings> {
+  const file = path.join(import.meta.dirname, 'github.local.json')
+  const text = await readFile(file, 'utf8').catch(() => null)
+  if (text === null) return EXAMPLE_GITHUB
+  const parsed = GithubSettingsSchema.safeParse(JSON.parse(text))
+  if (!parsed.success) throw new Error(`${file}: not GithubSettings: ${parsed.error.message}`)
+  return parsed.data
 }
 
 /** Creates the worktrees of `main` (the `clean-app` checkout), the two linked sessions and `config.json`. */
@@ -125,7 +135,7 @@ export async function writeWorktrees(main: string, origin: string): Promise<Work
   }
   await publishReport(prDir, report, prDir, tree, patches)
 
-  await writeJsonAtomic(path.join(storeDir, CONFIG_FILE), { worktreeFolders: [worktreesDir], github: FIXTURE_GITHUB })
+  await writeJsonAtomic(path.join(storeDir, CONFIG_FILE), { worktreeFolders: [worktreesDir], github: await fixtureGithub() })
   return [
     { path: exportFilters, branch: 'qi-15500-export-filters', covers: 'clean, 2 commits ahead' },
     { path: bulkArchive, branch: 'qi-15512-bulk-archive', covers: '1 commit ahead, a modified file and an untracked file (delete refused: dirty)' },

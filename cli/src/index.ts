@@ -6,6 +6,7 @@ import { registerArchive } from './commands/archive.ts'
 import { registerArtifact } from './commands/artifact.ts'
 import { registerCheckpoint } from './commands/checkpoint.ts'
 import { registerEnv } from './commands/env.ts'
+import { registerPack } from './commands/pack.ts'
 import { registerFeedback } from './commands/feedback.ts'
 import { registerInit } from './commands/init.ts'
 import { registerInstall } from './commands/install.ts'
@@ -40,6 +41,7 @@ registerPath(program)
 registerArtifact(program)
 registerPublishLog(program)
 registerEnv(program)
+registerPack(program)
 registerAppStatus(program)
 registerCheckpoint(program)
 registerFeedback(program)

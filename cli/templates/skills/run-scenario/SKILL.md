@@ -15,7 +15,7 @@ Load `/browser-recording` and `/verdict-highlights` (Skill tool) first and follo
 - Verify with `browser_snapshot` between actions; never assume a click or a navigation worked. Retry a decisive action once if it did not take.
 - Never write down a step you did not perform in the browser.
 - Use uncertain, not pass, when the outcome is ambiguous; never round it up.
-- Use the repository's own test notes when it has them (for qbdvision, `qbd-test-data`: pop-ups to dismiss after each sign-in, how to act on canvas diagrams).
+- Use the repository's own test notes when it has them: the test-data skill `ai-review env` names under `skills.testData` (pop-ups to dismiss after sign-in, how to act on unusual widgets such as canvas diagrams). Without one, dismiss whatever covers the UI under test and say so in `steps.md`.
 
 ## Steps
 1. **Start clean.** `--restore <key>`: `/snapshot-db restore <key> --session <id>` when the scenario changes data. Then resize and navigate to the app.

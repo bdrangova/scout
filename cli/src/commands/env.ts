@@ -7,7 +7,9 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
 import type { Command } from 'commander'
-import { currentBranch, mainWorktree, topLevel } from '@scout/shared/git/repo'
+import { currentBranch, mainWorktree, remoteUrl, topLevel } from '@scout/shared/git/repo'
+import { loadRegisteredPacks, originRepoName, packSkills, packsForRepo } from '@scout/shared/packs'
+import type { PackSkillRole } from '@scout/shared'
 import { CONFIG_FILE, readConfig } from '../config.ts'
 import { resolveHome, writeJsonAtomic } from '../store.ts'
 
@@ -60,8 +62,14 @@ export interface CheckoutEnv {
   /** Outside the checkout, so removing a worktree never takes snapshots or evidence with it. */
   scratch: string
   runtimeCommand: string | null
+  /** Where the runtime command comes from: stored for this repository, or a pack's default. */
+  runtimeSource: 'repo' | `pack:${string}` | null
   runtime: CheckoutRuntime | null
   runtimeError: string | null
+  /** Registered packs that apply to this repository (by origin name). */
+  packs: { name: string; dir: string }[]
+  /** The repository's own skill per job (from its packs); a job without one uses the generic skill's default. */
+  skills: Partial<Record<PackSkillRole, string>>
 }
 
 const toPosix = (p: string) => p.split(path.sep).join('/')
@@ -73,17 +81,20 @@ export function scratchDir(home: string, checkout: string): string {
   return path.join(home, CHECKOUTS_DIR, `${name}-${hash}`)
 }
 
-function runShell(command: string, cwd: string): Promise<string> {
+/** Runs a shell command from `cwd`; `packDir` is exported as `SCOUT_PACK_DIR` for commands that come from a pack. */
+export function runShell(command: string, cwd: string, options: { packDir?: string; timeoutMs?: number } = {}): Promise<string> {
+  const env: NodeJS.ProcessEnv = { ...process.env, AI_REVIEW_CHECKOUT: cwd }
+  if (options.packDir !== undefined) env.SCOUT_PACK_DIR = options.packDir
   return new Promise((resolve, reject) => {
-    execFile('/bin/sh', ['-c', command], { cwd, timeout: RUNTIME_TIMEOUT_MS, maxBuffer: 1024 * 1024, env: { ...process.env, AI_REVIEW_CHECKOUT: cwd } }, (error, stdout, stderr) => {
+    execFile('/bin/sh', ['-c', command], { cwd, timeout: options.timeoutMs ?? RUNTIME_TIMEOUT_MS, maxBuffer: 1024 * 1024, env }, (error, stdout, stderr) => {
       if (error) reject(new Error(`${error.message.split('\n')[0]}${stderr.trim() === '' ? '' : `: ${stderr.trim().split('\n').slice(-3).join(' | ')}`}`))
       else resolve(stdout)
     })
   })
 }
 
-export async function runRuntimeCommand(command: string, checkout: string): Promise<CheckoutRuntime> {
-  const stdout = await runShell(command, checkout)
+export async function runRuntimeCommand(command: string, checkout: string, packDir?: string): Promise<CheckoutRuntime> {
+  const stdout = await runShell(command, checkout, { packDir })
   let json: unknown
   try {
     json = JSON.parse(stdout)
@@ -99,12 +110,16 @@ export async function checkoutEnv(options: { home: string; repo: string }): Prom
   const checkout = toPosix(await topLevel(options.repo))
   const mainCheckout = toPosix(await mainWorktree(checkout))
   const config = await readConfig(options.home)
-  const runtimeCommand = config.repos?.[mainCheckout]?.runtime ?? null
+  const packs = packsForRepo(await loadRegisteredPacks(options.home), originRepoName(await remoteUrl(checkout)))
+  const stored = config.repos?.[mainCheckout]?.runtime ?? null
+  const runtimePack = stored === null ? packs.find((p) => p.manifest.runtime !== undefined) : undefined
+  const runtimeCommand = stored ?? runtimePack?.manifest.runtime ?? null
+  const runtimeSource: CheckoutEnv['runtimeSource'] = stored !== null ? 'repo' : runtimePack !== undefined ? `pack:${runtimePack.manifest.name}` : null
   let runtime: CheckoutRuntime | null = null
   let runtimeError: string | null = null
   if (runtimeCommand !== null) {
     try {
-      runtime = await runRuntimeCommand(runtimeCommand, checkout)
+      runtime = await runRuntimeCommand(runtimeCommand, checkout, runtimePack?.dir)
     } catch (err) {
       runtimeError = err instanceof Error ? err.message : String(err)
     }
@@ -116,8 +131,11 @@ export async function checkoutEnv(options: { home: string; repo: string }): Prom
     branch: await currentBranch(checkout),
     scratch: toPosix(scratchDir(options.home, checkout)),
     runtimeCommand,
+    runtimeSource,
     runtime,
     runtimeError,
+    packs: packs.map((p) => ({ name: p.manifest.name, dir: p.dir })),
+    skills: packSkills(packs),
   }
 }
 

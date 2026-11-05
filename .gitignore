@@ -11,3 +11,6 @@ playwright-report/
 
 # Versioned sample logs are required by the test-run fixtures.
 !fixtures/test-runs/**/*.log
+
+# Personal GitHub repos and teams for the fixture store (see scripts/fixtures/worktrees.ts).
+scripts/fixtures/github.local.json

@@ -1,8 +1,8 @@
 13:58:40.959 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ] [RequestId: ]
 13:58:40.966 [timeEnd] Starting up injection...: 4.991943359375 ms
 13:58:40.966 [log] %s: %s Starting up injection... 5.038ms
-13:58:40.987 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
-13:58:40.987 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:58:40.987 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+priyaDemo@foliant.com with username test1+priyademo__foliant.com and auth UUID 00000000-0000-4000-8000-000000000000 for DB "client_local_DemoCo".
+13:58:40.987 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_DemoCo
 13:58:40.990 [timeEnd] Security Context DB Initialization: 2.9638671875 ms
 13:58:40.990 [log] %s: %s Security Context DB Initialization 3.016ms
 13:58:40.991 [timeEnd] Freezing security context: 0.0419921875 ms
@@ -14,8 +14,8 @@
 13:58:41.233 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ws://localhost:3001] [RequestId: 44c56ffa-fba9-48d8-a6fa-5c3046a1dd55]
 13:58:41.242 [timeEnd] Starting up injection...: 0.342041015625 ms
 13:58:41.242 [log] %s: %s Starting up injection... 0.435ms
-13:58:41.251 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
-13:58:41.251 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:58:41.251 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+priyaDemo@foliant.com with username test1+priyademo__foliant.com and auth UUID 00000000-0000-4000-8000-000000000000 for DB "client_local_DemoCo".
+13:58:41.251 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_DemoCo
 13:58:41.253 [timeEnd] Security Context DB Initialization: 1.736083984375 ms
 13:58:41.253 [log] %s: %s Security Context DB Initialization 1.762ms
 13:58:41.253 [timeEnd] Freezing security context: 0.025146484375 ms
@@ -146,8 +146,8 @@
 13:58:49.665 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ws://localhost:3001] [RequestId: fd879e7a-b4a0-45be-90bd-904359bff19e]
 13:58:49.671 [timeEnd] Starting up injection...: 0.296142578125 ms
 13:58:49.671 [log] %s: %s Starting up injection... 0.455ms
-13:58:49.680 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
-13:58:49.680 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:58:49.680 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+priyaDemo@foliant.com with username test1+priyademo__foliant.com and auth UUID 00000000-0000-4000-8000-000000000000 for DB "client_local_DemoCo".
+13:58:49.680 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_DemoCo
 13:58:49.682 [timeEnd] Security Context DB Initialization: 1.844970703125 ms
 13:58:49.682 [log] %s: %s Security Context DB Initialization 1.987ms
 13:58:49.682 [timeEnd] Freezing security context: 0.037841796875 ms
@@ -183,15 +183,15 @@ Websockets: Starting EditablesApproveOrRejectOrWithdrawDecoratorRequestHandler..
 13:58:50.370 [timeEnd] DependenciesGetterContext.getDependencies::ControlMethod-4: 1.051025390625 ms
 13:58:50.370 [log] %s: %s DependenciesGetterContext.getDependencies::ControlMethod-4 1.108ms
 13:58:50.504 [log] <INFO> [Framework::ImmediateWebSocketClientFeedbackProvider] :: [recovery-persist] stored result under key=37733a34-263f-44eb-8504-8d123d06989a user=1350
-13:58:50.514 [log] Verifying user test1+ryanArchiver@qbdvision.com in company 303 in status CONFIRMED
-13:58:50.516 [log] Sending email to Ryan Archiver <test1+ryanArchiver@qbdvision.com> with subject: Approval response from QbDVision
+13:58:50.514 [log] Verifying user test1+omarDemo@foliant.com in company 303 in status CONFIRMED
+13:58:50.516 [log] Sending email to Omar Demo <test1+omarDemo@foliant.com> with subject: Approval response from Foliant
 13:58:50.519 [log] <INFO> [Email::DynamoDBNotificationSender] :: Matches:  [
   [
-    "test1+ryanArchiver@qbdvision.com",
-    "test1+ryanArchiver@qbdvision.com"
+    "test1+omarDemo@foliant.com",
+    "test1+omarDemo@foliant.com"
   ]
 ]
-13:58:50.519 [log] <INFO> [Email::DynamoDBNotificationSender] :: Sending email to:  test1+ryanArchiver@qbdvision.com
+13:58:50.519 [log] <INFO> [Email::DynamoDBNotificationSender] :: Sending email to:  test1+omarDemo@foliant.com
 13:58:50.887 [warning] Timer 'Recalculating training for Bulk Approval' already exists
 13:58:50.889 [error] (node:49795) Warning: Label 'Recalculating training for Bulk Approval' already exists for console.time()
 13:58:51.009 [log] <INFO> [Framework::ImmediateWebSocketClientFeedbackProvider] :: [recovery-persist] stored result under key=37733a34-263f-44eb-8504-8d123d06989a user=1350
@@ -201,8 +201,8 @@ Websockets: Starting EditablesApproveOrRejectOrWithdrawDecoratorRequestHandler..
 13:59:06.487 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ] [RequestId: ]
 13:59:06.489 [timeEnd] Starting up injection...: 0.3720703125 ms
 13:59:06.489 [log] %s: %s Starting up injection... 0.488ms
-13:59:06.503 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
-13:59:06.503 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:59:06.503 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+priyaDemo@foliant.com with username test1+priyademo__foliant.com and auth UUID 00000000-0000-4000-8000-000000000000 for DB "client_local_DemoCo".
+13:59:06.503 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_DemoCo
 13:59:06.507 [timeEnd] Security Context DB Initialization: 3.701904296875 ms
 13:59:06.507 [log] %s: %s Security Context DB Initialization 3.828ms
 13:59:06.507 [timeEnd] Freezing security context: 0.110107421875 ms
@@ -214,8 +214,8 @@ Websockets: Starting EditablesApproveOrRejectOrWithdrawDecoratorRequestHandler..
 13:59:06.579 [log] <INFO> [Framework::RequestHandler] :: Starting request:  [URL: ws://localhost:3001] [RequestId: fedf99d6-278a-4cf4-a4e3-071ea605784d]
 13:59:06.585 [timeEnd] Starting up injection...: 0.228759765625 ms
 13:59:06.585 [log] %s: %s Starting up injection... 0.316ms
-13:59:06.594 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+yashArchiver@qbdvision.com with username test1+yasharchiver__qbdvision.com and Cognito UUID 4619f308-9890-45a1-9ac4-d31b29845828 for DB "client_local_ArchiversRUS".
-13:59:06.594 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_ArchiversRUS
+13:59:06.594 [log] <INFO> [Security::ApplicationSecurityContext] :: [Security Context] Loading security context for user test1+priyaDemo@foliant.com with username test1+priyademo__foliant.com and auth UUID 00000000-0000-4000-8000-000000000000 for DB "client_local_DemoCo".
+13:59:06.594 [log] <INFO> [ClientDB::Index] :: Getting DB for database with name: client_local_DemoCo
 13:59:06.596 [timeEnd] Security Context DB Initialization: 1.9150390625 ms
 13:59:06.596 [log] %s: %s Security Context DB Initialization 1.968ms
 13:59:06.596 [timeEnd] Freezing security context: 0.027099609375 ms

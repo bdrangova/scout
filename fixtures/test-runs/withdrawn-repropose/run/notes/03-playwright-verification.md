@@ -9,14 +9,14 @@
 - Two runs:
   - **Baseline** on the current code, before the change, to confirm what is blocked today.
   - **After** the change, on the branch, with the state management propose flag on and off.
-- Data is created fresh in a new local project ("Withdrawn Re-propose QA") as Rockets R US (`test@qbdvision.com`). It is set up through the app's own REST calls (`addOrEdit`, propose, withdraw, approve) from the logged-in page, and the UI only drives the check itself.
+- Data is created fresh in a new local project ("Withdrawn Re-propose QA") as Demo Co (`test@example.com`). It is set up through the app's own REST calls (`addOrEdit`, propose, withdraw, approve) from the logged-in page, and the UI only drives the check itself.
 - Evidence: a narrated screen recording per run, with a chapter per check, as `.mp4` in `screenshots/withdrawn-repropose/`. API results are recorded as text. Screenshots only when a single frame says enough.
 
 ## Setup
 
 - **Users:**
-  - Proposer: `test@qbdvision.com`.
-  - Approver: a second confirmed Administrator in Rockets R US. Create one if none exists.
+  - Proposer: `test@example.com`.
+  - Approver: a second confirmed Administrator in Demo Co. Create one if none exists.
   - Passwords: `password_helper.js`.
 - **Flags:** `launchdarkly-dev` skill, toggling `StateManagementServiceProposeForApproval`.
 - **Records:**
@@ -37,7 +37,7 @@
   | S4 | Supplier | approved 1.0 → proposed for archive → rejected |
   | S5 | Supplier | archived → proposed for restore → rejected |
 
-  Rejections are done in a second browser context logged in as `test+yash@qbdvision.com`, through the UI (Approve / Reject → Reject). Rejecting over REST needs a payload the seeders don't build.
+  Rejections are done in a second browser context logged in as `test+priya@example.com`, through the UI (Approve / Reject → Reject). Rejecting over REST needs a payload the seeders don't build.
 
 ## Checks
 
@@ -74,7 +74,7 @@ Each check gets a screenshot of the title bar plus the action buttons, along wit
 
 ## Findings
 
-### Baseline — 2026-10-21, `master` (qbdvision), Rockets R US, project PRJ-18 "Withdrawn Re-propose QA 60430"
+### Baseline — 2026-10-21, `master` (foliant), Demo Co, project PRJ-18 "Withdrawn Re-propose QA 60430"
 
 Seeded via REST + the `withdrawRecord` test hook: S1 (Supplier 18), CM1-CM4 (ControlMethod 46-49). The checks below are numbered as in the Checks table.
 
