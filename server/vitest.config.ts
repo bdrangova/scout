@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    setupFiles: ['./src/testing/setup.ts'],
     testTimeout: 15_000,
     hookTimeout: 15_000,
     // Each file owns a temp git repo plus filesystem watchers; in parallel, macOS FSEvents drops

@@ -59,6 +59,10 @@ describe('RunWatcher', () => {
     try {
       await watcher.watch('s1', [path.join(dir, 'run'), path.join(dir, 'bugs')])
       expect([...watcher.active.keys()]).toEqual(['s1'])
+      // FSEvents can still report the folders setup just made; let that settle before the checks.
+      await new Promise((resolve) => setTimeout(resolve, 400))
+      events.length = 0
+      invalidated.length = 0
 
       await fs.writeFile(path.join(dir, 'run', 'scenarios', 's1', 'screenshots', 'raw', 'a.png'), 'raw')
       await new Promise((resolve) => setTimeout(resolve, 400))
