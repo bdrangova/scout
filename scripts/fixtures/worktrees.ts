@@ -3,7 +3,7 @@
 // with uncommitted changes, one with a code review, a PR review and a test run linked to it (so deleting it is refused).
 import { cp, mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { CONFIG_FILE, SCHEMA_VERSION, type TestRunManifest } from '@scout/shared'
+import { CONFIG_FILE, SCHEMA_VERSION, type GithubSettings, type TestRunManifest } from '@scout/shared'
 import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { publishReport } from '@scout/shared/pr-review/report'
 import { makePrReport } from '@scout/shared/testing/pr-review'
@@ -29,6 +29,15 @@ async function commit(dir: string, files: Record<string, string>, message: strin
   await writeFiles(dir, files)
   await git(dir, ['add', '-A'])
   await git(dir, ['commit', '-q', '-m', message])
+}
+
+/** The PR reviews' Assigned PRs tab follows the real qbdvision repo (through the local `gh` login) and the Dream Team and Core UI. */
+const FIXTURE_GITHUB: GithubSettings = {
+  repos: ['QbDVision-Inc/qbdvision'],
+  teams: [
+    { id: 'dream-team', name: 'Dream Team', githubTeams: ['QbDVision-Inc/dream-team'], members: ['dnp1204', 'geveit', 'karimmady', 'bdrangova', 'NooreldeenAbd'] },
+    { id: 'core-ui', name: 'Core UI', githubTeams: ['QbDVision-Inc/core-ui'], members: [] },
+  ],
 }
 
 /** Creates the worktrees of `main` (the `clean-app` checkout), the two linked sessions and `config.json`. */
@@ -117,7 +126,7 @@ export async function writeWorktrees(main: string, origin: string): Promise<Work
   }
   await publishReport(prDir, report, prDir, tree, patches)
 
-  await writeJsonAtomic(path.join(storeDir, CONFIG_FILE), { worktreeFolders: [worktreesDir] })
+  await writeJsonAtomic(path.join(storeDir, CONFIG_FILE), { worktreeFolders: [worktreesDir], github: FIXTURE_GITHUB })
   return [
     { path: exportFilters, branch: 'qi-15500-export-filters', covers: 'clean, 2 commits ahead' },
     { path: bulkArchive, branch: 'qi-15512-bulk-archive', covers: '1 commit ahead, a modified file and an untracked file (delete refused: dirty)' },

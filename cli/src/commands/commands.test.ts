@@ -160,6 +160,56 @@ describe('init', () => {
     await expect(initSession({ home, repo, base: 'origin/nope', fresh: true })).rejects.toThrow(/base ref "origin\/nope" does not exist/)
   })
 
+  describe('--pr placeholders', () => {
+    const PLACEHOLDER_ID = '20260926-1000-pr-thing-abcd'
+    const pending = (id: string, url: string) => ({
+      id,
+      createdAt: '2026-09-26T10:00:00.000Z',
+      pr: { url, repo: 'Acme/Repo', number: 7, title: 'Thing', author: 'a', isDraft: false, headRef: 'h', baseRef: 'master' },
+    })
+    const placeholderFile = (id = PLACEHOLDER_ID) => path.join(home, 'pr-pending', `${id}.json`)
+
+    it('claims the placeholder id and removes the file', async () => {
+      const { repo } = await makeRepo(home)
+      await writeJsonAtomic(placeholderFile(), pending(PLACEHOLDER_ID, 'https://github.com/Acme/Repo/pull/7'))
+      await writeFile(path.join(home, 'pr-pending', 'junk.json'), '{nope')
+      const result = await initSession({ home, repo, kind: 'pr-review', pr: ' https://GitHub.com/acme/repo/pull/7/files/ ', now: new Date(T_NOW) })
+      expect(result.id).toBe(PLACEHOLDER_ID)
+      expect(result.reused).toBe(false)
+      expect(result.manifest.pr).toEqual({ url: 'https://GitHub.com/acme/repo/pull/7/files/' })
+      expect(await exists(placeholderFile())).toBe(false)
+      expect(await exists(path.join(home, 'pr-pending', 'junk.json'))).toBe(true)
+    })
+
+    it('uses a normal id when no placeholder exists', async () => {
+      const { repo } = await makeRepo(home)
+      const result = await initSession({ home, repo, kind: 'pr-review', pr: 'https://github.com/acme/repo/pull/7', now: new Date(T_NOW) })
+      expect(result.id).toMatch(/^20260927-\d{4}-/)
+    })
+
+    it('leaves a placeholder for another PR alone', async () => {
+      const { repo } = await makeRepo(home)
+      await writeJsonAtomic(placeholderFile(), pending(PLACEHOLDER_ID, 'https://github.com/acme/repo/pull/8'))
+      const result = await initSession({ home, repo, kind: 'pr-review', pr: 'https://github.com/acme/repo/pull/7', now: new Date(T_NOW) })
+      expect(result.id).not.toBe(PLACEHOLDER_ID)
+      expect(await exists(placeholderFile())).toBe(true)
+    })
+
+    it('rejects --pr for a code review', async () => {
+      const { repo } = await makeRepo(home)
+      await expect(initSession({ home, repo, pr: 'https://github.com/acme/repo/pull/7' })).rejects.toThrow(/--pr is only valid/)
+    })
+
+    it('deletes a matching placeholder when an existing session is reused', async () => {
+      const { repo } = await makeRepo(home)
+      const first = await initSession({ home, repo, kind: 'pr-review', now: new Date(T_NOW) })
+      await writeJsonAtomic(placeholderFile(), pending(PLACEHOLDER_ID, 'https://github.com/acme/repo/pull/7'))
+      const second = await initSession({ home, repo, kind: 'pr-review', pr: 'https://github.com/acme/repo/pull/7', now: new Date(T_NOW) })
+      expect(second).toMatchObject({ id: first.id, reused: true })
+      expect(await exists(placeholderFile())).toBe(false)
+    })
+  })
+
   it('parses tickets', () => {
     expect(parseTicket('QI-1')).toEqual({ key: 'QI-1', url: null })
     expect(parseTicket('QI-1=https://x/y')).toEqual({ key: 'QI-1', url: 'https://x/y' })

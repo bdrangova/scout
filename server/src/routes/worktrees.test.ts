@@ -53,9 +53,9 @@ async function call<T>(method: string, url: string, body?: unknown): Promise<{ s
 
 describe('settings', () => {
   it('reads defaults, then round-trips normalised folders (~ expanded, deduped, absolute)', async () => {
-    expect((await call<Settings>('GET', '/api/settings')).body).toEqual({ worktreeFolders: [] })
+    expect((await call<Settings>('GET', '/api/settings')).body).toEqual({ worktreeFolders: [], github: { repos: [], teams: [] } })
     const put = await call<Settings>('PUT', '/api/settings', { worktreeFolders: ['~/wt/', path.join(os.homedir(), 'wt'), '/a/b/../c'] })
-    expect(put.body).toEqual({ worktreeFolders: [path.join(os.homedir(), 'wt').split(path.sep).join('/'), '/a/c'] })
+    expect(put.body).toEqual({ worktreeFolders: [path.join(os.homedir(), 'wt').split(path.sep).join('/'), '/a/c'], github: { repos: [], teams: [] } })
     expect((await call<Settings>('GET', '/api/settings')).body).toEqual(put.body)
     expect(JSON.parse(await fs.readFile(path.join(store.home, CONFIG_FILE), 'utf8'))).toEqual(put.body)
   })

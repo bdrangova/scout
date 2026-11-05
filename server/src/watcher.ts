@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import chokidar from 'chokidar'
 import type { FSWatcher } from 'chokidar'
-import { SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, isTestRun } from '@scout/shared'
+import { PR_PENDING_DIR, PR_STATUS_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, isTestRun } from '@scout/shared'
 import type { StoreEvent } from '@scout/shared'
 import { errorMessage } from './errors.ts'
 import type { StoreEventBus } from './events.ts'
@@ -38,10 +38,11 @@ type Target =
  * file events into `StoreEvent`s and tree-cache invalidations. Session folder: `manifest.json`
  * (session.added/updated/removed, and the repo watch follows the manifest), `review/review.json`,
  * `review/resolutions.json`, `review/journal.json` (`journal.updated` + `session.updated`), `review/pr-comments.json` and `review/pr-resolutions.json` and `review/pr-replies.json` (`pr-comments.updated`, plus `session.updated` for the first: the session's PR changed), and the
- * artifacts (`evidence/`, `extras/`, `spec/`, `pr-description.md` → one debounced `session.updated`).
+ * artifacts (`evidence/`, `extras/`, `spec/`, `pr-description.md`) and `review/pr-status.json` → one debounced `session.updated`.
  */
 export class StoreWatcher {
   private watcher: FSWatcher | null = null
+  private pendingWatcher: FSWatcher | null = null
   private readyPromise: Promise<void> = Promise.resolve()
   private readonly repos: RepoWatcher
   private readonly runs: RunWatcher
@@ -106,7 +107,30 @@ export class StoreWatcher {
     watcher.on('error', (err) => this.log(`store watcher error: ${errorMessage(err)}`))
     const scanned = new Promise<void>((resolve) => watcher.once('ready', () => resolve()))
     this.watcher = watcher
-    this.readyPromise = Promise.all([scanned, this.syncRepos()]).then(() => undefined)
+    this.readyPromise = Promise.all([scanned, this.syncRepos(), this.watchPending()]).then(() => undefined)
+  }
+
+  /** `<home>/pr-pending/*.json`: any add, change or removal is one `pr-pending.updated`. */
+  private watchPending(): Promise<void> {
+    const dir = path.join(this.store.paths.home, PR_PENDING_DIR)
+    fs.mkdirSync(dir, { recursive: true })
+    const watcher = chokidar.watch(dir, {
+      ignoreInitial: true,
+      depth: 0,
+      awaitWriteFinish: {
+        stabilityThreshold: this.options.stabilityThreshold ?? 200,
+        pollInterval: this.options.pollInterval ?? 50,
+      },
+      ignored: (file) => {
+        const name = path.basename(file)
+        return file !== dir && (name.startsWith('.') || !name.endsWith('.json'))
+      },
+    })
+    const emit = (): void => this.bus.emit({ type: 'pr-pending.updated' })
+    watcher.on('add', emit).on('change', emit).on('unlink', emit)
+    watcher.on('error', (err) => this.log(`pr-pending watcher error: ${errorMessage(err)}`))
+    this.pendingWatcher = watcher
+    return new Promise<void>((resolve) => watcher.once('ready', () => resolve()))
   }
 
   async close(): Promise<void> {
@@ -116,7 +140,9 @@ export class StoreWatcher {
     await this.runs.close()
     const watcher = this.watcher
     this.watcher = null
-    if (watcher) await watcher.close()
+    const pending = this.pendingWatcher
+    this.pendingWatcher = null
+    await Promise.all([watcher?.close(), pending?.close()])
   }
 
   /** The run folders currently watched (test runs), by session id. */
@@ -164,7 +190,7 @@ export class StoreWatcher {
     if (ARTIFACT_FOLDERS.has(second)) return false
     if (parts.length === 2) return second !== 'manifest.json' && second !== 'pr-review.json' && second !== SESSION_PR_DESCRIPTION_FILE && second !== 'review'
     if (second !== 'review') return true
-    if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'journal.json'
+    if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'journal.json' && third !== PR_STATUS_FILE
     return true
   }
 
@@ -179,6 +205,7 @@ export class StoreWatcher {
     if (parts.length === 3 && third === 'review.json') return { kind: 'review', sessionId }
     if (parts.length === 3 && third === 'resolutions.json') return { kind: 'resolutions', sessionId }
     if (parts.length === 3 && third === 'journal.json') return { kind: 'journal', sessionId }
+    if (parts.length === 3 && third === PR_STATUS_FILE) return { kind: 'artifact', sessionId }
     if (parts.length === 3 && (third === 'pr-comments.json' || third === 'pr-resolutions.json' || third === 'pr-replies.json')) return { kind: 'pr-comments', sessionId, file: third }
     return null
   }

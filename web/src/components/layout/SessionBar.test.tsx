@@ -123,12 +123,12 @@ describe('SessionBar', () => {
     expect(bar.querySelector('[aria-live]')).toHaveTextContent('Not saved')
   })
 
-  it('holds Archive in the overflow menu, after Shortcuts and Theme (which only show there below 1024px)', async () => {
+  it('holds Archive then Delete in the overflow menu, after Shortcuts and Theme (which only show there below 1024px)', async () => {
     const { bar } = renderShell(`/s/${SESSION_ID}/files`)
     expect(screen.queryByRole('menuitem', { name: 'Archive session' })).not.toBeInTheDocument()
     fireEvent.click(within(bar).getByRole('button', { name: 'More actions' }))
     const items = (await screen.findAllByRole('menuitem')).map((item) => item.textContent)
-    expect(items.at(-1)).toBe('Archive session')
+    expect(items.slice(-2)).toEqual(['Archive session', 'Delete session…'])
     expect(items).toContain('Keyboard shortcuts?')
     expect(items).toEqual(expect.arrayContaining(['Light', 'Dark', 'System']))
     expect(screen.getByRole('menuitem', { name: /^Keyboard shortcuts/ })).toHaveClass('lg:hidden')

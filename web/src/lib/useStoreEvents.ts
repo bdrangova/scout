@@ -18,9 +18,7 @@ function isStoreEvent(value: unknown): value is StoreEvent {
     typeof value === 'object' &&
     value !== null &&
     'type' in value &&
-    typeof value.type === 'string' &&
-    'sessionId' in value &&
-    typeof value.sessionId === 'string'
+    typeof value.type === 'string'
   )
 }
 

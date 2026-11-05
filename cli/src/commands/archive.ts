@@ -1,4 +1,4 @@
-// `ai-review archive <id> [--undo]` moves a session folder between sessions/ and archive/; `ai-review delete <id> --yes` removes an archived one (no server needed).
+// `ai-review archive <id> [--done] [--undo]` moves a session folder between sessions/ and archive/; `ai-review delete <id> --yes` removes an archived one (no server needed).
 import { cp, lstat, mkdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
@@ -28,11 +28,13 @@ export interface ArchiveOptions {
   home: string
   id: string
   undo?: boolean
+  /** Archive as Done: the work is finished (usually merged), not just put away. */
+  done?: boolean
   now?: Date
 }
 
 /** Returns the folder the session now lives in. */
-export async function archiveSession({ home, id, undo = false, now = new Date() }: ArchiveOptions): Promise<string> {
+export async function archiveSession({ home, id, undo = false, done = false, now = new Date() }: ArchiveOptions): Promise<string> {
   if (!SESSION_ID_RE.test(id)) throw new Error(`"${id}" is not a session id`)
   const live = sessionDir(home, id)
   const archived = archivedSessionDir(home, id)
@@ -45,7 +47,8 @@ export async function archiveSession({ home, id, undo = false, now = new Date() 
   }
   if (!(await manifestExists(live))) throw new Error(`session ${id} not found under ${home} (no manifest.json)`)
   if (await isDir(archived)) throw new Error(`session ${id} is already archived`)
-  await writeFile(path.join(live, ARCHIVED_FILE), `${JSON.stringify({ archivedAt: now.toISOString() }, null, 2)}\n`, 'utf8')
+  const marker = done ? { archivedAt: now.toISOString(), done } : { archivedAt: now.toISOString() }
+  await writeFile(path.join(live, ARCHIVED_FILE), `${JSON.stringify(marker, null, 2)}\n`, 'utf8')
   await moveDir(live, archived)
   return archived
 }
@@ -95,9 +98,10 @@ export function registerArchive(program: Command): void {
   program
     .command('archive')
     .argument('<id>', 'session id')
+    .option('--done', 'archive it as Done: the work is finished (usually merged)')
     .option('--undo', 'move an archived session back to the live list')
-    .description('Archive a session (--undo to restore)')
-    .action(async (id: string, options: { undo?: boolean }) => {
-      console.log(await archiveSession({ home: resolveHome(), id, undo: options.undo ?? false }))
+    .description('Archive a session (--done to mark it finished, --undo to restore)')
+    .action(async (id: string, options: { undo?: boolean; done?: boolean }) => {
+      console.log(await archiveSession({ home: resolveHome(), id, undo: options.undo ?? false, done: options.done ?? false }))
     })
 }

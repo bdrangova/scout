@@ -30,6 +30,35 @@ describe('writeSettings', () => {
     const cli = { port: 4546, trustedPrCommentAuthors: ['bot'], repos: { '/r': { runtime: 'bash rt.sh' } } }
     await writeFile(path.join(home, 'config.json'), JSON.stringify({ ...cli, worktreeFolders: ['/old'] }))
     await writeSettings(home, { worktreeFolders: ['/new', '/new'] })
-    expect(JSON.parse(await readFile(path.join(home, 'config.json'), 'utf8'))).toEqual({ ...cli, worktreeFolders: ['/new'] })
+    expect(JSON.parse(await readFile(path.join(home, 'config.json'), 'utf8'))).toEqual({ ...cli, worktreeFolders: ['/new'], github: { repos: [], teams: [] } })
+  })
+})
+
+describe('writeSettings github', () => {
+  it('trims, dedupes case-insensitively, strips @ from members and keeps team order', async () => {
+    const home = await mkdtemp(path.join(os.tmpdir(), 'scout-settings-'))
+    const saved = await writeSettings(home, {
+      worktreeFolders: [],
+      github: {
+        repos: ['Acme/Web', 'acme/web', 'acme/api'],
+        teams: [
+          { id: 'zeta', name: ' Zeta ', githubTeams: ['acme/Zeta', 'acme/zeta'], members: ['@Ann', 'ann', 'bob'] },
+          { id: 'alpha', name: 'Alpha', githubTeams: [], members: [] },
+        ],
+      },
+    })
+    expect(saved.github).toEqual({
+      repos: ['Acme/Web', 'acme/api'],
+      teams: [
+        { id: 'zeta', name: 'Zeta', githubTeams: ['acme/Zeta'], members: ['Ann', 'bob'] },
+        { id: 'alpha', name: 'Alpha', githubTeams: [], members: [] },
+      ],
+    })
+    expect(JSON.parse(await readFile(path.join(home, 'config.json'), 'utf8')).github).toEqual(saved.github)
+  })
+
+  it('defaults to no repos and teams', async () => {
+    const home = await mkdtemp(path.join(os.tmpdir(), 'scout-settings-'))
+    expect((await writeSettings(home, { worktreeFolders: [] })).github).toEqual({ repos: [], teams: [] })
   })
 })

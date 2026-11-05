@@ -1,7 +1,7 @@
 import os from 'node:os'
 import path from 'node:path'
 import { CONFIG_FILE, PutSettingsRequestSchema, SettingsSchema } from '@scout/shared'
-import type { Settings } from '@scout/shared'
+import type { GithubSettings, Settings } from '@scout/shared'
 import { badRequest, formatZodError, invalidStoreFile } from './errors.ts'
 import { readTextIfExists, writeFileAtomic } from './store/fs.ts'
 
@@ -16,9 +16,34 @@ export function normalizeFolder(folder: string): string {
   return path.resolve(expandHome(folder.trim())).split(path.sep).join('/')
 }
 
-/** Normalised, deduplicated folders in the order given. */
+/** Trimmed, non-empty, case-insensitively unique (the first spelling wins), in the order given. */
+function uniqueCaseless(values: readonly string[], clean: (value: string) => string = (v) => v): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const raw of values) {
+    const value = clean(raw.trim())
+    if (value === '' || seen.has(value.toLowerCase())) continue
+    seen.add(value.toLowerCase())
+    result.push(value)
+  }
+  return result
+}
+
+function normalizeGithub(github: GithubSettings): GithubSettings {
+  return {
+    repos: uniqueCaseless(github.repos),
+    teams: github.teams.map((team) => ({
+      ...team,
+      name: team.name.trim(),
+      githubTeams: uniqueCaseless(team.githubTeams),
+      members: uniqueCaseless(team.members, (login) => login.replace(/^@+/, '')),
+    })),
+  }
+}
+
+/** Normalised, deduplicated folders in the order given; followed repos and teams tidied. */
 export function normalizeSettings(settings: Settings): Settings {
-  return { worktreeFolders: [...new Set(settings.worktreeFolders.map(normalizeFolder))] }
+  return { worktreeFolders: [...new Set(settings.worktreeFolders.map(normalizeFolder))], github: normalizeGithub(settings.github) }
 }
 
 /** `<home>/config.json`; a missing file reads as the defaults, an unreadable one is a 422. */

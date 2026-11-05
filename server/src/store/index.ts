@@ -1,6 +1,7 @@
 import { constants as fsConstants } from 'node:fs'
 import { prReviewSessionStatus, searchPatch, SEARCH_MAX_PER_FILE, SEARCH_MAX_TOTAL, type PrReviewReport, type SearchFileHits, type SearchResponse } from '@scout/shared'
 import { readPrReviewReport } from './pr-review.ts'
+import { readPrStatus } from './pr-status.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import readline from 'node:readline'
@@ -46,7 +47,7 @@ import type { RunOptions } from '@scout/shared/git/run'
 import type { WorkingTreeResult } from '@scout/shared/git/working-tree'
 import { HttpError, badRequest, conflict, errorMessage, invalidStoreFile, notFound } from '../errors.ts'
 import { StoreEventBus } from '../events.ts'
-import { archiveEntryKind, archivedSession, isDir, moveDir, readArchivedAt, removeArchivedDir, removeArchivedMarker, writeArchivedMarker } from './archive.ts'
+import { archiveEntryKind, archivedSession, isDir, moveDir, readArchivedMarker, removeArchivedDir, removeArchivedMarker, writeArchivedMarker } from './archive.ts'
 import { ARTIFACT_DIRS, artifactPaths, deriveArtifacts } from './artifacts.ts'
 import type { ArtifactKind, SessionArtifacts } from './artifacts.ts'
 import { isFile, isMissing, readTextIfExists, writeFileAtomic } from './fs.ts'
@@ -333,6 +334,23 @@ export class Store {
     return this.manifests.read(path.join(this.paths.sessionsDir, id), id)
   }
 
+  /** Ids of archived session folders (`archive/<id>`), unsorted; none when `archive/` is missing. */
+  async archivedIds(): Promise<string[]> {
+    try {
+      const entries = await fs.readdir(this.paths.archiveDir, { withFileTypes: true })
+      return entries.filter((e) => e.isDirectory() && SESSION_ID_RE.test(e.name)).map((e) => e.name)
+    } catch (err) {
+      if (isMissing(err)) return []
+      throw err
+    }
+  }
+
+  /** The manifest of `archive/<id>` plus its `archived.json` marker. */
+  async readArchived(id: string): Promise<{ result: ManifestResult; marker: { archivedAt: string; done: boolean } }> {
+    const dir = this.paths.archivedSessionDir(id)
+    return { result: await this.manifests.read(dir, id), marker: await readArchivedMarker(dir) }
+  }
+
   /**
    * Every folder under `sessions/`, newest first; broken folders and unreadable repos appear as `{ id, error }`.
    * With `kind` only sessions of that kind are listed (a folder whose manifest cannot be read has no kind and is left out).
@@ -356,7 +374,9 @@ export class Store {
         return testRunSummary(manifest, state, detail)
       }
       const [state, { tree }] = await Promise.all([this.reviewState(session), this.tree(session)])
-      return sessionSummary(manifest, state, tree, manifest.kind === 'pr-review' ? await readPrReviewReport(session.dir) : null)
+      if (manifest.kind !== 'pr-review') return sessionSummary(manifest, state, tree)
+      const [report, prStatus] = await Promise.all([readPrReviewReport(session.dir), readPrStatus(session.dir)])
+      return { ...sessionSummary(manifest, state, tree, report), prStatus }
     } catch (err) {
       return { id, error: errorMessage(err) }
     }
@@ -519,6 +539,7 @@ export class Store {
       progress: progress(state.review, tree, state.resolutions),
       journalCount: journalCount(state.journal ?? null),
       ...prFields(state),
+      ...(session.manifest.kind === 'pr-review' && { prStatus: await readPrStatus(session.dir) }),
     }
   }
 
@@ -871,11 +892,12 @@ export class Store {
    * session is not live. The session watcher
    * sees the folder vanish and emits `session.removed`, unwatching the repo.
    */
-  async archiveSession(id: string, now: Date = new Date()): Promise<void> {
+  /** Moves `sessions/<id>` to `archive/<id>`; `done` marks it finished (usually merged) rather than just put away. */
+  async archiveSession(id: string, now: Date = new Date(), done = false): Promise<void> {
     const session = await this.loadSession(id)
     const target = this.paths.archivedSessionDir(id)
     if (await isDir(target)) throw new HttpError(409, 'exists', `session ${id} is already archived`)
-    await writeArchivedMarker(session.dir, now.toISOString())
+    await writeArchivedMarker(session.dir, now.toISOString(), done)
     await moveDir(session.dir, target)
     this.dropTree(id)
   }
@@ -921,7 +943,8 @@ export class Store {
         continue
       }
       if (kind !== undefined && manifestKind(result.manifest) !== kind) continue
-      items.push(archivedSession(result.manifest, await readArchivedAt(dir)))
+      const prStatus = manifestKind(result.manifest) === 'pr-review' ? await readPrStatus(dir) : undefined
+      items.push({ ...archivedSession(result.manifest, await readArchivedMarker(dir)), ...(prStatus && { prStatus }) })
     }
     return items.sort((a, b) => Date.parse(b.archivedAt) - Date.parse(a.archivedAt) || b.id.localeCompare(a.id))
   }

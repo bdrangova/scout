@@ -58,29 +58,29 @@ export async function removeArchivedDir(archiveDir: string, dir: string): Promis
   await fs.rm(target, { recursive: true, force: true })
 }
 
-export function writeArchivedMarker(dir: string, archivedAt: string): Promise<void> {
-  return writeFileAtomic(path.join(dir, ARCHIVED_FILE), `${JSON.stringify({ archivedAt }, null, 2)}\n`)
+export function writeArchivedMarker(dir: string, archivedAt: string, done = false): Promise<void> {
+  return writeFileAtomic(path.join(dir, ARCHIVED_FILE), `${JSON.stringify(done ? { archivedAt, done } : { archivedAt }, null, 2)}\n`)
 }
 
 export function removeArchivedMarker(dir: string): Promise<void> {
   return fs.rm(path.join(dir, ARCHIVED_FILE), { force: true })
 }
 
-/** `archived.json`'s timestamp; falls back to the folder's mtime when the file is missing or invalid. */
-export async function readArchivedAt(dir: string): Promise<string> {
+/** `archived.json`; the timestamp falls back to the folder's mtime (and `done` to false) when the file is missing or invalid. */
+export async function readArchivedMarker(dir: string): Promise<{ archivedAt: string; done: boolean }> {
   const text = await readTextIfExists(path.join(dir, ARCHIVED_FILE))
   if (text !== null) {
     try {
       const parsed = ArchivedMarkerSchema.safeParse(JSON.parse(text))
-      if (parsed.success) return parsed.data.archivedAt
+      if (parsed.success) return { archivedAt: parsed.data.archivedAt, done: parsed.data.done === true }
     } catch {
       // fall through to the folder mtime
     }
   }
-  return (await fs.stat(dir)).mtime.toISOString()
+  return { archivedAt: (await fs.stat(dir)).mtime.toISOString(), done: false }
 }
 
-export function archivedSession(manifest: Manifest, archivedAt: string): ArchivedSession {
+export function archivedSession(manifest: Manifest, { archivedAt, done }: { archivedAt: string; done: boolean }): ArchivedSession {
   return {
     id: manifest.id,
     title: manifest.title,
@@ -89,5 +89,6 @@ export function archivedSession(manifest: Manifest, archivedAt: string): Archive
     createdAt: manifest.createdAt,
     updatedAt: manifest.updatedAt,
     archivedAt,
+    done,
   }
 }

@@ -1,8 +1,7 @@
 import type { WorktreeSummary } from '@scout/shared'
 import { Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
-import { TicketStrip } from '@/components/session/TicketStrip'
-import { Branches, CardLine, RepoName } from '@/components/sessions/SessionCards'
+import { Branches, CardIdentity, CardLine, RepoName } from '@/components/sessions/SessionCards'
 import { Button } from '@/components/ui/button'
 import { Panel } from '@/components/ui/panel'
 import { Tag } from '@/components/ui/tag'
@@ -54,27 +53,17 @@ export function WorktreeCard({ worktree, onDelete, layout = 'grid' }: WorktreeCa
         }}
         className="h-full cursor-pointer gap-3 p-4 transition-colors hover:bg-paper-2"
       >
-        <div className="flex min-w-0 items-center gap-x-3">
-          <CardLine label="Worktree name" className="flex-1"><span className="text-sm font-bold" title={worktree.path}>{worktree.name}</span></CardLine>
-          {worktree.ticket && <TicketStrip tickets={[{ key: worktree.ticket, url: null }]} quiet className="shrink-0" />}
-        </div>
+        <CardIdentity title={worktree.name} tickets={worktree.ticket ? [{ key: worktree.ticket, url: null }] : []} />
         <div className={cn('flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:border-t-0 md:pt-0')}>
-          {layout === 'grid' ? (
-            <>
-              <Branches base={worktree.baseRef} current={worktree.branch} />
-              <CardLine label="Changes"><WorktreeStats worktree={worktree} leadingSeparator={false} /></CardLine>
-            </>
-          ) : (
-            <Branches base={worktree.baseRef} current={worktree.branch}>
-              <WorktreeStats worktree={worktree} />
-            </Branches>
-          )}
+          <Branches base={worktree.baseRef} current={worktree.branch}>
+            <WorktreeStats worktree={worktree} />
+          </Branches>
         </div>
         <div className={cn('mt-auto flex min-w-0 items-center gap-2 border-t-fine border-line/30 pt-3 text-[11px] text-ink-muted', layout === 'list' && '-mt-2 border-t-0 pt-0')}>
           <CardLine label="Worktree details" className="flex-1">
             {worktree.mainRepo && <><RepoName path={worktree.mainRepo} /><span>·</span></>}
-            {layout === 'list' && <><span title={worktree.path} className="font-mono">{worktree.path}</span><span aria-hidden>·</span></>}
             <SessionCountChips counts={worktree.sessions} />
+            <span title={worktree.path} className="font-mono">· {worktree.path}</span>
           </CardLine>
           <Button variant="ghost" size="icon-sm" title="Delete worktree" aria-label={`Delete worktree ${worktree.name}`} onClick={(event) => { event.stopPropagation(); onDelete(worktree) }} className="shrink-0 text-ink-muted shadow-none hover:bg-red-solid hover:text-on-red"><Trash2 aria-hidden /></Button>
         </div>

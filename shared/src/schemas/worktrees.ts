@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SessionListItemSchema } from './api.ts'
+import { GithubSettingsSchema } from './github.ts'
 import { PrSummarySchema } from './pr-comments.ts'
 
 const nonNegativeInt = z.number().int().nonnegative()
@@ -8,6 +9,8 @@ const nonNegativeInt = z.number().int().nonnegative()
 export const SettingsSchema = z.object({
   /** Absolute folders scanned for git worktrees (`~` is expanded by the server on save). */
   worktreeFolders: z.array(z.string().min(1)).default([]),
+  /** Followed repos and reviewing teams for the PR reviews' Assigned PRs tab. */
+  github: GithubSettingsSchema.default({ repos: [], teams: [] }),
 })
 export type Settings = z.infer<typeof SettingsSchema>
 

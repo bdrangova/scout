@@ -3,6 +3,7 @@ import { FINGERPRINT_RE, SESSION_ID_RE } from '../constants.ts'
 import { COMMENT_STATUSES, SESSION_STATUSES } from '../review/status.ts'
 import { EvidenceItemSchema, ExtraItemSchema, SpecItemSchema } from './artifacts.ts'
 import { CodeReviewManifestSchema, TestRunManifestSchema, TicketSchema } from './manifest.ts'
+import { PrReviewStatusSchema } from './github.ts'
 import { PrCommentCountsSchema, PrSummarySchema } from './pr-comments.ts'
 import { ResolutionSchema, ResolutionsSchema } from './resolutions.ts'
 import { CommentSchema, DecisionSchema, ReviewSchema } from './review.ts'
@@ -55,6 +56,8 @@ export const SessionSummarySchema = z.object({
   prComments: PrCommentCountsSchema.nullable().optional(),
   /** The session's current PR (from `review/pr-comments.json`); null/absent when none is known. */
   pr: PrSummarySchema.nullable().optional(),
+  /** PR reviews only: In progress, Commented or Approved (`review/pr-status.json`). */
+  prStatus: PrReviewStatusSchema.optional(),
 })
 export type SessionSummary = z.infer<typeof SessionSummarySchema>
 
@@ -95,7 +98,8 @@ export const SessionListItemSchema = z.union([
 export type SessionListItem = z.infer<typeof SessionListItemSchema>
 
 /** `archived.json` inside an archived session folder. */
-export const ArchivedMarkerSchema = z.object({ archivedAt: isoDate })
+/** `done`: the work is finished (usually merged), not just put away; absent on plain archives. */
+export const ArchivedMarkerSchema = z.object({ archivedAt: isoDate, done: z.boolean().optional() })
 export type ArchivedMarker = z.infer<typeof ArchivedMarkerSchema>
 
 /**
@@ -110,8 +114,16 @@ export const ArchivedSessionSchema = z.object({
   createdAt: isoDate,
   updatedAt: isoDate,
   archivedAt: isoDate,
+  /** Archived as Done (`archived.json` `done: true`). */
+  done: z.boolean(),
+  /** PR reviews only: the review's status when it was archived (Approved closes a review on its own). */
+  prStatus: PrReviewStatusSchema.optional(),
 })
 export type ArchivedSession = z.infer<typeof ArchivedSessionSchema>
+
+/** `POST /sessions/:id/archive` body (optional): `done` archives the session as Done. */
+export const ArchiveRequestSchema = z.object({ done: z.boolean().optional() })
+export type ArchiveRequest = z.infer<typeof ArchiveRequestSchema>
 
 export const CodeReviewDetailSchema = z.object({
   kind: z.enum(['code-review', 'pr-review']).optional(),
@@ -130,6 +142,8 @@ export const CodeReviewDetailSchema = z.object({
   prComments: PrCommentCountsSchema.nullable().optional(),
   /** The session's current PR (from `review/pr-comments.json`); null/absent when none is known. */
   pr: PrSummarySchema.nullable().optional(),
+  /** PR reviews only: In progress, Commented or Approved (`review/pr-status.json`). */
+  prStatus: PrReviewStatusSchema.optional(),
 })
 export type CodeReviewDetail = z.infer<typeof CodeReviewDetailSchema>
 
@@ -194,6 +208,8 @@ export const StoreEventSchema = z.discriminatedUnion('type', [
     fingerprint: z.string().regex(FINGERPRINT_RE),
     durationMs: nonNegativeInt,
   }),
+  /** A not-started PR review was created, removed or claimed (`<home>/pr-pending/`). */
+  z.object({ type: z.literal('pr-pending.updated') }),
 ])
 export type StoreEvent = z.infer<typeof StoreEventSchema>
 

@@ -13,6 +13,7 @@ import { WorktreesPage } from './WorktreesPage'
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), info: vi.fn(), success: vi.fn(), warning: vi.fn() } }))
 
 const FOLDER = '/Users/bojana/worktrees'
+const NO_GITHUB = { repos: [], teams: [] }
 const CLEAN = worktreeSummary({ id: 'aaaaaaaaaaaa', name: 'trial-bar', sessions: { 'code-review': 2, 'pr-review': 0, 'test-run': 1 }, pr: { number: 812, url: 'https://github.com/qbd/qbd/pull/812', state: 'open', title: 'Trial bar', baseRef: 'master', headRef: 'bojana-qi-15472-trial-bar', updatedAt: '2026-10-20T10:00:00.000Z' } })
 const DIRTY = worktreeSummary({ id: 'bbbbbbbbbbbb', name: 'bulk-export', branch: 'bojana-qi-15410-bulk-export', ticket: 'QI-15410', uncommitted: 4, ahead: null, behind: null })
 const FREE = worktreeSummary({ id: 'cccccccccccc', name: 'spike', branch: null, ticket: null, baseRef: null })
@@ -43,7 +44,7 @@ describe('WorktreesPage', () => {
   })
 
   it('asks for folders when none are configured, and saves them from the Settings dialog', async () => {
-    let saved = { worktreeFolders: [] as string[] }
+    let saved = { worktreeFolders: [] as string[], github: NO_GITHUB }
     let current = list({ folders: [], items: [] })
     const fetchMock = stubApi({
       'GET /api/worktrees': () => json(200, current),
@@ -68,14 +69,14 @@ describe('WorktreesPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument())
     const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT')
-    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ worktreeFolders: [FOLDER] })
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ worktreeFolders: [FOLDER], github: NO_GITHUB })
     expect(await screen.findByRole('link', { name: 'trial-bar' })).toBeInTheDocument()
   })
 
   it('shows a failed save inside the dialog and keeps it open', async () => {
     stubApi({
       'GET /api/worktrees': () => json(200, list()),
-      'GET /api/settings': () => json(200, { worktreeFolders: [FOLDER] }),
+      'GET /api/settings': () => json(200, { worktreeFolders: [FOLDER], github: NO_GITHUB }),
       'PUT /api/settings': () => json(400, { error: 'folder does not exist' }),
     })
     renderPage()
@@ -94,7 +95,7 @@ describe('WorktreesPage', () => {
     const picks = ['/Users/bojana/picked', null]
     stubApi({
       'GET /api/worktrees': () => json(200, list()),
-      'GET /api/settings': () => json(200, { worktreeFolders: [FOLDER] }),
+      'GET /api/settings': () => json(200, { worktreeFolders: [FOLDER], github: NO_GITHUB }),
       'POST /api/settings/pick-folder': () => json(200, { path: picks.shift() ?? null }),
     })
     renderPage()
@@ -138,7 +139,7 @@ describe('WorktreesPage', () => {
     expect(within(card).queryByText(/uncommitted/)).not.toBeInTheDocument()
     expect(within(card).getByRole('link', { name: 'PR #812 · open' })).toHaveAttribute('href', 'https://github.com/qbd/qbd/pull/812')
     expect(within(card).getByTitle('/Users/bojana/Projects/qbdvision')).toHaveTextContent('qbdvision')
-    expect(within(card).getByText(`${FOLDER}/trial-bar`)).toBeInTheDocument()
+    expect(within(card).getByTitle(`${FOLDER}/trial-bar`)).toBeInTheDocument()
     expect(within(card).getByText('Dev 2')).toBeInTheDocument()
     expect(within(card).getByText('Test 1')).toBeInTheDocument()
     expect(within(card).queryByText(/PR 0|Dev 0/)).not.toBeInTheDocument()

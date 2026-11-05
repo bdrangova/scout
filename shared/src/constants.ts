@@ -44,6 +44,12 @@ export const TEST_RUN_INDEX_SCHEMA_VERSION = 1
 /** Session folders live under `<home>/sessions/<id>`; archived ones are moved whole to `<home>/archive/<id>`. */
 export const SESSIONS_DIR = 'sessions'
 export const ARCHIVE_DIR = 'archive'
+/** Not-started PR reviews, one `<id>.json` each (`PendingPrReviewSchema`). */
+export const PR_PENDING_DIR = 'pr-pending'
+/** PRs marked Done from the Assigned PRs tab (`GithubDoneSchema`). */
+/** `<session>/review/pr-status.json`: a PR review's In progress / Commented / Approved. */
+export const PR_STATUS_FILE = 'pr-status.json'
+export const GITHUB_DONE_FILE = 'github-done.json'
 /** Written into an archived session folder: `{ archivedAt }`. */
 export const ARCHIVED_FILE = 'archived.json'
 /** Scout's settings in the home root (`SettingsSchema`). */

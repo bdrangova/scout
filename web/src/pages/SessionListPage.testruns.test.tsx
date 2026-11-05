@@ -73,7 +73,7 @@ describe('SessionListPage kinds', () => {
   it.each(['list', 'grid'])('omits branches from archived test runs in %s layout', async (layout) => {
     localStorage.setItem(SESSION_LAYOUT_KEY, layout)
     hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
-    hooks.archived = { archived: [{ id: RUN_A.id, title: 'Archived run', tickets: [], repo: { path: '/runs/run-a', branch: null, baseRef: null }, createdAt: RUN_A.updatedAt, updatedAt: RUN_A.updatedAt, archivedAt: RUN_A.updatedAt }], loading: false, error: null, reload: () => {} }
+    hooks.archived = { archived: [{ id: RUN_A.id, title: 'Archived run', tickets: [], repo: { path: '/runs/run-a', branch: null, baseRef: null }, createdAt: RUN_A.updatedAt, updatedAt: RUN_A.updatedAt, archivedAt: RUN_A.updatedAt, done: false }], loading: false, error: null, reload: () => {} }
     renderAt('/t')
     await userEvent.setup().click(screen.getByRole('button', { name: 'Archived · 1' }))
     const row = screen.getByRole('listitem', { name: 'Archived session Archived run' })

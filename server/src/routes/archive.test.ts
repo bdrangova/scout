@@ -42,7 +42,7 @@ const exists = (p: string) => fs.access(p).then(() => true, () => false)
 const isStoreEvent = (type: StoreEvent['type'], sessionId: string) => (m: SseMessage) => {
   if (m.kind !== 'event') return false
   const event = StoreEventSchema.parse(JSON.parse(m.data))
-  return event.type === type && event.sessionId === sessionId
+  return event.type === type && 'sessionId' in event && event.sessionId === sessionId
 }
 
 describe('archive and unarchive', () => {
@@ -94,6 +94,18 @@ describe('archive and unarchive', () => {
     expect((await get(`/api/sessions/${FIXTURE_SESSION_ID}`)).status).toBe(200)
   })
 
+  it('archives as Done when asked, and lists it as done until it is restored', async () => {
+    const res = await fetch(`${server.url}/api/sessions/${FIXTURE_SESSION_ID}/archive`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ done: true }) })
+    expect(res.status).toBe(200)
+    expect(JSON.parse(await fs.readFile(path.join(archivedDir(FIXTURE_SESSION_ID), 'archived.json'), 'utf8'))).toMatchObject({ done: true })
+    const listed = (await get<{ id: string; done: boolean }[]>('/api/sessions/archived')).body
+    expect(listed.map((item) => [item.id, item.done])).toEqual([[FIXTURE_SESSION_ID, true]])
+    expect((await post(`/api/sessions/${FIXTURE_SESSION_ID}/unarchive`)).status).toBe(200)
+    expect(await exists(path.join(store.home, 'sessions', FIXTURE_SESSION_ID, 'archived.json'))).toBe(false)
+    const bad = await fetch(`${server.url}/api/sessions/${FIXTURE_SESSION_ID}/archive`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ done: 'yes' }) })
+    expect(bad.status).toBe(400)
+  })
+
   it('answers 404 for unknown ids and sessions that are not archived', async () => {
     expect((await post('/api/sessions/20260101-0900-missing-0000/archive')).status).toBe(404)
     expect((await post('/api/sessions/not-an-id/archive')).status).toBe(404)
@@ -128,7 +140,9 @@ describe('archive and unarchive', () => {
       // Already gone: 404, and no store event was emitted for either call.
       expect((await fetch(`${server.url}/api/sessions/archived/${id}`, { method: 'DELETE' })).status).toBe(404)
       await new Promise((resolve) => setTimeout(resolve, 150))
-      expect(reader.messages.slice(before).filter((m) => m.kind === 'event')).toEqual([])
+      // Only events about these sessions count: a late event from an earlier test may still arrive.
+      const about = (m: { data?: unknown }) => typeof m.data === 'string' && (m.data.includes(id) || m.data.includes(sibling))
+      expect(reader.messages.slice(before).filter((m) => m.kind === 'event' && about(m))).toEqual([])
     } finally {
       await fs.rm(archivedDir(sibling), { recursive: true, force: true })
       await fs.rm(path.join(store.home, 'cache'), { recursive: true, force: true })

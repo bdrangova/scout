@@ -33,6 +33,7 @@ const archivedFixture: ArchivedSession[] = [
     createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: '2026-09-11T09:00:00.000Z',
     archivedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    done: false,
   },
 ]
 
@@ -106,8 +107,7 @@ describe('SessionListPage', () => {
     await user.clear(screen.getByRole('searchbox'))
     await user.click(screen.getByRole('button', { name: 'Archived · 1' }))
     const archive = screen.getByRole('listitem', { name: 'Archived session Old trial bar spike' })
-    expect(within(archive).getByLabelText('Archive dates')).toHaveTextContent('Created')
-    expect(within(archive).getByLabelText('Archive dates')).toHaveTextContent('Updated')
+    expect(within(archive).getByLabelText('Session metadata')).toHaveTextContent('Archived')
     expect(archive.querySelector('[data-layout="grid"]')).toBeInTheDocument()
     view.unmount()
     renderAt()
@@ -288,6 +288,17 @@ describe('SessionListPage', () => {
     expect(screen.getByRole('button', { name: 'Sessions · 5' })).toBeInTheDocument()
   })
 
+  it('marks a row as done: archives it with done and says so', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(200, { id: SESSION_ID }))
+    vi.stubGlobal('fetch', fetchMock)
+    renderPage({ sessions: sessionListFixture })
+    const user = userEvent.setup()
+    await user.click(within(screen.getByRole('link', { name: 'Trial countdown bar' })).getByRole('button', { name: 'Mark Trial countdown bar as done' }))
+    expect(fetchMock).toHaveBeenCalledWith(`/api/sessions/${SESSION_ID}/archive`, expect.objectContaining({ method: 'POST', body: JSON.stringify({ done: true }) }))
+    await waitFor(() => expect(screen.queryByRole('link', { name: 'Trial countdown bar' })).not.toBeInTheDocument())
+    expect(toast.success).toHaveBeenCalledWith('Session marked done', expect.anything())
+  })
+
   it('toasts instead of hiding the row when the server answers 409 run-active', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(409, { error: 'run-active' })))
     renderPage({ sessions: sessionListFixture })
@@ -313,7 +324,7 @@ describe('SessionListPage', () => {
     expect(within(row).getByText('qbdvision')).toBeInTheDocument()
     expect(within(row).getByLabelText('Base and current branch')).toHaveTextContent('origin/master')
     expect(within(row).getByLabelText('Base and current branch')).toHaveTextContent('bojana-QI-15001-spike')
-    expect(within(row).getByLabelText('Archive dates')).toHaveTextContent('Archived 2 days ago')
+    expect(within(row).getByLabelText('Session metadata')).toHaveTextContent('Archived 2 days ago')
     expect(within(row).getByText('2 days ago')).toHaveAttribute('dateTime', archivedFixture[0]?.archivedAt)
     expect(within(row).getByRole('link', { name: 'QI-15001' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Trial countdown bar' })).not.toBeInTheDocument()

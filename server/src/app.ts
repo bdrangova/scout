@@ -2,10 +2,12 @@ import express from 'express'
 import type { ErrorRequestHandler, Express, Request, Response } from 'express'
 import type { ApiError } from '@scout/shared'
 import type { Config } from './config.ts'
+import type { GhRunner } from './github/gh.ts'
 import { StoreEventBus } from './events.ts'
 import { artifactsRouter } from './routes/artifacts.ts'
 import { eventsRouter } from './routes/events.ts'
 import { filesRouter } from './routes/files.ts'
+import { githubRouter } from './routes/github.ts'
 import { githubImageRouter } from './routes/github-image.ts'
 import { healthRouter } from './routes/health.ts'
 import { prReviewRouter } from './routes/pr-review.ts'
@@ -71,6 +73,8 @@ export interface AppOverrides {
   trees?: StoreOptions['trees']
   scopes?: StoreOptions['scopes']
   log?: (message: string) => void
+  /** The `gh` runner behind the GitHub routes (default: the real CLI). */
+  gh?: GhRunner
 }
 
 export function createApp(config: Config, overrides: AppOverrides = {}): Express {
@@ -101,6 +105,7 @@ export function createApp(config: Config, overrides: AppOverrides = {}): Express
   api.use(journalRouter(store))
   api.use(prReviewRouter(store))
   api.use(settingsRouter(config.home))
+  api.use(githubRouter({ home: config.home, store, ...(overrides.gh ? { gh: overrides.gh } : {}) }))
   api.use(worktreesRouter(config.home, store))
   api.use(sendRouter({ store, dashboardUrl: config.dashboardUrl }))
   api.use(eventsRouter({ bus, watcher, sse }))

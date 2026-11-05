@@ -28,6 +28,8 @@ export interface SessionListView {
   reload: () => void
   reloadArchived: () => void
   archive: (session: LiveSummary) => Promise<void>
+  /** Archives the session as Done (finished, usually merged). */
+  markDone: (session: LiveSummary) => Promise<void>
   unarchive: (session: ArchivedSession) => Promise<void>
   /** Hides an archived row at once (after a permanent delete). */
   hideArchived: (id: string) => void
@@ -35,13 +37,15 @@ export interface SessionListView {
 
 /**
  * Everything the Sessions page shows for one kind (code reviews or test runs): both fetches, the status filter, the rows hidden by an
- * archive/unarchive/delete made here, and the debounced refetch that follows any store event.
+ * archive/unarchive/delete made here, and the debounced refetch that follows any store event. `forceArchived` lets the page pick
+ * the Live or Archived view itself (the PR reviews' tabs) instead of the filter.
  */
-export function useSessionList(kind: SessionKind = 'code-review'): SessionListView {
+export function useSessionList(kind: SessionKind = 'code-review', forceArchived?: boolean): SessionListView {
   const live = useSessions(kind)
   const archivedList = useArchivedSessions(kind)
   const [liveFilter, setLiveFilter] = useState<StatusFilter>('all')
-  const [archivedView, setArchivedView] = useState(false)
+  const [archivedChoice, setArchivedView] = useState(false)
+  const archivedView = forceArchived ?? archivedChoice
   const filter: StatusFilter = archivedView ? 'archived' : liveFilter
   const setFilter = (next: StatusFilter) => {
     setArchivedView(next === 'archived')
@@ -84,12 +88,12 @@ export function useSessionList(kind: SessionKind = 'code-review'): SessionListVi
     [],
   )
 
-  async function archive(session: LiveSummary) {
+  async function archive(session: LiveSummary, done = false) {
     try {
-      await archiveSession(session.id)
+      await archiveSession(session.id, done)
       hideLive(session.id)
       reloadBoth()
-      toast.success('Session archived', {
+      toast.success(done ? 'Session marked done' : 'Session archived', {
         description: session.title,
         duration: 10_000,
         action: {
@@ -131,7 +135,8 @@ export function useSessionList(kind: SessionKind = 'code-review'): SessionListVi
     archivedError: archivedList.error,
     reload,
     reloadArchived,
-    archive,
+    archive: (session) => archive(session),
+    markDone: (session) => archive(session, true),
     unarchive,
     hideArchived,
   }

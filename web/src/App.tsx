@@ -7,6 +7,7 @@ import { EvidencePage } from './pages/EvidencePage'
 import { ExtrasPage } from './pages/ExtrasPage'
 import { FilesPage } from './pages/FilesPage'
 import { JournalPage } from './pages/JournalPage'
+import { PendingPrPage } from './pages/PendingPrPage'
 import { PrSummaryPage } from './pages/PrSummaryPage'
 import { SessionLayout } from './pages/SessionLayout'
 import { SessionListPage } from './pages/SessionListPage'
@@ -26,6 +27,7 @@ import { TestRunSubmitPage } from './pages/testrun/TestRunSubmitPage'
 // `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/journal`, `/s/:id/submit`.
 // A PR review also has `/s/:id/summary`, where it opens.
 // `/s/:id` itself redirects to the step the review should open on (lib/landing-section.ts).
+// PR reviews: `/pr?tab=assigned|active|archived` (list), `/pr/p/:id` (a not-started review; becomes `/s/:id` once started).
 // Test runs: `/t` (list), `/t/:id/{overview,review,review/:scenarioId,gaps,data-setup,logs,submit}`; `/t/:id` redirects like `/s/:id`.
 // Worktrees: `/` (list; the old `/w` redirects there), `/w/:id` (detail).
 // `/__kit` is the dev-only primitives gallery (web/src/pages/KitPage.tsx).
@@ -35,6 +37,7 @@ const router = createBrowserRouter([
   { path: '/d', Component: SessionListPage },
   { path: '/w/:id', Component: WorktreeDetailPage },
   { path: '/pr', element: <SessionListPage kind="pr-review" /> },
+  { path: '/pr/p/:id', Component: PendingPrPage },
   { path: '/t', element: <SessionListPage kind="test-run" /> },
   ...(import.meta.env.DEV
     ? [{ path: '/__kit', HydrateFallback: () => null, lazy: async () => ({ Component: (await import('./pages/KitPage')).KitPage }) }]

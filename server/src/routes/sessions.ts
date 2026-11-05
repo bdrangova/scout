@@ -1,5 +1,7 @@
 import { Router } from 'express'
+import { ArchiveRequestSchema } from '@scout/shared'
 import type { ApiError, ManifestKind } from '@scout/shared'
+import { badRequest, formatZodError } from '../errors.ts'
 import type { Store } from '../store/index.ts'
 import { queryString } from './params.ts'
 
@@ -44,7 +46,9 @@ export function sessionsRouter(store: Store): Router {
   })
 
   router.post('/sessions/:id/archive', async (req, res) => {
-    await store.archiveSession(req.params.id)
+    const body = ArchiveRequestSchema.safeParse(req.body ?? {})
+    if (!body.success) throw badRequest(formatZodError(body.error))
+    await store.archiveSession(req.params.id, new Date(), body.data.done === true)
     res.json({ id: req.params.id })
   })
 

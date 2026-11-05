@@ -1,14 +1,14 @@
 // `ai-review init`: writes the session manifest (repo top level, branch, base ref) and creates the
 // folders the agent drops files into. The dashboard reads the repo working tree live from then on.
-import { mkdir } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import type { Command } from 'commander'
-import { commentsSince, SCHEMA_VERSION, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR, type CodeReviewManifest } from '@scout/shared'
+import { commentsSince, PendingPrReviewSchema, PR_PENDING_DIR, SCHEMA_VERSION, SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR, type CodeReviewManifest } from '@scout/shared'
 import { currentBranch, defaultBase, refExists, remoteUrl, topLevel } from '@scout/shared/git/repo'
 import { dashboardUrl, readConfig } from '../config.ts'
 import { openSessionForBranch, resetApprovedDecision, unapproveAfterRerun } from '../sessions.ts'
 import { initTestRunSession, type InitTestRunResult } from './init-test-run.ts'
-import { newSessionId, resolveHome, sessionDir, writeManifest } from '../store.ts'
+import { archivedSessionDir, manifestExists, newSessionId, resolveHome, sessionDir, writeManifest } from '../store.ts'
 
 /** Folders created under the session so the agent can write into them right away. */
 export const SESSION_SUBDIRS = [SESSION_EVIDENCE_DIR, SESSION_EXTRAS_DIR, SESSION_SPEC_DIR, 'review'] as const
@@ -24,6 +24,8 @@ export interface InitOptions {
   agentSession?: string | null
   /** Always create a new session instead of reusing the latest one for this branch. */
   kind?: 'code-review' | 'pr-review'
+  /** pr-review: the PR's URL; claims the not-started placeholder Scout made for it. */
+  pr?: string | null
   fresh?: boolean
   now?: Date
 }
@@ -52,7 +54,37 @@ function defaultTitle(tickets: CodeReviewManifest['tickets'], branch: string | n
   return key === undefined ? subject : `${key}: ${subject}`
 }
 
+/** Lower-cases, trims, and drops a trailing slash and `/files`-style tabs so equal PRs compare equal. */
+export function normalizePrUrl(url: string): string {
+  return url
+    .trim()
+    .replace(/[?#].*$/, '')
+    .replace(/\/(?:files|commits|checks|conversation)?\/?$/, '')
+    .replace(/\/+$/, '')
+    .toLowerCase()
+}
+
+/** Placeholders under `<home>/pr-pending` whose PR matches `url`. Unreadable or invalid files are skipped. */
+async function matchingPlaceholders(home: string, url: string): Promise<{ id: string; file: string }[]> {
+  const dir = path.join(home, PR_PENDING_DIR)
+  const names = await readdir(dir).catch(() => [] as string[])
+  const wanted = normalizePrUrl(url)
+  const found: { id: string; file: string }[] = []
+  for (const name of names.filter((n) => n.endsWith('.json')).sort()) {
+    const file = path.join(dir, name)
+    try {
+      const parsed = PendingPrReviewSchema.safeParse(JSON.parse(await readFile(file, 'utf8')))
+      if (parsed.success && normalizePrUrl(parsed.data.pr.url) === wanted) found.push({ id: parsed.data.id, file })
+    } catch {
+      // unreadable placeholder: ignore
+    }
+  }
+  return found
+}
+
 export async function initSession(options: InitOptions): Promise<InitResult> {
+  const prUrl = options.pr?.trim() ?? ''
+  if (prUrl !== '' && options.kind !== 'pr-review') throw new Error('--pr is only valid with --kind pr-review')
   const now = (options.now ?? new Date()).toISOString()
   const repo = (await topLevel(options.repo)).split(path.sep).join('/')
   const branch = await currentBranch(repo)
@@ -63,7 +95,17 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
   const previous = open?.manifest ?? null
   const tickets = options.tickets !== undefined && options.tickets.length > 0 ? options.tickets : (previous?.tickets ?? [])
   const title = options.title ?? previous?.title ?? defaultTitle(tickets, branch)
-  const id = previous?.id ?? newSessionId(title, new Date(now))
+  const placeholders = prUrl === '' ? [] : await matchingPlaceholders(options.home, prUrl)
+  let claimed: string | null = null
+  if (previous === null) {
+    for (const p of placeholders) {
+      if (!(await manifestExists(sessionDir(options.home, p.id))) && !(await manifestExists(archivedSessionDir(options.home, p.id)))) {
+        claimed = p.id
+        break
+      }
+    }
+  }
+  const id = previous?.id ?? claimed ?? newSessionId(title, new Date(now))
   const dir = sessionDir(options.home, id)
   for (const sub of SESSION_SUBDIRS) await mkdir(path.join(dir, sub), { recursive: true })
 
@@ -87,8 +129,10 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
       baseRef: options.base ?? previous?.repo.baseRef ?? (await defaultBase(repo)),
     },
     tickets,
+    ...(prUrl !== '' ? { pr: { url: prUrl } } : previous?.pr !== undefined ? { pr: previous.pr } : {}),
   }
   const written = await writeManifest(dir, manifest)
+  for (const p of placeholders) await rm(p.file, { force: true })
   if (open !== null) {
     await resetApprovedDecision(open.dir, now)
     // Published again: an approved item commented on since the previous publish needs another look.
@@ -100,6 +144,7 @@ export async function initSession(options: InitOptions): Promise<InitResult> {
 
 interface InitFlags {
   kind: string
+  pr?: string
   repo?: string
   run?: string
   title?: string
@@ -127,6 +172,7 @@ export function registerInit(program: Command): void {
     .description('Create or refresh a review session; prints id, folder, URL')
     .option('--kind <kind>', 'code-review | test-run | pr-review', 'code-review')
     .option('--repo <path>', 'path inside the repository (test-run: the checkout containing the run folder; default: the run folder)')
+    .option('--pr <url>', 'pr-review: the PR URL; takes over the not-started review Scout made for it')
     .option('--run <path>', 'test-run: the feature-test run folder (must be inside the repository)')
     .option('--base <ref>', 'code-review: base ref (default: origin/master, master, origin/main, main, then origin/HEAD)')
     .option('--title <title>', 'session title, e.g. "QI-15472: Trial bar" (test-run default: the run folder name)')
@@ -137,6 +183,7 @@ export function registerInit(program: Command): void {
     .option('--agent-session <id>', 'Claude Code session id')
     .option('--format <format>', 'json | brief', 'json')
     .action(async (flags: InitFlags) => {
+      if (flags.pr !== undefined && flags.kind !== 'pr-review') throw new Error('--pr is only valid with --kind pr-review')
       const tickets = (flags.ticket ?? []).map(parseTicket)
       if (flags.kind === 'test-run') {
         if (flags.run === undefined) throw new Error('--run <path> is required with --kind test-run')
@@ -161,6 +208,7 @@ export function registerInit(program: Command): void {
       const result = await initSession({
         home: resolveHome(),
         kind: flags.kind,
+        pr: flags.pr ?? null,
         repo: path.resolve(flags.repo),
         title: flags.title ?? null,
         tickets,

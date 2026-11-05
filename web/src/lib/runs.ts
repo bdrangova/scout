@@ -50,13 +50,14 @@ export function applyReviewCommand(sessionId: string, command: ReviewCommand = '
   return `${command} ${sessionId}`
 }
 
-/**
- * Claude Desktop deep link that opens a new session in `repoPath` (the agent's working directory) with the apply command
- * prefilled (Desktop asks for confirmation before sending it).
- */
+/** Claude Desktop deep link that opens a new session in `folder` (the agent's working directory) with `prompt` prefilled; Desktop asks for confirmation before sending it. */
+export function desktopDeepLink(folder: string, prompt: string): string {
+  return `claude://code/new?q=${encodeURIComponent(prompt)}&folder=${encodeURIComponent(folder)}`
+}
+
+/** The deep link with the apply command prefilled. */
 export function desktopNewSessionUrl(repoPath: string, sessionId: string, command: ReviewCommand = '/apply-review'): string {
-  const query = encodeURIComponent(applyReviewCommand(sessionId, command))
-  return `claude://code/new?q=${query}&folder=${encodeURIComponent(repoPath)}`
+  return desktopDeepLink(repoPath, applyReviewCommand(sessionId, command))
 }
 
 /** `error` (and `reason` when the server gives one) of a failed request, or the plain message. */

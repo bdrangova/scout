@@ -40,6 +40,8 @@ export const CodeReviewManifestSchema = z.object({
     /** A ref name (e.g. `origin/main`); the base SHA is `git merge-base <baseRef> HEAD`, computed live. */
     baseRef: z.string().min(1),
   }),
+  /** pr-review: the PR being reviewed (`ai-review init --pr`), so Scout can link it before a report is published. */
+  pr: z.object({ url: z.string().min(1) }).optional(),
 })
 export type CodeReviewManifest = z.infer<typeof CodeReviewManifestSchema>
 

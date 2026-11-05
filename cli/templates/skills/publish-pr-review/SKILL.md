@@ -22,10 +22,12 @@ With `--auto` or `AI_REVIEW_HEADLESS=1`, don't ask: review this folder when it q
 Create or reuse a session:
 
 ```sh
-ai-review init --kind pr-review --repo <PR-checkout> --base <PR-base-ref> --title <PR-title>
+ai-review init --kind pr-review --repo <PR-checkout> --base <PR-base-ref> --title <PR-title> --pr <PR-URL>
 ai-review pr-report template <session-id> --pr <PR-URL> --number <PR-number> --repository <owner/repo>
 ai-review pr-report schema
 ```
+
+If Scout already made a not-started session for this PR, `--pr` makes the new session take it over.
 
 Save the template JSON outside the clean checkout, next to the evidence files. Preserve its entire `files` array, SHAs and fingerprints; it includes files without findings. Fill the report rather than constructing a subset of changed files.
 

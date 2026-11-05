@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { otherKindRoute, type SessionKind } from '@/lib/paths'
+import { PrReviewsList } from '@/components/pr/PrReviewsList'
 import { TestRunRow } from '@/components/sessions/TestRunRow'
 import { ShortcutHelp } from '@/components/common/ShortcutHelp'
 import { ArchivedList } from '@/components/sessions/ArchivedList'
@@ -18,12 +19,41 @@ import { isLiveSummary, isTestRunSummary } from '@/lib/session-status'
 import { useHotkeys } from '@/lib/useHotkeys'
 
 export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }) {
+  return kind === 'pr-review' ? <PrReviewsPage /> : <SessionsPage kind={kind} />
+}
+
+/**
+ * PR reviews: one list of PRs in sections (My PRs, Assigned to me, teams), each row opening its review or starting one. Search
+ * covers every section.
+ */
+function PrReviewsPage() {
+  const navigate = useNavigate()
+  const [helpOpen, setHelpOpen] = useState(false)
+  // Saving Settings from the bar remounts the list, so it reloads with the new repos and teams.
+  const [settingsVersion, setSettingsVersion] = useState(0)
+  useHotkeys({ toggleKind: () => navigate(otherKindRoute('pr-review')) })
+  return (
+    <div data-page="session-list" className="flex min-h-screen flex-col">
+      <SessionsBar kind="pr-review" onHelp={() => setHelpOpen((open) => !open)} onSettingsSaved={() => setSettingsVersion((version) => version + 1)} />
+      <main className="flex flex-1 flex-col px-6 pt-7 pb-14">
+        <div className="mx-auto flex w-full max-w-[1300px] flex-col">
+          <PrReviewsList key={settingsVersion} />
+        </div>
+      </main>
+      <ShortcutHelp open={helpOpen} onOpenChange={setHelpOpen} />
+    </div>
+  )
+}
+
+function SessionsPage({ kind }: { kind: Exclude<SessionKind, 'pr-review'> }) {
   const list = useSessionList(kind)
   const { layout, setLayout } = useSessionListLayout()
   const navigate = useNavigate()
   const [helpOpen, setHelpOpen] = useState(false)
   const [query, setQuery] = useState('')
   const archived = list.filter === 'archived'
+  // Development sessions are Done when finished (usually merged); test runs have no Done.
+  const onDone = kind === 'code-review' ? list.markDone : undefined
   const visible = list.visible.filter((item) => matchesSessionSearch(item, query))
   const sessions = visible.filter(isLiveSummary)
   const unavailable = visible.filter((item) => !isLiveSummary(item))
@@ -36,7 +66,7 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
       <main className="flex flex-1 flex-col px-6 pt-7 pb-14">
         <div className="mx-auto flex w-full max-w-[1300px] flex-col gap-[18px]">
           <div className="flex flex-col gap-5">
-            <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : kind === 'pr-review' ? 'PR reviews' : 'Development'}</h1>
+            <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : 'Development'}</h1>
             <SessionFilters layout={layout} onLayout={setLayout} kind={kind} filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} />
           </div>
 
@@ -63,7 +93,7 @@ export function SessionListPage({ kind = 'code-review' }: { kind?: SessionKind }
           ) : (
             <div className="flex flex-col gap-2">
               <ul aria-label="Sessions" className={cn('m-0 list-none p-0', layout === 'grid' ? SESSION_CARD_GRID : 'flex flex-col gap-3.5')}>
-                {sessions.map((item) => layout === 'grid' ? <LiveSessionCard key={item.id} session={item} onArchive={list.archive} /> : isTestRunSummary(item) ? <TestRunRow key={item.id} session={item} onArchive={list.archive} /> : <SessionRow key={item.id} session={item} onArchive={list.archive} />)}
+                {sessions.map((item) => layout === 'grid' ? <LiveSessionCard key={item.id} session={item} onArchive={list.archive} onDone={onDone} /> : isTestRunSummary(item) ? <TestRunRow key={item.id} session={item} onArchive={list.archive} /> : <SessionRow key={item.id} session={item} onArchive={list.archive} onDone={onDone} />)}
                 {visible.length === 0 && <ListNote>{kind === 'test-run' ? 'No test runs match this filter or search.' : 'No sessions match this filter or search.'}</ListNote>}
               </ul>
               {unavailable.length > 0 && (
