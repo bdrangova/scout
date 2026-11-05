@@ -1,7 +1,7 @@
 import type { Verdict } from '@scout/shared'
 import { Check, ChevronDown, Folder, FolderOpen, MessageSquare, MessageSquareText, X } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
-import { ScoutMark } from '@/components/brand/Scout'
+import { ScoutIcon } from '@/components/brand/Scout'
 import { FileTypeDot } from '@/components/ui/file-type-dot'
 import { PrCount } from '@/components/prcomments/PrCount'
 import { StatusDot } from '@/components/ui/status-dot'
@@ -99,7 +99,7 @@ export function FileTreeRow({ row, expanded, current, focused, count, state, onA
                 title={`${state.scoutNotes} Scout ${state.scoutNotes === 1 ? 'note' : 'notes'}`}
                 className="inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums"
               >
-                <ScoutMark className="size-3.5" />
+                <ScoutIcon className="size-3.5" />
                 {state.scoutNotes}
                 <span className="sr-only">Scout {state.scoutNotes === 1 ? 'note' : 'notes'}</span>
               </span>

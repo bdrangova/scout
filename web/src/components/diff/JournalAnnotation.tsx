@@ -2,7 +2,7 @@ import { anchorKey, type JournalEntry, type LineAnchor } from '@scout/shared'
 import { MessageSquareReply } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { JournalBody, KindChip } from '@/components/journal/JournalParts'
-import { ScoutMark } from '@/components/brand/Scout'
+import { ScoutIcon } from '@/components/brand/Scout'
 import { CommentAction, CommentHeader } from '@/components/common/CommentHeader'
 import { replyOf, type JournalReply } from '@/lib/journal-view'
 import { cn } from '@/lib/utils'
@@ -39,7 +39,7 @@ function JournalNoteRow({ entry, anchor, startCollapsed, onReply, replyBox, repl
       <CommentHeader
         collapsed={collapsed}
         onToggle={() => setCollapsed(!collapsed)}
-        avatar={<ScoutMark className="size-5" />}
+        avatar={<ScoutIcon className="size-5" />}
         title={entry.title}
         label={entry.title}
         badges={<KindChip kind={entry.kind} />}

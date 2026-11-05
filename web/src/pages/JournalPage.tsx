@@ -3,7 +3,7 @@ import { NotebookText } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { ScoutMark } from '@/components/brand/Scout'
+import { ScoutIcon } from '@/components/brand/Scout'
 import { EmptyState } from '@/components/common/EmptyState'
 import { PageHeader } from '@/components/common/PageHeader'
 import { JournalEntryCard } from '@/components/journal/JournalEntryCard'
@@ -114,7 +114,7 @@ export function JournalPage() {
             days.map((day) => (
               <section key={day.key} aria-label={dayHeading(day.key)} className="flex flex-col gap-3">
                 <h2 className="m-0 flex items-center gap-2 text-[13px] font-bold text-ink-muted">
-                  <ScoutMark className="size-5" />
+                  <ScoutIcon className="size-5" />
                   {dayHeading(day.key)}
                 </h2>
                 {day.entries.map((entry) => (

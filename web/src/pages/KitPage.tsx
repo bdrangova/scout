@@ -1,4 +1,4 @@
-import { ScoutMark, ScoutMascot } from '@/components/brand/Scout'
+import { ScoutIcon, ScoutMark, ScoutMascot } from '@/components/brand/Scout'
 import type { FileStatus, SessionStatus, Verdict } from '@scout/shared'
 import {
   ArchiveIcon,
@@ -79,8 +79,7 @@ export function KitPage() {
               <div className="flex items-end gap-3" aria-label="Favicon at browser sizes">
                 {[16, 24, 32].map((size) => (
                   <figure key={size} className="m-0 flex flex-col items-center gap-2 text-[11px] text-ink-muted">
-                    <img src="/brand/scout-favicon.svg" alt="" width={size} height={size} className="dark:hidden" />
-                    <img src="/brand/scout-favicon-dark.svg" alt="" width={size} height={size} className="hidden dark:block" />
+                    <ScoutIcon className={size === 16 ? 'size-4' : size === 24 ? 'size-6' : 'size-8'} />
                     <figcaption>{size}px</figcaption>
                   </figure>
                 ))}

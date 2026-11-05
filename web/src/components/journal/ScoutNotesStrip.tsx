@@ -1,7 +1,7 @@
 import type { JournalEntry } from '@scout/shared'
 import { ChevronDown, ChevronRight, MessageSquareReply } from 'lucide-react'
 import { useState } from 'react'
-import { ScoutMark } from '@/components/brand/Scout'
+import { ScoutIcon } from '@/components/brand/Scout'
 import { Markdown } from '@/components/common/Markdown'
 import { Button } from '@/components/ui/button'
 import { entryAnchorLabel, replyOf, type JournalReply } from '@/lib/journal-view'
@@ -29,7 +29,7 @@ export function ScoutNotesStrip({ sessionId, summary, others, onReply }: ScoutNo
   return (
     <section aria-label="Scout's notes" data-journal-strip className="flex shrink-0 flex-col gap-2 border-b-fine border-line bg-paper-2/60 px-4 py-2 font-sans text-[13px]">
       <div className="flex items-center gap-2">
-        <ScoutMark className="size-5" />
+        <ScoutIcon className="size-5" />
         <button type="button" aria-expanded={!collapsed} onClick={toggleCollapsed} className="flex items-center gap-1 text-[13px] font-bold">
           <Chevron aria-hidden className="size-3.5 text-ink-muted" />
           Scout's notes

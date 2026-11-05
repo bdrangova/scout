@@ -5,6 +5,16 @@ export function ScoutMark({ className }: { className?: string }) {
   return <img src="/brand/scout-head.png" alt="" aria-hidden width={64} height={64} className={cn('scout-art size-8 shrink-0 object-contain', className)} />
 }
 
+/** Small-size mark for Scout's notes: the favicon reads better than the detailed head at icon sizes. */
+export function ScoutIcon({ className }: { className?: string }) {
+  return (
+    <span aria-hidden className={cn('inline-block size-5 shrink-0', className)}>
+      <img src="/brand/scout-favicon.svg" alt="" className="size-full dark:hidden" />
+      <img src="/brand/scout-favicon-dark.svg" alt="" className="hidden size-full dark:block" />
+    </span>
+  )
+}
+
 /** Select the still before downloading an animation when reduced motion is requested. */
 export function ScoutMascot({ mode = 'idle', className }: { mode?: 'idle' | 'working' | 'ready'; className?: string }) {
   return (
