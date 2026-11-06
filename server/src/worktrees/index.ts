@@ -6,7 +6,7 @@ import { git } from '@scout/shared/git/run'
 import { HttpError, conflict, errorMessage, notFound } from '../errors.ts'
 import { readSettings } from '../settings.ts'
 import type { Store } from '../store/index.ts'
-import { discoverWorktrees } from './discover.ts'
+import { discoverWorktrees, worktreeId } from './discover.ts'
 import { summarizeWorktree } from './summary.ts'
 import type { WorktreeBase } from './summary.ts'
 
@@ -88,11 +88,14 @@ export async function loadWorktrees(home: string, store: Store): Promise<{ respo
   return { response: { folders: worktreeFolders, items, errors }, details }
 }
 
+/** One worktree with its sessions. Only that worktree is summarised (the rest are just discovered), so it stays quick with many worktrees. */
 export async function worktreeDetail(home: string, store: Store, id: string): Promise<WorktreeDetail> {
-  const { details } = await loadWorktrees(home, store)
-  const found = details.find((d) => d.id === id)
+  const { worktreeFolders } = await readSettings(home)
+  const [discovery, byCwd] = await Promise.all([discoverWorktrees(worktreeFolders), sessionsByCwd(store)])
+  const found = discovery.found.find((f) => worktreeId(f.path) === id)
   if (!found) throw notFound(`no worktree ${id}`)
-  return found
+  const base = await summarizeWorktree(found, path.join(home, 'cache', 'objects'))
+  return withSessions(base, byCwd.get(base.path) ?? [])
 }
 
 /** `git worktree remove` (never `--force`, the branch stays), refused while changes or live sessions would be lost. */

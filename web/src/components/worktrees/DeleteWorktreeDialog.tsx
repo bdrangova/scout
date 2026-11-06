@@ -2,6 +2,9 @@ import type { WorktreeSummary } from '@scout/shared'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { StepList } from '@/components/common/StepList'
+import { endStep, startStep } from '@/components/common/steps'
+import type { Step as ProgressStep } from '@/components/common/steps'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Notice } from '@/components/ui/notice'
@@ -44,6 +47,8 @@ export function DeleteWorktreeDialog({ worktree, onClose, onDeleted }: DeleteWor
   const [step, setStep] = useState<Step>(sessionCount > 0 ? 'archive' : 'delete')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** What the dialog has done and is doing, kept across both steps so the confirm still shows the archived sessions. */
+  const [progress, setProgress] = useState<ProgressStep[]>([])
   const onOpenChange = (open: boolean) => {
     if (!open) onClose()
   }
@@ -67,11 +72,25 @@ export function DeleteWorktreeDialog({ worktree, onClose, onDeleted }: DeleteWor
   async function archiveAll() {
     setPending(true)
     setError(null)
+    let steps: ProgressStep[] = startStep([{ label: 'Finding the sessions', state: 'pending' }], 0)
+    let current = 0
+    setProgress(steps)
     try {
       const detail = await fetchWorktree(worktree.id)
-      for (const session of detail.linkedSessions) await archiveSession(session.id)
+      steps = endStep(steps, 0, 'done')
+      steps = [...steps, ...detail.linkedSessions.map((s, i): ProgressStep => ({ label: `Archiving ${('title' in s && s.title) || s.id} (${i + 1} of ${detail.linkedSessions.length})`, state: 'pending' }))]
+      setProgress(steps)
+      for (const [i, session] of detail.linkedSessions.entries()) {
+        current = i + 1
+        steps = startStep(steps, current)
+        setProgress(steps)
+        await archiveSession(session.id)
+        steps = endStep(steps, current, 'done')
+        setProgress(steps)
+      }
       setStep('delete')
     } catch (err) {
+      setProgress(endStep(steps, current, 'failed'))
       setError(archiveErrorMessage(err))
     } finally {
       setPending(false)
@@ -81,11 +100,18 @@ export function DeleteWorktreeDialog({ worktree, onClose, onDeleted }: DeleteWor
   async function remove() {
     setPending(true)
     setError(null)
+    // Drop a failed earlier delete attempt, keep the archive steps.
+    let steps: ProgressStep[] = [...progress.filter((s) => s.state === 'done'), { label: 'Removing the worktree folder from disk', state: 'pending' }]
+    const index = steps.length - 1
+    steps = startStep(steps, index)
+    setProgress(steps)
     try {
       await deleteWorktree(worktree.id)
+      setProgress(endStep(steps, index, 'done'))
       toast.success('Worktree deleted', { description: worktree.name })
       onDeleted()
     } catch (err) {
+      setProgress(endStep(steps, index, 'failed'))
       setError(deleteErrorMessage(err))
       setPending(false)
     }
@@ -101,6 +127,7 @@ export function DeleteWorktreeDialog({ worktree, onClose, onDeleted }: DeleteWor
               This worktree has {pluralize(sessionCount, 'session')}. Archive them first, then you can delete the worktree. You can restore them later.
             </DialogDescription>
           </DialogHeader>
+          {progress.length > 0 && <StepList steps={progress} />}
           {error !== null && <Notice tone="err">{error}</Notice>}
           <DialogFooter>
             <DialogClose disabled={pending} render={<Button />}>Cancel</DialogClose>
@@ -127,6 +154,14 @@ export function DeleteWorktreeDialog({ worktree, onClose, onDeleted }: DeleteWor
       pendingLabel="Deleting…"
       pending={pending}
       error={error}
+      progress={
+        progress.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <StepList steps={progress} />
+            {pending && <p className="text-xs text-ink-muted">Big folders (dependencies, build output) can take a minute or two.</p>}
+          </div>
+        )
+      }
       onConfirm={() => void remove()}
     />
   )

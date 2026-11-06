@@ -192,6 +192,13 @@ describe('WorktreesPage', () => {
     const confirm = await screen.findByRole('alertdialog', { name: 'Delete worktree?' })
     expect(confirm).toHaveTextContent(`${FOLDER}/trial-bar`)
     expect(confirm).toHaveTextContent('The branch is kept')
+    // The archive steps stay listed, ticked off, so it's clear what already happened.
+    const progress = within(confirm).getByRole('list', { name: 'Progress' })
+    expect(within(progress).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      expect.stringContaining('Finding the sessions'),
+      expect.stringContaining('Archiving One (1 of 2)'),
+      expect.stringContaining('Archiving Two (2 of 2)'),
+    ])
     expect(calls(fetchMock)).toEqual(expect.arrayContaining(['POST /api/sessions/s1/archive', 'POST /api/sessions/s2/archive']))
     await user.click(within(confirm).getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Worktree deleted', { description: 'trial-bar' }))

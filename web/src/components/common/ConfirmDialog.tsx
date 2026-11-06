@@ -19,21 +19,24 @@ export interface ConfirmDialogProps {
   pending?: boolean
   /** Shown under the description, so a failed attempt keeps the dialog open with its reason. */
   error?: string | null
+  /** Shown under the description, e.g. a live list of the steps a slow action is working through. */
+  progress?: ReactNode
 }
 
 /**
  * A modal `alertdialog` for destructive confirmations on the shared `Dialog` primitive: Cancel takes
  * the initial focus, Escape cancels, clicking outside does nothing.
  */
-export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, pendingLabel = 'Working…', onConfirm, pending = false, error = null }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, pendingLabel = 'Working…', onConfirm, pending = false, error = null, progress }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement | null>(null)
   return (
     <Dialog open={open} onOpenChange={(next) => !pending && onOpenChange(next)} disablePointerDismissal>
-      <DialogContent role="alertdialog" initialFocus={cancelRef} showCloseButton={false} className="sm:max-w-sm">
+      <DialogContent role="alertdialog" initialFocus={cancelRef} showCloseButton={false} className="grid-cols-[minmax(0,1fr)] wrap-anywhere sm:max-w-sm">
         <DialogHeader className="pr-0">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {progress}
         {error !== null && <Notice tone="err">{error}</Notice>}
         <DialogFooter>
           <DialogClose ref={cancelRef} disabled={pending} render={<Button />}>
