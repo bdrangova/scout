@@ -295,3 +295,32 @@ describe('LOAD and immutability', () => {
     expect(initial).toEqual(snapshot)
   })
 })
+
+describe('scenario evidence comments', () => {
+  const S1 = 'S1'
+  const S2 = 'S2'
+  const shot = 'run:scenarios/s1/shot.png'
+  const items = [
+    { path: S1, fingerprint: fp(S1), refs: [shot] },
+    { path: S2, fingerprint: fp(S2), refs: [] },
+  ]
+  const scenarioCtx: ReviewContext = { files: items, itemKind: 'scenario' }
+  const begin = () => start({}, S1)
+
+  it('a comment at a moment of the video counts as reviewed but stays on the scenario', () => {
+    const next = run(begin(), [{ type: 'ADD_COMMENT', target: { kind: 'scenario', ref: S1 }, body: 'Flicker here.', timestampSec: 4, now: T1 }], scenarioCtx)
+    expect(next.review.ui.currentFile).toBe(S1)
+    expect(nextUnreviewedFile(next.review, items)).toBe(S2)
+  })
+
+  it('a comment on a screenshot counts its scenario as reviewed and stays on it', () => {
+    const next = run(begin(), [{ type: 'ADD_COMMENT', target: { kind: 'run-file', ref: shot }, body: 'Cut off.', now: T1 }], scenarioCtx)
+    expect(next.review.ui.currentFile).toBe(S1)
+    expect(nextUnreviewedFile(next.review, items)).toBe(S2)
+  })
+
+  it('a plain scenario comment still moves on', () => {
+    const next = run(begin(), [{ type: 'ADD_COMMENT', target: { kind: 'scenario', ref: S1 }, body: 'Fine.', now: T1 }], scenarioCtx)
+    expect(next.review.ui.currentFile).toBe(S2)
+  })
+})

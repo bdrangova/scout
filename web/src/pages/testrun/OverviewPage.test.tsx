@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { SessionContext } from "@/lib/session-context";
@@ -74,6 +74,42 @@ describe("OverviewPage", () => {
     expect(
       screen.getByText("run:scenarios/s1-pass/data/out.json"),
     ).toBeInTheDocument();
+  });
+
+  it("shows a linked plan markdown file as its own card and keeps the other links", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("# The plan\n\nStep one.", { status: 200, headers: { "content-type": "text/markdown" } }),
+    );
+    const index = {
+      ...testRunDetailFixture.index,
+      overview: [
+        {
+          type: "links" as const,
+          title: "Documents",
+          items: [
+            { label: "Test plan", ref: "plan:test-plan.md" },
+            { label: "Docs", url: "https://example.com/docs" },
+          ],
+        },
+      ],
+    };
+    renderOverview({ ...testRunDetailFixture, index });
+    const card = screen.getByRole("article", { name: "Test plan" });
+    expect(within(card).getByText("test-plan.md")).toBeInTheDocument();
+    expect(await within(card).findByRole("heading", { name: "The plan" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/run/file/plan/test-plan.md"), expect.anything());
+    expect(screen.getByRole("link", { name: "Docs" })).toBeInTheDocument();
+    fetchMock.mockRestore();
+  });
+
+  it("folds a panel away from its chevron and opens it again", async () => {
+    renderOverview();
+    const collapse = screen.getByRole("button", { name: "Collapse Summary" });
+    expect(await screen.findByText(/One scenario passed/)).toBeVisible();
+    fireEvent.click(collapse);
+    expect(screen.queryByText(/One scenario passed/)).not.toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Expand Summary" }));
+    expect(screen.getByText(/One scenario passed/)).toBeVisible();
   });
 
   it("says so when the index chose no panels", () => {

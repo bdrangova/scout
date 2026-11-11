@@ -6,6 +6,7 @@ import { ShellConfigProvider } from '@/components/layout/ShellConfigProvider'
 import { SessionShell } from '@/components/layout/SessionShell'
 import { StatusDot } from '@/components/ui/status-dot'
 import { isTestRunDetail } from '@/lib/detail-kind'
+import { sessionTabTitle, useDocumentTitle } from '@/lib/document-title'
 import { useSessionDetail } from '@/lib/hooks'
 import { SessionContext, type SessionContextValue } from '@/lib/session-context'
 import { PrReviewProvider } from '@/components/prreview/PrReviewProvider'
@@ -20,6 +21,7 @@ export function SessionLayout() {
     () => (id && detail ? { sessionId: id, detail, reload } : null),
     [id, detail, reload],
   )
+  useDocumentTitle(detail ? sessionTabTitle(detail) : null)
 
   if (!id) return <Navigate to="/d" replace />
 

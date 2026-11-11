@@ -17,7 +17,26 @@ export const SESSION_STATUSES = [
 export type SessionStatus = (typeof SESSION_STATUSES)[number]
 
 /** What the review logic needs of a reviewable item: a changed file (`TreeFile`) or a test scenario (`path` = its id). */
-export type ReviewItem = { path: string; fingerprint: string }
+/**
+ * One reviewable item. `refs` are other comment refs that count as commenting on it: a test scenario's video,
+ * screenshot and data files (`run-file` comments), so a comment on its evidence marks the scenario reviewed.
+ */
+export type ReviewItem = { path: string; fingerprint: string; refs?: readonly string[] }
+
+/** A test scenario as a review item: keyed by id, with its evidence files as extra comment refs. */
+export function scenarioReviewItem(scenario: {
+  id: string
+  fingerprint: string
+  evidence: { videos: readonly { path: string }[]; screenshots: readonly { path: string }[]; data: readonly { path: string }[] }
+}): ReviewItem {
+  const { videos, screenshots, data } = scenario.evidence
+  return { path: scenario.id, fingerprint: scenario.fingerprint, refs: [...videos, ...screenshots, ...data].map((item) => item.path) }
+}
+
+/** True when the item or one of its `refs` is in `commented`. */
+export function itemIsCommented(item: ReviewItem, commented: ReadonlySet<string>): boolean {
+  return commented.has(item.path) || (item.refs?.some((ref) => commented.has(ref)) ?? false)
+}
 
 /** The items as an array or as anything carrying them in `files` (a `WorkingTree`). */
 export type ReviewItems = readonly ReviewItem[] | { readonly files: readonly ReviewItem[] }
@@ -73,11 +92,16 @@ export function effectiveVerdict(entry: FileReview | null | undefined, file: Rev
   return fileIsUpdated(entry, file) ? 'none' : entry.verdict
 }
 
-/** Paths of files with an open file comment: the reviewer responded to them, so they count as reviewed. */
+/** True for a comment that marks its item reviewed: an item comment, or one on a scenario's evidence file (`run-file`). */
+export function countsAsReview(kind: CommentTargetKind): boolean {
+  return isItemComment(kind) || kind === 'run-file'
+}
+
+/** Refs with an open item or evidence comment: the reviewer responded to them, so their items count as reviewed (see `itemIsCommented`). */
 export function commentedPaths(review: Review, resolutions: Resolutions | null = null): Set<string> {
   const paths = new Set<string>()
   for (const comment of mergeComments(review, resolutions)) {
-    if (comment.status === 'open' && isItemComment(comment.target.kind) && comment.target.ref !== null) paths.add(comment.target.ref)
+    if (comment.status === 'open' && countsAsReview(comment.target.kind) && comment.target.ref !== null) paths.add(comment.target.ref)
   }
   return paths
 }
@@ -97,7 +121,7 @@ export function progress(
   const commented = commentedPaths(review, resolutions)
   let reviewed = 0
   for (const file of items) {
-    if (effectiveVerdict(review.files[file.path], file) !== 'none' || commented.has(file.path)) reviewed += 1
+    if (effectiveVerdict(review.files[file.path], file) !== 'none' || itemIsCommented(file, commented)) reviewed += 1
   }
   return { reviewed, total }
 }

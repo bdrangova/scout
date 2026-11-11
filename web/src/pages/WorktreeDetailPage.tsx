@@ -19,6 +19,8 @@ import { StartSessionPanels } from '@/components/worktrees/StartSessionPanels'
 import { WorktreeStats } from '@/components/worktrees/WorktreeStats'
 import { useWorktree } from '@/hooks/useWorktrees'
 import { archiveErrorMessage, archiveSession, unarchiveSession } from '@/lib/archive'
+import { AppLink } from '@/components/worktrees/AppLink'
+import { worktreeTabTitle, useDocumentTitle } from '@/lib/document-title'
 import { otherKindRoute, WORKTREES_ROUTE } from '@/lib/paths'
 import { isLiveSummary, type LiveSummary } from '@/lib/session-status'
 import { useHotkeys } from '@/lib/useHotkeys'
@@ -40,6 +42,7 @@ function Heading({ worktree, onDelete }: { worktree: WorktreeDetail; onDelete: (
         <code className="min-w-0 truncate font-mono" title={worktree.path}>{worktree.path}</code>
         <CopyButton value={worktree.path} label="path" />
       </div>
+      {worktree.appUrl && <AppLink url={worktree.appUrl} className="-ml-1 self-start" />}
     </div>
   )
 }
@@ -52,6 +55,7 @@ export function WorktreeDetailPage() {
   const navigate = useNavigate()
   const [helpOpen, setHelpOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  useDocumentTitle(worktree ? worktreeTabTitle(worktree.name) : null)
   useHotkeys({ toggleKind: () => navigate(otherKindRoute('worktrees')) })
 
   async function archive(session: LiveSummary) {

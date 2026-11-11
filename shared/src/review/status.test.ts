@@ -13,7 +13,7 @@ import {
   makeTree,
   makeTreeFile,
 } from '../testing/fixtures.ts'
-import { anyFileUpdated, commentStatus, commentedPaths, effectiveVerdict, fileIsUpdated, mergeComments, progress, sessionStatus } from './status.ts'
+import { anyFileUpdated, commentStatus, commentedPaths, effectiveVerdict, fileIsUpdated, mergeComments, progress, scenarioReviewItem, sessionStatus } from './status.ts'
 
 describe('commentStatus', () => {
   it('is open without any event', () => {
@@ -202,6 +202,13 @@ describe('progress and anyFileUpdated', () => {
     expect(progress(r, tree)).toEqual({ reviewed: 2, total: 3 })
     expect(anyFileUpdated(r, tree)).toBe(true)
     expect(anyFileUpdated(makeReview(), tree)).toBe(false)
+  })
+
+  it('a comment on a scenario\'s evidence file counts the scenario as reviewed', () => {
+    const scenario = { id: 'S1', fingerprint: fp('S1'), evidence: { videos: [], screenshots: [{ path: 'run:s1/a.png' }], data: [] } }
+    const items = [scenarioReviewItem(scenario), { path: 'S2', fingerprint: fp('S2') }]
+    const r = makeReview({ comments: [makeComment({ id: 'c1', target: { kind: 'run-file', ref: 'run:s1/a.png' } })] })
+    expect(progress(r, items)).toEqual({ reviewed: 1, total: 2 })
   })
 
   it('a line comment makes its file commented like a file comment', () => {

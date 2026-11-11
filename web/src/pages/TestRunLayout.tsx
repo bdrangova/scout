@@ -6,6 +6,7 @@ import { SessionErrorBar } from '@/components/layout/SessionErrorBar'
 import { SessionShell } from '@/components/layout/SessionShell'
 import { StatusDot } from '@/components/ui/status-dot'
 import { isTestRunDetail } from '@/lib/detail-kind'
+import { sessionTabTitle, useDocumentTitle } from '@/lib/document-title'
 import { useSessionDetail } from '@/lib/hooks'
 import { SessionContext, type SessionContextValue } from '@/lib/session-context'
 import { ReviewProvider } from '@/state/ReviewProvider'
@@ -18,6 +19,7 @@ export function TestRunLayout() {
     () => (id && detail ? { sessionId: id, detail, reload } : null),
     [id, detail, reload],
   )
+  useDocumentTitle(detail ? sessionTabTitle(detail) : null)
 
   if (!id) return <Navigate to="/t" replace />
 

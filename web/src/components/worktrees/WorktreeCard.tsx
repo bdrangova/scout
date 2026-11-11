@@ -7,6 +7,7 @@ import { Panel } from '@/components/ui/panel'
 import { Tag } from '@/components/ui/tag'
 import { worktreeRoute } from '@/lib/paths'
 import { cn } from '@/lib/utils'
+import { AppLink } from './AppLink'
 import { WorktreeStats } from './WorktreeStats'
 
 /** "Dev 2 · PR 1 · Test 1": the non-zero linked session counts, or a muted note. */
@@ -53,7 +54,11 @@ export function WorktreeCard({ worktree, onDelete, layout = 'grid' }: WorktreeCa
         }}
         className="h-full cursor-pointer gap-3 p-4 transition-colors hover:bg-paper-2"
       >
-        <CardIdentity title={worktree.name} tickets={worktree.ticket ? [{ key: worktree.ticket, url: null }] : []} />
+        <CardIdentity
+          title={worktree.name}
+          tickets={worktree.ticket ? [{ key: worktree.ticket, url: null }] : []}
+          status={worktree.appUrl ? <AppLink url={worktree.appUrl} /> : undefined}
+        />
         <div className={cn('flex min-w-0 flex-col gap-3 border-t-fine border-line/30 pt-3', layout === 'list' && 'md:border-t-0 md:pt-0')}>
           <Branches base={worktree.baseRef} current={worktree.branch}>
             <WorktreeStats worktree={worktree} />

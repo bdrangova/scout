@@ -157,7 +157,12 @@ export function sessionFilesRoute(sessionId: string): string {
  * (usable as `<img src>` / `<video src>`). A value without `alias:` is returned as one path under the `run` alias.
  */
 export function runFileUrl(sessionId: string, ref: string): string {
-  return `/api${sessionApiPath(sessionId)}/run/file/${runRefPath(ref)}`
+  return `/api${runFilePath(sessionId, ref)}`
+}
+
+/** API path (relative to `/api`) of a test run file, for `apiGet`: `/sessions/:id/run/file/<alias>/<rel/path>`. */
+export function runFilePath(sessionId: string, ref: string): string {
+  return `${sessionApiPath(sessionId)}/run/file/${runRefPath(ref)}`
 }
 
 /** URL of a slice of a run log: `/api/sessions/:id/run/log/<alias>/<path>?from=&to=` (1-based, inclusive lines). */

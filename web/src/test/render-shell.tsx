@@ -1,4 +1,4 @@
-import { mergeComments, progress, type ReviewItem, type Resolutions, type Review, type SessionDetail } from '@scout/shared'
+import { mergeComments, progress, scenarioReviewItem, type ReviewItem, type Resolutions, type Review, type SessionDetail } from '@scout/shared'
 import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Outlet, Route, Routes } from 'react-router'
@@ -38,7 +38,7 @@ export interface ShellOptions {
 export function renderShell(path: string, { kind: kindOption, detail: detailOption, review = reviewFixture(), resolutions = null, saveStatus = 'idle', onHelp = vi.fn(), page = null, unsavedDrafts = [] }: ShellOptions = {}) {
   const kind: SessionKind = kindOption ?? (detailOption && isTestRunDetail(detailOption) ? 'test-run' : 'code-review')
   const detail = detailOption ?? (kind === 'test-run' ? testRunDetailFixture : sessionDetailFixture)
-  const items: readonly ReviewItem[] = isTestRunDetail(detail) ? detail.scenarios.map((scenario) => ({ path: scenario.id, fingerprint: scenario.fingerprint })) : detail.tree.files
+  const items: readonly ReviewItem[] = isTestRunDetail(detail) ? detail.scenarios.map(scenarioReviewItem) : detail.tree.files
   const value: ReviewContextValue = {
     state: { review, pendingReject: null, atEnd: false },
     items,

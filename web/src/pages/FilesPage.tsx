@@ -8,7 +8,10 @@ import { ReportNotice } from '@/components/prreview/ReportNotice'
 import { CardDeck } from '@/components/diff/CardDeck'
 import { clearVerdictUndo, undoLastVerdict, useVerdictAction } from '@/components/diff/useVerdictAction'
 import { ScrollList } from '@/components/diff/ScrollList'
+import { FileFilterBar } from '@/components/files/FileFilterBar'
 import { FileGrid } from '@/components/files/FileGrid'
+import { useFileFilter } from '@/components/files/useFileFilter'
+import { Button } from '@/components/ui/button'
 import { FilesRailSection } from '@/components/files/FilesRailSection'
 import { ReviewComplete } from '@/components/files/ReviewComplete'
 import { CommitTimeline } from '@/components/timeline/CommitTimeline'
@@ -60,6 +63,9 @@ export function FilesPage() {
   const statePath = stateFile !== null && files.some((file) => file.path === stateFile) ? stateFile : null
   const [commentFocusToken, bumpCommentFocus] = useReducer((count: number) => count + 1, 0)
   const previousRef = useRef<{ url: string | null; state: string | null } | null>(null)
+  // One set of filters for Swipe, Scroll, Grid and the tree; in the card modes the open file stays listed after its verdict moves it out.
+  const fileFilter = useFileFilter(files, fullFiles, isCardMode(mode) ? urlPath : null)
+  const { visible } = fileFilter
 
   // The undo belongs to this page: leaving it drops the toast.
   useEffect(() => clearVerdictUndo, [])
@@ -146,7 +152,8 @@ export function FilesPage() {
   // At the end a step with no neighbour still leaves the end panel, on the current file.
   function stepBy(delta: number) {
     if (!urlFile) return
-    const next = files[files.indexOf(urlFile) + delta] ?? (ended ? urlFile : undefined)
+    const index = visible.indexOf(urlFile)
+    const next = (index === -1 ? undefined : visible[index + delta]) ?? (ended ? urlFile : undefined)
     if (next) goTo(next.path)
   }
 
@@ -207,7 +214,7 @@ export function FilesPage() {
 
   // While a scope loads with no earlier list to show, the current path may be missing: the views tolerate it.
   const currentPath = urlPath ?? splat
-  const shared = { files, currentPath, sessionId, onNavigate: goTo, commentFocusToken, scope: scopeReview }
+  const shared = { files: visible, currentPath, sessionId, onNavigate: goTo, commentFocusToken, scope: scopeReview }
 
   let content: ReactNode
   if (!first) {
@@ -228,22 +235,44 @@ export function FilesPage() {
         />
       </div>
     )
-  } else if (mode === 'scroll') {
-    content = <ScrollList {...shared} />
   } else {
+    let view: ReactNode
+    if (visible.length === 0) {
+      view = (
+        <div className="flex flex-col items-center gap-3 py-12 text-center text-sm text-ink-muted">
+          <p>No files match these filters.</p>
+          <Button size="sm" onClick={fileFilter.clear}>
+            Clear filters
+          </Button>
+        </div>
+      )
+    } else if (mode === 'scroll') {
+      view = <ScrollList {...shared} />
+    } else {
+      view = (
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          {mode === 'swipe' && <CardDeck {...shared} />}
+          {mode === 'grid' && (
+            <div className="mx-auto w-full max-w-[1200px] px-4 py-4 md:px-6">
+              <FileGrid files={visible} reviewFiles={fullFiles} currentPath={currentPath} onOpen={openInCards} onApprove={(file) => setVerdict(file, 'approved')} />
+            </div>
+          )}
+        </div>
+      )
+    }
     content = (
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {mode === 'swipe' && <CardDeck {...shared} />}
-        {mode === 'grid' && (
-          <FileGrid files={files} reviewFiles={fullFiles} currentPath={currentPath} onOpen={openInCards} onApprove={(file) => setVerdict(file, 'approved')} />
-        )}
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="mx-auto w-full max-w-[1200px] shrink-0 px-4 pt-4 md:px-6">
+          <FileFilterBar state={fileFilter} />
+        </div>
+        {view}
       </div>
     )
   }
 
   return (
     <main className="flex h-[calc(100dvh-var(--shell-h))] min-w-0 flex-1 flex-col" data-mode={mode} data-scope={scope ?? undefined}>
-      <FilesRailSection files={files} reviewFiles={fullFiles} currentPath={urlPath} onSelect={goTo} />
+      <FilesRailSection files={visible} reviewFiles={fullFiles} currentPath={urlPath} onSelect={goTo} />
       {timeline}
       <ReportNotice />
       {ended && first ? (

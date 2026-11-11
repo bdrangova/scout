@@ -5,7 +5,7 @@ import { readPrStatus } from './pr-status.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import readline from 'node:readline'
-import { journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, runFolderOf, prCommentCounts, prReplyKindFor, prSummary, progress, sessionStatus } from '@scout/shared'
+import { journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, runFolderOf, prCommentCounts, prReplyKindFor, prSummary, progress, scenarioReviewItem, sessionStatus, type ReviewItem } from '@scout/shared'
 import type {
   AnySentSnapshot,
   ArchivedSession,
@@ -170,8 +170,8 @@ export function sessionSummary(manifest: CodeReviewManifest, state: ReviewState,
 }
 
 /** The scenarios of a run as review items: the id is the key of the verdict in `review.files`. */
-export function scenarioItems(detail: TestRunDetail): { path: string; fingerprint: string }[] {
-  return detail.scenarios.map((scenario) => ({ path: scenario.id, fingerprint: scenario.fingerprint }))
+export function scenarioItems(detail: TestRunDetail): ReviewItem[] {
+  return detail.scenarios.map(scenarioReviewItem)
 }
 
 function testRunStatus(state: ReviewState, detail: TestRunDetail): SessionStatus {

@@ -1,4 +1,5 @@
 import { effectiveVerdict, fileIsUpdated } from "@scout/shared";
+import { MessageSquare } from "lucide-react";
 import { StatusDot } from "@/components/ui/status-dot";
 import { Tag } from "@/components/ui/tag";
 import {
@@ -14,6 +15,8 @@ export interface ScenarioSidebarProps {
   /** In display order. */
   scenarios: readonly Scenario[];
   currentId: string | null;
+  /** Open comments of a scenario, its evidence included. */
+  openComments: (scenario: Scenario) => number;
   onSelect: (id: string) => void;
 }
 
@@ -21,19 +24,17 @@ export interface ScenarioSidebarProps {
 export function ScenarioSidebar({
   scenarios,
   currentId,
+  openComments,
   onSelect,
 }: ScenarioSidebarProps) {
-  const { fileReview, commentsFor } = useReview();
+  const { fileReview } = useReview();
   return (
     <nav aria-label="Scenarios" className="flex flex-col gap-1">
       <ol className="m-0 flex list-none flex-col gap-1 p-0">
         {scenarios.map((scenario) => {
           const item = { path: scenario.id, fingerprint: scenario.fingerprint };
           const review = fileReview(scenario.id);
-          const open = commentsFor({
-            kind: "scenario",
-            ref: scenario.id,
-          }).filter((comment) => comment.status === "open").length;
+          const open = openComments(scenario);
           const kind = verdictKind(effectiveVerdict(review, item), open);
           const style = VERDICT_STYLE[kind];
           const Icon = style.icon;
@@ -58,6 +59,16 @@ export function ScenarioSidebar({
                 <span className="min-w-0 flex-1 truncate">
                   {scenario.title}
                 </span>
+                {open > 0 && (
+                  <span
+                    aria-label={`${open} open ${open === 1 ? "comment" : "comments"}`}
+                    title={`${open} open ${open === 1 ? "comment" : "comments"}`}
+                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-ink-muted tabular-nums"
+                  >
+                    <MessageSquare aria-hidden className="size-3.5" />
+                    {open}
+                  </span>
+                )}
                 {fileIsUpdated(review, item) && (
                   <Tag tone="warn" size="sm">
                     updated

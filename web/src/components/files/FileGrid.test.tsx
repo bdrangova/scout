@@ -6,7 +6,29 @@ import { SessionContext } from '@/lib/session-context'
 import { ReviewProvider } from '@/state/ReviewProvider'
 import { commentFixture, reviewFixture, reviewResponseFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
 import { mockReviewApi } from '@/test/mock-api'
-import { FileGrid } from './FileGrid'
+import type { TreeFile } from '@scout/shared'
+import { Button } from '@/components/ui/button'
+import { FileFilterBar } from './FileFilterBar'
+import { FileGrid, type FileGridProps } from './FileGrid'
+import { useFileFilter } from './useFileFilter'
+
+/** The grid under the page's filters, the way the Files page puts them together. */
+function FilteredGrid({ files, ...props }: Omit<FileGridProps, 'files'> & { files: readonly TreeFile[] }) {
+  const state = useFileFilter(files, files, null)
+  return (
+    <>
+      <FileFilterBar state={state} />
+      {state.visible.length === 0 ? (
+        <div>
+          <p>No files match these filters.</p>
+          <Button onClick={state.clear}>Clear filters</Button>
+        </div>
+      ) : (
+        <FileGrid files={state.visible} {...props} />
+      )}
+    </>
+  )
+}
 
 vi.mock('sonner', async () => (await import('@/test/mock-sonner')).sonnerModuleMock())
 
@@ -37,7 +59,7 @@ function renderGrid(extra: Parameters<typeof commentFixture>[] = [], initialSear
     <MemoryRouter initialEntries={[`/s/${SESSION_ID}/files${initialSearch}`]}>
       <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: sessionDetailFixture, reload: () => {} }}>
         <ReviewProvider>
-          <FileGrid files={files} currentPath={P1} onOpen={onOpen} onApprove={onApprove} />
+          <FilteredGrid files={files} currentPath={P1} onOpen={onOpen} onApprove={onApprove} />
           <LocationProbe />
         </ReviewProvider>
       </SessionContext.Provider>

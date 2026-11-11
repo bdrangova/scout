@@ -134,6 +134,17 @@ describe('FilesPage', () => {
     expect(await screen.findByText('3 / 6')).toBeInTheDocument()
   })
 
+  it('filters Swipe and the file tree with the same verdict filter as the grid', async () => {
+    const stored = reviewFixture({ files: { [P0]: { verdict: 'approved', fingerprint: files[0]?.fingerprint ?? null, viewed: true } } })
+    renderFiles(`/s/${SESSION_ID}/files/${P1}`, reviewResponseFixture(stored))
+    await screen.findByRole('article', { name: P1 })
+    expect(screen.getByText('2 / 6')).toBeInTheDocument()
+    fireEvent.click(within(screen.getByRole('group', { name: 'Show files' })).getByRole('button', { name: 'Unreviewed 5' }))
+    expect(await screen.findByText('1 / 5')).toBeInTheDocument()
+    const tree = screen.getByRole('tree', { name: 'Changed files' })
+    expect(within(tree).queryByText(P0.split('/').pop() ?? '')).toBeNull()
+  })
+
   it('a URL that names a file wins over the review’s current file and updates it', async () => {
     const stored = reviewFixture({ ui: { mode: 'swipe', currentFile: P1, section: 'files' } })
     const api = renderFiles(`/s/${SESSION_ID}/files/${files[3]?.path}`, reviewResponseFixture(stored))

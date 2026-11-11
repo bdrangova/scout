@@ -1,18 +1,22 @@
-import { effectiveVerdict, nextUnreviewedFile, type ReviewItem } from "@scout/shared";
+import { effectiveVerdict, nextUnreviewedFile, scenarioReviewItem, type ReviewItem } from "@scout/shared";
 import { ListChecks } from "lucide-react";
 import { useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { EmptyState } from "@/components/common/EmptyState";
+import { Button } from "@/components/ui/button";
 import { clearVerdictUndo, undoLastVerdict } from "@/components/diff/useVerdictAction";
 import { ScenarioComplete } from "@/components/testrun/storyboard/ScenarioComplete";
 import { ScenarioDeck } from "@/components/testrun/storyboard/ScenarioDeck";
 import { ScenarioGrid } from "@/components/testrun/storyboard/ScenarioGrid";
+import { ScenarioFilterBar } from "@/components/testrun/storyboard/ScenarioFilterBar";
 import { ScenarioRailSection } from "@/components/testrun/storyboard/ScenarioRailSection";
+import { useScenarioFilter } from "@/components/testrun/storyboard/scenario-filter";
 import { useScenarioVerdict } from "@/components/testrun/storyboard/useScenarioVerdict";
 import { useTestRunDetail } from "@/lib/detail-kind";
 import { MODE_PARAM, modeSearch, parseRunMode, readLastCardMode, rememberCardMode } from "@/lib/mode";
 import { testRunRoute } from "@/lib/paths";
 import { useSessionContext } from "@/lib/session-context";
+import { cn } from "@/lib/utils";
 import { useHotkeys, type HotkeyHandlers } from "@/lib/useHotkeys";
 import { useReview } from "@/state/review-context";
 
@@ -32,7 +36,7 @@ export function ReviewPage() {
   const navigate = useNavigate();
   const mode = parseRunMode(searchParams.get(MODE_PARAM));
   const scenarios = useMemo(() => [...detail.scenarios].sort((a, b) => a.order - b.order), [detail.scenarios]);
-  const items = useMemo<ReviewItem[]>(() => scenarios.map((scenario) => ({ path: scenario.id, fingerprint: scenario.fingerprint })), [scenarios]);
+  const items = useMemo<ReviewItem[]>(() => scenarios.map(scenarioReviewItem), [scenarios]);
   const scenarioId = params.scenarioId ?? "";
   const urlScenario = scenarios.find((scenario) => scenario.id === scenarioId) ?? null;
   const urlId = urlScenario?.id ?? null;
@@ -40,6 +44,8 @@ export function ReviewPage() {
   const stateId = stateScenario !== null && scenarios.some((scenario) => scenario.id === stateScenario) ? stateScenario : null;
   const [commentFocusToken, bumpCommentFocus] = useReducer((count: number) => count + 1, 0);
   const previousRef = useRef<{ url: string | null; state: string | null } | null>(null);
+  // One filter for Swipe, Grid and the rail; in Swipe the open scenario stays listed after its verdict moves it out.
+  const { filter, setFilter, counts, visible, openComments } = useScenarioFilter(scenarios, mode === "grid" ? null : urlId);
 
   // The undo belongs to this page: leaving it drops the toast.
   useEffect(() => clearVerdictUndo, []);
@@ -88,7 +94,8 @@ export function ReviewPage() {
   // At the end a step with no neighbour still leaves the end panel, on the current scenario.
   function stepBy(delta: number) {
     if (!urlScenario) return;
-    const next = scenarios[scenarios.indexOf(urlScenario) + delta] ?? (ended ? urlScenario : undefined);
+    const index = visible.indexOf(urlScenario);
+    const next = (index === -1 ? undefined : visible[index + delta]) ?? (ended ? urlScenario : undefined);
     if (next) goTo(next.id);
   }
 
@@ -145,24 +152,36 @@ export function ReviewPage() {
   } else {
     content = (
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {mode === "swipe" && (
+        <div className={cn("mx-auto flex w-full max-w-[1200px] px-4 md:px-6", mode === "grid" ? "pt-5" : "pt-4")}>
+          <ScenarioFilterBar value={filter} counts={counts} onChange={setFilter} />
+        </div>
+        {visible.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-center text-sm text-ink-muted">
+            <p>No scenarios match this filter.</p>
+            <Button size="sm" onClick={() => setFilter("all")}>
+              Clear filter
+            </Button>
+          </div>
+        ) : mode === "swipe" ? (
           <ScenarioDeck
-            scenarios={scenarios}
+            scenarios={visible}
             currentId={currentId}
             detail={detail}
             sessionId={sessionId}
             onNavigate={goTo}
             commentFocusToken={commentFocusToken}
           />
-        )}
-        {mode === "grid" && (
-          <ScenarioGrid
-            sessionId={sessionId}
-            scenarios={scenarios}
-            currentId={currentId}
-            onOpen={openInCards}
-            onApprove={(scenario) => verdicts.set(scenario, "approved")}
-          />
+        ) : (
+          <div className="mx-auto w-full max-w-[1200px] px-4 py-4 md:px-6">
+            <ScenarioGrid
+              sessionId={sessionId}
+              scenarios={visible}
+              currentId={currentId}
+              openComments={openComments}
+              onOpen={openInCards}
+              onApprove={(scenario) => verdicts.set(scenario, "approved")}
+            />
+          </div>
         )}
       </div>
     );
@@ -170,7 +189,7 @@ export function ReviewPage() {
 
   return (
     <main className="flex h-[calc(100dvh-var(--shell-h))] min-w-0 flex-1 flex-col" data-mode={mode}>
-      <ScenarioRailSection scenarios={scenarios} currentId={urlId} onSelect={goTo} />
+      <ScenarioRailSection scenarios={visible} total={scenarios.length} currentId={urlId} openComments={openComments} onSelect={goTo} />
       {ended && first ? (
         <ScenarioComplete sessionId={sessionId} onBack={() => goTo(currentId)}>
           {content}

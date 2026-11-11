@@ -9,6 +9,7 @@ import { ShellConfigProvider } from "@/components/layout/ShellConfigProvider";
 import { SessionShell } from "@/components/layout/SessionShell";
 import { SessionContext } from "@/lib/session-context";
 import {
+  commentFixture,
   fp,
   reviewFixture,
   reviewResponseFixture,
@@ -499,6 +500,35 @@ describe("Test run review", () => {
           within(happy).getByRole("region", { name: "Comments on Happy path" }),
         ).queryByText("Row 3 is missing"),
       ).toBeNull();
+    });
+
+    it("filters Swipe and the rail together, keeps the filter in the URL and in Grid", async () => {
+      const s1 = testRunDetailFixture.scenarios[0]!;
+      const stored = reviewFixture({ files: { [s1.id]: { verdict: "approved", fingerprint: s1.fingerprint, viewed: true } } });
+      renderReview(`${BASE}/s2-fail`, testRunDetailFixture, reviewResponseFixture(stored));
+      const user = userEvent.setup();
+      await screen.findByRole("article", { name: "Empty result" });
+      const bar = screen.getByRole("group", { name: "Show scenarios" });
+      await user.click(within(bar).getByRole("button", { name: /Unreviewed/ }));
+      await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("show=none"));
+      expect(within(sidebar()).getAllByRole("button").map((row) => row.getAttribute("data-scenario"))).toEqual(["s2-fail", "s3-gap"]);
+      expect(screen.getByText("1 / 2", { selector: "p" })).toBeInTheDocument();
+      expect(within(rail()).getByText("2 of 3")).toBeInTheDocument();
+
+      await user.click(within(within(screen.getByRole("banner")).getByRole("group", { name: "Review mode" })).getByRole("link", { name: "Grid" }));
+      const grid = await screen.findByRole("list", { name: "All scenarios" });
+      expect(within(grid).getAllByRole("listitem").map((tile) => tile.getAttribute("data-scenario"))).toEqual(["s2-fail", "s3-gap"]);
+      expect(within(screen.getByRole("group", { name: "Show scenarios" })).getByRole("button", { name: /Unreviewed/ })).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("a screenshot comment marks the scenario commented, shows its count in the rail and stays on it", async () => {
+      const stored = reviewFixture({ comments: [commentFixture("c1", { kind: "run-file", ref: SHOT }, "Cut off")] });
+      renderReview(`${BASE}/s1-pass`, testRunDetailFixture, reviewResponseFixture(stored));
+      await screen.findByRole("article", { name: "Happy path" });
+      const row = within(sidebar()).getByRole("button", { name: /Happy path/ });
+      expect(within(row).getByLabelText("1 open comment")).toBeInTheDocument();
+      expect(row).toHaveAttribute("data-verdict", "commented");
+      expect(screen.getByText("1 / 3", { selector: "p" })).toBeInTheDocument();
     });
 
     it("comments on a data file the same way", async () => {

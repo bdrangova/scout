@@ -59,6 +59,8 @@ export const WorktreeSummarySchema = z.object({
   stats: z.object({ files: nonNegativeInt, additions: nonNegativeInt, deletions: nonNegativeInt }),
   /** Uncommitted entries of `git status --porcelain` (staged, unstaged and untracked). Delete is refused while > 0. */
   uncommitted: nonNegativeInt,
+  /** `http://localhost:<port>` of a web app served by a process running inside the worktree (lowest such port); null when none is. */
+  appUrl: z.string().nullable(),
   /** The PR of the newest linked session that knows one; null when none does. */
   pr: PrSummarySchema.nullable(),
   sessions: WorktreeSessionCountsSchema,

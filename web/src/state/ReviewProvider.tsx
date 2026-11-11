@@ -3,6 +3,7 @@ import {
   mergeComments,
   progress,
   reviewReducer,
+  scenarioReviewItem,
   type CommentTarget,
   type ReviewAction,
   type ReviewContext as ReducerContext,
@@ -37,7 +38,7 @@ function itemsOfDetail(detail: SessionDetail): { items: readonly ReviewItem[]; i
   if (isTestRunDetail(detail)) {
     // Index order, so the reducer's advance walks the scenarios the way the Review page lists them.
     const ordered = [...detail.scenarios].sort((a, b) => a.order - b.order)
-    return { items: ordered.map((scenario) => ({ path: scenario.id, fingerprint: scenario.fingerprint })), itemKind: 'scenario' }
+    return { items: ordered.map(scenarioReviewItem), itemKind: 'scenario' }
   }
   return { items: detail.tree.files, itemKind: 'file' }
 }

@@ -6,6 +6,7 @@ import { gitText, gitTry } from '@scout/shared/git/run'
 import { computeWorkingTree } from '@scout/shared/git/working-tree'
 import { mainRepoOf, worktreeId } from './discover.ts'
 import type { FoundWorktree } from './discover.ts'
+import { runningApps, type RunningApps } from './running-apps.ts'
 
 export type WorktreeBase = Omit<WorktreeSummary, 'pr' | 'sessions'>
 
@@ -30,9 +31,15 @@ async function uncommittedCount(repo: string): Promise<number> {
 }
 
 /** Everything about a worktree that git knows; session fields are added by the caller. */
-export async function summarizeWorktree(found: FoundWorktree, overlayRoot: string): Promise<WorktreeBase> {
+export async function summarizeWorktree(found: FoundWorktree, overlayRoot: string, apps: RunningApps = runningApps): Promise<WorktreeBase> {
   const wt = found.path
-  const [branch, mainRepo, uncommitted, resolvedBase] = await Promise.all([currentBranch(wt), mainRepoOf(wt), uncommittedCount(wt), defaultBase(wt)])
+  const [branch, mainRepo, uncommitted, resolvedBase, appUrl] = await Promise.all([
+    currentBranch(wt),
+    mainRepoOf(wt),
+    uncommittedCount(wt),
+    defaultBase(wt),
+    apps.appUrl(wt),
+  ])
   const baseRef = resolvedBase === 'HEAD' ? null : resolvedBase
   let counts: { ahead: number; behind: number } | null = null
   let stats = { files: 0, additions: 0, deletions: 0 }
@@ -58,5 +65,6 @@ export async function summarizeWorktree(found: FoundWorktree, overlayRoot: strin
     behind: counts?.behind ?? null,
     stats,
     uncommitted,
+    appUrl,
   }
 }

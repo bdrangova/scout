@@ -366,6 +366,7 @@ export function worktreeSummary(overrides: Partial<WorktreeSummary> & Pick<Workt
     behind: 1,
     stats: { files: 8, additions: 272, deletions: 51 },
     uncommitted: 0,
+    appUrl: null,
     pr: null,
     sessions: { 'code-review': 0, 'pr-review': 0, 'test-run': 0 },
     ...overrides,

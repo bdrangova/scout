@@ -1,35 +1,35 @@
-import { useCommentedOnlyFilter, useOpenCommentRefs } from "@/components/layout/commented-only";
+import { useCommentedOnlyFilter } from "@/components/layout/commented-only";
 import { CommentedOnlyToggle } from "@/components/layout/CommentedOnlyToggle";
-import { evidenceRefsOf } from "@/components/submit/open-comments-sections";
 import { RunRailSection } from "../RunRailSection";
 import type { Scenario } from "./scenario-types";
 import { ScenarioSidebar } from "./ScenarioSidebar";
 
 export interface ScenarioRailSectionProps {
-  /** In display order. */
+  /** In display order, already through the page's filter. */
   scenarios: readonly Scenario[];
+  /** Every scenario of the run, for the heading's count. */
+  total: number;
   currentId: string | null;
+  /** Open comments of a scenario, its evidence included. */
+  openComments: (scenario: Scenario) => number;
   onSelect: (id: string) => void;
 }
 
-/** The Review page's block in the session rail: the scenario list (the Swipe | Grid toggle is in the session bar). */
+/** The Review page's block in the session rail: the scenario list under the page's filter (the Swipe | Grid toggle is in the session bar). */
 export function ScenarioRailSection({
   scenarios,
+  total,
   currentId,
+  openComments,
   onSelect,
 }: ScenarioRailSectionProps) {
-  const openRefs = useOpenCommentRefs("scenario", "run-file");
-  const commented = useCommentedOnlyFilter(
-    scenarios,
-    (scenario) =>
-      openRefs.has(scenario.id) ||
-      evidenceRefsOf(scenario).some((ref) => openRefs.has(ref)),
-  );
+  const commented = useCommentedOnlyFilter(scenarios, (scenario) => openComments(scenario) > 0);
+  const shown = commented.active ? commented.items.length : scenarios.length;
   return (
     <RunRailSection
       heading="Scenarios"
-      count={scenarios.length}
-      shown={commented.active ? commented.items.length : undefined}
+      count={total}
+      shown={shown === total ? undefined : shown}
       action={
         <CommentedOnlyToggle
           size="sm"
@@ -42,6 +42,7 @@ export function ScenarioRailSection({
       <ScenarioSidebar
         scenarios={commented.items}
         currentId={currentId}
+        openComments={openComments}
         onSelect={onSelect}
       />
     </RunRailSection>

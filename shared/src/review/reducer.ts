@@ -1,5 +1,5 @@
 import type { Comment, CommentKind, CommentTarget, Decision, FileReview, Mode, Review, Verdict, ProposalReview } from '../schemas/review.ts'
-import { effectiveVerdict, isItemComment } from './status.ts'
+import { countsAsReview, effectiveVerdict, isItemComment, itemIsCommented } from './status.ts'
 import type { ReviewItem } from './status.ts'
 
 /**
@@ -90,7 +90,7 @@ function withComment(review: Review, target: CommentTarget, body: string, timest
 function commentedFiles(review: Review): Set<string> {
   const paths = new Set<string>()
   for (const comment of review.comments) {
-    if (isItemComment(comment.target.kind) && comment.target.ref !== null) paths.add(comment.target.ref)
+    if (countsAsReview(comment.target.kind) && comment.target.ref !== null) paths.add(comment.target.ref)
   }
   return paths
 }
@@ -109,7 +109,7 @@ export function nextUnreviewedFile(review: Review, files: readonly ReviewItem[])
   for (let step = 1; step <= count; step += 1) {
     const file = files[(start + step) % count]
     if (file === undefined) continue
-    if (effectiveVerdict(review.files[file.path], file) === 'none' && !commented.has(file.path)) return file.path
+    if (effectiveVerdict(review.files[file.path], file) === 'none' && !itemIsCommented(file, commented)) return file.path
   }
   return null
 }
@@ -169,7 +169,9 @@ export function reviewReducer(state: ReviewState, action: ReviewAction, ctx: Rev
         Object.assign(patch, withFile(review, target.ref, stored))
         pendingReject = null
       }
-      return advance({ ...state, pendingReject, review: touch(review, now, patch) }, ctx, now)
+      const next = { ...state, pendingReject, review: touch(review, now, patch) }
+      // A comment at a moment of the video: the reviewer is still watching, so the deck stays on the scenario.
+      return action.timestampSec != null ? next : advance(next, ctx, now)
     }
 
     case 'EDIT_COMMENT': {
