@@ -14,8 +14,8 @@ import { SESSION_LAYOUT_KEY } from '@/components/sessions/session-list-layout'
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), info: vi.fn(), success: vi.fn(), warning: vi.fn() } }))
 
 const listState = vi.hoisted(() => ({
-  current: { sessions: null, loading: true, error: null, reload: () => {} } as SessionListState,
-  archived: { archived: [], loading: false, error: null, reload: () => {} } as ArchivedListState,
+  current: { sessions: null, loading: true, busy: false, error: null, reload: () => {} } as SessionListState,
+  archived: { archived: [], loading: false, busy: false, error: null, reload: () => {} } as ArchivedListState,
 }))
 
 vi.mock('@/lib/hooks', async (importOriginal) => ({
@@ -51,8 +51,8 @@ function renderAt(initialEntries = ['/d']) {
 }
 
 function renderPage(state: Partial<SessionListState>, archived: Partial<ArchivedListState> = {}) {
-  listState.current = { sessions: null, loading: false, error: null, reload: () => {}, ...state }
-  listState.archived = { archived: [], loading: false, error: null, reload: () => {}, ...archived }
+  listState.current = { sessions: null, loading: false, busy: false, error: null, reload: () => {}, ...state }
+  listState.archived = { archived: [], loading: false, busy: false, error: null, reload: () => {}, ...archived }
   return renderAt()
 }
 

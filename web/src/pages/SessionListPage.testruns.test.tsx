@@ -12,8 +12,8 @@ import { SCENARIO_STATUS_LABEL } from '@/lib/scenario-status'
 
 const hooks = vi.hoisted(() => ({
   kinds: [] as (string | undefined)[],
-  current: { sessions: null, loading: false, error: null, reload: () => {} } as SessionListState,
-  archived: { archived: [], loading: false, error: null, reload: () => {} } as ArchivedListState,
+  current: { sessions: null, loading: false, busy: false, error: null, reload: () => {} } as SessionListState,
+  archived: { archived: [], loading: false, busy: false, error: null, reload: () => {} } as ArchivedListState,
 }))
 
 vi.mock('@/lib/hooks', async (importOriginal) => ({
@@ -49,13 +49,13 @@ describe('SessionListPage kinds', () => {
   afterEach(() => {
     localStorage.removeItem(SESSION_LAYOUT_KEY)
     hooks.kinds.length = 0
-    hooks.archived = { archived: [], loading: false, error: null, reload: () => {} }
+    hooks.archived = { archived: [], loading: false, busy: false, error: null, reload: () => {} }
     vi.unstubAllGlobals()
   })
 
   it('uses the saved grid for test runs, showing run metadata and every outcome', async () => {
     localStorage.setItem(SESSION_LAYOUT_KEY, 'grid')
-    hooks.current = { sessions: [RUN_A], loading: false, error: null, reload: () => {} }
+    hooks.current = { sessions: [RUN_A], loading: false, busy: false, error: null, reload: () => {} }
     renderAt('/t')
     const card = screen.getByRole('link', { name: 'Run A' })
     expect(card).toHaveAttribute('data-layout', 'grid')
@@ -72,8 +72,8 @@ describe('SessionListPage kinds', () => {
 
   it.each(['list', 'grid'])('omits branches from archived test runs in %s layout', async (layout) => {
     localStorage.setItem(SESSION_LAYOUT_KEY, layout)
-    hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
-    hooks.archived = { archived: [{ id: RUN_A.id, title: 'Archived run', tickets: [], repo: { path: '/runs/run-a', branch: null, baseRef: null }, createdAt: RUN_A.updatedAt, updatedAt: RUN_A.updatedAt, archivedAt: RUN_A.updatedAt, done: false }], loading: false, error: null, reload: () => {} }
+    hooks.current = { sessions: [], loading: false, busy: false, error: null, reload: () => {} }
+    hooks.archived = { archived: [{ id: RUN_A.id, title: 'Archived run', tickets: [], repo: { path: '/runs/run-a', branch: null, baseRef: null }, createdAt: RUN_A.updatedAt, updatedAt: RUN_A.updatedAt, archivedAt: RUN_A.updatedAt, done: false }], loading: false, busy: false, error: null, reload: () => {} }
     renderAt('/t')
     await userEvent.setup().click(screen.getByRole('button', { name: 'Archived · 1' }))
     const row = screen.getByRole('listitem', { name: 'Archived session Archived run' })
@@ -83,7 +83,7 @@ describe('SessionListPage kinds', () => {
   })
 
   it('asks for the code reviews on / and the test runs on /t', () => {
-    hooks.current = { sessions: sessionListFixture, loading: false, error: null, reload: () => {} }
+    hooks.current = { sessions: sessionListFixture, loading: false, busy: false, error: null, reload: () => {} }
     const { unmount } = renderAt('/d')
     expect(new Set(hooks.kinds)).toEqual(new Set(['code-review']))
     unmount()
@@ -93,7 +93,7 @@ describe('SessionListPage kinds', () => {
   })
 
   it('shows the Development | Test runs toggle with the current kind pressed, linking / and /t', () => {
-    hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
+    hooks.current = { sessions: [], loading: false, busy: false, error: null, reload: () => {} }
     renderAt('/t')
     const toggle = screen.getByRole('group', { name: 'Session type' })
     expect(within(toggle).getByRole('link', { name: 'Test runs' })).toHaveAttribute('aria-current', 'true')
@@ -103,7 +103,7 @@ describe('SessionListPage kinds', () => {
   })
 
   it('titles the page "Test runs" and shows the empty state, not an error, when there is none', () => {
-    hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
+    hooks.current = { sessions: [], loading: false, busy: false, error: null, reload: () => {} }
     renderAt('/t')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Test runs')
     expect(screen.getByText('No test runs')).toBeInTheDocument()
@@ -111,7 +111,7 @@ describe('SessionListPage kinds', () => {
   })
 
   it('lists test run rows newest first on the status filters, and opens one', async () => {
-    hooks.current = { sessions: [RUN_B, RUN_A], loading: false, error: null, reload: () => {} }
+    hooks.current = { sessions: [RUN_B, RUN_A], loading: false, busy: false, error: null, reload: () => {} }
     renderAt('/t')
     const rows = screen.getAllByRole('link').filter((link) => link.hasAttribute('data-href'))
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual(['Run A', 'Run B'])
@@ -124,7 +124,7 @@ describe('SessionListPage kinds', () => {
   })
 
   it('switches between the lists with the T key', async () => {
-    hooks.current = { sessions: [], loading: false, error: null, reload: () => {} }
+    hooks.current = { sessions: [], loading: false, busy: false, error: null, reload: () => {} }
     renderAt('/d')
     const user = userEvent.setup()
     await user.keyboard('t')

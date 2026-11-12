@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import type { WorktreeDetail } from '@scout/shared'
 import { CopyButton } from '@/components/common/CopyButton'
 import { Eyebrow } from '@/components/common/Eyebrow'
+import { RefreshButton } from '@/components/common/RefreshButton'
 import { ShortcutHelp } from '@/components/common/ShortcutHelp'
 import { BranchPair, BranchRef } from '@/components/common/BranchRef'
 import { TicketStrip } from '@/components/session/TicketStrip'
@@ -50,7 +51,7 @@ function Heading({ worktree, onDelete }: { worktree: WorktreeDetail; onDelete: (
 /** `/w/:id`: one worktree, how to start sessions in it, and its live sessions. */
 export function WorktreeDetailPage() {
   const { id } = useParams()
-  const { worktree, loading, error, reload } = useWorktree(id)
+  const { worktree, busy, error, reload } = useWorktree(id)
   const { layout, setLayout } = useSessionListLayout()
   const navigate = useNavigate()
   const [helpOpen, setHelpOpen] = useState(false)
@@ -92,7 +93,7 @@ export function WorktreeDetailPage() {
 
           {error && !worktree ? (
             <ErrorState message={`Couldn't load the worktree: ${error.message}`} onRetry={reload} />
-          ) : loading || !worktree ? (
+          ) : !worktree ? (
             <LoadingState label="Loading worktree…" />
           ) : (
             <>
@@ -106,7 +107,10 @@ export function WorktreeDetailPage() {
               <section aria-label="Sessions" className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   <Eyebrow as="h2">Sessions</Eyebrow>
-                  <div className="ml-auto"><SessionLayoutToggle layout={layout} onLayout={setLayout} /></div>
+                  <div className="ml-auto flex items-center gap-3">
+                    <RefreshButton busy={busy} label="Refresh worktree" onClick={reload} />
+                    <SessionLayoutToggle layout={layout} onLayout={setLayout} />
+                  </div>
                 </div>
                 <ul aria-label="Linked sessions" className={cn('m-0 list-none p-0', layout === 'grid' ? SESSION_CARD_GRID : 'flex flex-col gap-3.5')}>
                   {sessions.map((item) => <LiveSessionCard key={item.id} session={item} layout={layout} showKind onArchive={archive} />)}

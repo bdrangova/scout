@@ -7,8 +7,8 @@ import { useSessionList } from './useSessionList'
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }))
 
 const listState = vi.hoisted(() => ({
-  current: { sessions: null, loading: true, error: null, reload: () => {} } as SessionListState,
-  archived: { archived: [], loading: false, error: null, reload: () => {} } as ArchivedListState,
+  current: { sessions: null, loading: true, busy: false, error: null, reload: () => {} } as SessionListState,
+  archived: { archived: [], loading: false, busy: false, error: null, reload: () => {} } as ArchivedListState,
 }))
 
 vi.mock('@/lib/hooks', async (importOriginal) => ({
@@ -28,7 +28,7 @@ describe('useSessionList', () => {
   })
 
   it('sorts newest first with broken rows last, counts per filter and narrows `visible`', () => {
-    listState.current = { sessions: [...sessionListFixture].reverse(), loading: false, error: null, reload: () => {} }
+    listState.current = { sessions: [...sessionListFixture].reverse(), loading: false, busy: false, error: null, reload: () => {} }
     const { result } = renderHook(() => useSessionList())
     expect(result.current.items.map((item) => item.id)[0]).toBe(sessionListFixture[0]?.id)
     expect(result.current.items.at(-1)).toHaveProperty('error')
@@ -49,8 +49,8 @@ describe('useSessionList', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, { id: 'x' })))
     const reload = vi.fn()
     const reloadArchived = vi.fn()
-    listState.current = { sessions: sessionListFixture, loading: false, error: null, reload }
-    listState.archived = { archived: [], loading: false, error: null, reload: reloadArchived }
+    listState.current = { sessions: sessionListFixture, loading: false, busy: false, error: null, reload }
+    listState.archived = { archived: [], loading: false, busy: false, error: null, reload: reloadArchived }
     const { result } = renderHook(() => useSessionList())
     const first = sessionListFixture[0]
     if (!first || !('tickets' in first)) throw new Error('fixture')
@@ -65,7 +65,7 @@ describe('useSessionList', () => {
   it('keeps the row and reloads nothing when archiving fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(409, { error: 'run-active' })))
     const reload = vi.fn()
-    listState.current = { sessions: sessionListFixture, loading: false, error: null, reload }
+    listState.current = { sessions: sessionListFixture, loading: false, busy: false, error: null, reload }
     const { result } = renderHook(() => useSessionList())
     const first = sessionListFixture[0]
     if (!first || !('tickets' in first)) throw new Error('fixture')

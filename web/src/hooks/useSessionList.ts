@@ -22,10 +22,15 @@ export interface SessionListView {
   visible: readonly SessionListItem[]
   archived: readonly ArchivedSession[]
   counts: Record<StatusFilter, number>
+  /** Nothing to show yet for the current view (no saved copy and no answer). */
   loading: boolean
+  /** A load for the current view is in flight (the first, or a refresh while the saved copy shows). */
+  busy: boolean
   error: Error | null
   archivedError: Error | null
   reload: () => void
+  /** Reloads both the live and the archived lists. */
+  refresh: () => void
   reloadArchived: () => void
   archive: (session: LiveSummary) => Promise<void>
   /** Archives the session as Done (finished, usually merged). */
@@ -131,10 +136,13 @@ export function useSessionList(kind: SessionKind = 'code-review', forceArchived?
     archived,
     counts: countByFilter(items, archived.length),
     loading: archivedView ? archivedList.loading : live.loading,
-    error: archivedView ? null : live.error,
+    busy: archivedView ? archivedList.busy : live.busy,
+    // A failed reload keeps the saved copy on screen; the error page is only for an empty list.
+    error: archivedView || live.sessions !== null ? null : live.error,
     archivedError: archivedList.error,
     reload,
     reloadArchived,
+    refresh: reloadBoth,
     archive: (session) => archive(session),
     markDone: (session) => archive(session, true),
     unarchive,

@@ -1,11 +1,13 @@
 import { Archive, Search } from 'lucide-react'
 import { SessionLayoutToggle } from './SessionLayoutToggle'
 import type { SessionListLayout } from './session-list-layout'
+import { RefreshButton } from '@/components/common/RefreshButton'
 import { Input } from '@/components/ui/input'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import type { SessionKind } from '@/lib/paths'
 import type { StatusFilter } from '@/lib/session-status'
 import { SessionStatusSelect } from './SessionStatusSelect'
+import { cn } from '@/lib/utils'
 
 interface SessionFiltersProps {
   layout: SessionListLayout
@@ -17,6 +19,10 @@ interface SessionFiltersProps {
   onToggleArchived: () => void
   query: string
   onQuery: (value: string) => void
+  /** A load is in flight: the refresh icon spins. */
+  busy?: boolean
+  /** Shows the refresh icon before the search. */
+  onRefresh?: () => void
 }
 
 /** The list search field. */
@@ -30,7 +36,7 @@ export function SearchBox({ query, onQuery, placeholder, title, label = 'Search 
 }
 
 /** Archive is a separate view; lifecycle filtering applies only to current sessions. */
-export function SessionFilters({ kind = 'code-review', layout, onLayout, filter, counts, onFilter, onToggleArchived, query, onQuery }: SessionFiltersProps) {
+export function SessionFilters({ kind = 'code-review', layout, onLayout, filter, counts, onFilter, onToggleArchived, query, onQuery, busy = false, onRefresh }: SessionFiltersProps) {
   const archived = filter === 'archived'
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -40,7 +46,8 @@ export function SessionFilters({ kind = 'code-review', layout, onLayout, filter,
           <Archive aria-hidden />Archived
         </SegmentedItem>
       </Segmented>
-      <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 max-sm:ml-0 max-sm:grid max-sm:w-full max-sm:grid-cols-1">
+      <div className={cn('ml-auto flex min-w-0 flex-wrap items-center gap-3 max-sm:ml-0 max-sm:grid max-sm:w-full', onRefresh ? 'max-sm:grid-cols-[auto_1fr] [&>*:nth-child(n+3)]:max-sm:col-span-2' : 'max-sm:grid-cols-1')}>
+        {onRefresh && <RefreshButton busy={busy} label={kind === 'test-run' ? 'Refresh test runs' : 'Refresh sessions'} onClick={onRefresh} />}
         <SearchBox query={query} onQuery={onQuery} placeholder={kind === 'test-run' ? 'Search test runs…' : 'Search sessions…'} title={kind === 'test-run' ? 'Search by title, ticket, feature, area, or run folder' : 'Search by title, ticket, repository, or branch'} />
         {!archived && <SessionStatusSelect filter={filter} counts={counts} onFilter={onFilter} />}
         <div className="max-sm:justify-self-end"><SessionLayoutToggle layout={layout} onLayout={onLayout} /></div>

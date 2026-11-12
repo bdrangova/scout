@@ -67,7 +67,7 @@ function SessionsPage({ kind }: { kind: Exclude<SessionKind, 'pr-review'> }) {
         <div className="mx-auto flex w-full max-w-[1300px] flex-col gap-[18px]">
           <div className="flex flex-col gap-5">
             <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">{archived ? 'Archived sessions' : kind === 'test-run' ? 'Test runs' : 'Development'}</h1>
-            <SessionFilters layout={layout} onLayout={setLayout} kind={kind} filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} />
+            <SessionFilters layout={layout} onLayout={setLayout} kind={kind} filter={list.filter} counts={list.counts} onFilter={list.setFilter} onToggleArchived={list.toggleArchived} query={query} onQuery={setQuery} busy={list.busy} onRefresh={list.refresh} />
           </div>
 
           {list.error ? (

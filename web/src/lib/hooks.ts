@@ -8,22 +8,27 @@ import {
   type SessionDetail,
   type SessionListItem,
   type WorkingTree,
+  ArchivedSessionSchema,
+  SessionListItemSchema,
 } from '@scout/shared'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiRequestError, apiGet } from './api'
+import { readCache, writeCache, type Parser } from './cached-async'
 import { commitsPath, fileContentsPath, journalPath, filePatchPath, scopeTreePath, type DiffSide, type SessionKind } from './paths'
 import { useStoreEvents } from './useStoreEvents'
 
 type Settled<T> = { ok: true; value: T } | { ok: false; error: Error }
 
 /** The last settled load, tagged with the key it was loaded for. */
-type Slot<T> = { key: string; settled: Settled<T> } | null
+type Slot<T> = { key: string; version: number; settled: Settled<T> } | null
 
 export interface AsyncState<T> {
   data: T | null
   error: Error | null
   /** True until a result for the current key has arrived (a reload keeps the stale data meanwhile). */
   loading: boolean
+  /** A load for the current key is in flight: the first one or a reload. */
+  busy: boolean
   reload: () => void
 }
 
@@ -49,10 +54,10 @@ export function useAsync<T>(key: string | null, load: () => Promise<T>): AsyncSt
     let cancelled = false
     loadRef.current().then(
       (value) => {
-        if (!cancelled) setSlot({ key, settled: { ok: true, value } })
+        if (!cancelled) setSlot({ key, version, settled: { ok: true, value } })
       },
       (reason: unknown) => {
-        if (!cancelled) setSlot({ key, settled: { ok: false, error: toError(reason) } })
+        if (!cancelled) setSlot({ key, version, settled: { ok: false, error: toError(reason) } })
       },
     )
     return () => {
@@ -66,34 +71,54 @@ export function useAsync<T>(key: string | null, load: () => Promise<T>): AsyncSt
     data: settled !== null && settled.ok ? settled.value : null,
     error: settled !== null && !settled.ok ? settled.error : null,
     loading: key !== null && settled === null,
+    busy: key !== null && (slot === null || slot.key !== key || slot.version !== version),
     reload,
   }
+}
+
+/**
+ * `useAsync`, but shows the last answer for `key` at once (from an earlier visit) while the fresh load runs.
+ * With a saved copy `loading` is false and `busy` true until the fresh answer arrives; a failed load keeps the cached answer and reports the error.
+ */
+export function useCachedAsync<T>(key: string | null, load: () => Promise<T>, schema: Parser<T>): AsyncState<T> {
+  const state = useAsync(key, load)
+  useEffect(() => {
+    if (key !== null && state.data !== null) writeCache(key, state.data)
+  }, [key, state.data])
+  if (key === null || state.data !== null) return state
+  const cached = readCache(key, schema)
+  return cached === null ? state : { ...state, data: cached, loading: false }
 }
 
 export interface SessionListState {
   sessions: SessionListItem[] | null
   loading: boolean
+  busy: boolean
   error: Error | null
   reload: () => void
 }
 
-/** `GET /api/sessions?kind=`: the code reviews or the test runs; without `kind`, every session. */
+const SessionListParser = SessionListItemSchema.array()
+const ArchivedListParser = ArchivedSessionSchema.array()
+
+/** `GET /api/sessions?kind=`: the code reviews or the test runs; without `kind`, every session. Shown from the last answer at once, then reloaded. */
 export function useSessionList(kind?: SessionKind): SessionListState {
-  const state = useAsync(`sessions:${kind ?? 'all'}`, () => apiGet<SessionListItem[]>(kind === undefined ? '/sessions' : `/sessions?kind=${kind}`))
-  return { sessions: state.data, loading: state.loading, error: state.error, reload: state.reload }
+  const state = useCachedAsync(`sessions:${kind ?? 'all'}`, () => apiGet<SessionListItem[]>(kind === undefined ? '/sessions' : `/sessions?kind=${kind}`), SessionListParser)
+  return { sessions: state.data, loading: state.loading, busy: state.busy, error: state.error, reload: state.reload }
 }
 
 export interface ArchivedListState {
   archived: ArchivedSession[] | null
   loading: boolean
+  busy: boolean
   error: Error | null
   reload: () => void
 }
 
-/** `GET /api/sessions/archived`: manifests under `archive/`, newest `archivedAt` first. */
+/** `GET /api/sessions/archived`: manifests under `archive/`, newest `archivedAt` first. Shown from the last answer at once, then reloaded. */
 export function useArchivedSessions(kind?: SessionKind): ArchivedListState {
-  const state = useAsync(`sessions:archived:${kind ?? 'all'}`, () => apiGet<ArchivedSession[]>(kind === undefined ? '/sessions/archived' : `/sessions/archived?kind=${kind}`))
-  return { archived: state.data, loading: state.loading, error: state.error, reload: state.reload }
+  const state = useCachedAsync(`sessions:archived:${kind ?? 'all'}`, () => apiGet<ArchivedSession[]>(kind === undefined ? '/sessions/archived' : `/sessions/archived?kind=${kind}`), ArchivedListParser)
+  return { archived: state.data, loading: state.loading, busy: state.busy, error: state.error, reload: state.reload }
 }
 
 export interface SessionDetailState {

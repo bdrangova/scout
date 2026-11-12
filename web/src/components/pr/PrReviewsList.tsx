@@ -1,6 +1,7 @@
 import type { AssignedPr, AssignedPrsProblem, PrStatus } from '@scout/shared'
-import { Archive, ChevronRight, CircleDashed, GitPullRequest, RefreshCw } from 'lucide-react'
+import { Archive, ChevronRight, CircleDashed, GitPullRequest } from 'lucide-react'
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { RefreshButton } from '@/components/common/RefreshButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Notice } from '@/components/ui/notice'
@@ -160,9 +161,7 @@ export function PrReviewsList() {
       {data && (
         <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-muted">
           Fetched <time dateTime={data.fetchedAt} title={new Date(data.fetchedAt).toLocaleString()}>{formatRelativeTime(data.fetchedAt)}</time>
-          <Button variant="ghost" size="icon-sm" title="Refresh" aria-label="Refresh PRs" disabled={busy} aria-busy={busy} onClick={refresh}>
-            <RefreshCw aria-hidden className={busy ? 'animate-spin motion-reduce:animate-none' : undefined} />
-          </Button>
+          <RefreshButton busy={busy} label="Refresh PRs" onClick={refresh} />
         </span>
       )}
       <SearchBox query={query} onQuery={setQuery} placeholder="Search PRs…" label="Search PRs" title="Search by title, repository, number or author" />

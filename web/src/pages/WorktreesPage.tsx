@@ -2,6 +2,7 @@ import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import type { WorktreeSummary } from '@scout/shared'
+import { RefreshButton } from '@/components/common/RefreshButton'
 import { ShortcutHelp } from '@/components/common/ShortcutHelp'
 import { ErrorState, ListNote, LoadingState } from '@/components/sessions/SessionListStates'
 import { SessionLayoutToggle } from '@/components/sessions/SessionLayoutToggle'
@@ -45,12 +46,13 @@ export function WorktreesPage() {
           <div className="flex flex-col gap-5">
             <h1 className="m-0 text-[26px] leading-[1.1] font-bold tracking-[-.01em]">Worktrees</h1>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 max-sm:ml-0 max-sm:grid max-sm:w-full max-sm:grid-cols-1">
+              <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 max-sm:ml-0 max-sm:grid max-sm:w-full max-sm:grid-cols-[auto_1fr]">
+                <RefreshButton busy={list.busy} label="Refresh worktrees" onClick={list.reload} />
                 <label className="relative min-w-0 max-sm:w-full">
                   <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-ink-muted" />
                   <Input type="search" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search worktrees" placeholder="Search worktrees…" title="Search by name, ticket, branch, repository, or path" className="h-9 w-64 pl-9 max-sm:w-full" />
                 </label>
-                <div className="max-sm:justify-self-end"><SessionLayoutToggle layout={layout} onLayout={setLayout} /></div>
+                <div className="max-sm:col-span-2 max-sm:justify-self-end"><SessionLayoutToggle layout={layout} onLayout={setLayout} /></div>
               </div>
             </div>
           </div>
