@@ -63,6 +63,20 @@ function headerAdditions(page: Page) {
 
 test.describe.configure({ mode: 'serial' })
 
+/**
+ * Leaves "Request changes" chosen. A rejected file makes the Submit page suggest it by itself, and clicking the chosen
+ * card would undo it, so the click only happens when the suggestion did not arrive.
+ */
+async function chooseRequestChanges(page: Page): Promise<void> {
+  const radio = page.getByRole('radio', { name: 'Request changes' })
+  await expect(radio).toBeVisible()
+  const suggested = await expect(radio)
+    .toHaveAttribute('aria-checked', 'true', { timeout: 2000 })
+    .then(() => true, () => false)
+  if (!suggested) await radio.click()
+  await expect(radio).toHaveAttribute('aria-checked', 'true')
+}
+
 test.describe('review loop smoke', () => {
   let page: Page
   let originalAppTs: string | null = null
@@ -166,8 +180,7 @@ test.describe('review loop smoke', () => {
     await page.goto(`/s/${SESSION_ID}/submit`)
     await expect(page.getByRole('heading', { level: 1, name: 'Submit' })).toBeVisible()
 
-    await page.getByRole('radio', { name: 'Request changes' }).click()
-    await expect(page.getByRole('radio', { name: 'Request changes' })).toHaveAttribute('aria-checked', 'true')
+    await chooseRequestChanges(page)
 
     // No confirmation step: the split button's main action sends at once.
     await page.getByRole('button', { name: 'Submit to current session' }).click()
@@ -193,7 +206,7 @@ test.describe('review loop smoke', () => {
     const OVERALL = 'Smoke test: overall note typed right before Submit.'
     await page.goto(`/s/${SESSION_ID}/submit`)
     await expect(page.getByRole('heading', { level: 1, name: 'Submit' })).toBeVisible()
-    await page.getByRole('radio', { name: 'Request changes' }).click()
+    await chooseRequestChanges(page)
     await page.getByRole('textbox', { name: 'Overall feedback' }).fill(OVERALL)
     // The click blurs the field and sends well inside the 250 ms autosave delay.
     await page.getByRole('button', { name: 'Submit to current session' }).click()
