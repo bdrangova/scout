@@ -69,6 +69,7 @@ export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
     section6: section(5),
     altHelp: onToggleHelp,
   };
+  const onBlueprint = !testRun && new RegExp(`^${base}/blueprint(/|$)`).test(location.pathname);
   // A PR review's Evidence page: `S` is swipe, `G` flips the grid, both on the page itself.
   const onPrEvidence = config.kind === "pr-review" && new RegExp(`^${base}/evidence(/|$)`).test(location.pathname);
 
@@ -85,8 +86,8 @@ export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
     handlers.toggleMode = () => switchPageMode(() => "scroll");
     handlers.toggleGrid = () => switchPageMode((current) => (current === "grid" ? "scroll" : "grid"));
   } else if (config.hotkeys.modes) {
-    // A test run has no scroll mode: `S` is swipe.
-    handlers.toggleMode = () => switchMode(testRun ? () => "swipe" : toggledCardMode);
+    // A test run has no scroll mode: `S` is swipe. On the Blueprint page `S` is its own select mode.
+    if (!onBlueprint) handlers.toggleMode = () => switchMode(testRun ? () => "swipe" : toggledCardMode);
     // Back from the grid returns to the remembered card mode (a test run has no scroll mode).
     handlers.toggleGrid = () => switchMode(testRun ? (current) => (toggledGridMode(current) === "grid" ? "grid" : "swipe") : toggledGridMode);
   }

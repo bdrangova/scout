@@ -5,6 +5,8 @@ import type { BlueprintPoint } from '@scout/shared'
 const DRAG_THRESHOLD = 4
 
 export interface BoxDragOptions {
+  /** False in select mode: a press never starts a drag. */
+  enabled: boolean
   /** The canvas zoom right now: screen pixels are divided by it to get canvas units. */
   getScale: () => number
   positionOf: (key: string) => BlueprintPoint
@@ -33,7 +35,8 @@ export function useBoxDrag(options: BoxDragOptions): BoxDrag {
   useEffect(() => () => stop.current?.(), [])
 
   const onPointerDown = useCallback((key: string, event: PointerEvent<HTMLElement>) => {
-    if (event.button !== 0 || !event.isPrimary) return
+    // Ctrl or Cmd + click is the quick preview (macOS even reports it as a right-click press), never a drag.
+    if (!optionsRef.current.enabled || event.button !== 0 || !event.isPrimary || event.ctrlKey || event.metaKey) return
     const target = event.currentTarget
     const { pointerId, clientX: startX, clientY: startY } = event
     const origin = optionsRef.current.positionOf(key)

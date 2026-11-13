@@ -21,6 +21,8 @@ export interface BlueprintCanvasProps {
   ready: boolean
   onInit: () => void
   onTransform: (view: View) => void
+  /** Pinned over the canvas, outside the pan and zoom layer (the selection bar). */
+  overlay?: ReactNode
   children: ReactNode
 }
 
@@ -28,7 +30,7 @@ export interface BlueprintCanvasProps {
  * The pan and zoom surface: drag the background to pan, scroll or two-finger scroll to pan, pinch or Ctrl/Cmd + wheel to zoom,
  * with no bounds. A dotted grid sits behind the content and moves with it. Boxes carry the `bp-box` class, which the panning skips.
  */
-export function BlueprintCanvas({ label, transformRef, viewportRef, contentRef, extent, ready, onInit, onTransform, children }: BlueprintCanvasProps) {
+export function BlueprintCanvas({ label, transformRef, viewportRef, contentRef, extent, ready, onInit, onTransform, overlay, children }: BlueprintCanvasProps) {
   const gridRef = useRef<HTMLDivElement>(null)
   const handleTransform = useCallback(
     (_ref: unknown, state: { scale: number; positionX: number; positionY: number }) => {
@@ -70,6 +72,7 @@ export function BlueprintCanvas({ label, transformRef, viewportRef, contentRef, 
           </div>
         </TransformComponent>
       </TransformWrapper>
+      {overlay}
     </div>
   )
 }

@@ -14,6 +14,8 @@ export interface BlueprintRailSectionProps {
   root: BlueprintPackage
   /** The folder of the package whose diagram is open (the holder of an around-diagram's file). */
   currentDir: string
+  /** The outline is of an agent grouping (groups, not folders): the root is titled by its name and the filter matches names. */
+  groups?: boolean
   onSelect: (diagramId: string) => void
 }
 
@@ -35,6 +37,10 @@ function packagesBelow(pkg: BlueprintPackage): BlueprintPackage[] {
   return pkg.packages.flatMap((child) => [child, ...packagesBelow(child)])
 }
 
+function rootLabel(root: BlueprintPackage): string {
+  return root.name === '' ? 'Whole change' : root.name
+}
+
 function PackageRows({ pkg, depth, closed, onToggle, visible, currentDir, onSelect }: RowProps) {
   const current = pkg.dir === currentDir
   const children = visible === null ? pkg.packages : pkg.packages.filter((child) => visible.has(child.dir))
@@ -42,7 +48,7 @@ function PackageRows({ pkg, depth, closed, onToggle, visible, currentDir, onSele
   // A filter decides what is open, so nothing folds while one is on.
   const foldable = depth > 0 && pkg.packages.length > 0 && visible === null
   const open = !foldable || !closed.has(pkg.dir)
-  const label = depth === 0 ? 'Whole change' : pkg.name
+  const label = depth === 0 ? rootLabel(pkg) : pkg.name
   return (
     <li>
       <div
@@ -90,7 +96,8 @@ function PackageRows({ pkg, depth, closed, onToggle, visible, currentDir, onSele
  * The Blueprint page's block in the session rail: the packages as a foldable outline with their file counts,
  * under the same header toggle, filter box and "only commented" switch as the Files tree.
  */
-export function BlueprintRailSection({ root, currentDir, onSelect }: BlueprintRailSectionProps) {
+export function BlueprintRailSection({ root, currentDir, groups = false, onSelect }: BlueprintRailSectionProps) {
+  const noun = groups ? 'Groups' : 'Packages'
   const all = useMemo(() => packagesBelow(root), [root])
   const foldable = useMemo(() => all.filter((pkg) => pkg.packages.length > 0).map((pkg) => pkg.dir), [all])
   const [closed, setClosed] = useState<ReadonlySet<string>>(() => new Set())
@@ -108,8 +115,8 @@ export function BlueprintRailSection({ root, currentDir, onSelect }: BlueprintRa
   const needle = query.trim().toLowerCase()
   const filtering = needle !== '' || commented.active
   const matches = useMemo(
-    () => (filtering ? commented.items.filter((pkg) => needle === '' || pkg.dir.toLowerCase().includes(needle)) : []),
-    [filtering, commented.items, needle],
+    () => (filtering ? commented.items.filter((pkg) => needle === '' || (groups ? pkg.name : pkg.dir).toLowerCase().includes(needle)) : []),
+    [filtering, commented.items, needle, groups],
   )
   const visible = useMemo(() => {
     if (!filtering) return null
@@ -130,9 +137,9 @@ export function BlueprintRailSection({ root, currentDir, onSelect }: BlueprintRa
 
   return (
     <RailSection>
-      <nav aria-label="Packages" className="flex min-h-0 flex-1 flex-col px-2.5 pt-3.5 pb-2">
+      <nav aria-label={noun} className="flex min-h-0 flex-1 flex-col px-2.5 pt-3.5 pb-2">
         <div className="flex shrink-0 items-center gap-2 pb-2.5 pl-1">
-          <strong className="text-[15px] font-bold">Packages</strong>
+          <strong className="text-[15px] font-bold">{noun}</strong>
           <Badge>{filtering ? `${matches.length} of ${all.length}` : all.length}</Badge>
           {foldable.length > 0 && (
             <Button
@@ -140,7 +147,7 @@ export function BlueprintRailSection({ root, currentDir, onSelect }: BlueprintRa
               size="icon-sm"
               className="ml-auto size-7 rounded-md"
               aria-label={foldLabel}
-              title={`${foldLabel} packages`}
+              title={`${foldLabel} ${noun.toLowerCase()}`}
               disabled={filtering}
               onClick={() => setClosed(allExpanded ? new Set(foldable) : new Set())}
             >
@@ -150,7 +157,7 @@ export function BlueprintRailSection({ root, currentDir, onSelect }: BlueprintRa
         </div>
         {all.length > 0 && (
           <FileTreeFilter
-            label="Filter packages"
+            label={`Filter ${noun.toLowerCase()}`}
             query={query}
             onChange={setQuery}
             commented={<CommentedOnlyToggle count={commented.count} active={commented.active} onToggle={commented.toggle} />}
@@ -160,7 +167,7 @@ export function BlueprintRailSection({ root, currentDir, onSelect }: BlueprintRa
           <ul className="m-0 list-none p-0">
             <PackageRows pkg={root} depth={0} closed={closed} onToggle={toggle} visible={visible} currentDir={currentDir} onSelect={onSelect} />
           </ul>
-          {filtering && matches.length === 0 && <p className="m-0 px-2 py-3 text-xs font-medium text-ink-muted">No packages match.</p>}
+          {filtering && matches.length === 0 && <p className="m-0 px-2 py-3 text-xs font-medium text-ink-muted">No {noun.toLowerCase()} match.</p>}
         </div>
       </nav>
     </RailSection>

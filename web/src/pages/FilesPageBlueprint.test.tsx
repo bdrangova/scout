@@ -75,11 +75,11 @@ vi.mock('@/lib/blueprint', async (importOriginal) => ({
 const files = sessionDetailFixture.tree.files
 const [P0, P1, P2] = [files[0]?.path ?? '', files[1]?.path ?? '', files[2]?.path ?? '']
 
-function diagramOf(paths: string[]): BlueprintDiagram {
+function diagramOf(paths: string[], dir = 'src/a'): BlueprintDiagram {
   return {
-    id: 'pkg:src/a',
-    ref: { type: 'package', dir: 'src/a' },
-    title: 'src/a',
+    id: `pkg:${dir}`,
+    ref: { type: 'package', dir },
+    title: dir,
     boxes: paths.map((path) => ({
       key: `file:${path}`,
       ref: { type: 'file', path },
@@ -100,6 +100,9 @@ function stubBlueprint(diagram: BlueprintDiagram | null, state: { loading?: bool
   vi.mocked(blueprintLib.useBlueprint).mockReturnValue({
     blueprint: loading ? null : ({} as never),
     root: null,
+    groupTrees: {},
+    groupsLoading: false,
+    groupsError: null,
     loading,
     error: null,
     reload: () => {},
@@ -168,6 +171,77 @@ describe('FilesPage with ?bp=', () => {
     renderFiles(`/s/${SESSION_ID}/files/${P0}?bp=pkg%3Asrc%2Fa`)
     await waitFor(() => expect(currentUrl()).toContain(`/files/${P2}`))
     expect(currentUrl()).toContain('bp=')
+  })
+
+  it('scopes to an agent group, loads the groupings, and links back to the same view', async () => {
+    stubBlueprint(diagramOf([P0, P1], '@feature/x'))
+    renderFiles(`/s/${SESSION_ID}/files?mode=grid&bp=pkg%3A%40feature%2Fx`)
+    expect(await screen.findByRole('list', { name: 'All files' })).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Blueprint scope' })).getByText('@feature/x')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to Blueprint' })).toHaveAttribute('href', `/s/${SESSION_ID}/blueprint?at=pkg%3A%40feature%2Fx&view=feature`)
+    expect(vi.mocked(blueprintLib.useBlueprint)).toHaveBeenCalledWith(SESSION_ID, true, true)
+    // The Blueprint tab on the stop leads back to the same view.
+    expect(within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('link', { name: /^Blueprint/ })).toHaveAttribute('href', `/s/${SESSION_ID}/blueprint?at=pkg%3A%40feature%2Fx&view=feature`)
+  })
+
+  describe('with ?sel=', () => {
+    const save = (paths: string[]) => window.sessionStorage.setItem(`scout:bp-sel:${SESSION_ID}:k1`, JSON.stringify(paths))
+    beforeEach(() => window.sessionStorage.clear())
+
+    it('lists exactly the picked files in their saved order, minus files no longer in the change, and says so', async () => {
+      stubBlueprint(diagramOf([P0, P1, P2]))
+      save([P2, 'gone/File.ts', P0])
+      renderFiles(`/s/${SESSION_ID}/files?mode=grid&bp=pkg%3Asrc%2Fa&sel=k1`)
+      const tiles = within(await screen.findByRole('list', { name: 'All files' })).getAllByRole('listitem')
+      expect(tiles).toHaveLength(2)
+      expect(tiles[0]).toHaveTextContent(P2.split('/').pop() ?? '')
+      expect(tiles[1]).toHaveTextContent(P0.split('/').pop() ?? '')
+      const scope = within(screen.getByRole('region', { name: 'Blueprint scope' }))
+      expect(scope.getByText('src/a')).toBeInTheDocument()
+      expect(scope.getByText('2 selected files')).toBeInTheDocument()
+      expect(scope.getByRole('link', { name: 'Back to Blueprint' })).toBeInTheDocument()
+      expect(currentUrl()).toContain('sel=k1')
+    })
+
+    it('keeps sel while stepping to another file, and "Show all files" drops bp and sel', async () => {
+      stubBlueprint(diagramOf([P0, P1, P2]))
+      save([P1, P2])
+      renderFiles(`/s/${SESSION_ID}/files/${P1}?bp=pkg%3Asrc%2Fa&sel=k1`)
+      await userEvent.click(await screen.findByRole('button', { name: 'Next file' }))
+      await waitFor(() => expect(currentUrl()).toContain(`/files/${P2}`))
+      expect(currentUrl()).toContain('sel=k1')
+      await userEvent.click(screen.getByRole('button', { name: 'Show all files' }))
+      await waitFor(() => expect(currentUrl()).not.toContain('bp='))
+      expect(currentUrl()).not.toContain('sel=')
+    })
+
+    it('the Files tab leaves the stop and drops both, the Blueprint tab leads back to the diagram', async () => {
+      stubBlueprint(diagramOf([P0, P1]))
+      save([P1])
+      renderFiles(`/s/${SESSION_ID}/files/${P1}?bp=pkg%3Asrc%2Fa&sel=k1`)
+      await screen.findByRole('region', { name: 'Blueprint scope' })
+      const tabs = within(screen.getByRole('navigation', { name: 'Sections' }))
+      expect(tabs.getByRole('link', { name: /^Files/ }).getAttribute('href')).not.toMatch(/bp=|sel=/)
+      expect(tabs.getByRole('link', { name: /^Blueprint/ })).toHaveAttribute('href', `/s/${SESSION_ID}/blueprint?at=pkg%3Asrc%2Fa`)
+    })
+
+    it('drops sel and uses the diagram when the key cannot be read', async () => {
+      stubBlueprint(diagramOf([P0, P1]))
+      renderFiles(`/s/${SESSION_ID}/files?mode=grid&bp=pkg%3Asrc%2Fa&sel=missing`)
+      await waitFor(() => expect(currentUrl()).not.toContain('sel='))
+      expect(currentUrl()).toContain('bp=')
+      const tiles = within(await screen.findByRole('list', { name: 'All files' })).getAllByRole('listitem')
+      expect(tiles).toHaveLength(2)
+      expect(within(screen.getByRole('region', { name: 'Blueprint scope' })).queryByText(/selected/)).not.toBeInTheDocument()
+    })
+
+    it('drops sel too when none of the picked files is in the change any more', async () => {
+      stubBlueprint(diagramOf([P0, P1]))
+      save(['gone/One.ts'])
+      renderFiles(`/s/${SESSION_ID}/files?mode=grid&bp=pkg%3Asrc%2Fa&sel=k1`)
+      await waitFor(() => expect(currentUrl()).not.toContain('sel='))
+      expect(within(await screen.findByRole('list', { name: 'All files' })).getAllByRole('listitem')).toHaveLength(2)
+    })
   })
 
   it('does not ask for the blueprint without ?bp=', async () => {

@@ -1,4 +1,4 @@
-import { buildBlueprintTree } from '@scout/shared'
+import { buildBlueprintGroupTree, buildBlueprintTree } from '@scout/shared'
 import { describe, expect, it } from 'vitest'
 import { chainOfDiagram, packageChain, parentDiagramId } from './blueprint-nav'
 
@@ -26,5 +26,17 @@ describe('blueprint navigation', () => {
     expect(parentDiagramId(root, { type: 'package', dir: 'app/ui' })).toBe(`pkg:${packageChain(root, 'app/ui').at(-2)?.dir}`)
     expect(parentDiagramId(root, { type: 'around', path: 'app/ui/Widget1.tsx' })).toBe('pkg:app/ui')
     expect(parentDiagramId(root, { type: 'package', dir: '' })).toBeNull()
+  })
+
+  it('follows a grouping: the group holding the file, and up to its parent group or the view root', () => {
+    const grouping = {
+      createdAt: '2026-11-13T10:00:00.000Z',
+      groups: [{ id: 'ui', name: 'UI', purpose: 'Screens.', files: [], groups: [{ id: 'widgets', name: 'Widgets', purpose: 'Boxes.', files: ['app/ui/Widget1.tsx'] }] }],
+    }
+    const tree = buildBlueprintGroupTree('feature', grouping, paths).root
+    expect(chainOfDiagram(tree, { type: 'around', path: 'app/ui/Widget1.tsx' }).map((pkg) => pkg.dir)).toEqual(['@feature', '@feature/ui', '@feature/ui/widgets'])
+    expect(parentDiagramId(tree, { type: 'around', path: 'app/ui/Widget1.tsx' })).toBe('pkg:@feature/ui/widgets')
+    expect(parentDiagramId(tree, { type: 'package', dir: '@feature/ui/widgets' })).toBe('pkg:@feature/ui')
+    expect(parentDiagramId(tree, { type: 'package', dir: '@feature' })).toBeNull()
   })
 })

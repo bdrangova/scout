@@ -11,6 +11,7 @@ import { registerService } from './commands/service.ts'
 import { registerFeedback } from './commands/feedback.ts'
 import { registerInit } from './commands/init.ts'
 import { registerInstall } from './commands/install.ts'
+import { registerGroups } from './commands/groups.ts'
 import { registerJournal } from './commands/journal.ts'
 import { registerOpen } from './commands/open.ts'
 import { registerPath } from './commands/path.ts'
@@ -48,6 +49,7 @@ registerAppStatus(program)
 registerCheckpoint(program)
 registerFeedback(program)
 registerResolve(program)
+registerGroups(program)
 registerJournal(program)
 registerPending(program)
 registerStatus(program)

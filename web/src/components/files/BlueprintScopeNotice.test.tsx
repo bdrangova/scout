@@ -18,4 +18,15 @@ describe('BlueprintScopeNotice', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Show all files' }))
     expect(onShowAll).toHaveBeenCalledOnce()
   })
+
+  it('reads "N selected files" after the diagram title when the files are a pick', () => {
+    render(
+      <MemoryRouter>
+        <BlueprintScopeNotice sessionId="s1" diagramId="pkg:src/a" title="src/a" count={3} selected position={2} onShowAll={() => {}} />
+      </MemoryRouter>,
+    )
+    expect(screen.getByText('src/a')).toBeInTheDocument()
+    expect(screen.getByText('3 selected files')).toBeInTheDocument()
+    expect(screen.getByText('2 / 3')).toBeInTheDocument()
+  })
 })

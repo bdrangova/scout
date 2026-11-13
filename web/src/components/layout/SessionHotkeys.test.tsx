@@ -77,6 +77,12 @@ describe("SessionHotkeys", () => {
     expect(where()).toBe(`/s/${SESSION_ID}/files`);
   });
 
+  it("leaves S to the Blueprint page: it no longer jumps to the Files page there", async () => {
+    await renderHotkeys("code-review", `/s/${SESSION_ID}/blueprint`);
+    fireEvent.keyDown(window, { key: "s" });
+    expect(where()).toBe(`/s/${SESSION_ID}/blueprint`);
+  });
+
   it("follows the visible test-run tabs, under /t", async () => {
     await renderHotkeys("test-run", `/t/${SESSION_ID}/overview`);
     fireEvent.keyDown(window, { key: "2" });

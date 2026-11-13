@@ -1,5 +1,6 @@
 import type { BlueprintDiagram, BlueprintPackage } from '@scout/shared'
-import { ChevronRight, Maximize, Minus, Plus, Sparkles } from 'lucide-react'
+import { ChevronRight, Maximize, Minus, Plus, Sparkles, SquareCheck } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Pill } from '@/components/ui/segmented'
 import { packageDiagramId } from './blueprint-nav'
@@ -12,12 +13,17 @@ export interface BlueprintToolbarProps {
   files: number
   reviewed: number
   details: boolean
+  /** Select mode is on. */
+  selecting: boolean
+  /** The folders / feature / layer / priority switch, when the session can be grouped. */
+  viewSwitch?: ReactNode
   onNavigate: (diagramId: string) => void
   onZoomIn: () => void
   onZoomOut: () => void
   onFit: () => void
   onTidy: () => void
   onToggleDetails: () => void
+  onToggleSelect: () => void
 }
 
 function Legend() {
@@ -50,12 +56,18 @@ function Legend() {
   )
 }
 
+/** The root is titled by its own name in a grouping ("By feature"); the folders' root has none. */
+function rootTitle(root: BlueprintPackage): string {
+  return root.name === '' ? 'Whole change' : root.name
+}
+
 /** The Blueprint page's bar: where you are, how much is here, the legend, and the canvas controls. */
-export function BlueprintToolbar({ diagram, chain, boxes, files, reviewed, details, onNavigate, onZoomIn, onZoomOut, onFit, onTidy, onToggleDetails }: BlueprintToolbarProps) {
+export function BlueprintToolbar({ diagram, chain, boxes, files, reviewed, details, selecting, viewSwitch, onNavigate, onZoomIn, onZoomOut, onFit, onTidy, onToggleDetails, onToggleSelect }: BlueprintToolbarProps) {
   const around = diagram.ref.type === 'around' ? diagram.title : null
   const lastIndex = chain.length - 1
   return (
     <div role="toolbar" aria-label="Blueprint" className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b-fine border-line px-4 py-2 md:px-6">
+      {viewSwitch}
       <nav aria-label="Diagram path">
         <ol className="m-0 flex min-w-0 list-none flex-wrap items-center gap-0.5 p-0 text-[13px]">
           {chain.map((pkg, index) => {
@@ -65,11 +77,11 @@ export function BlueprintToolbar({ diagram, chain, boxes, files, reviewed, detai
                 {index > 0 && <ChevronRight aria-hidden className="size-3.5 text-ink-muted" />}
                 {current ? (
                   <span aria-current="page" className="px-1.5 font-bold">
-                    {index === 0 ? 'Whole change' : pkg.name}
+                    {index === 0 ? rootTitle(pkg) : pkg.name}
                   </span>
                 ) : (
                   <Button variant="ghost" size="sm" className="h-7 px-1.5" onClick={() => onNavigate(packageDiagramId(pkg))}>
-                    {index === 0 ? 'Whole change' : pkg.name}
+                    {index === 0 ? rootTitle(pkg) : pkg.name}
                   </Button>
                 )}
               </li>
@@ -104,6 +116,10 @@ export function BlueprintToolbar({ diagram, chain, boxes, files, reviewed, detai
             <Sparkles aria-hidden />
             Tidy up
           </Button>
+          <Pill pressed={selecting} onClick={onToggleSelect} title="Pick files to look at or approve together (S)">
+            <SquareCheck aria-hidden />
+            Select
+          </Pill>
           <Pill pressed={details} onClick={onToggleDetails} title="Show or hide summaries and changed members">
             Details
           </Pill>

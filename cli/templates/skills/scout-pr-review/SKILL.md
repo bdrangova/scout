@@ -1,7 +1,7 @@
 ---
 name: scout-pr-review
 description: Publish a pull request review to Scout with a plain-language summary, change tags, the PR description, its Jira tickets, and findings with reproduction evidence generated in the current Claude or Codex session. Use when the user runs /scout-pr-review, requests a PR review dashboard, or names a review skill chain to publish.
-argument-hint: "<PR url> [review skills…] [--record video|screenshots|none] [--auto]"
+argument-hint: "<PR url> [review skills…] [--record video|screenshots|none] [--groups feature,layer,priority] [--auto]"
 ---
 # Publish a PR review to Scout
 
@@ -52,5 +52,7 @@ scout open <session-id>
 ```
 
 Validation checks revisions, the complete file list, real diff anchors and evidence files; import copies evidence into immutable report storage and publishes the report atomically. If code changed during verification, regenerate the template for the new head and reverify affected findings. A failed import preserves the previous published report. Never edit `review/review.json` to approve proposals or overwrite human wording; human decisions belong to Scout.
+
+With `--groups <type[,type]>` (`feature`, `layer`, `priority`), after the import run `/scout-blueprint-groups <session-id> <type>` (Skill tool) once per type named, so the Blueprint tab can show the change grouped that way (Claude Code only; skip it and say so elsewhere). It costs tokens: never do it without the option.
 
 Return the session URL, the change tags, finding counts and any verification limitations. Skills remain composable in this session on the next request.

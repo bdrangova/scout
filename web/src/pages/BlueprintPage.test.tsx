@@ -1,4 +1,4 @@
-import { type Blueprint, type BlueprintFile, type BlueprintLayout } from '@scout/shared'
+import { type Blueprint, type BlueprintFile, type BlueprintGroup, type BlueprintGroupingType, type BlueprintLayout } from '@scout/shared'
 import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { forwardRef, useEffect, useImperativeHandle, type ReactNode } from 'react'
@@ -13,16 +13,23 @@ import { BlueprintPage } from './BlueprintPage'
 const mocks = vi.hoisted(() => ({
   save: vi.fn(() => Promise.resolve()),
   requestLineJump: vi.fn(),
-  state: { blueprint: null as unknown, layout: null as unknown },
+  state: { blueprint: null as unknown, layout: null as unknown, groupings: {} as unknown },
 }))
 
 vi.mock('@/lib/blueprint', async (importOriginal) => {
-  const { buildBlueprintTree: build } = await import('@scout/shared')
+  const { buildBlueprintTree: build, buildBlueprintGroupTree: buildGroups, BLUEPRINT_GROUPING_TYPES } = await import('@scout/shared')
   return {
     ...(await importOriginal<typeof import('@/lib/blueprint')>()),
     useBlueprint: () => {
       const blueprint = mocks.state.blueprint as Blueprint | null
-      return { blueprint, root: blueprint ? build(blueprint.files.map((file) => file.path)) : null, loading: false, error: null, reload: () => {} }
+      const paths = blueprint ? blueprint.files.map((file) => file.path) : []
+      const groupings = mocks.state.groupings as Partial<Record<BlueprintGroupingType, { createdAt: string; groups: BlueprintGroup[] }>>
+      const groupTrees: Partial<Record<BlueprintGroupingType, ReturnType<typeof buildGroups>>> = {}
+      for (const type of BLUEPRINT_GROUPING_TYPES) {
+        const grouping = groupings[type]
+        if (blueprint && grouping) groupTrees[type] = buildGroups(type, grouping, paths)
+      }
+      return { blueprint, root: blueprint ? build(paths) : null, groupTrees, groupsLoading: false, groupsError: null, loading: false, error: null, reload: () => {} }
     },
     useBlueprintLayout: () => ({ layout: mocks.state.layout as BlueprintLayout | null, loading: false, save: mocks.save }),
   }
@@ -74,7 +81,15 @@ function open(search = '', journal = makeJournal([])) {
   })
 }
 
+function setGrouping(type: BlueprintGroupingType, groups: BlueprintGroup[]) {
+  mocks.state.groupings = { [type]: { createdAt: '2026-11-13T10:00:00.000Z', groups } }
+}
+
+const TOP_BAR: BlueprintGroup = { id: 'top-bar', name: 'Top bar', purpose: 'The bar that counts the trial down.', files: PATHS.filter((path) => path.startsWith('a/')) }
+const REST: BlueprintGroup = { id: 'rest', name: 'Everything else', purpose: 'Supporting code.', files: PATHS.filter((path) => path.startsWith('b/')) }
+
 beforeEach(() => {
+  mocks.state.groupings = {}
   mocks.save.mockClear()
   mocks.requestLineJump.mockClear()
   setBlueprint()
@@ -222,6 +237,154 @@ describe('BlueprintPage', () => {
     mocks.state.blueprint = { fingerprint: fp('blueprint'), files: [] } satisfies Blueprint
     open()
     expect(screen.getByText('No files changed')).toBeInTheDocument()
+  })
+
+  describe('grouped views', () => {
+    const clipboard = vi.fn(() => Promise.resolve())
+    beforeEach(() => {
+      clipboard.mockClear()
+      vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText: clipboard } })
+    })
+
+    it('has a switch for a code review, on Folders by default, also for a PR review', () => {
+      open()
+      const switcher = screen.getByRole('group', { name: 'Group the change by' })
+      expect(within(switcher).getByRole('button', { name: 'Folders' })).toHaveAttribute('aria-pressed', 'true')
+      for (const name of ['Feature', 'Layer', 'Priority']) expect(within(switcher).getByRole('button', { name })).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    it('has the switch for a PR review too', () => {
+      renderShell(`/s/${SESSION_ID}/blueprint`, {
+        detail: { ...detail, manifest: { ...detail.manifest, kind: 'pr-review' } },
+        page: (
+          <JournalContext.Provider value={{ journal: makeJournal([]), loading: false, error: null, reload: () => {} }}>
+            <BlueprintPage />
+          </JournalContext.Provider>
+        ),
+      })
+      expect(screen.getByRole('group', { name: 'Package a' })).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Group the change by' })).toBeInTheDocument()
+    })
+
+    it('switches to a view without a grouping: how to ask for it, copied only on the button', async () => {
+      open()
+      await userEvent.click(screen.getByRole('button', { name: 'Feature' }))
+      expect(where().searchParams.get('view')).toBe('feature')
+      expect(where().searchParams.get('at')).toBeNull()
+      expect(screen.getByText('Not grouped by feature yet')).toBeInTheDocument()
+      expect(screen.getByText(`/scout-blueprint-groups ${SESSION_ID} feature`)).toBeInTheDocument()
+      expect(screen.getByText(/uses tokens/)).toBeInTheDocument()
+      expect(screen.getByText("Run it in this session's Claude Code; this page updates when it is done.")).toBeInTheDocument()
+      expect(screen.queryByRole('region', { name: /Blueprint diagram/ })).not.toBeInTheDocument()
+      expect(clipboard).not.toHaveBeenCalled()
+      await userEvent.click(screen.getByRole('button', { name: 'Copy' }))
+      expect(clipboard).toHaveBeenCalledWith(`/scout-blueprint-groups ${SESSION_ID} feature`)
+      expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument()
+    })
+
+    it('draws the groups as boxes with their purpose, titled by the view', async () => {
+      setGrouping('feature', [TOP_BAR, REST])
+      open('?view=feature')
+      const box = screen.getByRole('group', { name: 'Group Top bar' })
+      expect(within(box).getByText('«group»')).toBeInTheDocument()
+      expect(within(box).getByText('The bar that counts the trial down.')).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Group Everything else' })).toBeInTheDocument()
+      expect(within(screen.getByRole('navigation', { name: 'Diagram path' })).getByText('By feature')).toHaveAttribute('aria-current', 'page')
+      expect(screen.queryByText('Whole change')).not.toBeInTheDocument()
+      const rail = screen.getByRole('navigation', { name: 'Groups' })
+      expect(within(rail).getByRole('button', { name: /By feature/ })).toHaveAttribute('aria-current', 'page')
+      expect(screen.queryByRole('status', { name: 'Grouping is out of date' })).not.toBeInTheDocument()
+      // Details off hides the purpose.
+      await userEvent.click(screen.getByRole('button', { name: 'Details' }))
+      expect(screen.queryByText('Supporting code.')).not.toBeInTheDocument()
+    })
+
+    it('opens a group, keeps the view in the URL, and filters the outline by name', async () => {
+      setGrouping('feature', [TOP_BAR, REST])
+      open('?view=feature')
+      await userEvent.click(within(screen.getByRole('group', { name: 'Group Top bar' })).getByRole('button', { name: /Top bar/ }))
+      expect(where().searchParams.get('at')).toBe('pkg:@feature/top-bar')
+      expect(where().searchParams.get('view')).toBe('feature')
+      expect(screen.getAllByRole('group', { name: /^File a\/A\d\.ts$/ })).toHaveLength(8)
+      const path = screen.getByRole('navigation', { name: 'Diagram path' })
+      await userEvent.click(within(path).getByRole('button', { name: 'By feature' }))
+      expect(where().searchParams.get('at')).toBeNull()
+      expect(where().searchParams.get('view')).toBe('feature')
+
+      const rail = within(screen.getByRole('navigation', { name: 'Groups' }))
+      await userEvent.type(rail.getByRole('searchbox', { name: 'Filter groups' }), 'everything')
+      expect(rail.getByRole('button', { name: /Everything else/ })).toBeInTheDocument()
+      expect(rail.queryByRole('button', { name: /Top bar/ })).not.toBeInTheDocument()
+    })
+
+    it('opens a file from a group diagram on the Files page scoped to the group', async () => {
+      setGrouping('feature', [TOP_BAR, REST])
+      open('?at=pkg:@feature/top-bar&view=feature')
+      await userEvent.click(within(screen.getByRole('group', { name: 'File a/A3.ts' })).getByRole('button', { name: /A3\.ts/ }))
+      expect(where().pathname).toBe(`/s/${SESSION_ID}/files/a/A3.ts`)
+      expect(where().searchParams.get('bp')).toBe('pkg:@feature/top-bar')
+    })
+
+    it('draws files no group names in a dashed Ungrouped box and says the grouping is out of date', async () => {
+      setGrouping('feature', [{ ...TOP_BAR, files: TOP_BAR.files.slice(0, 6) }, REST])
+      open('?view=feature')
+      const ungrouped = screen.getByRole('group', { name: 'Group Ungrouped' })
+      expect(within(ungrouped).getByText('«ungrouped»')).toBeInTheDocument()
+      expect(ungrouped).toHaveClass('border-dashed')
+      const notice = screen.getByRole('status', { name: 'Grouping is out of date' })
+      expect(within(notice).getByText('2 files changed since this grouping')).toBeInTheDocument()
+      await userEvent.click(within(notice).getByRole('button', { name: 'Regroup' }))
+      expect(clipboard).toHaveBeenCalledWith(`/scout-blueprint-groups ${SESSION_ID} feature`)
+      expect(await within(notice).findByRole('button', { name: 'Copied' })).toBeInTheDocument()
+    })
+
+    it('mentions removed files only when nothing is ungrouped', () => {
+      setGrouping('feature', [{ ...TOP_BAR, files: [...TOP_BAR.files, 'a/Gone.ts'] }, REST])
+      open('?view=feature')
+      expect(screen.getByText('1 file left the change since this grouping')).toBeInTheDocument()
+      expect(screen.queryByRole('group', { name: 'Group Ungrouped' })).not.toBeInTheDocument()
+    })
+
+    it('lets ?at= win over ?view=: a folder diagram shows the folders and the switch says so', () => {
+      setGrouping('feature', [TOP_BAR, REST])
+      open('?view=feature&at=pkg:a')
+      expect(screen.getAllByRole('group', { name: /^File a\/A\d\.ts$/ })).toHaveLength(8)
+      expect(screen.getByRole('button', { name: 'Folders' })).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('shows the view named by a group diagram even without ?view=', () => {
+      setGrouping('layer', [TOP_BAR, REST])
+      open('?at=pkg:@layer/rest')
+      expect(screen.getByRole('button', { name: 'Layer' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getAllByRole('group', { name: /^File b\/B\d\.ts$/ })).toHaveLength(8)
+    })
+
+    it('keeps the view on an around-a-file diagram and goes up to the group holding the file', () => {
+      setGrouping('feature', [TOP_BAR, REST])
+      open('?at=around:a/A0.ts&view=feature')
+      expect(screen.getByRole('button', { name: 'Feature' })).toHaveAttribute('aria-pressed', 'true')
+      fireEvent.keyDown(document.body, { key: 'Escape' })
+      expect(where().searchParams.get('at')).toBe('pkg:@feature/top-bar')
+      expect(where().searchParams.get('view')).toBe('feature')
+    })
+
+    it('falls back to the view root when a group no longer exists', () => {
+      setGrouping('feature', [TOP_BAR, REST])
+      open('?at=pkg:@feature/old&view=feature')
+      expect(where().searchParams.get('at')).toBeNull()
+      expect(where().searchParams.get('view')).toBe('feature')
+      expect(screen.getByRole('group', { name: 'Group Top bar' })).toBeInTheDocument()
+    })
+
+    it('goes back to Folders and drops the view and the diagram', async () => {
+      setGrouping('feature', [TOP_BAR, REST])
+      open('?at=pkg:@feature/top-bar&view=feature')
+      await userEvent.click(screen.getByRole('button', { name: 'Folders' }))
+      expect(where().searchParams.get('view')).toBeNull()
+      expect(where().searchParams.get('at')).toBeNull()
+      expect(screen.getByRole('group', { name: 'Package a' })).toBeInTheDocument()
+      expect(within(screen.getByRole('navigation', { name: 'Diagram path' })).getByText('Whole change')).toBeInTheDocument()
+    })
   })
 
   it('has no blueprint for a test run', () => {

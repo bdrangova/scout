@@ -71,6 +71,8 @@ export const PR_RESOLUTIONS_FILE = 'review/pr-resolutions.json'
 export const JOURNAL_FILE = 'review/journal.json'
 /** The user's arrangement of the Blueprint diagrams (dashboard-owned; posix, relative to the session folder). */
 export const BLUEPRINT_LAYOUT_FILE = 'review/blueprint.json'
+/** The agent's logical groupings of the change for the Blueprint page (agent-owned, `scout groups set`). */
+export const BLUEPRINT_GROUPS_FILE = 'review/groups.json'
 /** Dashboard-written drafts: the user's instruction for an open comment, or the reply to post for an answered one. */
 export const PR_REPLIES_FILE = 'review/pr-replies.json'
 /** GitHub's comment body limit is 65536 characters. */

@@ -4,7 +4,7 @@ import { Link, NavLink, useLocation } from 'react-router'
 import { isTestRunDetail } from '@/lib/detail-kind'
 import { PrTab } from './PrTab'
 import { useShellConfig, visibleSectionsOf, type ShellConfig } from './shell-config'
-import { BLUEPRINT_AT_PARAM, BLUEPRINT_PARAM, withBlueprint } from '@/lib/blueprint'
+import { BLUEPRINT_PARAM, blueprintSearch, withBlueprint } from '@/lib/blueprint'
 import { useCurrentSection } from './useCurrentSection'
 import { cn } from '@/lib/utils'
 
@@ -94,7 +94,7 @@ export function SectionTabs({ detail, submit }: { detail: SessionDetail; submit:
           tab.to === 'files' && onFiles
             ? { pathname: tab.to, search: filesSearch }
             : tab.to === 'blueprint' && stop !== null
-              ? { pathname: tab.to, search: `?${new URLSearchParams({ [BLUEPRINT_AT_PARAM]: stop })}` }
+              ? { pathname: tab.to, search: blueprintSearch(stop) }
               : tab.to
         const linkClass = (isActive: boolean) => {
           const signal = isActive ? null : tab.state

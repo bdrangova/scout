@@ -1,8 +1,12 @@
+import { BLUEPRINT_UNGROUPED_ID, blueprintGroupingOfDir } from '@scout/shared'
+import { Folder, Layers } from 'lucide-react'
 import { formatAdditions, formatDeletions } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { OutsideLinks } from './OutsideLinks'
 import { BoxShell, type BoxShellProps } from './BoxShell'
 import type { BoxInfo } from './box-info'
+import { BOX_STATE_BORDER, BOX_STATE_WASH, BOX_STATE_WORD, boxStateOf } from './box-state'
+import { CommentCount } from './CommentCount'
 
 export const PACKAGE_BOX_WIDTH = 236
 
@@ -12,34 +16,48 @@ export interface PackageBoxProps extends Omit<BoxShellProps, 'boxKey' | 'label' 
   onOpen: (dir: string) => void
 }
 
-/** A folder of the change drawn as a UML package: a tab, its name (a link into the folder), the biggest files and the review progress. */
+/** A folder of the change drawn as a UML package: a header band with its name (a link into the folder), the biggest files and the review progress. */
 export function PackageBox({ info, details, onOpen, ...shell }: PackageBoxProps) {
   const { box } = info
   const dir = box.ref.type === 'dir' ? box.ref.dir : ''
-  const settled = info.total > 0 && info.reviewed === info.total
+  const state = boxStateOf(info)
+  // An agent group (its dir starts with `@<type>`) reads «group»; the box of files no group names reads «ungrouped» and is dashed.
+  const group = blueprintGroupingOfDir(dir) !== null
+  const ungrouped = group && dir.endsWith(`/${BLUEPRINT_UNGROUPED_ID}`)
+  const stereotype = ungrouped ? '«ungrouped»' : group ? '«group»' : '«package»'
+  const Icon = group ? Layers : Folder
   const more = box.files.length - info.topNames.length
   return (
     <BoxShell
       {...shell}
       boxKey={box.key}
-      label={`Package ${box.name}`}
+      label={`${group ? 'Group' : 'Package'} ${box.name}${state === 'none' ? '' : `, ${BOX_STATE_WORD[state]}`}`}
       width={PACKAGE_BOX_WIDTH}
-      className={cn('rounded-[4px_12px_12px_12px]', settled && 'bg-paper-2')}
+      wash={BOX_STATE_WASH[state]}
+      className={cn('rounded-[10px]', BOX_STATE_BORDER[state], ungrouped && 'border-dashed')}
     >
-      <span className="absolute -top-[17px] -left-[1.5px] flex h-[17px] items-center rounded-t-[7px] border-x-fine border-t-fine border-line bg-sunken px-2.5 font-mono text-[10px] font-semibold">package</span>
       <button
         type="button"
+        tabIndex={shell.pick ? -1 : undefined}
         onClick={() => onOpen(dir)}
         title={`Open the ${box.name} diagram`}
-        className="cursor-pointer rounded-[inherit] px-3 pt-2.5 pb-0.5 text-left text-[15px] font-bold break-all hover:underline"
+        aria-label={`${box.name}, open its diagram`}
+        className="group block w-full cursor-pointer rounded-t-[8.5px] border-b-fine border-line bg-sunken px-3 py-1.5 text-left"
       >
-        {box.name}
-        <span aria-hidden className="opacity-50">
-          {' →'}
+        <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-ink-muted">
+          <Icon aria-hidden className="size-3" />
+          {stereotype}
         </span>
+        <b className="block text-[15px] font-bold break-all group-hover:underline">
+          {box.name}
+          <span aria-hidden className="opacity-50">
+            {' →'}
+          </span>
+        </b>
       </button>
+      {details && info.purpose && <p className="m-0 px-3 pt-2 text-[12px] leading-[1.4] text-ink">{info.purpose}</p>}
       {details && (
-        <p className="m-0 px-3 pb-1 font-mono text-[10.5px] leading-[1.4] break-all text-ink-muted">
+        <p className="m-0 px-3 pt-2 pb-0.5 font-mono text-[10.5px] leading-[1.4] break-all text-ink-muted">
           {info.topNames.join(', ')}
           {more > 0 && ` +${more} more`}
         </p>
@@ -50,7 +68,8 @@ export function PackageBox({ info, details, onOpen, ...shell }: PackageBoxProps)
           <span className="text-green">{formatAdditions(info.additions)}</span>
           <span className="text-red">{formatDeletions(info.deletions)}</span>
         </span>
-        <span className="ml-auto font-mono tabular-nums">
+        <span className="ml-auto inline-flex items-center gap-1.5 font-mono tabular-nums">
+          <CommentCount count={info.comments} />
           {info.reviewed}/{info.total}
         </span>
       </div>
@@ -60,9 +79,10 @@ export function PackageBox({ info, details, onOpen, ...shell }: PackageBoxProps)
         aria-valuemin={0}
         aria-valuemax={info.total}
         aria-valuenow={info.reviewed}
-        className={cn('h-[5px] overflow-hidden border-t border-line bg-sunken', details && 'mb-0')}
+        className={cn('h-[5px] overflow-hidden border-t border-line bg-sunken', !details && 'rounded-b-[8.5px]')}
       >
-        <i className="block h-full bg-green" style={{ width: `${info.total === 0 ? 0 : (100 * info.reviewed) / info.total}%` }} />
+        <i className="block h-full bg-green" style={{ width: `${info.total === 0 ? 0 : (100 * info.approved) / info.total}%`, float: 'left' }} />
+        <i className="block h-full bg-red" style={{ width: `${info.total === 0 ? 0 : (100 * info.rejected) / info.total}%`, float: 'left' }} />
       </div>
       {details && <OutsideLinks box={box} />}
     </BoxShell>

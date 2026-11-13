@@ -17,7 +17,16 @@ import { Button } from '@/components/ui/button'
 import { FilesRailSection } from '@/components/files/FilesRailSection'
 import { ReviewComplete } from '@/components/files/ReviewComplete'
 import { CommitTimeline } from '@/components/timeline/CommitTimeline'
-import { BLUEPRINT_PARAM, blueprintDiagramOf, useBlueprint, withBlueprint } from '@/lib/blueprint'
+import {
+  BLUEPRINT_PARAM,
+  BLUEPRINT_SELECTION_PARAM,
+  blueprintDiagramOf,
+  groupingOfDiagram,
+  loadBlueprintSelection,
+  useBlueprint,
+  withBlueprint,
+  withoutBlueprintSelection,
+} from '@/lib/blueprint'
 import { useCommits, useScopeTree } from '@/lib/hooks'
 import { isCardMode, MODE_PARAM, parseMode, readLastCardMode, rememberCardMode } from '@/lib/mode'
 import { fileRoute } from '@/lib/paths'
@@ -61,15 +70,26 @@ export function FilesPage() {
   const commitFiles = scope === null ? fullFiles : (scopeFiles ?? fullFiles)
   // The Blueprint scope (`?bp=`): the files of one diagram, in its reading order, among the commit scope's files.
   const bpId = searchParams.get(BLUEPRINT_PARAM)
-  const blueprint = useBlueprint(sessionId, bpId !== null)
-  const bpPending = bpId !== null && blueprint.loading && blueprint.blueprint === null
+  // A scope on an agent group (`pkg:@feature/x`) needs the groupings too.
+  const blueprint = useBlueprint(sessionId, bpId !== null, groupingOfDiagram(bpId) !== null)
+  const bpPending = bpId !== null && ((blueprint.loading && blueprint.blueprint === null) || blueprint.groupsLoading)
   const bpDiagram = bpId === null || bpPending ? null : blueprintDiagramOf(blueprint, bpId)
+  // `?sel=`: the files picked on the Blueprint page, saved in this tab's sessionStorage; they replace the diagram's own list.
+  const selKey = searchParams.get(BLUEPRINT_SELECTION_PARAM)
+  const selPaths = useMemo(() => (selKey === null ? null : loadBlueprintSelection(sessionId, selKey)), [sessionId, selKey])
+  const selFiles = useMemo(() => {
+    if (selPaths === null) return null
+    const byPath = indexByPath(commitFiles)
+    const listed = selPaths.flatMap((path) => byPath.get(path) ?? [])
+    return listed.length > 0 ? listed : null
+  }, [selPaths, commitFiles])
   const bpFiles = useMemo(() => {
     if (bpDiagram === null) return null
+    if (selFiles !== null) return selFiles
     const byPath = indexByPath(commitFiles)
     const listed = blueprintDiagramFiles(bpDiagram).flatMap((path) => byPath.get(path) ?? [])
     return listed.length > 0 ? listed : null
-  }, [bpDiagram, commitFiles])
+  }, [bpDiagram, commitFiles, selFiles])
   const bpScoped = bpId !== null && bpDiagram !== null && bpFiles !== null
   const files = bpFiles ?? commitFiles
   const splat = params['*'] ?? ''
@@ -93,6 +113,13 @@ export function FilesPage() {
     if (!bpDropped) return
     navigate({ pathname: location.pathname, search: searchString(withBlueprint(searchParams, null)) }, { replace: true })
   }, [bpDropped, navigate, location.pathname, searchParams])
+
+  // Picked files that cannot be read back (a new tab, cleared storage, none of them still in the change): the diagram's own files.
+  const selDropped = selKey !== null && !bpPending && scopeReady && selFiles === null
+  useEffect(() => {
+    if (!selDropped) return
+    navigate({ pathname: location.pathname, search: searchString(withoutBlueprintSelection(searchParams)) }, { replace: true })
+  }, [selDropped, navigate, location.pathname, searchParams])
 
   // A scope the commit list cannot serve (a sha no longer in range): back to the full diff.
   useEffect(() => {
@@ -310,6 +337,7 @@ export function FilesPage() {
               diagramId={bpId}
               title={bpDiagram.title}
               count={files.length}
+              selected={selFiles !== null}
               position={files.findIndex((file) => file.path === urlPath) + 1}
               onShowAll={showAllFiles}
             />

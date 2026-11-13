@@ -175,7 +175,7 @@ function packageDiagram(blueprint: Blueprint, root: BlueprintPackage, dir: strin
   const pkg = findBlueprintPackage(root, dir)
   if (!pkg) return null
   const boxes = [...pkg.packages.map(packageBox), ...pkg.files.map(fileBox)]
-  return assemble(blueprint, { type: 'package', dir }, dir === '' ? 'Whole change' : pkg.name, boxes, null, null)
+  return assemble(blueprint, { type: 'package', dir }, pkg === root ? root.name || 'Whole change' : pkg.name, boxes, null, null)
 }
 
 function aroundDiagram(blueprint: Blueprint, path: string): BlueprintDiagram | null {

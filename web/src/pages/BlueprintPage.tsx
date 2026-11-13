@@ -1,15 +1,36 @@
-import { liveEntries, type BlueprintMember, type TreeFile } from '@scout/shared'
+import { blueprintDiagramFiles, findBlueprintPackage, liveEntries, parseBlueprintDiagramId, type BlueprintMember, type TreeFile } from '@scout/shared'
 import { Workflow } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router'
 import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { EmptyState } from '@/components/common/EmptyState'
+import { BlueprintGroupsEmpty } from '@/components/blueprint/BlueprintGroupsEmpty'
+import { BlueprintStaleNotice } from '@/components/blueprint/BlueprintStaleNotice'
+import { BlueprintViewSwitch } from '@/components/blueprint/BlueprintViewSwitch'
 import { BlueprintDiagramView } from '@/components/blueprint/BlueprintDiagramView'
 import { BlueprintRailSection } from '@/components/blueprint/BlueprintRailSection'
 import { chainOfDiagram, parentDiagramId } from '@/components/blueprint/blueprint-nav'
 import { describeBoxes } from '@/components/blueprint/box-info'
+import { useApproveAll } from '@/components/blueprint/useApproveAll'
+import { useSelection } from '@/components/blueprint/useSelection'
+import { useOpenCommentRefs } from '@/components/layout/commented-only'
 import { useFileCategories } from '@/components/files/useFileCategories'
-import { BLUEPRINT_AT_PARAM, blueprintDiagramOf, blueprintRoute, useBlueprint, useBlueprintLayout, withBlueprint } from '@/lib/blueprint'
+import {
+  BLUEPRINT_AT_PARAM,
+  BLUEPRINT_SELECTION_PARAM,
+  BLUEPRINT_VIEW_PARAM,
+  blueprintDiagramOf,
+  blueprintRoute,
+  blueprintViewOf,
+  blueprintViewRoot,
+  groupingOfDiagram,
+  orderBlueprintSelection,
+  saveBlueprintSelection,
+  useBlueprint,
+  useBlueprintLayout,
+  withBlueprint,
+  type BlueprintView,
+} from '@/lib/blueprint'
 import { isTestRunDetail } from '@/lib/detail-kind'
 import { MODE_PARAM, readLastCardMode } from '@/lib/mode'
 import { fileRoute } from '@/lib/paths'
@@ -37,13 +58,27 @@ export function BlueprintPage() {
 function BlueprintContent({ sessionId, treeFiles }: { sessionId: string; treeFiles: readonly TreeFile[] }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const blueprint = useBlueprint(sessionId)
+  const blueprint = useBlueprint(sessionId, true, true)
   const layoutState = useBlueprintLayout(sessionId)
   const { journal } = useJournalState()
   const { verdictOf } = useFileCategories(treeFiles)
+  const openComments = useOpenCommentRefs('file')
+  // Select mode lives here, above the diagram, so the picks survive moving between diagrams.
+  const selection = useSelection()
+  const approveAll = useApproveAll(treeFiles)
   const at = searchParams.get(BLUEPRINT_AT_PARAM)
-  const { blueprint: analysis, root } = blueprint
-  const diagram = useMemo(() => blueprintDiagramOf({ blueprint: analysis, root }, at), [analysis, root, at])
+  const atRef = parseBlueprintDiagramId(at)
+  const atGrouping = groupingOfDiagram(at)
+  // The view the page is in: `?at=` wins over `?view=` when it names a grouping or a folder (an around-a-file diagram keeps the view).
+  const view: BlueprintView = atGrouping ?? (atRef?.type === 'package' ? 'folders' : blueprintViewOf(searchParams.get(BLUEPRINT_VIEW_PARAM)))
+  const { blueprint: analysis, root, groupTrees } = blueprint
+  const diagramId = at ?? blueprintViewRoot(view)
+  const diagram = useMemo(() => blueprintDiagramOf({ blueprint: analysis, root, groupTrees }, diagramId), [analysis, root, groupTrees, diagramId])
+  const tree = view === 'folders' ? undefined : groupTrees[view]
+  // The packages the outline and the breadcrumb follow: the grouping's, or the folders'.
+  const navRoot = tree?.root ?? root
+  const loading = blueprint.loading || (view !== 'folders' && blueprint.groupsLoading)
+  const error = blueprint.error ?? (view !== 'folders' ? blueprint.groupsError : null)
 
   const summaries = useMemo(() => {
     const byPath = new Map<string, string>()
@@ -52,14 +87,39 @@ function BlueprintContent({ sessionId, treeFiles }: { sessionId: string; treeFil
   }, [journal])
 
   const infos =
-    diagram && analysis ? describeBoxes({ diagram, blueprint: analysis, treeFiles, verdictOf, summaryOf: (path) => summaries.get(path) ?? null }) : null
+    diagram && analysis
+      ? describeBoxes({
+          diagram,
+          blueprint: analysis,
+          treeFiles,
+          verdictOf,
+          summaryOf: (path) => summaries.get(path) ?? null,
+          commentsOf: (path) => openComments.get(path) ?? 0,
+          purposeOf: (dir) => (tree ? (findBlueprintPackage(tree.root, dir)?.purpose ?? null) : null),
+        })
+      : null
 
-  const go = useCallback((id: string) => navigate(blueprintRoute(sessionId, id)), [sessionId, navigate])
+  const go = useCallback((id: string) => navigate(blueprintRoute(sessionId, id, view)), [sessionId, navigate, view])
+  // Switching the view starts at that view's root: `?at=` is dropped.
+  const switchView = useCallback((next: BlueprintView) => navigate(blueprintRoute(sessionId, blueprintViewRoot(next))), [sessionId, navigate])
   const openFile = useCallback(
     (path: string) => {
       const params = withBlueprint(new URLSearchParams(), diagram?.id ?? null)
       params.set(MODE_PARAM, readLastCardMode())
       navigate({ pathname: fileRoute(sessionId, path), search: `?${params.toString()}` })
+    },
+    [sessionId, diagram, navigate],
+  )
+  // "View all": the Files page limited to the picked files; the list rides in sessionStorage, the URL only carries its key.
+  const viewSelected = useCallback(
+    (paths: readonly string[]) => {
+      if (!diagram) return
+      const ordered = orderBlueprintSelection(new Set(paths), blueprintDiagramFiles(diagram))
+      const params = withBlueprint(new URLSearchParams(), diagram.id)
+      const key = saveBlueprintSelection(sessionId, ordered)
+      if (key !== null) params.set(BLUEPRINT_SELECTION_PARAM, key)
+      params.set(MODE_PARAM, readLastCardMode())
+      navigate({ pathname: fileRoute(sessionId, ordered[0] ?? ''), search: `?${params.toString()}` })
     },
     [sessionId, diagram, navigate],
   )
@@ -72,17 +132,29 @@ function BlueprintContent({ sessionId, treeFiles }: { sessionId: string; treeFil
   )
 
   const empty = analysis === null || analysis.files.length === 0
-  // An id that names no diagram (a stale link) falls back to the whole change.
-  if (!blueprint.loading && !blueprint.error && !empty && diagram === null && at !== null) {
-    return <Navigate to={blueprintRoute(sessionId)} replace />
+  const viewSwitch = <BlueprintViewSwitch view={view} onChange={switchView} />
+  // An id that names no diagram (a stale link, a regrouped-away group) falls back to the root of its view, or the whole change.
+  if (!loading && !error && !empty && diagram === null && at !== null) {
+    return <Navigate to={blueprintRoute(sessionId, atGrouping === null ? null : blueprintViewRoot(atGrouping))} replace />
   }
-  const chain = diagram && root ? chainOfDiagram(root, diagram.ref) : []
+  // The agent has not grouped this way yet: how to ask for it, instead of the canvas.
+  if (!loading && !error && !empty && view !== 'folders' && tree === undefined && at === null) {
+    return (
+      <main className={MAIN}>
+        <div role="toolbar" aria-label="Blueprint" className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b-fine border-line px-4 py-2 md:px-6">
+          {viewSwitch}
+        </div>
+        <BlueprintGroupsEmpty sessionId={sessionId} type={view} />
+      </main>
+    )
+  }
+  const chain = diagram && navRoot ? chainOfDiagram(navRoot, diagram.ref) : []
   return (
     <main className={MAIN}>
-      {root && diagram && <BlueprintRailSection root={root} currentDir={chain.at(-1)?.dir ?? ''} onSelect={go} />}
+      {navRoot && diagram && <BlueprintRailSection key={tree ? view : 'folders'} root={navRoot} groups={tree !== undefined} currentDir={chain.at(-1)?.dir ?? ''} onSelect={go} />}
       <AsyncBoundary
-        loading={blueprint.loading || layoutState.loading}
-        error={blueprint.error}
+        loading={loading || layoutState.loading}
+        error={error}
         onRetry={blueprint.reload}
         errorLabel="Couldn't load the blueprint"
         className="px-6 py-6"
@@ -93,7 +165,7 @@ function BlueprintContent({ sessionId, treeFiles }: { sessionId: string; treeFil
           </div>
         }
       >
-        {root && diagram && infos && (
+        {navRoot && diagram && infos && (
           <BlueprintDiagramView
             key={diagram.id}
             sessionId={sessionId}
@@ -105,7 +177,12 @@ function BlueprintContent({ sessionId, treeFiles }: { sessionId: string; treeFil
             onNavigate={go}
             onOpenFile={openFile}
             onOpenMember={openMember}
-            parentId={parentDiagramId(root, diagram.ref)}
+            selection={selection}
+            approveAll={approveAll}
+            onViewSelected={viewSelected}
+            parentId={parentDiagramId(navRoot, diagram.ref)}
+            viewSwitch={viewSwitch}
+            notice={tree?.stale && view !== 'folders' ? <BlueprintStaleNotice sessionId={sessionId} type={view} ungrouped={tree.ungrouped.length} gone={tree.gone.length} /> : undefined}
           />
         )}
       </AsyncBoundary>

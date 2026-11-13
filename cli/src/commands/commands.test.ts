@@ -478,6 +478,8 @@ describe('install', () => {
     expect(actions['.agents/skills/review-choices/SKILL.md']).toBe('created')
     expect(actions['.claude/skills/journal/SKILL.md']).toBe('created')
     expect(actions['.agents/skills/journal/SKILL.md']).toBe('created')
+    expect(actions['.claude/skills/scout-blueprint-groups/SKILL.md']).toBe('created')
+    expect(actions['.agents/skills/scout-blueprint-groups/SKILL.md']).toBeUndefined()
     expect(actions['.claude/hooks/scout_pending_feedback.sh']).toBe('created')
     expect(actions['.claude/settings.local.json']).toBe('updated')
     expect(actions['.gitignore']).toBe('created')

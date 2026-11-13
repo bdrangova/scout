@@ -12,6 +12,10 @@ export function blueprintRouter(store: Store): Router {
     res.json(await store.getBlueprint(req.params.id))
   })
 
+  router.get('/sessions/:id/blueprint/groups', async (req, res) => {
+    res.json(await store.getBlueprintGroups(req.params.id))
+  })
+
   router.get('/sessions/:id/blueprint/layout', async (req, res) => {
     res.json(await store.getBlueprintLayout(req.params.id))
   })

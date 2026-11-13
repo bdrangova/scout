@@ -29,6 +29,7 @@ const TEMPLATE_FILES = [
   { from: 'skills/scout-pr-review/SKILL.md', to: '.agents/skills/scout-pr-review/SKILL.md', mode: 0o644 },
   { from: 'skills/scout-development-review/SKILL.md', to: '.claude/skills/scout-development-review/SKILL.md', mode: 0o644 },
   { from: 'skills/scout-apply-review/SKILL.md', to: '.claude/skills/scout-apply-review/SKILL.md', mode: 0o644 },
+  { from: 'skills/scout-blueprint-groups/SKILL.md', to: '.claude/skills/scout-blueprint-groups/SKILL.md', mode: 0o644 },
   { from: 'skills/scout-pr-comments/SKILL.md', to: '.claude/skills/scout-pr-comments/SKILL.md', mode: 0o644 },
   { from: 'skills/scout-test-plan/SKILL.md', to: '.claude/skills/scout-test-plan/SKILL.md', mode: 0o644 },
   { from: 'skills/scout-data-setup/SKILL.md', to: '.claude/skills/scout-data-setup/SKILL.md', mode: 0o644 },

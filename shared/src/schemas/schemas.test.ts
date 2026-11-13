@@ -14,6 +14,7 @@ import {
   StoreEventSchema,
 } from './api.ts'
 import { EvidenceIndexSchema, ExtrasIndexSchema, SpecIndexSchema } from './artifacts.ts'
+import { BlueprintGroupsSchema } from './blueprint-groups.ts'
 import { BlueprintLayoutResponseSchema, BlueprintResponseSchema, PutBlueprintLayoutRequestSchema } from './blueprint.ts'
 import { CommitListSchema, ScopeSchema } from './commits.ts'
 import { ManifestSchema } from './manifest.ts'
@@ -249,5 +250,24 @@ describe('blueprint schemas', () => {
     expect(BlueprintResponseSchema.safeParse({ blueprint: { fingerprint: 'short', files: [] } }).success).toBe(false)
     expect(BlueprintLayoutResponseSchema.safeParse({ layout: { schemaVersion: 2, sessionId: SESSION_ID, updatedAt: T1, diagrams: {} } }).success).toBe(false)
     expect(PutBlueprintLayoutRequestSchema.safeParse({ diagram: 'pkg:', layout: { positions: { 'dir:a': { x: Number.NaN, y: 0 } } } }).success).toBe(false)
+  })
+})
+
+describe('BlueprintGroupsSchema', () => {
+  const grouping = { createdAt: T1, groups: [{ id: 'top-bar', name: 'Top bar', purpose: 'The bar', files: ['a.ts'], groups: [{ id: 'tabs', name: 'Tabs', purpose: '', files: [] }] }] }
+  const file = { schemaVersion: 1, sessionId: SESSION_ID, updatedAt: T1, groupings: { feature: grouping } }
+
+  it('accepts nested groups', () => {
+    expect(BlueprintGroupsSchema.parse(file)).toEqual(file)
+    expect(BlueprintGroupsSchema.parse({ ...file, groupings: {} }).groupings).toEqual({})
+  })
+
+  it('rejects a bad id, empty groups and an unknown type', () => {
+    const withId = (id: string) => ({ ...file, groupings: { feature: { ...grouping, groups: [{ ...grouping.groups[0], id }] } } })
+    expect(BlueprintGroupsSchema.safeParse(withId('Top Bar')).success).toBe(false)
+    expect(BlueprintGroupsSchema.safeParse(withId('~ungrouped')).success).toBe(false)
+    expect(BlueprintGroupsSchema.safeParse({ ...file, groupings: { feature: { ...grouping, groups: [] } } }).success).toBe(false)
+    expect(BlueprintGroupsSchema.safeParse({ ...file, groupings: { other: grouping } }).success).toBe(false)
+    expect(BlueprintGroupsSchema.safeParse({ ...file, schemaVersion: 2 }).success).toBe(false)
   })
 })

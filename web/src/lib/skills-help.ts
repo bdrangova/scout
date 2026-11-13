@@ -19,6 +19,7 @@ export const SKILL_GROUPS: readonly SkillGroup[] = [
       { command: '/scout-development-review', when: 'Work done. Opens or refreshes the session.' },
       { command: '/scout-apply-review <id>', when: 'After Submit. Fixes code, answers comments.' },
       { command: '/scout-pr-comments', when: 'GitHub PR comments to handle.' },
+      { command: '/scout-blueprint-groups <id> <type>', when: "Group a change's files logically for the Blueprint page (asked from the dashboard)" },
       { command: '/run-app', when: 'Needs the app up. The skills call it too.' },
       { command: '/jira-snapshot <KEY>', when: 'Ticket into the session spec. The publish skills call it too.' },
       { command: '/capture-evidence', when: 'Screenshots or video into the session. The skills call it too.' },

@@ -21,9 +21,15 @@ export interface BoxInfo {
   additions: number
   deletions: number
   reviewed: number
+  approved: number
+  rejected: number
+  /** Open comments on the box's files. */
+  comments: number
   total: number
   /** Up to three of the biggest changed files (package boxes). */
   topNames: string[]
+  /** A group's one-line purpose (package boxes of an agent grouping); null for folders and files. */
+  purpose: string | null
   /** Set for a file box. */
   file: FileBoxInfo | null
 }
@@ -34,6 +40,10 @@ export interface DescribeInput {
   treeFiles: readonly TreeFile[]
   verdictOf: (file: TreeFile) => Verdict
   summaryOf: (path: string) => string | null
+  /** Open comments on a file (default: none). */
+  commentsOf?: (path: string) => number
+  /** The purpose of the package at `dir` (agent groupings); default: none. */
+  purposeOf?: (dir: string) => string | null
 }
 
 function baseName(path: string): string {
@@ -41,7 +51,7 @@ function baseName(path: string): string {
 }
 
 /** Everything the boxes of a diagram display, computed once per diagram and review state. */
-export function describeBoxes({ diagram, blueprint, treeFiles, verdictOf, summaryOf }: DescribeInput): Map<string, BoxInfo> {
+export function describeBoxes({ diagram, blueprint, treeFiles, verdictOf, summaryOf, commentsOf = () => 0, purposeOf = () => null }: DescribeInput): Map<string, BoxInfo> {
   const treeByPath = new Map(treeFiles.map((file) => [file.path, file]))
   const fileByPath = new Map(blueprint.files.map((file) => [file.path, file]))
   const importers = new Map<string, number>()
@@ -60,8 +70,12 @@ export function describeBoxes({ diagram, blueprint, treeFiles, verdictOf, summar
       additions: trees.reduce((sum, item) => sum + item.additions, 0),
       deletions: trees.reduce((sum, item) => sum + item.deletions, 0),
       reviewed: verdicts.filter((verdict) => verdict !== 'none').length,
+      approved: verdicts.filter((verdict) => verdict === 'approved').length,
+      rejected: verdicts.filter((verdict) => verdict === 'rejected').length,
+      comments: box.files.reduce((sum, item) => sum + commentsOf(item), 0),
       total: box.files.length,
       topNames: biggest.slice(0, 3).map((item) => baseName(item.path)),
+      purpose: box.ref.type === 'dir' ? purposeOf(box.ref.dir) : null,
       file:
         path === null
           ? null

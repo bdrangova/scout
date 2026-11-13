@@ -181,6 +181,10 @@ JournalResponse = { journal: Journal|null }      // GET /sessions/:id/journal
 
 `review/journal-anchor.ts` (browser-safe): `relocateJournalAnchor(anchor, filePatch)` → `{ anchor, stale: false } | { anchor: null, stale: true }`; `liveEntries`, `fileSummary`, `entriesForFile` (live only), `journalCount`, `nextJournalId` (all take `Journal | null`). `renderSentMarkdown` takes an optional `ctx.journal` and prints `> Re Scout note j3 (decision): <title>` above a comment with `about` (just `> Re Scout note j3` without the journal or the entry).
 
+## schemas/blueprint-groups.ts (agent-owned `review/groups.json`, `BLUEPRINT_GROUPS_FILE`)
+
+The agent's optional logical groupings of a development or PR-review session's change for the Blueprint page (full spec in [docs/blueprint.md](../docs/blueprint.md), "Logical groups"). `BlueprintGroups { schemaVersion: 1, sessionId, updatedAt, groupings: { feature?, layer?, priority? } }`, each `{ createdAt, groups: BlueprintGroup[] }`, `BlueprintGroup { id (slug), name, purpose, files[], groups? }`; written only by `scout groups set`. `BlueprintGroupsResponse = { groups: BlueprintGroups|null }` for `GET /sessions/:id/blueprint/groups` (null when absent or invalid, and for a test run); event `blueprint-groups.updated { sessionId }`. `blueprint/groups.ts`: `buildBlueprintGroupTree(type, grouping, paths)` makes the folder-style `BlueprintPackage` tree under `@<type>/...` (plus `ungrouped`, `gone`, `stale`), `checkBlueprintGroups` is the validation behind `scout groups set`, `blueprintGroupingOfDir(dir)` tells a group path from a folder.
+
 ## schemas/pr-comments.ts: GitHub PR comments (external, read-only for the dashboard)
 
 ```ts

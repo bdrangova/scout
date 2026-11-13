@@ -24,8 +24,18 @@ await build({
   platform: 'node',
   format: 'esm',
   target: 'node22',
-  // Express and its helpers are CommonJS and call require() for Node built-ins.
-  banner: { js: "import { createRequire as __scoutRequire } from 'node:module'; const require = __scoutRequire(import.meta.url);" },
+  // Express and its helpers are CommonJS and call require() for Node built-ins; the TypeScript compiler (Blueprint's
+  // parser) also reads __filename and __dirname, which an ES module does not have.
+  banner: {
+    js: [
+      "import { createRequire as __scoutRequire } from 'node:module';",
+      "import { fileURLToPath as __scoutFileURLToPath } from 'node:url';",
+      "import { dirname as __scoutDirname } from 'node:path';",
+      'const require = __scoutRequire(import.meta.url);',
+      'const __filename = __scoutFileURLToPath(import.meta.url);',
+      'const __dirname = __scoutDirname(__filename);',
+    ].join(' '),
+  },
   legalComments: 'none',
   logLevel: 'warning',
 })

@@ -9,6 +9,7 @@ import { BLUEPRINT_LAYOUT_SCHEMA_VERSION, journalCount, SCHEMA_VERSION, TEST_RUN
 import type {
   AnySentSnapshot,
   Blueprint,
+  BlueprintGroupsResponse,
   BlueprintLayoutResponse,
   BlueprintResponse,
   PutBlueprintLayoutRequest,
@@ -64,7 +65,7 @@ import { ManifestReader } from './manifest.ts'
 import type { ManifestResult } from './manifest.ts'
 import { safeJoin, storePaths } from './paths.ts'
 import type { StorePaths } from './paths.ts'
-import { REVIEW_FILE, readJournal, readPrComments, readPrReplies, readPrResolutions, writePrReplies, readResolutions, readReview, sentFiles } from './review.ts'
+import { REVIEW_FILE, readBlueprintGroups, readJournal, readPrComments, readPrReplies, readPrResolutions, writePrReplies, readResolutions, readReview, sentFiles } from './review.ts'
 import { ScopeCache } from './scopes.ts'
 import type { ScopeCacheOptions } from './scopes.ts'
 import { deriveRunDetail, indexFingerprint, loadRunIndex, normalizeRef, refToAbsolute, resolveRoots, servablePaths } from './test-run.ts'
@@ -800,6 +801,13 @@ export class Store {
         }
       },
     }
+  }
+
+  /** The agent's logical groupings of the change; `{ groups: null }` when absent or invalid, and for a test run. */
+  async getBlueprintGroups(id: string): Promise<BlueprintGroupsResponse> {
+    const session = await this.loadSession(id)
+    if (isTestRun(session.manifest)) return { groups: null }
+    return { groups: await readBlueprintGroups(session.dir, id) }
   }
 
   /** The saved Blueprint arrangement; `{ layout: null }` when absent, invalid or for a test run. */

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { z } from 'zod'
-import { JOURNAL_FILE, JournalSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@scout/shared'
-import type { Journal, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@scout/shared'
+import { BLUEPRINT_GROUPS_FILE, BlueprintGroupsSchema, JOURNAL_FILE, JournalSchema, PR_COMMENTS_FILE, PR_REPLIES_FILE, PR_RESOLUTIONS_FILE, PrCommentsSchema, PrRepliesSchema, PrResolutionsSchema, ResolutionsSchema, ReviewSchema, sentFileStem } from '@scout/shared'
+import type { BlueprintGroups, Journal, PrComments, PrReplies, PrResolutions, Resolutions, Review } from '@scout/shared'
 import { errorMessage, formatZodError, invalidStoreFile } from '../errors.ts'
 import { readTextIfExists, writeFileAtomic } from './fs.ts'
 
@@ -57,6 +57,16 @@ export async function readJournal(sessionDir: string, sessionId: string): Promis
   try {
     const journal = await readValidated(path.join(sessionDir, ...JOURNAL_FILE.split('/')), JOURNAL_FILE, JournalSchema)
     return journal !== null && journal.sessionId === sessionId ? journal : null
+  } catch {
+    return null
+  }
+}
+
+/** `review/groups.json` (the agent's logical groupings, written by `scout groups set`); `null` when absent, invalid or another session's. */
+export async function readBlueprintGroups(sessionDir: string, sessionId: string): Promise<BlueprintGroups | null> {
+  try {
+    const groups = await readValidated(path.join(sessionDir, ...BLUEPRINT_GROUPS_FILE.split('/')), BLUEPRINT_GROUPS_FILE, BlueprintGroupsSchema)
+    return groups !== null && groups.sessionId === sessionId ? groups : null
   } catch {
     return null
   }

@@ -198,7 +198,7 @@ export type SendResponse = z.infer<typeof SendResponseSchema>
 
 export const StoreEventSchema = z.discriminatedUnion('type', [
   z.object({
-    type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated', 'journal.updated', 'blueprint-layout.updated', 'pr-comments.updated', 'testrun.updated']),
+    type: z.enum(['session.added', 'session.updated', 'session.removed', 'review.updated', 'resolutions.updated', 'journal.updated', 'blueprint-layout.updated', 'blueprint-groups.updated', 'pr-comments.updated', 'testrun.updated']),
     sessionId: z.string(),
   }),
   /** The working tree was recomputed; `fingerprint` is `WorkingTree.fingerprint`. */

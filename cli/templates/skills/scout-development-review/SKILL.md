@@ -1,7 +1,7 @@
 ---
 name: scout-development-review
 description: Open (or refresh) a Scout session for the current implementation and fill it with evidence (screenshots, recordings), the Jira snapshot, plan docs, extra artifacts and a PR description so the developer can review the live working tree in the dashboard. Use when the user says "publish for review", "send this to review", runs /scout-development-review, or when a ticket implementation is complete.
-argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full] [--record video|screenshots|none] [--auto]"
+argument-hint: "[--ticket KEY[=url]] [--base REF] [--title TEXT] [--new] [--full] [--record video|screenshots|none] [--groups feature,layer,priority] [--auto]"
 allowed-tools: Bash(scout *) Bash(git status *) Bash(git diff *) Bash(git log *) Bash(git rev-parse *) Bash(npx playwright *) Read Write Edit Glob AskUserQuestion mcp__playwright__* Skill
 ---
 # Publish the current work for review
@@ -33,7 +33,7 @@ A first publish writes everything. When step 1 reuses a session (`"reused": true
 - `changed`, `added`, `dropped`: the repository files that moved since the last publish. Empty and nothing in the arguments asks for more: change nothing, and say so in step 8.
 - `evidenceToRecapture`, `evidenceToDelete`, `extrasToRegenerate`: from the coverage the last publish logged.
 - `refreshedEvidence`: evidence `/scout-apply-review` already re-captured since then. Keep it; update only its caption and description if they no longer match.
-Each step below says what it does in refresh mode. Step 9 always rewrites the log.
+Each step below says what it does in refresh mode. Step 10 always rewrites the log.
 
 ## Steps
 0. **Choices** (`/review-choices`). Before running anything else, work out your proposal for each choice. Base: the session's base, or the default base. Ticket: from the arguments, the branch name or the conversation. Mode: refresh when a session for this branch exists, else new. Spec documents: the plan or spec files you worked from. Evidence: the user-visible changes you would capture. Extras: what you would add. Journal: the files you would summarise and the decisions you would log. The preview lists base, session mode, Jira, spec files, evidence, extras, journal and PR description. On "Let me choose", ask in two calls:
@@ -55,7 +55,7 @@ Each step below says what it does in refresh mode. Step 9 always rewrites the lo
    Refresh mode: skip this step unless the snapshot is missing, the ticket key changed, or the arguments ask for a fresh one.
 3. **Spec documents.** For each plan or spec Markdown file you worked from (for example under `plans/`, or the paths the user gave): `scout artifact add <id> spec <absolute path> --type markdown --title "<its first heading>"` (it records where the original lives). A design artifact HTML: `scout artifact add <id> spec <file> --as design.html --type artifact --title "<design title>" --url <artifact url>`.
    Refresh mode: add a document again only when the original changed since the copy, or when it is new.
-4. **Evidence.** For each user-visible change, `/capture-evidence <what to capture> --session <id>` (Skill tool, with `--record` when you have it). Keep the coverage it returns (which repository files each capture covers) for the log in step 9.
+4. **Evidence.** For each user-visible change, `/capture-evidence <what to capture> --session <id>` (Skill tool, with `--record` when you have it). Keep the coverage it returns (which repository files each capture covers) for the log in step 10.
    Refresh mode: re-capture `evidenceToRecapture` with `--as <same name>` (skip `refreshedEvidence`), capture new evidence for user-visible changes nothing covers yet, and remove `evidenceToDelete` (`scout artifact remove <id> evidence <file>`). Leave every other file untouched.
 5. **Extras.** Markdown explainers (`*.md`), artifact HTML (`*.html`) and Mermaid diagrams (`*.mmd`) that help the reviewer (for example a component or data-flow graph): `scout artifact add <id> extras <file> --title "<title>"`. Note the files each extra describes, as for evidence.
    Refresh mode: regenerate only `extrasToRegenerate`, and add new ones only for areas none of them cover.
@@ -64,4 +64,5 @@ Each step below says what it does in refresh mode. Step 9 always rewrites the lo
 7. **PR description.** `/pr-description --session <id>` (Skill tool). `/scout-apply-review` opens the PR from the same file.
    Refresh mode: add `--refresh`, so only the sections the changed set affects are edited and the user's edits stay.
 8. Report the dashboard URL printed by step 1, the number of evidence files and anything you could not capture. In refresh mode, list what you refreshed, added and deleted, and say that the rest was kept. Remind the user that the dashboard updates live as files change; there is nothing to publish.
-9. **Publish log.** Write the coverage you noted to a JSON file, `{ "evidence": { "trial-bar-admin.png": ["<repo path>"] }, "extras": { "components.mmd": ["<repo path>"] } }` (only the entries you added or changed in refresh mode), and run `scout publish-log write <id> --coverage <file>`. It stores the current file hashes and head next to that coverage.
+9. **Blueprint groups** (only with `--groups`; it costs tokens, so never on your own). For each type named (`feature`, `layer`, `priority`, comma-separated), in that order: `/scout-blueprint-groups <id> <type>` (Skill tool). It runs after the journal so the groups can lean on its summaries. In refresh mode, run it again only for a type named in the arguments. Mention the grouped views in the report of step 8.
+10. **Publish log.** Write the coverage you noted to a JSON file, `{ "evidence": { "trial-bar-admin.png": ["<repo path>"] }, "extras": { "components.mmd": ["<repo path>"] } }` (only the entries you added or changed in refresh mode), and run `scout publish-log write <id> --coverage <file>`. It stores the current file hashes and head next to that coverage.

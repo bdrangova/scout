@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import chokidar from 'chokidar'
 import type { FSWatcher } from 'chokidar'
-import { BLUEPRINT_LAYOUT_FILE, PR_PENDING_DIR, PR_STATUS_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, isTestRun } from '@scout/shared'
+import { BLUEPRINT_GROUPS_FILE, BLUEPRINT_LAYOUT_FILE, PR_PENDING_DIR, PR_STATUS_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, isTestRun } from '@scout/shared'
 import type { StoreEvent } from '@scout/shared'
 import { errorMessage } from './errors.ts'
 import type { StoreEventBus } from './events.ts'
@@ -26,6 +26,9 @@ export const SESSION_DEBOUNCE_MS = 300
 /** File name of the layout inside `review/`. */
 const BLUEPRINT_LAYOUT_NAME = BLUEPRINT_LAYOUT_FILE.slice(BLUEPRINT_LAYOUT_FILE.lastIndexOf('/') + 1)
 
+/** File name of the agent's groupings inside `review/`. */
+const BLUEPRINT_GROUPS_NAME = BLUEPRINT_GROUPS_FILE.slice(BLUEPRINT_GROUPS_FILE.lastIndexOf('/') + 1)
+
 const ARTIFACT_FOLDERS: ReadonlySet<string> = new Set(['evidence', 'extras', 'spec'])
 
 type Target =
@@ -34,6 +37,7 @@ type Target =
   | { kind: 'resolutions'; sessionId: string }
   | { kind: 'journal'; sessionId: string }
   | { kind: 'blueprint-layout'; sessionId: string }
+  | { kind: 'blueprint-groups'; sessionId: string }
   | { kind: 'pr-comments'; sessionId: string; file: 'pr-comments.json' | 'pr-resolutions.json' | 'pr-replies.json' }
   | { kind: 'artifact'; sessionId: string }
 
@@ -41,7 +45,7 @@ type Target =
  * Watches `<home>/sessions` with chokidar and every session's repo with a `RepoWatcher`, turning
  * file events into `StoreEvent`s and tree-cache invalidations. Session folder: `manifest.json`
  * (session.added/updated/removed, and the repo watch follows the manifest), `review/review.json`,
- * `review/resolutions.json`, `review/journal.json` (`journal.updated` + `session.updated`), `review/blueprint.json` (`blueprint-layout.updated`, not for the server's own writes), `review/pr-comments.json` and `review/pr-resolutions.json` and `review/pr-replies.json` (`pr-comments.updated`, plus `session.updated` for the first: the session's PR changed), and the
+ * `review/resolutions.json`, `review/journal.json` (`journal.updated` + `session.updated`), `review/blueprint.json` (`blueprint-layout.updated`, not for the server's own writes), `review/groups.json` (`blueprint-groups.updated`), `review/pr-comments.json` and `review/pr-resolutions.json` and `review/pr-replies.json` (`pr-comments.updated`, plus `session.updated` for the first: the session's PR changed), and the
  * artifacts (`evidence/`, `extras/`, `spec/`, `pr-description.md`) and `review/pr-status.json` → one debounced `session.updated`.
  */
 export class StoreWatcher {
@@ -194,7 +198,7 @@ export class StoreWatcher {
     if (ARTIFACT_FOLDERS.has(second)) return false
     if (parts.length === 2) return second !== 'manifest.json' && second !== 'pr-review.json' && second !== SESSION_PR_DESCRIPTION_FILE && second !== 'review'
     if (second !== 'review') return true
-    if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'journal.json' && third !== BLUEPRINT_LAYOUT_NAME && third !== PR_STATUS_FILE
+    if (parts.length === 3) return third !== 'review.json' && third !== 'resolutions.json' && third !== 'pr-comments.json' && third !== 'pr-resolutions.json' && third !== 'pr-replies.json' && third !== 'journal.json' && third !== BLUEPRINT_LAYOUT_NAME && third !== BLUEPRINT_GROUPS_NAME && third !== PR_STATUS_FILE
     return true
   }
 
@@ -210,6 +214,7 @@ export class StoreWatcher {
     if (parts.length === 3 && third === 'resolutions.json') return { kind: 'resolutions', sessionId }
     if (parts.length === 3 && third === 'journal.json') return { kind: 'journal', sessionId }
     if (parts.length === 3 && third === BLUEPRINT_LAYOUT_NAME) return { kind: 'blueprint-layout', sessionId }
+    if (parts.length === 3 && third === BLUEPRINT_GROUPS_NAME) return { kind: 'blueprint-groups', sessionId }
     if (parts.length === 3 && third === PR_STATUS_FILE) return { kind: 'artifact', sessionId }
     if (parts.length === 3 && (third === 'pr-comments.json' || third === 'pr-resolutions.json' || third === 'pr-replies.json')) return { kind: 'pr-comments', sessionId, file: third }
     return null
@@ -285,6 +290,11 @@ export class StoreWatcher {
       // The nav badge (journalCount) comes from journal.json; a removal changes it too. The dashboard never writes the file.
       this.bus.emit({ type: 'journal.updated', sessionId })
       this.bus.emit({ type: 'session.updated', sessionId })
+      return
+    }
+    if (target.kind === 'blueprint-groups') {
+      // Agent-written like the journal (`scout groups set`); a removal changes the view too.
+      this.bus.emit({ type: 'blueprint-groups.updated', sessionId })
       return
     }
     if (change === 'unlink') return

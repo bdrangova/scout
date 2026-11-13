@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { BlueprintLayoutResponseSchema, BlueprintResponseSchema, PutBlueprintLayoutResponseSchema, StoreEventSchema } from '@scout/shared'
+import { BlueprintGroupsResponseSchema, BlueprintLayoutResponseSchema, BlueprintResponseSchema, PutBlueprintLayoutResponseSchema, StoreEventSchema } from '@scout/shared'
 import type { Blueprint, BlueprintFile, BlueprintLayout } from '@scout/shared'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -47,6 +47,8 @@ afterAll(async () => {
 
 const url = (id = FIXTURE_SESSION_ID) => `/api/sessions/${id}/blueprint`
 const layoutUrl = (id = FIXTURE_SESSION_ID) => `${url(id)}/layout`
+const groupsUrl = (id = FIXTURE_SESSION_ID) => `${url(id)}/groups`
+const groupsFile = () => path.join(store.dir, 'review', 'groups.json')
 const layoutFile = () => path.join(store.dir, 'review', 'blueprint.json')
 
 async function blueprint(): Promise<Blueprint> {
@@ -209,6 +211,56 @@ describe('GET /api/events for the layout file', () => {
       fs.writeFileSync(layoutFile(), JSON.stringify({ schemaVersion: 1, sessionId: FIXTURE_SESSION_ID, updatedAt: '2026-01-01T10:00:00.000Z', diagrams: {} }))
       const event = await reader.waitFor(isLayoutEvent, { timeoutMs: 8_000, from: mark })
       expect(event.kind === 'event' && JSON.parse(event.data)).toEqual({ type: 'blueprint-layout.updated', sessionId: FIXTURE_SESSION_ID })
+    } finally {
+      reader.close()
+    }
+  })
+})
+
+const groupsDoc = (sessionId = FIXTURE_SESSION_ID) => ({
+  schemaVersion: 1,
+  sessionId,
+  updatedAt: '2026-11-13T10:00:00.000Z',
+  groupings: { feature: { createdAt: '2026-11-13T10:00:00.000Z', groups: [{ id: 'pages', name: 'Pages', purpose: 'The pages', files: ['web/pages/helper.ts'] }] } },
+})
+
+describe('blueprint groups', () => {
+  it('reads null when the agent grouped nothing', async () => {
+    fs.rmSync(groupsFile(), { force: true })
+    expect(BlueprintGroupsResponseSchema.parse((await request(app).get(groupsUrl())).body)).toEqual({ groups: null })
+  })
+
+  it('returns a valid file', async () => {
+    fs.writeFileSync(groupsFile(), JSON.stringify(groupsDoc()))
+    const res = await request(app).get(groupsUrl())
+    expect(res.status).toBe(200)
+    expect(BlueprintGroupsResponseSchema.parse(res.body).groups).toEqual(groupsDoc())
+  })
+
+  it('treats an unparsable, invalid or foreign file as absent', async () => {
+    fs.writeFileSync(groupsFile(), '{ nope')
+    expect((await request(app).get(groupsUrl())).body).toEqual({ groups: null })
+    fs.writeFileSync(groupsFile(), JSON.stringify({ ...groupsDoc(), groupings: { feature: { createdAt: '2026-11-13T10:00:00.000Z', groups: [] } } }))
+    expect((await request(app).get(groupsUrl())).body).toEqual({ groups: null })
+    fs.writeFileSync(groupsFile(), JSON.stringify(groupsDoc('20260101-0900-other-0000')))
+    expect((await request(app).get(groupsUrl())).body).toEqual({ groups: null })
+  })
+
+  it('is null for a test run and 404 for an unknown session', async () => {
+    expect((await request(app).get(groupsUrl(TEST_RUN_SESSION_ID))).body).toEqual({ groups: null })
+    expect((await request(app).get(groupsUrl('20260101-0900-missing-0000'))).status).toBe(404)
+  })
+
+  it('reports a write of the file as blueprint-groups.updated', async () => {
+    fs.rmSync(groupsFile(), { force: true })
+    const reader = await openSseReader(`${server.url}/api/events`)
+    try {
+      await reader.waitFor((m) => m.kind === 'comment' && m.text === 'ready')
+      const isGroupsEvent = (m: SseMessage) => m.kind === 'event' && StoreEventSchema.parse(JSON.parse(m.data)).type === 'blueprint-groups.updated'
+      const mark = reader.messages.length
+      fs.writeFileSync(groupsFile(), JSON.stringify(groupsDoc()))
+      const event = await reader.waitFor(isGroupsEvent, { timeoutMs: 8_000, from: mark })
+      expect(event.kind === 'event' && JSON.parse(event.data)).toEqual({ type: 'blueprint-groups.updated', sessionId: FIXTURE_SESSION_ID })
     } finally {
       reader.close()
     }

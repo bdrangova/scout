@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils'
 import { VERDICT_STYLE } from '@/lib/verdict'
 import { BoxShell, type BoxShellProps } from './BoxShell'
 import type { BoxInfo } from './box-info'
+import { BOX_STATE_BORDER, BOX_STATE_WASH, BOX_STATE_WORD, boxStateOf } from './box-state'
+import { CommentCount } from './CommentCount'
 import { OutsideLinks } from './OutsideLinks'
 
 export const FILE_BOX_WIDTH = 264
@@ -39,27 +41,30 @@ export function FileBox({ info, details, center, showOutside, onOpenFile, onOpen
   const kind = file.file?.kind ?? 'module'
   const word = file.tree ? (STATUS_WORD[file.tree.status] ?? '') : ''
   const deleted = file.tree?.status === 'deleted'
-  const settled = file.verdict !== 'none'
-  const verdict = settled ? VERDICT_STYLE[file.verdict] : null
+  const state = boxStateOf(info)
+  const verdict = file.verdict !== 'none' ? VERDICT_STYLE[file.verdict] : null
   const members = file.file?.members ?? []
   const extendsOther = (file.file?.extends.length ?? 0) > 0
+  // In select mode the box is one checkbox: its buttons stay out of the tab order.
+  const tab = shell.pick ? -1 : undefined
   const relation = file.importers > 0 ? `${file.importers} lean on it` : 'relations'
   return (
     <BoxShell
       {...shell}
       boxKey={box.key}
-      label={`File ${file.path}`}
+      label={state === 'none' ? `File ${file.path}` : `File ${file.path}, ${BOX_STATE_WORD[state]}`}
+      wash={BOX_STATE_WASH[state]}
       width={FILE_BOX_WIDTH}
-      className={cn('rounded-[10px]', settled && 'bg-paper-2', center && 'outline outline-[3px] outline-offset-[3px] outline-coral')}
+      className={cn('rounded-[10px]', BOX_STATE_BORDER[state], center && 'outline outline-[3px] outline-offset-[3px] outline-coral')}
     >
       <button
         type="button"
+        tabIndex={tab}
         onClick={() => onOpenFile(file.path)}
         title={`Open ${file.path}`}
         className={cn(
           fileTypeClass(fileTypeOf(file.path).id),
           'relative block w-full cursor-pointer rounded-t-[8.5px] border-b-fine border-fill-line bg-ft py-1.5 pr-9 pl-2.5 text-left text-hdr-ink',
-          settled && 'saturate-[.35]',
         )}
       >
         <span className="block font-mono text-[10.5px] opacity-80">
@@ -84,6 +89,7 @@ export function FileBox({ info, details, center, showOutside, onOpenFile, onOpen
               <button
                 key={`${member.side}:${member.line}:${member.name}`}
                 type="button"
+                tabIndex={tab}
                 title="Jump to this in the code"
                 onClick={() => onOpenMember(file.path, member)}
                 className="flex cursor-pointer items-center truncate rounded-md px-1.5 py-px text-left font-mono text-[11.5px] font-medium hover:bg-hover"
@@ -104,9 +110,11 @@ export function FileBox({ info, details, center, showOutside, onOpenFile, onOpen
           <span className="text-green">{formatAdditions(info.additions)}</span>
           <span className="text-red">{formatDeletions(info.deletions)}</span>
         </span>
+        <CommentCount count={info.comments} />
         {file.related && !center && (
           <button
             type="button"
+            tabIndex={tab}
             onClick={() => onAround(file.path)}
             title="Redraw the diagram around this file"
             className="ml-auto cursor-pointer rounded-full border-fine border-line px-2 py-px text-[11px] font-semibold whitespace-nowrap hover:bg-selected hover:text-on-selected"

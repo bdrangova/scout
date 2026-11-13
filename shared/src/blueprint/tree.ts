@@ -4,6 +4,8 @@ export interface BlueprintPackage {
   dir: string
   /** Relative to the parent package (`a/b` for a merged chain); '' for the root. */
   name: string
+  /** A group's one-line purpose (agent groupings only; folders have none). */
+  purpose?: string
   packages: BlueprintPackage[]
   /** Files directly in this package, sorted. */
   files: string[]

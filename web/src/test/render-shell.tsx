@@ -29,13 +29,17 @@ export interface ShellOptions {
   unsavedDrafts?: UnsavedDraft[]
   /** The page rendered in the content column (default: nothing). */
   page?: ReactNode
+  /** Records the review actions the page dispatches (default: a mock nobody reads). */
+  dispatch?: ReviewContextValue['dispatch']
+  /** The stored review entry of a file (default: none). */
+  fileReview?: ReviewContextValue['fileReview']
 }
 
 /**
  * The session bar and rail around a page, on the given route (`/s/:id/...`, or `/t/:id/...` for a test run), with a fixed review (no provider,
  * no network). The page can render into the rail with `RailSection`.
  */
-export function renderShell(path: string, { kind: kindOption, detail: detailOption, review = reviewFixture(), resolutions = null, saveStatus = 'idle', onHelp = vi.fn(), page = null, unsavedDrafts = [] }: ShellOptions = {}) {
+export function renderShell(path: string, { kind: kindOption, detail: detailOption, review = reviewFixture(), resolutions = null, saveStatus = 'idle', onHelp = vi.fn(), page = null, unsavedDrafts = [], dispatch = vi.fn(), fileReview = () => null }: ShellOptions = {}) {
   const kind: SessionKind = kindOption ?? (detailOption && isTestRunDetail(detailOption) ? 'test-run' : 'code-review')
   const detail = detailOption ?? (kind === 'test-run' ? testRunDetailFixture : sessionDetailFixture)
   const items: readonly ReviewItem[] = isTestRunDetail(detail) ? detail.scenarios.map(scenarioReviewItem) : detail.tree.files
@@ -43,10 +47,10 @@ export function renderShell(path: string, { kind: kindOption, detail: detailOpti
     state: { review, pendingReject: null, atEnd: false },
     items,
     itemKind: kind === 'test-run' ? 'scenario' : 'file',
-    dispatch: vi.fn(),
+    dispatch,
     comments: mergeComments(review, resolutions),
     commentsFor: () => [],
-    fileReview: () => null,
+    fileReview,
     draftFor: () => '',
     setDraft: () => {},
     unsavedDrafts,
