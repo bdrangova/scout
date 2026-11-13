@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import type { SessionDetail } from "@scout/shared";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it } from "vitest";
 import { SessionContext } from "@/lib/session-context";
@@ -29,6 +30,7 @@ async function renderHotkeys(
   kind: "code-review" | "test-run",
   path: string,
   pages: ("gaps" | "data-setup" | "logs")[] = [],
+  codeReviewDetail: SessionDetail = sessionDetailFixture,
 ) {
   const detail =
     kind === "test-run"
@@ -36,7 +38,7 @@ async function renderHotkeys(
           ...testRunDetailFixture,
           index: { ...testRunDetailFixture.index, pages },
         }
-      : sessionDetailFixture;
+      : codeReviewDetail;
   mockReviewApi(reviewResponseFixture());
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -71,7 +73,7 @@ const where = () => screen.getByTestId("where").textContent;
 describe("SessionHotkeys", () => {
   it("jumps to the code review sections by number", async () => {
     await renderHotkeys("code-review", `/s/${SESSION_ID}/spec`);
-    fireEvent.keyDown(window, { key: "4" });
+    fireEvent.keyDown(window, { key: "5" });
     expect(where()).toBe(`/s/${SESSION_ID}/files`);
   });
 
@@ -126,5 +128,25 @@ describe("SessionHotkeys", () => {
     fireEvent.keyDown(window, { key: "s" });
     expect(search()).toBe("?mode=scroll");
     expect(where()).toBe(`/s/${SESSION_ID}/spec`);
+  });
+
+  it("G flips Extras, but on its Journal view S and G leave the extras modes alone", async () => {
+    const withJournal = { ...sessionDetailFixture, journalCount: 2 };
+    await renderHotkeys("code-review", `/s/${SESSION_ID}/extras`, [], withJournal);
+    fireEvent.keyDown(window, { key: "g" });
+    expect(screen.getByTestId("where").textContent).toBe(`/s/${SESSION_ID}/extras`);
+    expect(screen.getByTestId("search").textContent).toBe("?mode=grid");
+    cleanup();
+    await renderHotkeys("code-review", `/s/${SESSION_ID}/extras?tab=journal`, [], withJournal);
+    fireEvent.keyDown(window, { key: "g" });
+    expect(screen.getByTestId("where").textContent).not.toBe(`/s/${SESSION_ID}/extras`);
+  });
+
+  it("keys 1-6 jump to Spec, Extras, Evidence, Blueprint, Files, Submit", async () => {
+    await renderHotkeys("code-review", `/s/${SESSION_ID}/spec`);
+    for (const [key, section] of [["4", "blueprint"], ["5", "files"], ["6", "submit"], ["2", "extras"]] as const) {
+      fireEvent.keyDown(window, { key });
+      expect(where()).toBe(`/s/${SESSION_ID}/${section}`);
+    }
   });
 });

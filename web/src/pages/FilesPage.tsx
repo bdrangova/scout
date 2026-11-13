@@ -1,4 +1,4 @@
-import { currentProposal, reportMatchesTree, effectiveVerdict, nextUnreviewedFile, type Scope, type TreeFile } from '@scout/shared'
+import { blueprintDiagramFiles, currentProposal, reportMatchesTree, effectiveVerdict, nextUnreviewedFile, type Scope, type TreeFile } from '@scout/shared'
 import { FileCheck } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -8,13 +8,16 @@ import { ReportNotice } from '@/components/prreview/ReportNotice'
 import { CardDeck } from '@/components/diff/CardDeck'
 import { clearVerdictUndo, undoLastVerdict, useVerdictAction } from '@/components/diff/useVerdictAction'
 import { ScrollList } from '@/components/diff/ScrollList'
+import { BlueprintScopeNotice } from '@/components/files/BlueprintScopeNotice'
 import { FileFilterBar } from '@/components/files/FileFilterBar'
 import { FileGrid } from '@/components/files/FileGrid'
 import { useFileFilter } from '@/components/files/useFileFilter'
+import { Skeleton } from '@/components/common/AsyncBoundary'
 import { Button } from '@/components/ui/button'
 import { FilesRailSection } from '@/components/files/FilesRailSection'
 import { ReviewComplete } from '@/components/files/ReviewComplete'
 import { CommitTimeline } from '@/components/timeline/CommitTimeline'
+import { BLUEPRINT_PARAM, blueprintDiagramOf, useBlueprint, withBlueprint } from '@/lib/blueprint'
 import { useCommits, useScopeTree } from '@/lib/hooks'
 import { isCardMode, MODE_PARAM, parseMode, readLastCardMode, rememberCardMode } from '@/lib/mode'
 import { fileRoute } from '@/lib/paths'
@@ -55,7 +58,20 @@ export function FilesPage() {
   const scopeTree = useScopeTree(sessionId, scope)
   const scopeFiles = useLastValue(scopeTree.tree?.files ?? null)
   const scopeReady = scope === null || scopeTree.tree !== null
-  const files = scope === null ? fullFiles : (scopeFiles ?? fullFiles)
+  const commitFiles = scope === null ? fullFiles : (scopeFiles ?? fullFiles)
+  // The Blueprint scope (`?bp=`): the files of one diagram, in its reading order, among the commit scope's files.
+  const bpId = searchParams.get(BLUEPRINT_PARAM)
+  const blueprint = useBlueprint(sessionId, bpId !== null)
+  const bpPending = bpId !== null && blueprint.loading && blueprint.blueprint === null
+  const bpDiagram = bpId === null || bpPending ? null : blueprintDiagramOf(blueprint, bpId)
+  const bpFiles = useMemo(() => {
+    if (bpDiagram === null) return null
+    const byPath = indexByPath(commitFiles)
+    const listed = blueprintDiagramFiles(bpDiagram).flatMap((path) => byPath.get(path) ?? [])
+    return listed.length > 0 ? listed : null
+  }, [bpDiagram, commitFiles])
+  const bpScoped = bpId !== null && bpDiagram !== null && bpFiles !== null
+  const files = bpFiles ?? commitFiles
   const splat = params['*'] ?? ''
   const urlFile = files.find((file) => file.path === splat) ?? null
   const urlPath = urlFile?.path ?? null
@@ -65,10 +81,18 @@ export function FilesPage() {
   const previousRef = useRef<{ url: string | null; state: string | null } | null>(null)
   // One set of filters for Swipe, Scroll, Grid and the tree; in the card modes the open file stays listed after its verdict moves it out.
   const fileFilter = useFileFilter(files, fullFiles, isCardMode(mode) ? urlPath : null)
-  const { visible } = fileFilter
+  // On a Blueprint stop the filter bar is hidden, so a filter left on from the full list must not narrow it unseen.
+  const visible = bpScoped ? files : fileFilter.visible
 
   // The undo belongs to this page: leaving it drops the toast.
   useEffect(() => clearVerdictUndo, [])
+
+  // A Blueprint scope that cannot be served (unknown diagram, none of its files here, a failed load): all files.
+  const bpDropped = bpId !== null && !bpPending && !bpScoped
+  useEffect(() => {
+    if (!bpDropped) return
+    navigate({ pathname: location.pathname, search: searchString(withBlueprint(searchParams, null)) }, { replace: true })
+  }, [bpDropped, navigate, location.pathname, searchParams])
 
   // A scope the commit list cannot serve (a sha no longer in range): back to the full diff.
   useEffect(() => {
@@ -107,7 +131,7 @@ export function FilesPage() {
   // scope's end is not the review's) and only while that holds (a file the agent changed since
   // comes back as unreviewed). Any `GO_TO` (a step, the tree, "Back to files") leaves it.
   const proposalsPending = detail.manifest.kind === 'pr-review' && (!detail.prReview || detail.prReview.findings.some((f) => !reportMatchesTree(detail.prReview!, detail.tree) || currentProposal(detail.prReview!, f, state.review).verdict === 'none'))
-  const ended = !proposalsPending && state.atEnd && scope === null && nextUnreviewedFile(state.review, fullFiles) === null
+  const ended = !proposalsPending && state.atEnd && scope === null && !bpScoped && nextUnreviewedFile(state.review, fullFiles) === null
 
   function goTo(path: string) {
     dispatch({ type: 'GO_TO', path })
@@ -188,6 +212,23 @@ export function FilesPage() {
 
   const first = files[0]
 
+  /** Leave the Blueprint scope, keeping the file, mode and commit scope. */
+  function showAllFiles() {
+    navigate({ pathname: location.pathname, search: searchString(withBlueprint(searchParams, null)) })
+  }
+
+  // The first look at a Blueprint scope: no flash of the unscoped list.
+  if (bpPending) {
+    return (
+      <main className="flex h-[calc(100dvh-var(--shell-h))] min-w-0 flex-1 flex-col" data-mode={mode}>
+        <div role="status" aria-busy="true" className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6">
+          <span className="sr-only">Loading the Blueprint…</span>
+          <Skeleton lines={4} />
+        </div>
+      </main>
+    )
+  }
+
   // Keep the current file in the URL: the review's own current file while it still needs a verdict
   // (after the last approval it stays on the last file, and a file the agent changed since comes
   // back as unreviewed elsewhere), else the next unreviewed file, else the current one, else the first.
@@ -195,7 +236,7 @@ export function FilesPage() {
     const current = statePath === null ? undefined : fullByPath.get(statePath)
     const settled = current !== undefined && effectiveVerdict(state.review.files[current.path], current) !== 'none'
     const unreviewed = settled ? nextUnreviewedFile(state.review, fullFiles) : null
-    const opening = unreviewed !== null && files.some((file) => file.path === unreviewed) ? unreviewed : (statePath ?? first.path)
+    const opening = bpScoped && splat !== '' ? first.path : unreviewed !== null && files.some((file) => file.path === unreviewed) ? unreviewed : (statePath ?? first.path)
     return <Navigate to={{ pathname: fileRoute(sessionId, opening), search }} replace />
   }
 
@@ -263,7 +304,18 @@ export function FilesPage() {
     content = (
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mx-auto w-full max-w-[1200px] shrink-0 px-4 pt-4 md:px-6">
-          <FileFilterBar state={fileFilter} />
+          {bpScoped && bpId !== null && bpDiagram !== null && (
+            <BlueprintScopeNotice
+              sessionId={sessionId}
+              diagramId={bpId}
+              title={bpDiagram.title}
+              count={files.length}
+              position={files.findIndex((file) => file.path === urlPath) + 1}
+              onShowAll={showAllFiles}
+            />
+          )}
+          {/* Focus mode: a Blueprint stop is a handful of files the rail already lists, so the filters and the timeline step aside. */}
+          {!bpScoped && <FileFilterBar state={fileFilter} />}
         </div>
         {view}
       </div>
@@ -273,7 +325,7 @@ export function FilesPage() {
   return (
     <main className="flex h-[calc(100dvh-var(--shell-h))] min-w-0 flex-1 flex-col" data-mode={mode} data-scope={scope ?? undefined}>
       <FilesRailSection files={visible} reviewFiles={fullFiles} currentPath={urlPath} onSelect={goTo} />
-      {timeline}
+      {!bpScoped && timeline}
       <ReportNotice />
       {ended && first ? (
         <ReviewComplete sessionId={sessionId} detail={detail} onBack={() => goTo(currentPath)}>

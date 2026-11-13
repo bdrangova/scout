@@ -12,6 +12,12 @@
       "runtimeExecutable": "env",
       "runtimeArgs": ["SCOUT_PORT=4785", "WEB_PORT=4786", "npm", "run", "dev:fixtures"],
       "port": 4786
+    },
+    {
+      "name": "review-explore",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4790", "--bind", "127.0.0.1"],
+      "port": 4790
     }
   ]
 }

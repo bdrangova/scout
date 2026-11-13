@@ -31,7 +31,9 @@ export const COLLAPSE_GLOBS: readonly string[] = [
 ]
 
 /** The session sections in tab order; the single source for the tabs, the `1–5` hotkeys and the shortcut help. */
-export const SECTIONS = ['spec', 'extras', 'journal', 'evidence', 'files', 'submit'] as const
+export const SECTIONS = ['spec', 'extras', 'evidence', 'blueprint', 'files', 'submit'] as const
+/** Sections that no longer have a tab but may still be saved in an old `review.json` (`ui.section`). The Journal now lives inside Extras. */
+export const LEGACY_SECTIONS = ['journal'] as const
 
 /** The test-run sections in tab order (`overview`, `review`, the optional pages, `submit`). */
 export const TEST_SECTIONS = ['overview', 'review', 'gaps', 'data-setup', 'logs', 'submit'] as const
@@ -67,6 +69,8 @@ export const PR_COMMENTS_FILE = 'review/pr-comments.json'
 export const PR_RESOLUTIONS_FILE = 'review/pr-resolutions.json'
 /** Scout's journal (agent-owned, written by `scout journal`; posix, relative to the session folder). */
 export const JOURNAL_FILE = 'review/journal.json'
+/** The user's arrangement of the Blueprint diagrams (dashboard-owned; posix, relative to the session folder). */
+export const BLUEPRINT_LAYOUT_FILE = 'review/blueprint.json'
 /** Dashboard-written drafts: the user's instruction for an open comment, or the reply to post for an answered one. */
 export const PR_REPLIES_FILE = 'review/pr-replies.json'
 /** GitHub's comment body limit is 65536 characters. */

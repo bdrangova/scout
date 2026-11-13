@@ -5,9 +5,14 @@ import { readPrStatus } from './pr-status.ts'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import readline from 'node:readline'
-import { journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, runFolderOf, prCommentCounts, prReplyKindFor, prSummary, progress, scenarioReviewItem, sessionStatus, type ReviewItem } from '@scout/shared'
+import { BLUEPRINT_LAYOUT_SCHEMA_VERSION, journalCount, SCHEMA_VERSION, TEST_RUN_INDEX_FILE, SESSION_ID_RE, SESSION_PR_DESCRIPTION_FILE, buildPrCommentsResponse, derivePrComments, emptyReview, isTestRun, manifestKind, mergeComments, mimeFromPath, runFolderOf, prCommentCounts, prReplyKindFor, prSummary, progress, scenarioReviewItem, sessionStatus, type ReviewItem } from '@scout/shared'
 import type {
   AnySentSnapshot,
+  Blueprint,
+  BlueprintLayoutResponse,
+  BlueprintResponse,
+  PutBlueprintLayoutRequest,
+  PutBlueprintLayoutResponse,
   ArchivedSession,
   CodeReviewManifest,
   CommitList,
@@ -47,9 +52,12 @@ import type { RunOptions } from '@scout/shared/git/run'
 import type { WorkingTreeResult } from '@scout/shared/git/working-tree'
 import { HttpError, badRequest, conflict, errorMessage, invalidStoreFile, notFound } from '../errors.ts'
 import { StoreEventBus } from '../events.ts'
+import { computeBlueprint } from '../blueprint/compute.ts'
+import type { BlueprintSource } from '../blueprint/compute.ts'
 import { archiveEntryKind, archivedSession, isDir, moveDir, readArchivedMarker, removeArchivedDir, removeArchivedMarker, writeArchivedMarker } from './archive.ts'
 import { ARTIFACT_DIRS, artifactPaths, deriveArtifacts } from './artifacts.ts'
 import type { ArtifactKind, SessionArtifacts } from './artifacts.ts'
+import { blueprintLayoutFile, readBlueprintLayout } from './blueprint-layout.ts'
 import { isFile, isMissing, readTextIfExists, writeFileAtomic } from './fs.ts'
 import { KeyedLock } from './lock.ts'
 import { ManifestReader } from './manifest.ts'
@@ -287,6 +295,9 @@ export class Store {
   private readonly runDetailsInFlight = new Map<string, Promise<TestRunDetail>>()
   private readonly reviewLock = new KeyedLock()
   private readonly prRepliesLock = new KeyedLock()
+  private readonly blueprintLayoutLock = new KeyedLock()
+  /** The last Blueprint per session, keyed by the tree fingerprint it was computed for (the promise is shared while it runs). */
+  private readonly blueprints = new Map<string, { fingerprint: string; promise: Promise<Blueprint> }>()
   private readonly log: (message: string) => void
   /** Artifact index warnings already logged, so a broken `index.json` is reported once, not on every request. */
   private readonly loggedOnce = new Set<string>()
@@ -310,6 +321,7 @@ export class Store {
 
   dropTree(id: string): void {
     this.trees.drop(id)
+    this.blueprints.delete(id)
     this.scopes.invalidate(id)
     this.invalidateRun(id)
   }
@@ -749,6 +761,67 @@ export class Store {
     const session = await this.loadSession(id)
     if (manifestKind(session.manifest) !== 'code-review') return { journal: null }
     return { journal: await readJournal(session.dir, id) }
+  }
+
+  /**
+   * Scout's own analysis of the change (imports, inheritance, touched declarations per file); `{ blueprint: null }` for a test run.
+   * Cached per session by the tree fingerprint, one computation shared by concurrent requests.
+   */
+  async getBlueprint(id: string): Promise<BlueprintResponse> {
+    const session = await this.loadSession(id)
+    if (isTestRun(session.manifest)) return { blueprint: null }
+    const result = await this.tree(session)
+    const { fingerprint } = result.tree
+    const cached = this.blueprints.get(id)
+    if (cached?.fingerprint === fingerprint) return { blueprint: await cached.promise }
+    const entry = { fingerprint, promise: computeBlueprint(this.blueprintSource(this.codeReview(session).repo.path, result)) }
+    this.blueprints.set(id, entry)
+    entry.promise.catch(() => {
+      if (this.blueprints.get(id) === entry) this.blueprints.delete(id)
+    })
+    return { blueprint: await entry.promise }
+  }
+
+  private blueprintSource(repo: string, { tree, patches }: SessionTree): BlueprintSource {
+    return {
+      tree,
+      patches,
+      readNew: async (file) => (await this.contentsOf(repo, tree, file, 'after', null)).body.toString('utf8'),
+      readBase: async (file) => (await this.contentsOf(repo, tree, file, 'before', null)).body.toString('utf8'),
+      listConfigs: async () => {
+        const listed = await gitTry(repo, ['ls-files', '-co', '--exclude-standard', '-z', '--', ':(glob)**/tsconfig.json', ':(glob)**/jsconfig.json'])
+        return (listed ?? '').split('\0').filter((file) => file !== '')
+      },
+      readConfig: async (relative) => {
+        try {
+          return (await readWorkingFile(repo, relative)).toString('utf8')
+        } catch {
+          return null
+        }
+      },
+    }
+  }
+
+  /** The saved Blueprint arrangement; `{ layout: null }` when absent, invalid or for a test run. */
+  async getBlueprintLayout(id: string): Promise<BlueprintLayoutResponse> {
+    const session = await this.loadSession(id)
+    if (isTestRun(session.manifest)) return { layout: null }
+    return { layout: await readBlueprintLayout(session.dir, id) }
+  }
+
+  /** Replaces (or, with `layout: null`, forgets) one diagram's arrangement in `review/blueprint.json`; last write per diagram wins. 404 for a test run. */
+  async putBlueprintLayout(id: string, request: PutBlueprintLayoutRequest): Promise<PutBlueprintLayoutResponse> {
+    return this.blueprintLayoutLock.run(id, async () => {
+      const session = await this.loadSession(id)
+      this.codeReview(session)
+      const current = await readBlueprintLayout(session.dir, id)
+      const diagrams = new Map(Object.entries(current?.diagrams ?? {}))
+      if (request.layout === null) diagrams.delete(request.diagram)
+      else diagrams.set(request.diagram, request.layout)
+      const updatedAt = nextUpdatedAt(current?.updatedAt ?? null)
+      await this.writeOwned(blueprintLayoutFile(session.dir), { schemaVersion: BLUEPRINT_LAYOUT_SCHEMA_VERSION, sessionId: id, updatedAt, diagrams: Object.fromEntries(diagrams) })
+      return { updatedAt }
+    })
   }
 
   /** `pr-comments.json` merged with `pr-resolutions.json` (an empty response when never synced); 422 when a file is invalid. */

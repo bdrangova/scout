@@ -10,6 +10,7 @@ import {
   type PageMode,
   toggledGridMode,
 } from "@/lib/mode";
+import { extrasViewOf, TAB_PARAM } from "@/lib/extras-view";
 import { sessionFilesRoute } from "@/lib/paths";
 import { useSessionContext } from "@/lib/session-context";
 import { useHotkeys, type HotkeyHandlers } from "@/lib/useHotkeys";
@@ -42,7 +43,9 @@ export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
   const onCardPage = new RegExp(`^${base}/(review|gaps|logs|data-setup)(/|$)`).test(location.pathname);
 
   // Spec and Extras: `G` flips their own grid and scroll views, `S` returns to scroll.
-  const onPageModes = !testRun && new RegExp(`^${base}/(spec|extras)(/|$)`).test(location.pathname);
+  // Extras only shows them while its extras (not the journal) are showing.
+  const onJournal = extrasViewOf(detail, searchParams.get(TAB_PARAM)) === "journal";
+  const onPageModes = !testRun && new RegExp(`^${base}/(spec|extras)(/|$)`).test(location.pathname) && !(onJournal && new RegExp(`^${base}/extras(/|$)`).test(location.pathname));
 
   function switchMode(pick: (current: Mode) => Mode) {
     if (testRun && !onCardPage) return;

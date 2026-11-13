@@ -32,13 +32,47 @@ describe('SessionBar', () => {
     expect(within(bar).queryByRole('progressbar')).not.toBeInTheDocument()
   })
 
-  it('orders the tabs Spec, Extras, Evidence, Files, Submit with their counts', () => {
+  it('orders the tabs Spec, Extras, Evidence, Blueprint, Files, Submit with their counts, and has no Journal tab', () => {
     const { bar } = renderShell(`/s/${SESSION_ID}/files`)
     const tabs = within(bar).getByRole('navigation', { name: 'Sections' })
     const links = within(tabs).getAllByRole('link')
-    expect(links.map((link) => link.getAttribute('aria-label'))).toEqual(['Spec 1', 'Extras 1', 'Evidence 2', 'Files 6', 'Submit'])
+    expect(links.map((link) => link.getAttribute('aria-label'))).toEqual(['Spec 1', 'Extras 1', 'Evidence 2', 'Blueprint 6', 'Files 6', 'Submit'])
     expect(within(tabs).getByRole('link', { name: 'Files 6' })).toHaveAttribute('aria-current', 'page')
     expect(within(tabs).getByRole('link', { name: 'Spec 1' })).toHaveTextContent('Spec1')
+  })
+
+  it('keeps the Blueprint tab lit on a Blueprint stop of the Files page, leading back to the diagram', () => {
+    const { bar } = renderShell(`/s/${SESSION_ID}/files/src/app.ts?bp=pkg%3Asrc&mode=swipe`)
+    const tabs = within(bar).getByRole('navigation', { name: 'Sections' })
+    const blueprint = within(tabs).getByRole('link', { name: 'Blueprint 6' })
+    expect(blueprint).toHaveAttribute('aria-current', 'page')
+    expect(blueprint).toHaveAttribute('href', `/s/${SESSION_ID}/blueprint?at=pkg%3Asrc`)
+    const files = within(tabs).getByRole('link', { name: 'Files 6' })
+    expect(files).not.toHaveAttribute('aria-current')
+    expect(files).toHaveAttribute('href', `/s/${SESSION_ID}/files?mode=swipe`)
+  })
+
+  it('counts the journal notes in the Extras tab, and shows no Journal tab', () => {
+    const { bar } = renderShell(`/s/${SESSION_ID}/spec`, { detail: { ...sessionDetailFixture, journalCount: 3 } })
+    expect(within(bar).getByRole('link', { name: 'Extras 4' })).toBeInTheDocument()
+    expect(within(bar).queryByRole('link', { name: /Journal/ })).not.toBeInTheDocument()
+  })
+
+  it('hides the Blueprint count when no file changed', () => {
+    const { bar } = renderShell(`/s/${SESSION_ID}/spec`, { detail: { ...sessionDetailFixture, tree: { ...sessionDetailFixture.tree, files: [] } } })
+    expect(within(bar).getByRole('link', { name: 'Blueprint' })).toHaveTextContent(/^Blueprint$/)
+  })
+
+  it('offers the Scroll/Grid toggle on Extras but not on its Journal view', () => {
+    const detail = { ...sessionDetailFixture, journalCount: 2 }
+    const extras = renderShell(`/s/${SESSION_ID}/extras`, { detail })
+    expect(within(extras.bar).getByRole('group', { name: 'Review mode' })).toBeInTheDocument()
+    cleanup()
+    const journal = renderShell(`/s/${SESSION_ID}/extras?tab=journal`, { detail })
+    expect(within(journal.bar).queryByRole('group', { name: 'Review mode' })).not.toBeInTheDocument()
+    cleanup()
+    const defaulted = renderShell(`/s/${SESSION_ID}/extras`, { detail: { ...detail, extras: [] } })
+    expect(within(defaulted.bar).queryByRole('group', { name: 'Review mode' })).not.toBeInTheDocument()
   })
 
   it('shows section counts only when there is something, Files always', () => {

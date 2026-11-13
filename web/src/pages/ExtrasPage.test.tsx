@@ -1,12 +1,14 @@
-import type { SessionDetail } from '@scout/shared'
+import type { CodeReviewDetail } from '@scout/shared'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import { SessionContext } from '@/lib/session-context'
 import { ReviewProvider } from '@/state/ReviewProvider'
 import { commentFixture, reviewFixture, reviewResponseFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
 import { mockReviewApi } from '@/test/mock-api'
+import { JournalContext } from '@/state/journal-context'
+import { makeEntry, makeJournal } from '@/test/journal'
 import { ExtrasPage } from './ExtrasPage'
 
 vi.mock('@streamdown/mermaid', () => ({
@@ -18,12 +20,34 @@ const CONTENTS: Record<string, string> = {
   'extras/reports/report.html': '<html><body><h1>Report</h1></body></html>',
 }
 
-const detail: SessionDetail = {
+const detail: CodeReviewDetail = {
   ...sessionDetailFixture,
   extras: [
     { path: 'architecture.md', type: 'markdown', title: 'Architecture' },
     { path: 'reports/report.html', type: 'html', title: 'Test report' },
   ],
+}
+
+function Where() {
+  const { search } = useLocation()
+  return <output data-testid="search">{search}</output>
+}
+
+function renderWithJournal(path: string, withExtras = true) {
+  mockReviewApi(reviewResponseFixture(reviewFixture()), { contents: CONTENTS })
+  const entries = [makeEntry('j1', { kind: 'decision', title: 'Use a ref', file: null })]
+  render(
+    <MemoryRouter initialEntries={[path]}>
+      <SessionContext.Provider value={{ sessionId: SESSION_ID, detail: { ...detail, extras: withExtras ? detail.extras : [], journalCount: 1 }, reload: () => {} }}>
+        <ReviewProvider>
+          <JournalContext.Provider value={{ journal: makeJournal(entries), loading: false, error: null, reload: () => {} }}>
+            <ExtrasPage />
+            <Where />
+          </JournalContext.Provider>
+        </ReviewProvider>
+      </SessionContext.Provider>
+    </MemoryRouter>,
+  )
 }
 
 function renderExtras(review = reviewFixture(), path = '/') {
@@ -143,5 +167,41 @@ describe('ExtrasPage', () => {
     await userEvent.setup().click(within(architecture).getByRole('button', { name: 'Retry' }))
     expect(await within(architecture).findByRole('heading', { level: 1, name: 'Architecture' })).toBeInTheDocument()
     expect(within(architecture).queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('has no Extras | Journal switch without a journal', async () => {
+    renderExtras()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Extras' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Extras view' })).not.toBeInTheDocument()
+  })
+
+  it('shows the switch with both counts, extras by default, and switches to the journal dropping mode', async () => {
+    renderWithJournal('/?mode=grid')
+    const view = await screen.findByRole('group', { name: 'Extras view' })
+    expect(within(view).getByRole('button', { name: /Extras/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(view).getByRole('button', { name: /Extras/ })).toHaveTextContent('2')
+    expect(within(view).getByRole('button', { name: /Journal/ })).toHaveTextContent('1')
+    await userEvent.setup().click(within(view).getByRole('button', { name: /Journal/ }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Journal' })).toBeInTheDocument()
+    expect(screen.getByTestId('search')).toHaveTextContent('?tab=journal')
+    expect(screen.getByRole('article', { name: 'Use a ref' })).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'All extras' })).not.toBeInTheDocument()
+    await userEvent.setup().click(within(screen.getByRole('group', { name: 'Extras view' })).getByRole('button', { name: /Extras/ }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Extras' })).toBeInTheDocument()
+    expect(screen.getByTestId('search')).toHaveTextContent(/^$/)
+  })
+
+  it('opens on the journal when there are no extras, and the Extras side can still be chosen', async () => {
+    renderWithJournal('/', false)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Journal' })).toBeInTheDocument()
+    await userEvent.setup().click(within(screen.getByRole('group', { name: 'Extras view' })).getByRole('button', { name: /Extras/ }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Extras' })).toBeInTheDocument()
+    expect(screen.getByText('No extras')).toBeInTheDocument()
+  })
+
+  it('keeps the extras rail block out of the journal view', async () => {
+    renderWithJournal('/?tab=journal')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Journal' })).toBeInTheDocument()
+    expect(screen.queryByRole('article', { name: 'Architecture' })).not.toBeInTheDocument()
   })
 })

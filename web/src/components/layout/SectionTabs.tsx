@@ -1,9 +1,10 @@
 import type { SessionDetail } from '@scout/shared'
-import { BookOpen, Bug, Database, FileText, Files, Image, LayoutDashboard, ListChecks, Package, ScrollText, Send, Check, type LucideIcon } from 'lucide-react'
-import { NavLink, useLocation } from 'react-router'
+import { Bug, Database, FileText, Files, Image, LayoutDashboard, ListChecks, Package, ScrollText, Send, Check, Workflow, type LucideIcon } from 'lucide-react'
+import { Link, NavLink, useLocation } from 'react-router'
 import { isTestRunDetail } from '@/lib/detail-kind'
 import { PrTab } from './PrTab'
 import { useShellConfig, visibleSectionsOf, type ShellConfig } from './shell-config'
+import { BLUEPRINT_AT_PARAM, BLUEPRINT_PARAM, withBlueprint } from '@/lib/blueprint'
 import { useCurrentSection } from './useCurrentSection'
 import { cn } from '@/lib/utils'
 
@@ -29,8 +30,8 @@ export interface SubmitTab {
 const SECTION_ICONS: Record<string, LucideIcon> = {
   spec: FileText,
   extras: Package,
-  journal: BookOpen,
   evidence: Image,
+  blueprint: Workflow,
   files: Files,
   submit: Send,
   overview: LayoutDashboard,
@@ -80,35 +81,50 @@ export function SectionTabs({ detail, submit }: { detail: SessionDetail; submit:
   const location = useLocation()
   const config = useShellConfig()
   const onFiles = useCurrentSection() === 'files'
+  // A Blueprint stop (`/files?bp=…`) is still Blueprint: its tab stays lit and leads back to the diagram; Files leaves the stop.
+  const params = new URLSearchParams(location.search)
+  const stop = onFiles ? params.get(BLUEPRINT_PARAM) : null
+  const filesSearch = stop === null ? location.search : `?${withBlueprint(params, null)}`
   const tabs = sectionTabs(config, detail, submit)
   return (
     <nav aria-label="Sections" className="ml-1 flex items-stretch [filter:drop-shadow(2px_2px_0_var(--sh))]">
       {tabs.map((tab) => {
         const counted = showsCount(tab)
+        const to =
+          tab.to === 'files' && onFiles
+            ? { pathname: tab.to, search: filesSearch }
+            : tab.to === 'blueprint' && stop !== null
+              ? { pathname: tab.to, search: `?${new URLSearchParams({ [BLUEPRINT_AT_PARAM]: stop })}` }
+              : tab.to
+        const linkClass = (isActive: boolean) => {
+          const signal = isActive ? null : tab.state
+          return cn('step-tab text-[13px] font-bold whitespace-nowrap', '[&_svg]:size-[15px] [&_svg]:shrink-0', isActive ? 'text-hdr' : signal ? STATE_CLASS[signal].link : 'text-ink')
+        }
+        const body = (isActive: boolean) => {
+          const signal = isActive ? null : tab.state
+          const Icon = signal ? STATE_ICON[signal] : tab.icon
+          return (
+            <span className={cn('step-tab-in', isActive ? 'bg-hdr-ink' : signal ? STATE_CLASS[signal].fill : 'bg-surface')}>
+              <span className="step-tab-c">
+                <Icon aria-hidden className={signal ? 'stroke-[3]' : undefined} />
+                <span className={cn(isActive ? 'max-[520px]:sr-only' : config.kind === 'test-run' ? 'max-2xl:sr-only' : 'max-lg:sr-only')}>{tab.label}</span>
+                {counted && <span className={cn('text-[11.5px] font-semibold tabular-nums max-md:hidden', isActive || signal ? 'opacity-85' : 'text-ink-muted')}>{tab.count}</span>}
+              </span>
+            </span>
+          )
+        }
+        // On a Blueprint stop the route says Files, so the lit tab is chosen here instead of by the router.
+        if (stop !== null) {
+          const isActive = tab.to === 'blueprint'
+          return (
+            <Link key={tab.to} to={to} aria-label={tabName(tab, counted)} title={tab.label} aria-current={isActive ? 'page' : undefined} className={linkClass(isActive)}>
+              {body(isActive)}
+            </Link>
+          )
+        }
         return (
-          <NavLink
-            key={tab.to}
-            to={tab.to === 'files' && onFiles ? { pathname: tab.to, search: location.search } : tab.to}
-            aria-label={tabName(tab, counted)}
-            title={tab.label}
-            className={({ isActive }) => {
-              const signal = isActive ? null : tab.state
-              return cn('step-tab text-[13px] font-bold whitespace-nowrap', '[&_svg]:size-[15px] [&_svg]:shrink-0', isActive ? 'text-hdr' : signal ? STATE_CLASS[signal].link : 'text-ink')
-            }}
-          >
-            {({ isActive }) => {
-              const signal = isActive ? null : tab.state
-              const Icon = signal ? STATE_ICON[signal] : tab.icon
-              return (
-                <span className={cn('step-tab-in', isActive ? 'bg-hdr-ink' : signal ? STATE_CLASS[signal].fill : 'bg-surface')}>
-                  <span className="step-tab-c">
-                    <Icon aria-hidden className={signal ? 'stroke-[3]' : undefined} />
-                    <span className={cn(isActive ? 'max-[520px]:sr-only' : config.kind === 'test-run' ? 'max-2xl:sr-only' : 'max-lg:sr-only')}>{tab.label}</span>
-                    {counted && <span className={cn('text-[11.5px] font-semibold tabular-nums max-md:hidden', isActive || signal ? 'opacity-85' : 'text-ink-muted')}>{tab.count}</span>}
-                  </span>
-                </span>
-              )
-            }}
+          <NavLink key={tab.to} to={to} aria-label={tabName(tab, counted)} title={tab.label} className={({ isActive }) => linkClass(isActive)}>
+            {({ isActive }) => body(isActive)}
           </NavLink>
         )
       })}

@@ -14,6 +14,7 @@ import {
   StoreEventSchema,
 } from './api.ts'
 import { EvidenceIndexSchema, ExtrasIndexSchema, SpecIndexSchema } from './artifacts.ts'
+import { BlueprintLayoutResponseSchema, BlueprintResponseSchema, PutBlueprintLayoutRequestSchema } from './blueprint.ts'
 import { CommitListSchema, ScopeSchema } from './commits.ts'
 import { ManifestSchema } from './manifest.ts'
 import { PutPrReplyRequestSchema } from './pr-comments.ts'
@@ -213,5 +214,40 @@ describe('PutPrReplyRequestSchema', () => {
     expect(PutPrReplyRequestSchema.parse({ body: 'x' })).toEqual({ body: 'x' })
     expect(PutPrReplyRequestSchema.parse({ body: 'x', kind: 'reply' })).toEqual({ body: 'x', kind: 'reply' })
     expect(PutPrReplyRequestSchema.safeParse({ body: 'x', kind: 'post' }).success).toBe(false)
+  })
+})
+
+describe('blueprint schemas', () => {
+  it('round-trip a blueprint, a layout and a layout update', () => {
+    const response = {
+      blueprint: {
+        fingerprint: 'a'.repeat(16),
+        files: [
+          { path: 'src/a.ts', kind: 'module', analyzed: true, members: [{ name: 'run()', change: 'added', side: 'new', line: 3 }], imports: ['src/b.ts'], extends: [] },
+          { path: 'README.md', kind: 'config', analyzed: false, members: [], imports: [], extends: [] },
+        ],
+      },
+    }
+    expect(BlueprintResponseSchema.parse(response)).toEqual(response)
+    expect(BlueprintResponseSchema.parse({ blueprint: null })).toEqual({ blueprint: null })
+
+    const layout = {
+      schemaVersion: 1,
+      sessionId: SESSION_ID,
+      updatedAt: T1,
+      diagrams: { 'pkg:': { positions: { 'dir:src': { x: 0, y: 10.5 } }, viewport: { x: -4, y: 2, scale: 1.5 } } },
+    }
+    expect(BlueprintLayoutResponseSchema.parse({ layout })).toEqual({ layout })
+    expect(BlueprintLayoutResponseSchema.parse({ layout: null })).toEqual({ layout: null })
+
+    const put = { diagram: 'around:src/a.ts', layout: { positions: { 'file:src/a.ts': { x: 1, y: 2 } } } }
+    expect(PutBlueprintLayoutRequestSchema.parse(put)).toEqual(put)
+    expect(PutBlueprintLayoutRequestSchema.parse({ diagram: 'pkg:', layout: null }).layout).toBeNull()
+  })
+
+  it('reject bad data', () => {
+    expect(BlueprintResponseSchema.safeParse({ blueprint: { fingerprint: 'short', files: [] } }).success).toBe(false)
+    expect(BlueprintLayoutResponseSchema.safeParse({ layout: { schemaVersion: 2, sessionId: SESSION_ID, updatedAt: T1, diagrams: {} } }).success).toBe(false)
+    expect(PutBlueprintLayoutRequestSchema.safeParse({ diagram: 'pkg:', layout: { positions: { 'dir:a': { x: Number.NaN, y: 0 } } } }).success).toBe(false)
   })
 })

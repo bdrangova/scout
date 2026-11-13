@@ -13,14 +13,16 @@ interface FileTreeFilterProps {
   onToggleContents?: () => void
   /** The "only commented" toggle, drawn before the contents toggle. */
   commented?: ReactNode
+  /** What the box filters when it is not the file tree's ("Filter packages"). */
+  label?: string
 }
 
 /**
  * The tree's search box: Esc or the cross clears it; the match count is announced beside it.
  * The toggle beside it switches from filtering names to searching the changes' contents.
  */
-export function FileTreeFilter({ query, onChange, matches, contents = false, onToggleContents, commented }: FileTreeFilterProps) {
-  const label = contents ? 'Search in changes' : 'Filter files'
+export function FileTreeFilter({ query, onChange, matches, contents = false, onToggleContents, commented, label: ownLabel }: FileTreeFilterProps) {
+  const label = contents ? 'Search in changes' : (ownLabel ?? 'Filter files')
   return (
     <div className="flex shrink-0 items-center gap-2 pb-2">
       <div className="relative min-w-0 flex-1">

@@ -5,10 +5,8 @@ import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { ScoutIcon } from '@/components/brand/Scout'
 import { EmptyState } from '@/components/common/EmptyState'
-import { PageHeader } from '@/components/common/PageHeader'
-import { JournalEntryCard } from '@/components/journal/JournalEntryCard'
+import { JournalEntryCard } from './JournalEntryCard'
 import { useCodeReviewDetail } from '@/lib/detail-kind'
-import { pluralize } from '@/lib/format'
 import { replyTargetFor } from '@/lib/journal-reply'
 import { dayHeading, dayKey, KIND_LABEL, KINDS } from '@/lib/journal-view'
 import { requestLineJump } from '@/lib/line-jump'
@@ -23,8 +21,8 @@ const SESSION_LEVEL = '\u0000session'
 
 const CHIP = 'inline-flex h-6 items-center rounded-full border-fine border-line bg-paper px-2.5 text-[11.5px] font-bold transition-colors hover:bg-hover aria-pressed:border-ink aria-pressed:bg-yellow aria-pressed:text-on-yellow'
 
-/** Scout's journal: every note of the session in the order it was written, grouped by day, filterable by kind and file. */
-export function JournalPage() {
+/** Scout's journal: every note of the session in the order it was written, grouped by day, filterable by kind and file. The Journal view of the Extras page. */
+export function JournalView() {
   const { sessionId } = useSessionContext()
   const detail = useCodeReviewDetail()
   const { dispatch } = useReview()
@@ -52,7 +50,6 @@ export function JournalPage() {
     }
     return groups
   }, [shown])
-  const live = entries.filter((entry) => entry.supersededBy === undefined).length
 
   function toggleKind(kind: JournalKind) {
     const next = new Set(kinds)
@@ -81,8 +78,7 @@ export function JournalPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-[900px] flex-col gap-5 px-6 py-6">
-      <PageHeader title="Journal" summary={entries.length > 0 ? `${pluralize(live, 'note')} from Scout` : null} />
+    <div className="flex flex-col gap-5">
       {entries.length === 0 ? (
         <EmptyState icon={NotebookText} title="No notes yet" description="Scout writes a note when it makes a decision worth explaining. They show here and under the lines they are about." />
       ) : (
@@ -137,6 +133,6 @@ export function JournalPage() {
           )}
         </>
       )}
-    </main>
+    </div>
   )
 }

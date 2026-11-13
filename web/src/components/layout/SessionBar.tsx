@@ -1,10 +1,11 @@
 import { BookOpen, ChevronLeft, Keyboard } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router'
+import { Link, useLocation, useSearchParams } from 'react-router'
 import { SkillsHelp } from '@/components/common/SkillsHelp'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
+import { extrasViewOf, TAB_PARAM } from '@/lib/extras-view'
 import { PAGE_MODES, SWIPE_GRID_MODES } from '@/lib/mode'
 import { useHotkeys } from '@/lib/useHotkeys'
 import { sessionListRoute } from '@/lib/paths'
@@ -51,7 +52,10 @@ export function SessionBar({ onHelp }: SessionBarProps) {
   // A PR review's Evidence page has its own swipe and grid.
   const onPrEvidence = kind === 'pr-review' && section === 'evidence'
   // Spec, Extras and a PR review's Summary switch between their stacked cards and a grid of tiles, on their own route.
-  const onPageModes = kind !== 'test-run' && (section === 'spec' || section === 'extras' || section === 'summary')
+  // Extras only while its extras (not the journal) are showing.
+  const [searchParams] = useSearchParams()
+  const onExtras = section === 'extras' && extrasViewOf(detail, searchParams.get(TAB_PARAM)) === 'extras'
+  const onPageModes = kind !== 'test-run' && (section === 'spec' || onExtras || section === 'summary')
   const saveText = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Not saved' : ''
 
   return (

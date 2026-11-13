@@ -12,6 +12,7 @@ export default defineConfig([
     'fixtures/**',
     'test-results/**',
     'playwright-report/**',
+    'design/**',
   ]),
   {
     files: ['**/*.{js,mjs,cjs}'],

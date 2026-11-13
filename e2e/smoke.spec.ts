@@ -270,6 +270,8 @@ test.describe('session shell', () => {
       await page.goto(`${base}/${route}`)
       await expect(rail(page).getByRole('heading', { name: heading, exact: true })).toBeVisible()
     }
+    await page.goto(`${base}/blueprint`)
+    await expect(rail(page).getByRole('navigation', { name: 'Packages' })).toBeVisible()
     await page.goto(`${base}/files`)
     await expect(rail(page).getByRole('tree')).toBeVisible()
   })

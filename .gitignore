@@ -14,3 +14,6 @@ playwright-report/
 
 # Personal GitHub repos and teams for the fixture store (see scripts/fixtures/worktrees.ts).
 scripts/fixtures/github.local.json
+
+# Prototype dataset: contains source from a private repo.
+design/review-explore/data.js

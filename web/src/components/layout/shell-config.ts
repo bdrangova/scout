@@ -23,7 +23,7 @@ export interface ShellConfig {
   }
 }
 
-const CODE_REVIEW_LABELS: Record<(typeof SECTIONS)[number], string> = { spec: 'Spec', extras: 'Extras', journal: 'Journal', evidence: 'Evidence', files: 'Files', submit: 'Submit' }
+const CODE_REVIEW_LABELS: Record<(typeof SECTIONS)[number], string> = { spec: 'Spec', extras: 'Extras', evidence: 'Evidence', blueprint: 'Blueprint', files: 'Files', submit: 'Submit' }
 
 export const CODE_REVIEW_SHELL: ShellConfig = {
   kind: 'code-review',
@@ -36,19 +36,18 @@ export const CODE_REVIEW_SHELL: ShellConfig = {
       case 'spec':
         return detail.spec.length
       case 'extras':
-        return detail.extras.length
+        // The journal is a view of the Extras page, so its notes count here.
+        return detail.extras.length + detail.journalCount
       case 'evidence':
         return detail.evidence.length
-      case 'journal':
-        return detail.journalCount
+      case 'blueprint':
+        return detail.tree.files.length
       case 'files':
         return detail.tree.files.length
       default:
         return undefined
     }
   },
-  // Scout's journal is a tab only once it has a live note.
-  visibleSections: (detail) => SECTIONS.filter((section) => section !== 'journal' || (!isTestRunDetail(detail) && detail.journalCount > 0)),
   hotkeys: { modes: true },
 }
 
@@ -93,8 +92,8 @@ export const TEST_RUN_SHELL: ShellConfig = {
   hotkeys: { modes: true },
 }
 
-/** Summary (what the PR is), Review (the diff), Evidence (each finding's reproduction and what was said about it), Submit. */
-const PR_REVIEW_SECTIONS = ['summary', 'files', 'evidence', 'submit'] as const
+/** Summary (what the PR is), Blueprint (the change as a diagram), Review (the diff), Evidence (each finding's reproduction and what was said about it), Submit. */
+const PR_REVIEW_SECTIONS = ['summary', 'blueprint', 'files', 'evidence', 'submit'] as const
 
 export const PR_REVIEW_SHELL: ShellConfig = {
   ...CODE_REVIEW_SHELL, kind: 'pr-review', sections: PR_REVIEW_SECTIONS, visibleSections: () => PR_REVIEW_SECTIONS,

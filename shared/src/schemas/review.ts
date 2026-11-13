@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { COMMENT_ID_RE, FINGERPRINT_RE, JOURNAL_ID_RE, SCHEMA_VERSION, SECTIONS, SESSION_ID_RE, TEST_SECTIONS } from '../constants.ts'
+import { COMMENT_ID_RE, FINGERPRINT_RE, JOURNAL_ID_RE, LEGACY_SECTIONS, SCHEMA_VERSION, SECTIONS, SESSION_ID_RE, TEST_SECTIONS } from '../constants.ts'
 
 const isoDate = z.iso.datetime({ offset: true })
 
@@ -130,7 +130,7 @@ export const ReviewSchema = z
       mode: ModeSchema,
       currentFile: z.string().nullable(),
       /** Test runs keep the current scenario id in `currentFile`. */
-      section: z.enum([...SECTIONS, ...TEST_SECTIONS]),
+      section: z.enum([...SECTIONS, ...LEGACY_SECTIONS, ...TEST_SECTIONS]),
     }),
     updatedAt: isoDate,
   })

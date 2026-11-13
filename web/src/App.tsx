@@ -3,10 +3,11 @@ import { DiffWorkerProvider } from './components/diff/DiffWorkerProvider'
 import { SessionIndexRedirect } from './components/layout/SessionIndexRedirect'
 import { TestRunIndexRedirect } from './components/layout/TestRunIndexRedirect'
 import { Toaster } from './components/ui/sonner'
+import { BlueprintPage } from './pages/BlueprintPage'
 import { EvidencePage } from './pages/EvidencePage'
 import { ExtrasPage } from './pages/ExtrasPage'
 import { FilesPage } from './pages/FilesPage'
-import { JournalPage } from './pages/JournalPage'
+import { JournalRedirect } from './pages/JournalRedirect'
 import { PendingPrPage } from './pages/PendingPrPage'
 import { PrSummaryPage } from './pages/PrSummaryPage'
 import { SessionLayout } from './pages/SessionLayout'
@@ -24,7 +25,7 @@ import { ReviewPage } from './pages/testrun/ReviewPage'
 import { TestRunSubmitPage } from './pages/testrun/TestRunSubmitPage'
 
 // Web routes from the contract: `/` (worktrees), `/d` (development sessions), `/s/:id/files`, `/s/:id/files/*path`,
-// `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras`, `/s/:id/journal`, `/s/:id/submit`.
+// `/s/:id/evidence/*path?`, `/s/:id/spec`, `/s/:id/extras` (also Scout's journal, `?tab=journal`; `/s/:id/journal` redirects there), `/s/:id/blueprint`, `/s/:id/submit`.
 // A PR review also has `/s/:id/summary`, where it opens.
 // `/s/:id` itself redirects to the step the review should open on (lib/landing-section.ts).
 // PR reviews: `/pr?tab=assigned|active|archived` (list), `/pr/p/:id` (a not-started review; becomes `/s/:id` once started).
@@ -54,7 +55,8 @@ const router = createBrowserRouter([
       { path: 'evidence/*', Component: EvidencePage },
       { path: 'spec', Component: SpecPage },
       { path: 'extras', Component: ExtrasPage },
-      { path: 'journal', Component: JournalPage },
+      { path: 'journal', Component: JournalRedirect },
+      { path: 'blueprint', Component: BlueprintPage },
       { path: 'submit', Component: SubmitPage },
     ],
   },

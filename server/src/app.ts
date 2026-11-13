@@ -11,6 +11,7 @@ import { githubRouter } from './routes/github.ts'
 import { githubImageRouter } from './routes/github-image.ts'
 import { healthRouter } from './routes/health.ts'
 import { prReviewRouter } from './routes/pr-review.ts'
+import { blueprintRouter } from './routes/blueprint.ts'
 import { journalRouter } from './routes/journal.ts'
 import { prCommentsRouter } from './routes/pr-comments.ts'
 import { reviewRouter } from './routes/review.ts'
@@ -103,6 +104,7 @@ export function createApp(config: Config, overrides: AppOverrides = {}): Express
   api.use(prCommentsRouter(store))
   api.use(githubImageRouter())
   api.use(journalRouter(store))
+  api.use(blueprintRouter(store))
   api.use(prReviewRouter(store))
   api.use(settingsRouter(config.home))
   api.use(githubRouter({ home: config.home, store, ...(overrides.gh ? { gh: overrides.gh } : {}) }))

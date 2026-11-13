@@ -18,6 +18,7 @@ spec/                         jira.md, plan.md, design.html …; optional spec/i
 pr-description.md             optional, session root
 review/review.json            dashboard-owned live review state
 review/resolutions.json       agent-owned (written by `scout resolve`)
+review/blueprint.json         dashboard-owned: the reviewer's arrangement of the Blueprint diagrams (BlueprintLayout; see docs/blueprint.md)
 review/pr-comments.json       written by `scout pr-sync` / `pr-link` only: the session's PR + its GitHub comments
 review/pr-resolutions.json    agent-owned (written by `scout pr-resolve`)
 review/sent/<stem>.json       immutable snapshot of each Submit; <stem> = sentAt with ':' → '-'
@@ -253,7 +254,7 @@ ArchivedSession = { id, title, tickets, repo: { path, branch, baseRef: string|nu
 SessionDetail = { manifest, tree: WorkingTree, evidence: EvidenceItem[], extras: ExtraItem[], spec: SpecItem[], prDescription: string|null, status, progress, activeRunId, pr?: PrSummary|null, prComments?: PrCommentCounts|null }
 ReviewResponse, PutReviewRequest/Response/Conflict, SendRequest = { decision, dispatch }, SendResponse = { sent, run, pending }, StartRunRequest — as before
 StoreEvent =
-  | { type: 'session.added'|'session.updated'|'session.removed'|'review.updated'|'resolutions.updated'|'journal.updated'|'pr-comments.updated', sessionId }
+  | { type: 'session.added'|'session.updated'|'session.removed'|'review.updated'|'resolutions.updated'|'journal.updated'|'pr-comments.updated'|'blueprint-layout.updated' /* review/blueprint.json changed on disk, not by the server's own PUT */, sessionId }
   | { type: 'run.updated', sessionId, runId }
   | { type: 'tree.updated', sessionId, fingerprint /* WorkingTree.fingerprint */, durationMs }
 FileContentsSide = 'before'|'after'
@@ -285,6 +286,9 @@ GET  /sessions/:id/evidence/*path                 only paths listed by deriveEvi
 GET  /sessions/:id/extras/*path                   only paths listed by deriveExtras; correct Content-Type
 GET  /sessions/:id/spec/*path                     only paths listed by deriveSpec; correct Content-Type
 GET  /sessions/:id/pr-comments                    PrCommentsResponse (empty when never synced; 404 unknown session; 422 invalid file)
+GET  /sessions/:id/blueprint                      BlueprintResponse (computed from the diff, cached per tree fingerprint; { blueprint: null } for a test run; 404 unknown session)
+GET  /sessions/:id/blueprint/layout               BlueprintLayoutResponse ({ layout: null } when absent, invalid or a test run)
+PUT  /sessions/:id/blueprint/layout               PutBlueprintLayoutRequest { diagram, layout | null } → { updatedAt }; replaces/removes that one diagram, last write wins; 400 invalid body, 404 test run or unknown session
 GET  /sessions/:id/review                         ReviewResponse (empty review in memory when missing)
 PUT  /sessions/:id/review                         PutReviewRequest → { updatedAt } | 409 { error, current }
 POST /sessions/:id/review/send                    SendRequest → SendResponse; writes sent/<stem>.json|.md|.patch

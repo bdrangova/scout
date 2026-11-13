@@ -8,7 +8,7 @@ import { JournalContext } from '@/state/journal-context'
 import { ReviewStateContext, type ReviewContextValue } from '@/state/review-context'
 import { filesFixture, reviewFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
 import { makeEntry, makeJournal } from '@/test/journal'
-import { JournalPage } from './JournalPage'
+import { JournalView } from './JournalView'
 
 vi.mock('@streamdown/mermaid', () => ({
   mermaid: { name: 'mermaid', type: 'diagram', language: 'mermaid', getMermaid: () => ({ initialize() {}, render: async () => ({ svg: '<svg />' }) }) },
@@ -46,7 +46,7 @@ function renderPage(entries: ReturnType<typeof makeEntry>[], dispatch = vi.fn())
         <ReviewStateContext.Provider value={value}>
           <JournalContext.Provider value={{ journal: makeJournal(entries), loading: false, error: null, reload: () => {} }}>
             <Routes>
-              <Route path="/s/:id/journal" element={<JournalPage />} />
+              <Route path="/s/:id/journal" element={<JournalView />} />
               <Route path="*" element={<Where />} />
             </Routes>
           </JournalContext.Provider>
@@ -66,7 +66,7 @@ const ENTRIES = [
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('JournalPage', () => {
+describe('JournalView', () => {
   it('lists notes in order, grouped by day, with superseded ones struck through and linking to the replacement', async () => {
     renderPage(ENTRIES)
     const days = screen.getAllByRole('region').map((region) => region.getAttribute('aria-label'))
