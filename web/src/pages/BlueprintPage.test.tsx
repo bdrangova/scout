@@ -1,12 +1,13 @@
 import { type Blueprint, type BlueprintFile, type BlueprintGroup, type BlueprintGroupingType, type BlueprintLayout } from '@scout/shared'
-import { fireEvent, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { forwardRef, useEffect, useImperativeHandle, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { JournalContext } from '@/state/journal-context'
-import { fp, makeTreeFile, SESSION_ID, sessionDetailFixture, testRunDetailFixture } from '@/test/fixtures'
+import { fp, makeTreeFile, reviewResponseFixture, SESSION_ID, sessionDetailFixture, testRunDetailFixture } from '@/test/fixtures'
 import { makeEntry, makeJournal } from '@/test/journal'
+import { mockReviewApi } from '@/test/mock-api'
 import { renderShell } from '@/test/render-shell'
 import { BlueprintPage } from './BlueprintPage'
 
@@ -38,6 +39,12 @@ vi.mock('@/lib/blueprint', async (importOriginal) => {
 vi.mock('@/lib/line-jump', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/line-jump')>()), requestLineJump: mocks.requestLineJump }))
 
 // The pan and zoom library measures real layout; here it only has to render its content and report that it is ready.
+vi.mock('@pierre/diffs/react', () => ({
+  PatchDiff: ({ patch }: { patch: string }) => <pre data-testid="patch-diff">{patch}</pre>,
+  WorkerPoolContextProvider: ({ children }: { children: ReactNode }) => children,
+}))
+vi.mock('sonner', async () => (await import('@/test/mock-sonner')).sonnerModuleMock())
+
 vi.mock('react-zoom-pan-pinch', () => ({
   TransformWrapper: forwardRef(function Wrapper({ children, onInit }: { children: ReactNode; onInit?: () => void }, ref) {
     useImperativeHandle(ref, () => ({ zoomIn: () => Promise.resolve(), zoomOut: () => Promise.resolve(), setTransform: () => Promise.resolve() }))
@@ -70,7 +77,7 @@ function where(): URL {
 }
 
 function open(search = '', journal = makeJournal([])) {
-  renderShell(`/s/${SESSION_ID}/blueprint${search}`, {
+  return renderShell(`/s/${SESSION_ID}/blueprint${search}`, {
     detail,
     page: (
       <JournalContext.Provider value={{ journal, loading: false, error: null, reload: () => {} }}>
@@ -89,6 +96,8 @@ const TOP_BAR: BlueprintGroup = { id: 'top-bar', name: 'Top bar', purpose: 'The 
 const REST: BlueprintGroup = { id: 'rest', name: 'Everything else', purpose: 'Supporting code.', files: PATHS.filter((path) => path.startsWith('b/')) }
 
 beforeEach(() => {
+  window.localStorage.clear()
+  mockReviewApi(reviewResponseFixture())
   mocks.state.groupings = {}
   mocks.save.mockClear()
   mocks.requestLineJump.mockClear()
@@ -159,21 +168,14 @@ describe('BlueprintPage', () => {
     expect(within(box).getByText('goneFn()')).toHaveClass('line-through')
     await userEvent.click(within(box).getByRole('button', { name: /removed goneFn\(\)/ }))
     expect(mocks.requestLineJump).toHaveBeenCalledWith('a/A0.ts', 'old', 9)
-    expect(where().pathname).toBe(`/s/${SESSION_ID}/files/a/A0.ts`)
-    expect(where().searchParams.get('bp')).toBe('pkg:a')
+    expect(where().pathname).toBe(`/s/${SESSION_ID}/blueprint`)
+    expect(where().searchParams.get('file')).toBe('a/A0.ts')
+    expect(screen.getByRole('dialog', { name: 'a' })).toBeInTheDocument()
   })
 
   it('shows the journal summary of a file', () => {
     open('?at=pkg:a', makeJournal([makeEntry('j1', { kind: 'summary', title: 'Adds the countdown', file: 'a/A0.ts' })]))
     expect(within(screen.getByRole('group', { name: 'File a/A0.ts' })).getByText('Adds the countdown')).toBeInTheDocument()
-  })
-
-  it('opens the Files page limited to the diagram from a file header', async () => {
-    open('?at=pkg:a')
-    await userEvent.click(within(screen.getByRole('group', { name: 'File a/A3.ts' })).getByRole('button', { name: /A3\.ts/ }))
-    expect(where().pathname).toBe(`/s/${SESSION_ID}/files/a/A3.ts`)
-    expect(where().searchParams.get('bp')).toBe('pkg:a')
-    expect(where().searchParams.get('mode')).toBe('swipe')
   })
 
   it('draws arrows between files and redraws the diagram around a file', async () => {
@@ -183,6 +185,44 @@ describe('BlueprintPage', () => {
     expect(document.querySelectorAll('[data-arrow="uses"]')).toHaveLength(1)
     await userEvent.click(within(screen.getByRole('group', { name: 'File a/A0.ts' })).getByRole('button', { name: /2 lean on it/ }))
     expect(where().searchParams.get('at')).toBe('around:a/A0.ts')
+  })
+
+  it('hides a kind of arrow from the legend and remembers it for the session', async () => {
+    setBlueprint({ 'a/A1.ts': { imports: ['a/A0.ts'], extends: ['a/A0.ts'] }, 'a/A2.ts': { imports: ['a/A0.ts'] } })
+    open('?at=pkg:a')
+    const leansOn = screen.getByRole('button', { name: 'Show the "leans on" arrows' })
+    expect(leansOn).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(leansOn)
+    expect(leansOn).toHaveAttribute('aria-pressed', 'false')
+    expect(document.querySelectorAll('[data-arrow="uses"]')).toHaveLength(0)
+    expect(document.querySelectorAll('[data-arrow="extends"]')).toHaveLength(1)
+    cleanup()
+    open('?at=pkg:a')
+    expect(screen.getByRole('button', { name: 'Show the "leans on" arrows' })).toHaveAttribute('aria-pressed', 'false')
+    expect(document.querySelectorAll('[data-arrow="uses"]')).toHaveLength(0)
+    await userEvent.click(screen.getByRole('button', { name: 'Show the "leans on" arrows' }))
+    expect(document.querySelectorAll('[data-arrow="uses"]')).toHaveLength(1)
+  })
+
+  it('shows only the boxes no arrow touches from the legend and remembers it for the session', async () => {
+    setBlueprint({ 'a/A1.ts': { imports: ['a/A0.ts'] } })
+    open('?at=pkg:a')
+    const shown = screen.getByRole('group', { name: 'Boxes shown' })
+    // No packages on this diagram: there is nothing for "files" to do.
+    expect(within(shown).queryByRole('button', { name: /loose files/ })).not.toBeInTheDocument()
+    const only = within(shown).getByRole('button', { name: 'Only the boxes no arrow touches' })
+    expect(only).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.click(only)
+    expect(only).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('group', { name: 'File a/A2.ts' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'File a/A0.ts' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'File a/A1.ts' })).not.toBeInTheDocument()
+    expect(document.querySelectorAll('[data-arrow]')).toHaveLength(0)
+    expect(shown).toHaveAttribute('title', '2 boxes hidden')
+    cleanup()
+    open('?at=pkg:a')
+    expect(screen.getByRole('button', { name: 'Only the boxes no arrow touches' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByRole('group', { name: 'File a/A0.ts' })).not.toBeInTheDocument()
   })
 
   it('shows the around-diagram with its crumb and goes up to the package on Esc', () => {
@@ -217,14 +257,6 @@ describe('BlueprintPage', () => {
     open('?at=pkg:a')
     await userEvent.click(screen.getByRole('button', { name: 'Tidy up' }))
     expect(mocks.save).toHaveBeenCalledWith('pkg:a', null)
-  })
-
-  it('hides summaries and members with Details off', async () => {
-    setBlueprint({ 'a/A0.ts': { members: [{ name: 'addedFn()', change: 'added', side: 'new', line: 4 }] } })
-    open('?at=pkg:a')
-    expect(screen.getByText('addedFn()')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Details' }))
-    expect(screen.queryByText('addedFn()')).not.toBeInTheDocument()
   })
 
   it('has labelled canvas controls and a named canvas', () => {
@@ -294,9 +326,6 @@ describe('BlueprintPage', () => {
       const rail = screen.getByRole('navigation', { name: 'Groups' })
       expect(within(rail).getByRole('button', { name: /By feature/ })).toHaveAttribute('aria-current', 'page')
       expect(screen.queryByRole('status', { name: 'Grouping is out of date' })).not.toBeInTheDocument()
-      // Details off hides the purpose.
-      await userEvent.click(screen.getByRole('button', { name: 'Details' }))
-      expect(screen.queryByText('Supporting code.')).not.toBeInTheDocument()
     })
 
     it('opens a group, keeps the view in the URL, and filters the outline by name', async () => {
@@ -317,12 +346,13 @@ describe('BlueprintPage', () => {
       expect(rail.queryByRole('button', { name: /Top bar/ })).not.toBeInTheDocument()
     })
 
-    it('opens a file from a group diagram on the Files page scoped to the group', async () => {
+    it('opens a file from a group diagram in the cards over it, titled by the group', async () => {
       setGrouping('feature', [TOP_BAR, REST])
       open('?at=pkg:@feature/top-bar&view=feature')
       await userEvent.click(within(screen.getByRole('group', { name: 'File a/A3.ts' })).getByRole('button', { name: /A3\.ts/ }))
-      expect(where().pathname).toBe(`/s/${SESSION_ID}/files/a/A3.ts`)
-      expect(where().searchParams.get('bp')).toBe('pkg:@feature/top-bar')
+      expect(where().searchParams.get('file')).toBe('a/A3.ts')
+      expect(where().searchParams.get('at')).toBe('pkg:@feature/top-bar')
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
     })
 
     it('draws files no group names in a dashed Ungrouped box and says the grouping is out of date', async () => {

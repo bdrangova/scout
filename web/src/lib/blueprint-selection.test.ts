@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { loadBlueprintSelection, orderBlueprintSelection, saveBlueprintSelection, withBlueprint, withoutBlueprintSelection } from './blueprint'
+import { loadBlueprintSelection, orderBlueprintSelection, saveBlueprintSelection } from './blueprint'
 
 describe('Blueprint selection helpers', () => {
   beforeEach(() => window.sessionStorage.clear())
@@ -25,12 +25,5 @@ describe('Blueprint selection helpers', () => {
     expect(loadBlueprintSelection('s1', 'mixed')).toBeNull()
     window.sessionStorage.setItem('scout:bp-sel:s1:junk', 'not json')
     expect(loadBlueprintSelection('s1', 'junk')).toBeNull()
-  })
-
-  it('keeps sel when the diagram changes and drops it when the Blueprint scope is left', () => {
-    const params = new URLSearchParams('mode=swipe&bp=pkg%3Aa&sel=k1')
-    expect(withBlueprint(params, 'pkg:b').get('sel')).toBe('k1')
-    expect(withBlueprint(params, null).toString()).toBe('mode=swipe')
-    expect(withoutBlueprintSelection(params).toString()).toBe('mode=swipe&bp=pkg%3Aa')
   })
 })

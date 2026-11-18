@@ -12,15 +12,14 @@ export const PACKAGE_BOX_WIDTH = 236
 
 export interface PackageBoxProps extends Omit<BoxShellProps, 'boxKey' | 'label' | 'width' | 'children' | 'className'> {
   info: BoxInfo
-  details: boolean
   onOpen: (dir: string) => void
 }
 
 /** A folder of the change drawn as a UML package: a header band with its name (a link into the folder), the biggest files and the review progress. */
-export function PackageBox({ info, details, onOpen, ...shell }: PackageBoxProps) {
+export function PackageBox({ info, onOpen, ...shell }: PackageBoxProps) {
   const { box } = info
   const dir = box.ref.type === 'dir' ? box.ref.dir : ''
-  const state = boxStateOf(info)
+  const state = boxStateOf(info, true)
   // An agent group (its dir starts with `@<type>`) reads «group»; the box of files no group names reads «ungrouped» and is dashed.
   const group = blueprintGroupingOfDir(dir) !== null
   const ungrouped = group && dir.endsWith(`/${BLUEPRINT_UNGROUPED_ID}`)
@@ -55,13 +54,11 @@ export function PackageBox({ info, details, onOpen, ...shell }: PackageBoxProps)
           </span>
         </b>
       </button>
-      {details && info.purpose && <p className="m-0 px-3 pt-2 text-[12px] leading-[1.4] text-ink">{info.purpose}</p>}
-      {details && (
-        <p className="m-0 px-3 pt-2 pb-0.5 font-mono text-[10.5px] leading-[1.4] break-all text-ink-muted">
-          {info.topNames.join(', ')}
-          {more > 0 && ` +${more} more`}
-        </p>
-      )}
+      {info.purpose && <p className="m-0 px-3 pt-2 text-[12px] leading-[1.4] text-ink">{info.purpose}</p>}
+      <p className="m-0 px-3 pt-2 pb-0.5 font-mono text-[10.5px] leading-[1.4] break-all text-ink-muted">
+        {info.topNames.join(', ')}
+        {more > 0 && ` +${more} more`}
+      </p>
       <div className="flex items-center gap-2 px-3 py-1.5 text-[11.5px]">
         <span>{box.files.length === 1 ? '1 file' : `${box.files.length} files`}</span>
         <span className="inline-flex gap-1.5 font-mono font-bold tabular-nums">
@@ -79,12 +76,12 @@ export function PackageBox({ info, details, onOpen, ...shell }: PackageBoxProps)
         aria-valuemin={0}
         aria-valuemax={info.total}
         aria-valuenow={info.reviewed}
-        className={cn('h-[5px] overflow-hidden border-t border-line bg-sunken', !details && 'rounded-b-[8.5px]')}
+        className="h-[5px] overflow-hidden border-t border-line bg-sunken"
       >
         <i className="block h-full bg-green" style={{ width: `${info.total === 0 ? 0 : (100 * info.approved) / info.total}%`, float: 'left' }} />
         <i className="block h-full bg-red" style={{ width: `${info.total === 0 ? 0 : (100 * info.rejected) / info.total}%`, float: 'left' }} />
       </div>
-      {details && <OutsideLinks box={box} />}
+      <OutsideLinks box={box} />
     </BoxShell>
   )
 }

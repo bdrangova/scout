@@ -11,14 +11,15 @@ import {
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { ReactZoomPanPinchContentRef } from 'react-zoom-pan-pinch'
+import { arrowKindOf, type BoxHide, useArrowKinds, useBoxHides } from '@/lib/blueprint-arrow-prefs'
 import { isTypingTarget } from '@/lib/keyboard'
 import type { Rect } from './arrow-path'
 import { BlueprintArrows } from './BlueprintArrows'
 import { BlueprintCanvas } from './BlueprintCanvas'
 import { BlueprintToolbar } from './BlueprintToolbar'
 import type { BoxInfo } from './box-info'
+import { boxStateOf } from './box-state'
 import { FILE_BOX_WIDTH, FileBox } from './FileBox'
-import { FilePreview } from './FilePreview'
 import { fitView, type View } from './fit-view'
 import { PACKAGE_BOX_WIDTH, PackageBox } from './PackageBox'
 import { SelectionBar } from './SelectionBar'
@@ -52,18 +53,17 @@ export interface BlueprintDiagramViewProps {
   /** Select mode and the picked files; they outlive the diagram. */
   selection: Selection
   approveAll: ApproveAll
-  /** "View all": the Files page limited to these files (in this diagram's reading order). */
+  /** "View all": opens the cards over the diagram for exactly these files. */
   onViewSelected: (paths: readonly string[]) => void
+  /** The cards are open over the diagram: its keys (Esc, F, S) wait. */
+  keysSuspended: boolean
 }
 
 /** One diagram on the canvas: measures the boxes, lays them out, lets the user move them, and keeps the arrangement and view. Remount it per diagram. */
-export function BlueprintDiagramView({ sessionId, diagram, chain, infos, layout, save, onNavigate, onOpenFile, onOpenMember, parentId, viewSwitch, notice, selection, approveAll, onViewSelected }: BlueprintDiagramViewProps) {
-  const [details, setDetails] = useState(true)
+export function BlueprintDiagramView({ sessionId, diagram, chain, infos, layout, save, onNavigate, onOpenFile, onOpenMember, parentId, viewSwitch, notice, selection, approveAll, onViewSelected, keysSuspended }: BlueprintDiagramViewProps) {
   const [active, setActive] = useState<string | null>(null)
   const [libraryReady, setLibraryReady] = useState(false)
   const [tidyCount, setTidyCount] = useState(0)
-  // The file whose review card is open on top (Ctrl or Cmd + click), and the box to give the focus back to.
-  const [preview, setPreview] = useState<{ path: string; boxKey: string } | null>(null)
   // Rows wrap at about the width the canvas has at 100% (the window less the rail), fixed for this diagram so resizing never reshuffles it.
   const [rowWidth] = useState(() => Math.max(MIN_ROW_WIDTH, window.innerWidth - ROW_WIDTH_MARGIN))
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -75,19 +75,44 @@ export function BlueprintDiagramView({ sessionId, diagram, chain, infos, layout,
 
   const saved = savedDiagramLayout(sessionId, layout, diagram.id)
   const persistence = useDiagramPersistence({ sessionId, diagramId: diagram.id, layout, save })
-  const { sizes, measured } = useBoxSizes(contentRef, `${details}|${diagram.boxes.map((box) => box.key).join(',')}`)
+  const { sizes, measured } = useBoxSizes(contentRef, diagram.boxes.map((box) => box.key).join(','))
   const arrangement = useDiagramLayout({ diagram, sizes, maxRowWidth: rowWidth, saved, persistence })
   const { positions } = arrangement
+
+  // The box switches: approved and files hide those boxes; "only unlinked" hides every box an arrow touches. A hidden box stays laid out and measured, so nothing else moves; it just is not drawn, and neither are its arrows.
+  const [hides, toggleHide] = useBoxHides(sessionId)
+  const hideOptions = useMemo(() => {
+    const dirs = diagram.boxes.some((box) => box.ref.type === 'dir')
+    const options: BoxHide[] = ['approved']
+    if (diagram.center === null && dirs && diagram.boxes.some((box) => box.ref.type !== 'dir')) options.push('files')
+    if (diagram.center === null && diagram.arrows.length > 0 && diagram.boxes.some((box) => box.layer === -1)) options.push('unlinked')
+    return options
+  }, [diagram])
+  const hiddenKeys = useMemo(() => {
+    const keys = new Set<string>()
+    for (const box of diagram.boxes) {
+      if (box.key === diagram.center) continue
+      const dir = box.ref.type === 'dir'
+      const info = infos.get(box.key)
+      const gone =
+        (hides.approved && info !== undefined && boxStateOf(info, dir) === 'approved') ||
+        (hides.files && hideOptions.includes('files') && !dir) ||
+        (hides.unlinked && hideOptions.includes('unlinked') && box.layer !== -1)
+      if (gone) keys.add(box.key)
+    }
+    return keys
+  }, [diagram, infos, hides, hideOptions])
 
   const rects = useMemo(() => {
     const result: Record<string, Rect> = {}
     for (const box of diagram.boxes) {
+      if (hiddenKeys.has(box.key)) continue
       const at: BlueprintPoint = positions[box.key] ?? { x: 0, y: 0 }
       const size = sizes[box.key]
       result[box.key] = { x: at.x, y: at.y, w: size?.w ?? (box.ref.type === 'dir' ? PACKAGE_BOX_WIDTH : FILE_BOX_WIDTH), h: size?.h ?? FALLBACK_HEIGHT }
     }
     return result
-  }, [diagram, positions, sizes])
+  }, [diagram, positions, sizes, hiddenKeys])
   const extent = useMemo(() => {
     const all = Object.values(rects)
     return { w: Math.max(1, ...all.map((rect) => rect.x + rect.w)), h: Math.max(1, ...all.map((rect) => rect.y + rect.h)) }
@@ -136,12 +161,10 @@ export function BlueprintDiagramView({ sessionId, diagram, chain, infos, layout,
     setTidyCount((count) => count + 1)
   }
 
-  const previewFile = preview === null ? null : (infos.get(`file:${preview.path}`)?.file?.tree ?? null)
-  const previewing = previewFile !== null
   const { active: selecting, leave, enter } = selection
-  // Esc leaves select mode, else goes up a level; F fits; S toggles select mode. Typing and modified keys are left alone, and an open preview owns the keyboard.
+  // Esc leaves select mode, else goes up a level; F fits; S toggles select mode. Typing and modified keys are left alone, and the open cards own the keyboard.
   useEffect(() => {
-    if (previewing) return
+    if (keysSuspended) return
     function onKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target, event.composedPath())) return
       if (event.key === 'Escape') {
@@ -155,33 +178,37 @@ export function BlueprintDiagramView({ sessionId, diagram, chain, infos, layout,
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [fit, onNavigate, parentId, previewing, selecting, leave, enter])
+  }, [fit, onNavigate, parentId, keysSuspended, selecting, leave, enter])
+
+  // Switching a kind of arrow off only hides it: the layout still comes from every link, so the boxes stay put.
+  const [arrowKinds, toggleArrowKind] = useArrowKinds(sessionId)
+  const arrows = useMemo(() => diagram.arrows.filter((arrow) => arrowKinds[arrowKindOf(arrow)]), [diagram, arrowKinds])
 
   const near = useMemo(() => {
     if (active === null) return null
     const set = new Set([active])
-    for (const arrow of diagram.arrows) {
+    for (const arrow of arrows) {
       if (arrow.from === active) set.add(arrow.to)
       if (arrow.to === active) set.add(arrow.from)
     }
     return set
-  }, [active, diagram])
+  }, [active, arrows])
 
   const all = [...infos.values()]
-  const diagramFiles = useMemo(() => diagram.boxes.flatMap((box) => box.files), [diagram])
+  const diagramFiles = useMemo(() => diagram.boxes.filter((box) => !hiddenKeys.has(box.key)).flatMap((box) => box.files), [diagram, hiddenKeys])
   const shell = (box: BlueprintBox) => ({
     x: positions[box.key]?.x ?? 0,
     y: positions[box.key]?.y ?? 0,
     // Nothing is "unrelated" in select mode: every box is a candidate.
     dim: !selecting && near !== null && !near.has(box.key),
     dragging: drag.draggingKey === box.key,
+    hidden: hiddenKeys.has(box.key),
     pick: selecting ? { state: pickStateOf(box.files, selection.selected), onToggle: () => selection.toggle(box.files) } : null,
     onShiftPick: () => enter(box.files),
     onActive: setActive,
     onPointerDown: drag.onPointerDown,
     onClickCapture: drag.onClickCapture,
   })
-  const closePreview = useCallback(() => setPreview(null), [])
 
   return (
     <>
@@ -191,15 +218,19 @@ export function BlueprintDiagramView({ sessionId, diagram, chain, infos, layout,
         boxes={diagram.boxes.length}
         files={all.reduce((sum, info) => sum + info.total, 0)}
         reviewed={all.reduce((sum, info) => sum + info.reviewed, 0)}
-        details={details}
         selecting={selecting}
         viewSwitch={viewSwitch}
+        arrows={arrowKinds}
+        onToggleArrow={toggleArrowKind}
+        hideOptions={hideOptions}
+        hides={hides}
+        hidden={hiddenKeys.size}
+        onToggleHide={toggleHide}
         onNavigate={onNavigate}
         onZoomIn={() => void transformRef.current?.zoomIn()}
         onZoomOut={() => void transformRef.current?.zoomOut()}
         onFit={fit}
         onTidy={tidy}
-        onToggleDetails={() => setDetails((value) => !value)}
         onToggleSelect={() => (selecting ? leave() : enter())}
       />
       {notice}
@@ -229,30 +260,26 @@ export function BlueprintDiagramView({ sessionId, diagram, chain, infos, layout,
           )
         }
       >
-        <BlueprintArrows diagram={diagram} rects={rects} active={active} />
+        <BlueprintArrows arrows={arrows} rects={rects} active={active} />
         {diagram.boxes.map((box) => {
           const info = infos.get(box.key)
           if (!info) return null
-          const filePath = box.ref.type === 'file' ? box.ref.path : null
           return box.ref.type === 'dir' ? (
-            <PackageBox key={box.key} info={info} details={details} onOpen={(dir) => onNavigate(blueprintDiagramId({ type: 'package', dir }))} {...shell(box)} />
+            <PackageBox key={box.key} info={info} onOpen={(dir) => onNavigate(blueprintDiagramId({ type: 'package', dir }))} {...shell(box)} />
           ) : (
             <FileBox
               key={box.key}
               info={info}
-              details={details}
               center={diagram.center === box.key}
               showOutside={diagram.center === null}
               onOpenFile={onOpenFile}
               onOpenMember={onOpenMember}
               onAround={(path) => onNavigate(blueprintDiagramId({ type: 'around', path }))}
-              onPreview={() => filePath !== null && setPreview({ path: filePath, boxKey: box.key })}
               {...shell(box)}
             />
           )
         })}
       </BlueprintCanvas>
-      <FilePreview file={previewFile} sessionId={sessionId} boxKey={preview?.boxKey ?? null} onClose={closePreview} />
     </>
   )
 }

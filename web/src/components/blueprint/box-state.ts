@@ -4,10 +4,14 @@ import type { BoxInfo } from './box-info'
 export type BoxState = 'approved' | 'rejected' | 'commented' | 'none'
 
 /**
- * A file: its verdict, else "commented" when it carries open comments. A package: rejected as soon as one file is,
- * approved once every file is, else commented when any of its files carries open comments.
+ * A file: its verdict, else "commented" when it carries open comments. A package or group (`many`): nothing until every file
+ * has a verdict, then rejected when any file is, else approved. Comments alone never colour a package; its count chip says so.
  */
-export function boxStateOf(info: BoxInfo): BoxState {
+export function boxStateOf(info: BoxInfo, many = false): BoxState {
+  if (many) {
+    if (info.total === 0 || info.approved + info.rejected < info.total) return 'none'
+    return info.rejected > 0 ? 'rejected' : 'approved'
+  }
   if (info.rejected > 0) return 'rejected'
   if (info.total > 0 && info.approved === info.total) return 'approved'
   return info.comments > 0 ? 'commented' : 'none'
@@ -17,7 +21,7 @@ export function boxStateOf(info: BoxInfo): BoxState {
 export const BOX_STATE_BORDER: Record<BoxState, string> = {
   approved: 'border-ok-bd',
   rejected: 'border-err-bd',
-  commented: 'border-ink-muted border-dashed',
+  commented: 'border-ink-muted',
   none: '',
 }
 

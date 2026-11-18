@@ -41,17 +41,6 @@ describe('SessionBar', () => {
     expect(within(tabs).getByRole('link', { name: 'Spec 1' })).toHaveTextContent('Spec1')
   })
 
-  it('keeps the Blueprint tab lit on a Blueprint stop of the Files page, leading back to the diagram', () => {
-    const { bar } = renderShell(`/s/${SESSION_ID}/files/src/app.ts?bp=pkg%3Asrc&mode=swipe`)
-    const tabs = within(bar).getByRole('navigation', { name: 'Sections' })
-    const blueprint = within(tabs).getByRole('link', { name: 'Blueprint 6' })
-    expect(blueprint).toHaveAttribute('aria-current', 'page')
-    expect(blueprint).toHaveAttribute('href', `/s/${SESSION_ID}/blueprint?at=pkg%3Asrc`)
-    const files = within(tabs).getByRole('link', { name: 'Files 6' })
-    expect(files).not.toHaveAttribute('aria-current')
-    expect(files).toHaveAttribute('href', `/s/${SESSION_ID}/files?mode=swipe`)
-  })
-
   it('counts the journal notes in the Extras tab, and shows no Journal tab', () => {
     const { bar } = renderShell(`/s/${SESSION_ID}/spec`, { detail: { ...sessionDetailFixture, journalCount: 3 } })
     expect(within(bar).getByRole('link', { name: 'Extras 4' })).toBeInTheDocument()

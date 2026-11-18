@@ -26,9 +26,9 @@ import { apiGet, apiPut } from './api'
 import { useAsync } from './hooks'
 import { useStoreEvents } from './useStoreEvents'
 
-/** `?bp=<diagram id>` on the Files page: the deck is limited to that Blueprint diagram's files, in its reading order. */
-export const BLUEPRINT_PARAM = 'bp'
-/** `?sel=<key>` on the Files page next to `?bp=`: the files picked on the Blueprint page, saved in sessionStorage under that key. */
+/** `?file=<path>` on the Blueprint page: the file whose card is open in the overlay. */
+export const BLUEPRINT_FILE_PARAM = 'file'
+/** `?sel=<key>` on the Blueprint page next to `?file=`: the overlay's cards are the files picked in select mode, saved in sessionStorage under that key. */
 export const BLUEPRINT_SELECTION_PARAM = 'sel'
 /** `?at=<diagram id>` on the Blueprint page: the diagram shown; absent = the whole change. */
 export const BLUEPRINT_AT_PARAM = 'at'
@@ -90,23 +90,6 @@ export function blueprintSearch(diagram?: string | null, view: BlueprintView = '
 /** The Blueprint page of a code-review or PR-review session, opened on `diagram` (the whole change when absent). */
 export function blueprintRoute(sessionId: string, diagram?: string | null, view: BlueprintView = 'folders'): string {
   return `/s/${encodeURIComponent(sessionId)}/blueprint${blueprintSearch(diagram, view)}`
-}
-
-/** `params` with the Blueprint diagram set or removed, keeping everything else (`mode`, `show`, `sel`). Leaving the diagram also drops the picked files. */
-export function withBlueprint(params: URLSearchParams, diagram: string | null): URLSearchParams {
-  const next = new URLSearchParams(params)
-  if (diagram === null) {
-    next.delete(BLUEPRINT_PARAM)
-    next.delete(BLUEPRINT_SELECTION_PARAM)
-  } else next.set(BLUEPRINT_PARAM, diagram)
-  return next
-}
-
-/** `params` without the picked files (they could not be read back), keeping the diagram. */
-export function withoutBlueprintSelection(params: URLSearchParams): URLSearchParams {
-  const next = new URLSearchParams(params)
-  next.delete(BLUEPRINT_SELECTION_PARAM)
-  return next
 }
 
 function selectionStorageKey(sessionId: string, key: string): string {
@@ -179,7 +162,7 @@ export function useBlueprintGroups(sessionId: string, enabled = true): Blueprint
 
 /**
  * `GET /api/sessions/:id/blueprint`, refetched when the session's tree changed (the stale analysis stays meanwhile).
- * `enabled: false` skips the request (the Files page only needs it while `?bp=` is set).
+ * `enabled: false` skips the request.
  * `withGroups` also loads the agent's groupings (code reviews only) and turns them into `groupTrees` over the files changed now.
  */
 export function useBlueprint(sessionId: string, enabled = true, withGroups = false): BlueprintState {

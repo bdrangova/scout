@@ -35,8 +35,7 @@ export function useBoxDrag(options: BoxDragOptions): BoxDrag {
   useEffect(() => () => stop.current?.(), [])
 
   const onPointerDown = useCallback((key: string, event: PointerEvent<HTMLElement>) => {
-    // Ctrl or Cmd + click is the quick preview (macOS even reports it as a right-click press), never a drag.
-    if (!optionsRef.current.enabled || event.button !== 0 || !event.isPrimary || event.ctrlKey || event.metaKey) return
+    if (!optionsRef.current.enabled || event.button !== 0 || !event.isPrimary) return
     const target = event.currentTarget
     const { pointerId, clientX: startX, clientY: startY } = event
     const origin = optionsRef.current.positionOf(key)

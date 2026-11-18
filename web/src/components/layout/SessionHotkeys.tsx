@@ -11,6 +11,7 @@ import {
   toggledGridMode,
 } from "@/lib/mode";
 import { extrasViewOf, TAB_PARAM } from "@/lib/extras-view";
+import { BLUEPRINT_FILE_PARAM } from "@/lib/blueprint";
 import { sessionFilesRoute } from "@/lib/paths";
 import { useSessionContext } from "@/lib/session-context";
 import { useHotkeys, type HotkeyHandlers } from "@/lib/useHotkeys";
@@ -89,7 +90,10 @@ export function SessionHotkeys({ onToggleHelp }: { onToggleHelp: () => void }) {
     // A test run has no scroll mode: `S` is swipe. On the Blueprint page `S` is its own select mode.
     if (!onBlueprint) handlers.toggleMode = () => switchMode(testRun ? () => "swipe" : toggledCardMode);
     // Back from the grid returns to the remembered card mode (a test run has no scroll mode).
-    handlers.toggleGrid = () => switchMode(testRun ? (current) => (toggledGridMode(current) === "grid" ? "grid" : "swipe") : toggledGridMode);
+    // The cards over the Blueprint diagram (`?file=`) keep `G` to themselves: it must not leave for the Files grid.
+    if (!(onBlueprint && searchParams.has(BLUEPRINT_FILE_PARAM))) {
+      handlers.toggleGrid = () => switchMode(testRun ? (current) => (toggledGridMode(current) === "grid" ? "grid" : "swipe") : toggledGridMode);
+    }
   }
   useHotkeys(handlers);
   return null;

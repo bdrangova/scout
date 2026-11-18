@@ -1,10 +1,11 @@
 import { type Blueprint, type BlueprintFile, type BlueprintLayout, type FileReview, type ReviewAction } from '@scout/shared'
-import { act, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { forwardRef, useEffect, useImperativeHandle, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadBlueprintSelection } from '@/lib/blueprint'
+import { type ReviewContextValue } from '@/state/review-context'
 import { JournalContext } from '@/state/journal-context'
 import { fp, makeTreeFile, reviewResponseFixture, SESSION_ID, sessionDetailFixture } from '@/test/fixtures'
 import { makeJournal } from '@/test/journal'
@@ -62,11 +63,13 @@ function where(): URL {
 }
 
 const dispatched: ReviewAction[] = []
+const setVerdict = vi.fn<ReviewContextValue['setVerdict']>(() => false)
 function open(search = '', entries: Record<string, FileReview> = {}) {
   dispatched.length = 0
   renderShell(`/s/${SESSION_ID}/blueprint${search}`, {
     detail,
     dispatch: (action) => dispatched.push(action as ReviewAction),
+    setVerdict,
     fileReview: (path) => entries[path] ?? null,
     page: (
       <JournalContext.Provider value={{ journal: makeJournal([]), loading: false, error: null, reload: () => {} }}>
@@ -81,6 +84,7 @@ const box = (path: string) => screen.getByRole('group', { name: new RegExp(`^Fil
 const pickBox = (name: RegExp | string) => screen.getByRole('checkbox', { name })
 
 beforeEach(() => {
+  setVerdict.mockClear()
   // The review card of the preview fetches its patch.
   mockReviewApi(reviewResponseFixture())
   window.sessionStorage.clear()
@@ -88,66 +92,107 @@ beforeEach(() => {
   mocks.state.layout = null
 })
 
-describe('quick preview', () => {
-  it('opens the review card of a file on Ctrl + click and on Cmd + click, labelled by its path', () => {
+const openCard = (path: string) => fireEvent.click(within(box(path)).getByRole('button', { name: new RegExp(`${path.split('/').pop()?.replace('.', '\\.')}`) }))
+
+describe('cards over the diagram', () => {
+  it('opens on a file header click with the diagram\'s files, on that file, and puts it in the URL', () => {
     open('?at=pkg:a')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    fireEvent.click(box('a/A0.ts'), { ctrlKey: true })
-    const dialog = screen.getByRole('dialog', { name: 'a/A0.ts' })
-    expect(within(dialog).getByRole('article', { name: 'a/A0.ts' })).toBeInTheDocument()
+    openCard('a/A3.ts')
+    const dialog = screen.getByRole('dialog', { name: 'a' })
+    expect(within(dialog).getByRole('article', { name: 'a/A3.ts' })).toBeInTheDocument()
+    expect(within(dialog).getByText('4 / 8')).toBeInTheDocument()
+    expect(document.querySelector('[data-slot="deck-peek"]')).toBeNull()
     expect(within(dialog).getByRole('button', { name: /Approve/ })).toBeInTheDocument()
+    expect(where().pathname).toBe(`/s/${SESSION_ID}/blueprint`)
+    expect(where().searchParams.get('file')).toBe('a/A3.ts')
+    expect(where().searchParams.get('at')).toBe('pkg:a')
+    expect(where().searchParams.get('sel')).toBeNull()
+  })
+
+  it('moves with the arrows and the arrow keys, keeping ?file= in step', () => {
+    open('?at=pkg:a')
+    openCard('a/A3.ts')
+    fireEvent.click(screen.getByRole('button', { name: 'Next file' }))
+    expect(where().searchParams.get('file')).toBe('a/A4.ts')
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    expect(where().searchParams.get('file')).toBe('a/A2.ts')
+    expect(screen.getByRole('article', { name: 'a/A2.ts' })).toBeInTheDocument()
+  })
+
+  it('approves through the review action and stays open', () => {
+    open('?at=pkg:a')
+    openCard('a/A3.ts')
+    fireEvent.keyDown(window, { key: 'a' })
+    expect(setVerdict).toHaveBeenCalledWith('a/A3.ts', 'approved', TREE.find((file) => file.path === 'a/A3.ts')?.fingerprint)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('does not take the keys while a comment is being typed', () => {
+    open('?at=pkg:a')
+    openCard('a/A3.ts')
+    const field = document.createElement('textarea')
+    document.body.append(field)
+    fireEvent.keyDown(field, { key: 'a' })
+    field.remove()
+    expect(setVerdict).not.toHaveBeenCalled()
+  })
+
+  it('closes on Esc, on the scrim and on the corner button, and clears the URL each time', async () => {
+    open('?at=pkg:a')
+    openCard('a/A0.ts')
     fireEvent.keyDown(document.body, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    fireEvent.click(box('a/A1.ts'), { metaKey: true })
-    expect(screen.getByRole('dialog', { name: 'a/A1.ts' })).toBeInTheDocument()
-  })
+    expect(where().searchParams.get('file')).toBeNull()
+    expect(where().searchParams.get('at')).toBe('pkg:a')
 
-  it('opens on the contextmenu macOS sends for Ctrl + click, and leaves a plain right-click alone', () => {
-    open('?at=pkg:a')
-    expect(fireEvent.contextMenu(box('a/A0.ts'))).toBe(true)
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(fireEvent.contextMenu(box('a/A0.ts'), { ctrlKey: true })).toBe(false)
-    expect(screen.getByRole('dialog', { name: 'a/A0.ts' })).toBeInTheDocument()
-  })
-
-  it('previews from an inner button too, without navigating, and not on a plain click of the box', async () => {
-    open('?at=pkg:a')
-    fireEvent.click(within(box('a/A2.ts')).getByRole('button', { name: /A2\.ts/ }), { ctrlKey: true })
-    expect(screen.getByRole('dialog', { name: 'a/A2.ts' })).toBeInTheDocument()
-    expect(where().pathname).toBe(`/s/${SESSION_ID}/blueprint`)
-  })
-
-  it('does not open on a plain click, and does nothing special for a package box', () => {
-    open()
-    fireEvent.click(screen.getByRole('group', { name: 'Package a' }), { ctrlKey: true })
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(fireEvent.contextMenu(screen.getByRole('group', { name: 'Package a' }), { ctrlKey: true })).toBe(true)
-  })
-
-  it('closes on the scrim, on the close button and on Esc, and gives the box its focus back', async () => {
-    open('?at=pkg:a')
-    fireEvent.click(box('a/A0.ts'), { ctrlKey: true })
-    const scrim = document.querySelector('[data-slot="dialog-overlay"]')
-    expect(scrim).not.toBeNull()
-    expect(scrim).toHaveClass('bg-ink/80')
+    openCard('a/A1.ts')
+    const scrim = document.querySelector('[data-slot="blueprint-deck-scrim"]')
+    expect(scrim).toHaveClass('bg-black/75')
     fireEvent.click(scrim as Element)
-    expect(await screen.findByRole('group', { name: /File a\/A0\.ts/ })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(where().searchParams.get('file')).toBeNull()
 
-    fireEvent.click(box('a/A1.ts'), { ctrlKey: true })
-    await userEvent.click(screen.getByRole('button', { name: 'Close preview' }))
+    openCard('a/A2.ts')
+    await userEvent.click(screen.getByRole('button', { name: 'Close cards' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(box('a/A1.ts')).toHaveFocus()
+    expect(where().searchParams.get('file')).toBeNull()
   })
 
-  it('keeps the canvas keys quiet while open: F and S do nothing, Esc does not go up a level', () => {
+  it('opens when the page loads with ?file=, and drops a file the diagram does not have', () => {
+    open('?at=pkg:a&file=a/A5.ts')
+    expect(screen.getByRole('article', { name: 'a/A5.ts' })).toBeInTheDocument()
+    cleanup()
+    open('?at=pkg:a&file=b/B1.ts')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(where().searchParams.get('file')).toBeNull()
+    expect(where().searchParams.get('at')).toBe('pkg:a')
+  })
+
+  it('keeps the canvas keys quiet while open: S does nothing, and Esc closes the cards instead of going up a level', () => {
     open('?at=pkg:a')
-    fireEvent.click(box('a/A0.ts'), { ctrlKey: true })
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 's' })
+    openCard('a/A0.ts')
+    fireEvent.keyDown(window, { key: 's' })
     // The page behind a modal dialog is hidden from the accessibility tree.
     expect(screen.getByRole('button', { name: 'Select', hidden: true })).toHaveAttribute('aria-pressed', 'false')
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    fireEvent.keyDown(document.body, { key: 'Escape' })
     expect(where().searchParams.get('at')).toBe('pkg:a')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('does nothing special for Ctrl or Cmd + click, or the macOS Ctrl right-click', () => {
+    open('?at=pkg:a')
+    fireEvent.click(box('a/A0.ts'), { ctrlKey: true })
+    fireEvent.click(box('a/A1.ts'), { metaKey: true })
+    expect(fireEvent.contextMenu(box('a/A0.ts'), { ctrlKey: true })).toBe(true)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('has no cards for a package box', () => {
+    open()
+    fireEvent.click(screen.getByRole('group', { name: 'Package a' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
 
@@ -171,16 +216,13 @@ describe('select mode', () => {
     expect(where().searchParams.get('at')).toBeNull()
   })
 
-  it('closes a preview first, then leaves select mode', () => {
+  it('picks on a click in select mode instead of opening the cards', () => {
     open('?at=pkg:a')
     fireEvent.keyDown(document.body, { key: 's' })
-    fireEvent.click(pickBox(/^File a\/A0\.ts/), { ctrlKey: true })
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-    fireEvent.keyDown(document.body, { key: 'Escape' })
+    fireEvent.click(pickBox(/^File a\/A0\.ts/))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Select' })).toHaveAttribute('aria-pressed', 'true')
-    fireEvent.keyDown(document.body, { key: 'Escape' })
-    expect(screen.getByRole('button', { name: 'Select' })).toHaveAttribute('aria-pressed', 'false')
+    expect(pickBox(/^File a\/A0\.ts/)).toHaveAttribute('aria-checked', 'true')
+    expect(where().searchParams.get('file')).toBeNull()
   })
 
   it('enters select mode with the box picked on Shift + click', () => {
@@ -257,16 +299,6 @@ describe('select mode', () => {
     expect(pickBox(/^File a\/A1\.ts/).style.left).toBe(left)
     expect(pickBox(/^File a\/A1\.ts/).style.top).toBe(top)
     expect(picked).not.toHaveAttribute('data-dragging')
-  })
-
-  it('does not start a drag with Ctrl or Cmd held', () => {
-    open('?at=pkg:a')
-    const element = box('a/A0.ts')
-    const left = element.style.left
-    fireEvent.pointerDown(element, { button: 0, isPrimary: true, pointerId: 1, clientX: 10, clientY: 10, ctrlKey: true })
-    fireEvent.pointerMove(window, { pointerId: 1, clientX: 210, clientY: 10 })
-    fireEvent.pointerUp(window, { pointerId: 1 })
-    expect(box('a/A0.ts').style.left).toBe(left)
   })
 })
 
@@ -356,19 +388,30 @@ describe('selection bar', () => {
     }
   })
 
-  it('opens the Files page on the picked files in the diagram order, keeping bp and saving the list under sel', async () => {
+  it('opens the cards on exactly the picked files in the diagram order, keeping at and saving the list under sel', async () => {
     open('?at=pkg:a')
     await userEvent.click(screen.getByRole('button', { name: 'Select' }))
     await userEvent.click(pickBox(/^File a\/A5\.ts/))
     await userEvent.click(pickBox(/^File a\/A2\.ts/))
     await userEvent.click(screen.getByRole('button', { name: 'View all' }))
     const url = where()
-    expect(url.pathname).toBe(`/s/${SESSION_ID}/files/a/A2.ts`)
-    expect(url.searchParams.get('bp')).toBe('pkg:a')
-    expect(url.searchParams.get('mode')).toBe('swipe')
+    expect(url.pathname).toBe(`/s/${SESSION_ID}/blueprint`)
+    expect(url.searchParams.get('at')).toBe('pkg:a')
+    expect(url.searchParams.get('file')).toBe('a/A2.ts')
     const key = url.searchParams.get('sel')
     expect(key).toMatch(/^[a-z0-9]+$/)
     expect(loadBlueprintSelection(SESSION_ID, key ?? '')).toEqual(['a/A2.ts', 'a/A5.ts'])
-    expect(window.sessionStorage.getItem(`scout:bp-sel:${SESSION_ID}:${key}`)).toBe(JSON.stringify(['a/A2.ts', 'a/A5.ts']))
+    const dialog = screen.getByRole('dialog', { name: '2 selected files' })
+    expect(within(dialog).getByText('1 / 2')).toBeInTheDocument()
+    // Picked files show as a stack; a card opened from its box does not (checked above).
+    expect(document.querySelectorAll('[data-slot="deck-peek"]').length).toBe(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Next file' }))
+    expect(where().searchParams.get('file')).toBe('a/A5.ts')
+    expect(where().searchParams.get('sel')).toBe(key)
+    expect(screen.getByRole('button', { name: 'Next file' })).toBeDisabled()
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    // Closing leaves the diagram as it was, picks and select mode included.
+    expect(screen.getByRole('toolbar', { name: 'Selected files' })).toHaveTextContent('2 selected')
+    expect(where().searchParams.get('sel')).toBeNull()
   })
 })

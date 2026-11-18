@@ -23,7 +23,6 @@ const MEMBER_MARK: Record<BlueprintMemberChange, { glyph: string; word: string; 
 
 export interface FileBoxProps extends Omit<BoxShellProps, 'boxKey' | 'label' | 'width' | 'children' | 'className'> {
   info: BoxInfo
-  details: boolean
   /** The box the diagram is drawn around. */
   center: boolean
   /** Show the links to files outside the diagram (not in an around-diagram). */
@@ -34,7 +33,7 @@ export interface FileBoxProps extends Omit<BoxShellProps, 'boxKey' | 'label' | '
 }
 
 /** A changed file as a UML class: a band in the file type's colour, Scout's one-liner, the declarations that changed, then the size of the change. */
-export function FileBox({ info, details, center, showOutside, onOpenFile, onOpenMember, onAround, ...shell }: FileBoxProps) {
+export function FileBox({ info, center, showOutside, onOpenFile, onOpenMember, onAround, ...shell }: FileBoxProps) {
   const { box } = info
   const file = info.file
   if (!file) return null
@@ -75,13 +74,13 @@ export function FileBox({ info, details, center, showOutside, onOpenFile, onOpen
           {verdict ? <verdict.icon role="img" aria-label={verdict.label} className={cn('size-3 stroke-[3]', verdict.iconClassName)} /> : file.order}
         </span>
       </button>
-      {details && file.summary && (
+      {file.summary && (
         <p className="m-0 flex gap-1.5 border-b-fine border-line px-2.5 py-[7px] text-[12.5px] leading-[1.35]">
           <PencilLine aria-hidden className="mt-0.5 size-3 shrink-0 text-ink-muted" />
           <span>{file.summary}</span>
         </p>
       )}
-      {details && members.length > 0 && (
+      {members.length > 0 && (
         <div className="flex flex-col border-b-fine border-line px-1 py-1.5">
           {members.map((member) => {
             const mark = MEMBER_MARK[member.change]
@@ -125,7 +124,7 @@ export function FileBox({ info, details, center, showOutside, onOpenFile, onOpen
           </button>
         )}
       </div>
-      {details && showOutside && <OutsideLinks box={box} />}
+      {showOutside && <OutsideLinks box={box} />}
     </BoxShell>
   )
 }

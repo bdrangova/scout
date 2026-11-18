@@ -7,22 +7,22 @@ function info(counts: Partial<Pick<BoxInfo, 'approved' | 'rejected' | 'comments'
 }
 
 describe('boxStateOf', () => {
-  it('is rejected as soon as one file is, even beside approvals and comments', () => {
-    expect(boxStateOf(info({ approved: 2, rejected: 1, comments: 4 }))).toBe('rejected')
+  it('a file: its verdict, else commented when it has open comments', () => {
+    expect(boxStateOf(info({ total: 1, rejected: 1, comments: 2 }))).toBe('rejected')
+    expect(boxStateOf(info({ total: 1, approved: 1, comments: 2 }))).toBe('approved')
+    expect(boxStateOf(info({ total: 1, comments: 2 }))).toBe('commented')
+    expect(boxStateOf(info({ total: 1 }))).toBe('none')
   })
 
-  it('is approved only once every file is', () => {
-    expect(boxStateOf(info({ approved: 3 }))).toBe('approved')
-    expect(boxStateOf(info({ approved: 2 }))).toBe('none')
+  it('a package: nothing until every file has a verdict', () => {
+    expect(boxStateOf(info({ approved: 2 }), true)).toBe('none')
+    expect(boxStateOf(info({ approved: 1, rejected: 1, comments: 4 }), true)).toBe('none')
+    expect(boxStateOf(info({ comments: 4 }), true)).toBe('none')
+    expect(boxStateOf(info({ total: 0 }), true)).toBe('none')
   })
 
-  it('is commented when files carry open comments and no verdict settles it', () => {
-    expect(boxStateOf(info({ approved: 1, comments: 2 }))).toBe('commented')
-    expect(boxStateOf(info({ approved: 3, comments: 2 }))).toBe('approved')
-  })
-
-  it('is nothing for an untouched or empty box', () => {
-    expect(boxStateOf(info({}))).toBe('none')
-    expect(boxStateOf(info({ total: 0 }))).toBe('none')
+  it('a fully reviewed package: rejected when any file is, else approved', () => {
+    expect(boxStateOf(info({ approved: 3, comments: 2 }), true)).toBe('approved')
+    expect(boxStateOf(info({ approved: 2, rejected: 1 }), true)).toBe('rejected')
   })
 })

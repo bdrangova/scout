@@ -1,9 +1,10 @@
-import type { BlueprintArrow, BlueprintDiagram } from '@scout/shared'
+import type { BlueprintArrow } from '@scout/shared'
 import { useMemo } from 'react'
 import { arrowGeometry, type Rect } from './arrow-path'
 
 export interface BlueprintArrowsProps {
-  diagram: BlueprintDiagram
+  /** The arrows to draw (the diagram's, less the kinds switched off). */
+  arrows: readonly BlueprintArrow[]
   rects: Record<string, Rect>
   /** The box under the pointer or focus: its arrows stand out and the others fade. */
   active: string | null
@@ -18,9 +19,9 @@ interface Drawn {
 }
 
 /** The arrows of a diagram, redrawn from the current box rectangles (so they follow a box while it moves). */
-export function BlueprintArrows({ diagram, rects, active }: BlueprintArrowsProps) {
+export function BlueprintArrows({ arrows, rects, active }: BlueprintArrowsProps) {
   const drawn = useMemo(() => {
-    const placed = diagram.arrows.filter((arrow) => rects[arrow.from] && rects[arrow.to])
+    const placed = arrows.filter((arrow) => rects[arrow.from] && rects[arrow.to])
     const xs = Object.values(rects).flatMap((rect) => [rect.x, rect.x + rect.w])
     const centerX = xs.length > 0 ? (Math.min(...xs) + Math.max(...xs)) / 2 : 0
     // Arrows arriving at one box fan out along its edge, ordered by where they come from.
@@ -33,7 +34,7 @@ export function BlueprintArrows({ diagram, rects, active }: BlueprintArrowsProps
       const to = rects[arrow.to] as Rect
       return { arrow, ...arrowGeometry(from, to, fan, centerX) }
     })
-  }, [diagram, rects])
+  }, [arrows, rects])
 
   return (
     <svg width="1" height="1" className="pointer-events-none absolute top-0 left-0 overflow-visible" aria-hidden data-slot="blueprint-arrows">

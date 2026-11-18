@@ -1,11 +1,12 @@
 import { blueprintDiagramFiles, findBlueprintPackage, liveEntries, parseBlueprintDiagramId, type BlueprintMember, type TreeFile } from '@scout/shared'
 import { Workflow } from 'lucide-react'
-import { useCallback, useMemo } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router'
+import { useCallback, useEffect, useMemo } from 'react'
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { AsyncBoundary } from '@/components/common/AsyncBoundary'
 import { EmptyState } from '@/components/common/EmptyState'
 import { BlueprintGroupsEmpty } from '@/components/blueprint/BlueprintGroupsEmpty'
 import { BlueprintStaleNotice } from '@/components/blueprint/BlueprintStaleNotice'
+import { BlueprintDeck } from '@/components/blueprint/BlueprintDeck'
 import { BlueprintViewSwitch } from '@/components/blueprint/BlueprintViewSwitch'
 import { BlueprintDiagramView } from '@/components/blueprint/BlueprintDiagramView'
 import { BlueprintRailSection } from '@/components/blueprint/BlueprintRailSection'
@@ -17,6 +18,7 @@ import { useOpenCommentRefs } from '@/components/layout/commented-only'
 import { useFileCategories } from '@/components/files/useFileCategories'
 import {
   BLUEPRINT_AT_PARAM,
+  BLUEPRINT_FILE_PARAM,
   BLUEPRINT_SELECTION_PARAM,
   BLUEPRINT_VIEW_PARAM,
   blueprintDiagramOf,
@@ -24,16 +26,15 @@ import {
   blueprintViewOf,
   blueprintViewRoot,
   groupingOfDiagram,
+  loadBlueprintSelection,
   orderBlueprintSelection,
   saveBlueprintSelection,
   useBlueprint,
   useBlueprintLayout,
-  withBlueprint,
   type BlueprintView,
 } from '@/lib/blueprint'
 import { isTestRunDetail } from '@/lib/detail-kind'
-import { MODE_PARAM, readLastCardMode } from '@/lib/mode'
-import { fileRoute } from '@/lib/paths'
+import { indexByPath } from '@/lib/scope'
 import { requestLineJump } from '@/lib/line-jump'
 import { useSessionContext } from '@/lib/session-context'
 import { useJournalState } from '@/state/journal-context'
@@ -57,6 +58,7 @@ export function BlueprintPage() {
 
 function BlueprintContent({ sessionId, treeFiles }: { sessionId: string; treeFiles: readonly TreeFile[] }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const blueprint = useBlueprint(sessionId, true, true)
   const layoutState = useBlueprintLayout(sessionId)
@@ -102,26 +104,52 @@ function BlueprintContent({ sessionId, treeFiles }: { sessionId: string; treeFil
   const go = useCallback((id: string) => navigate(blueprintRoute(sessionId, id, view)), [sessionId, navigate, view])
   // Switching the view starts at that view's root: `?at=` is dropped.
   const switchView = useCallback((next: BlueprintView) => navigate(blueprintRoute(sessionId, blueprintViewRoot(next))), [sessionId, navigate])
-  const openFile = useCallback(
-    (path: string) => {
-      const params = withBlueprint(new URLSearchParams(), diagram?.id ?? null)
-      params.set(MODE_PARAM, readLastCardMode())
-      navigate({ pathname: fileRoute(sessionId, path), search: `?${params.toString()}` })
+  // The cards over the diagram: `?file=` is the open card, `?sel=` says the deck is the picked files. Opening pushes an entry, moving between cards replaces it.
+  const fileParam = searchParams.get(BLUEPRINT_FILE_PARAM)
+  const selKey = searchParams.get(BLUEPRINT_SELECTION_PARAM)
+  const treeByPath = useMemo(() => indexByPath(treeFiles), [treeFiles])
+  const deckFiles = useMemo(() => {
+    if (!diagram) return null
+    const paths = selKey === null ? blueprintDiagramFiles(diagram) : loadBlueprintSelection(sessionId, selKey)
+    const listed = (paths ?? []).flatMap((path) => treeByPath.get(path) ?? [])
+    return listed.length > 0 ? listed : null
+  }, [diagram, selKey, sessionId, treeByPath])
+  const deckOpen = fileParam !== null && deckFiles !== null && deckFiles.some((file) => file.path === fileParam)
+  const deckInvalid = fileParam !== null && !loading && !error && diagram !== null && !deckOpen
+  const deckSearch = useCallback(
+    (file: string | null, sel: string | null) => {
+      const params = new URLSearchParams(searchParams)
+      for (const [name, value] of [[BLUEPRINT_FILE_PARAM, file], [BLUEPRINT_SELECTION_PARAM, sel]] as const) {
+        if (value === null) params.delete(name)
+        else params.set(name, value)
+      }
+      const query = params.toString()
+      return query === '' ? '' : `?${query}`
     },
-    [sessionId, diagram, navigate],
+    [searchParams],
   )
-  // "View all": the Files page limited to the picked files; the list rides in sessionStorage, the URL only carries its key.
+  // An unknown file or unreadable picks: the diagram alone.
+  useEffect(() => {
+    if (deckInvalid) navigate({ search: deckSearch(null, null) }, { replace: true })
+  }, [deckInvalid, deckSearch, navigate])
+  const openDeck = useCallback((path: string, sel: string | null) => navigate({ search: deckSearch(path, sel) }, { state: { bpDeck: true } }), [deckSearch, navigate])
+  const stepDeck = useCallback((path: string) => navigate({ search: deckSearch(path, selKey) }, { replace: true, state: location.state }), [deckSearch, selKey, navigate, location.state])
+  // Closing returns to the entry the cards were opened from (the diagram as it was); after a reload or a pasted link the params are simply dropped.
+  const closeDeck = useCallback(() => {
+    if ((location.state as { bpDeck?: boolean } | null)?.bpDeck === true) navigate(-1)
+    else navigate({ search: deckSearch(null, null) }, { replace: true })
+  }, [location.state, deckSearch, navigate])
+
+  const openFile = useCallback((path: string) => openDeck(path, null), [openDeck])
+  // "View all": the cards of exactly the picked files; the list rides in sessionStorage, the URL only carries its key.
   const viewSelected = useCallback(
     (paths: readonly string[]) => {
       if (!diagram) return
       const ordered = orderBlueprintSelection(new Set(paths), blueprintDiagramFiles(diagram))
-      const params = withBlueprint(new URLSearchParams(), diagram.id)
-      const key = saveBlueprintSelection(sessionId, ordered)
-      if (key !== null) params.set(BLUEPRINT_SELECTION_PARAM, key)
-      params.set(MODE_PARAM, readLastCardMode())
-      navigate({ pathname: fileRoute(sessionId, ordered[0] ?? ''), search: `?${params.toString()}` })
+      if (ordered.length === 0) return
+      openDeck(ordered[0] ?? '', saveBlueprintSelection(sessionId, ordered))
     },
-    [sessionId, diagram, navigate],
+    [sessionId, diagram, openDeck],
   )
   const openMember = useCallback(
     (path: string, member: BlueprintMember) => {
@@ -180,12 +208,24 @@ function BlueprintContent({ sessionId, treeFiles }: { sessionId: string; treeFil
             selection={selection}
             approveAll={approveAll}
             onViewSelected={viewSelected}
+            keysSuspended={deckOpen}
             parentId={parentDiagramId(navRoot, diagram.ref)}
             viewSwitch={viewSwitch}
             notice={tree?.stale && view !== 'folders' ? <BlueprintStaleNotice sessionId={sessionId} type={view} ungrouped={tree.ungrouped.length} gone={tree.gone.length} /> : undefined}
           />
         )}
       </AsyncBoundary>
+      {deckOpen && deckFiles !== null && fileParam !== null && (
+        <BlueprintDeck
+          sessionId={sessionId}
+          files={deckFiles}
+          title={selKey === null ? (diagram?.title ?? '') : `${deckFiles.length} selected ${deckFiles.length === 1 ? 'file' : 'files'}`}
+          currentPath={fileParam}
+          onNavigate={stepDeck}
+          stacked={selKey !== null}
+          onClose={closeDeck}
+        />
+      )}
     </main>
   )
 }

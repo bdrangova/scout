@@ -19,9 +19,11 @@ export interface CardDeckProps {
   commentFocusToken?: number
   /** Set when `files` are one scope's files: verdicts are read from and pinned to the full diff. */
   scope?: ScopeReview
+  /** The next cards showing as layers behind the open one (default on). */
+  stacked?: boolean
 }
 
-export function CardDeck({ files, currentPath, sessionId, onNavigate, commentFocusToken = 0, scope }: CardDeckProps) {
+export function CardDeck({ files, currentPath, sessionId, onNavigate, commentFocusToken = 0, scope, stacked = true }: CardDeckProps) {
   const { fileReview, commentsFor } = useReview()
   const sendVerdict = useVerdictAction()
   const foundIndex = files.findIndex((file) => file.path === currentPath)
@@ -68,7 +70,7 @@ export function CardDeck({ files, currentPath, sessionId, onNavigate, commentFoc
         <div className="relative flex min-h-[560px] flex-1">
           {/* The next files in the queue show as layers behind the card, in their type's colour. */}
           {Array.from({ length: PEEK_COUNT }, (_, i) => PEEK_COUNT - i).map((offset) => {
-            const peek = files[index + offset]
+            const peek = stacked ? files[index + offset] : undefined
             if (!peek) return null
             return (
               <div

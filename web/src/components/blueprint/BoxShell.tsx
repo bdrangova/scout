@@ -21,12 +21,12 @@ export interface BoxShellProps {
   /** Unrelated to the box under the pointer or focus: faded. */
   dim: boolean
   dragging: boolean
+  /** Left out of the diagram by a "Hide" switch: still laid out (so nothing moves), but not seen, clicked, focused or read out. */
+  hidden?: boolean
   /** Set while select mode is on: every click picks or unpicks the box instead of opening anything. */
   pick: BoxPick | null
   /** Shift + click while select mode is off: turns it on with this box picked. */
   onShiftPick: () => void
-  /** File boxes only: Ctrl or Cmd + click opens the quick preview. */
-  onPreview?: () => void
   onActive: (key: string | null) => void
   onPointerDown: (key: string, event: PointerEvent<HTMLElement>) => void
   onClickCapture: (event: MouseEvent<HTMLElement>) => void
@@ -54,24 +54,17 @@ function PickBadge({ state }: { state: PickState }) {
 }
 
 /** The positioned, draggable, focusable frame every box shares. The `bp-box` class keeps the canvas from panning when a box is dragged. */
-export function BoxShell({ boxKey, label, x, y, width, className, wash, dim, dragging, pick, onShiftPick, onPreview, onActive, onPointerDown, onClickCapture, children }: BoxShellProps) {
-  // Ahead of the box's own buttons (capture phase): preview, select mode and Shift + click replace what a click normally does.
+export function BoxShell({ boxKey, label, x, y, width, className, wash, dim, dragging, hidden = false, pick, onShiftPick, onActive, onPointerDown, onClickCapture, children }: BoxShellProps) {
+  // Ahead of the box's own buttons (capture phase): select mode and Shift + click replace what a click normally does.
   function onClick(event: MouseEvent<HTMLElement>) {
     const claim = (action: () => void) => {
       event.preventDefault()
       event.stopPropagation()
       action()
     }
-    if (onPreview && (event.ctrlKey || event.metaKey)) claim(onPreview)
-    else if (pick) claim(pick.onToggle)
+    if (pick) claim(pick.onToggle)
     else if (event.shiftKey) claim(onShiftPick)
     else onClickCapture(event)
-  }
-  // macOS reports Ctrl + click as a right-click: no `click` follows, only `contextmenu`.
-  function onContextMenu(event: MouseEvent<HTMLElement>) {
-    if (!onPreview || !event.ctrlKey) return
-    event.preventDefault()
-    onPreview()
   }
   function onKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (!pick || event.target !== event.currentTarget || (event.key !== ' ' && event.key !== 'Enter')) return
@@ -82,12 +75,14 @@ export function BoxShell({ boxKey, label, x, y, width, className, wash, dim, dra
     <div
       role={pick ? 'checkbox' : 'group'}
       aria-checked={pick ? PICK_ARIA[pick.state] : undefined}
-      tabIndex={0}
+      tabIndex={hidden ? -1 : 0}
+      aria-hidden={hidden || undefined}
       aria-label={label}
       data-box-key={boxKey}
       data-slot="blueprint-box"
       data-dragging={dragging || undefined}
       data-pick={pick?.state}
+      data-hidden={hidden || undefined}
       className={cn(
         'bp-box absolute flex touch-none flex-col border-fine border-line bg-surface text-ink transition-opacity select-none',
         pick ? 'cursor-pointer' : dragging ? 'cursor-grabbing' : 'cursor-grab',
@@ -99,10 +94,9 @@ export function BoxShell({ boxKey, label, x, y, width, className, wash, dim, dra
         pick && pick.state !== 'none' && 'z-[2] outline outline-[3px] outline-offset-[3px] outline-selected',
         pick?.state === 'some' && 'outline-dashed',
       )}
-      style={{ left: x, top: y, width }}
+      style={{ left: x, top: y, width, visibility: hidden ? 'hidden' : undefined }}
       onPointerDown={(event) => onPointerDown(boxKey, event)}
       onClickCapture={onClick}
-      onContextMenu={onContextMenu}
       onKeyDown={onKeyDown}
       onMouseEnter={() => onActive(boxKey)}
       onMouseLeave={() => onActive(null)}

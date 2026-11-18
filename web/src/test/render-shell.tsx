@@ -33,13 +33,15 @@ export interface ShellOptions {
   dispatch?: ReviewContextValue['dispatch']
   /** The stored review entry of a file (default: none). */
   fileReview?: ReviewContextValue['fileReview']
+  /** What a verdict does (default: nothing, no comment attached). */
+  setVerdict?: ReviewContextValue['setVerdict']
 }
 
 /**
  * The session bar and rail around a page, on the given route (`/s/:id/...`, or `/t/:id/...` for a test run), with a fixed review (no provider,
  * no network). The page can render into the rail with `RailSection`.
  */
-export function renderShell(path: string, { kind: kindOption, detail: detailOption, review = reviewFixture(), resolutions = null, saveStatus = 'idle', onHelp = vi.fn(), page = null, unsavedDrafts = [], dispatch = vi.fn(), fileReview = () => null }: ShellOptions = {}) {
+export function renderShell(path: string, { kind: kindOption, detail: detailOption, review = reviewFixture(), resolutions = null, saveStatus = 'idle', onHelp = vi.fn(), page = null, unsavedDrafts = [], dispatch = vi.fn(), fileReview = () => null, setVerdict = () => false }: ShellOptions = {}) {
   const kind: SessionKind = kindOption ?? (detailOption && isTestRunDetail(detailOption) ? 'test-run' : 'code-review')
   const detail = detailOption ?? (kind === 'test-run' ? testRunDetailFixture : sessionDetailFixture)
   const items: readonly ReviewItem[] = isTestRunDetail(detail) ? detail.scenarios.map(scenarioReviewItem) : detail.tree.files
@@ -54,7 +56,7 @@ export function renderShell(path: string, { kind: kindOption, detail: detailOpti
     draftFor: () => '',
     setDraft: () => {},
     unsavedDrafts,
-    setVerdict: () => false,
+    setVerdict,
     progress: progress(review, items),
     resolutions,
     saveStatus,
